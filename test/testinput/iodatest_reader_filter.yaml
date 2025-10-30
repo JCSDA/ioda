@@ -43,4 +43,11 @@ expected filtered data:
   - name: "ObsValue/myObsInst"
     type: "float"
     values: [ 30.5, 60.5, 80.5, missing ]
+expected obs source stats data:
+  source nlocs: 10
+  nlocs: 4
+  gnlocs: 4
+  gnlocs outside timewindow: 4
+  gnlocs reject qc: 2
+  loc indices: [ 2, 5, 7, 8 ]
 tolerance: 1.0e-6

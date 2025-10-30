@@ -7,10 +7,10 @@
 
 #include "oops/runs/Run.h"
 
-#include "ioda/test/ioda/ReaderLoadNetcdf.h"
+#include "ioda/test/ioda/ReaderLoad.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  ioda::test::ReaderLoadNetcdf tests;
+  ioda::test::ReaderLoad tests;
   return run.execute(tests);
 }

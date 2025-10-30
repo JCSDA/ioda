@@ -620,6 +620,9 @@ namespace ioda {
         void load(const eckit::LocalConfiguration & backendConfig, ObsGroup & destObsGroup,
                   ObsSourceStats & obsSourceStats);
 
+        /// \brief set data members that are based on the ObsSpace parameter values
+        void recordCheckParameterInfo();
+
         /// \brief expand the obsdatain parameter to a vector of obsdatain configs
         /// \details This function will take the obsdatain ObsDataInParameters object
         /// from deserializing the original obsdatain spec, and construct a vector
@@ -657,6 +660,13 @@ namespace ioda {
         /// \param appendNlocs number of newly appended locations
         /// of the obs source
         void appendMissingObsErrors(const std::size_t appendNlocs);
+
+        /// \brief categorize the obs variables
+        /// \details This function will inspect the obs_params_ data member along
+        /// with the contents of the obs container (ObsGroup or OSDF) and determine
+        /// the lists of obs variables held in the obsvars_, initial_obsvars_,
+        /// derived_obsvars_, and assimvars_ data members.
+        void categorizeObsVariables();
 
         /// \brief build the recidx_ data member
         /// \details Build the recidx_ data member using the indices and recnums in
@@ -846,29 +856,6 @@ namespace ioda {
         std::string groupToUse(const std::string & group,
                                const std::string & variable,
                                bool skipDerived) const;
-
-        /// \brief transfer data from an ObsGroup to an OSDF
-        /// \param numLocs number of locations (size of Location dimension)
-        /// \param numChans number of channels (size of Channel dimension)
-        /// \param srcObsGroup source ObsGroup container
-        /// \param destOSDF destination OSDF container
-        void osdfTransferDataFromObsGroup(const std::size_t numLocs,
-                                    const std::size_t numChans,
-                                    const std::unique_ptr<ObsGroup> & srcObsGroup,
-                                    std::unique_ptr<osdf::IFrame> & destOSDF);
-
-        /// \param srcVar ioda::Variable object from the source ObsGroup
-        /// \param varName variable name
-        /// \param chanNums numbers of all the channels
-        /// \param destOSDF destination OSDF container
-        /// \param numLocs number of locations (size of Location dimension)
-        /// \param destOSDF destination OSDF container
-        template<typename VarType>
-        void osdfTransferVariableFromObsGroup(const Variable & srcVar,
-                                    const std::string & varName,
-                                    const std::vector<int> & chanNums,
-                                    const Dimensions_t numLocs,
-                                    std::unique_ptr<osdf::IFrame> & destOSDF);
     };
 
 }  // namespace ioda

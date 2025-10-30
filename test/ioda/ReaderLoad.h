@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_IODA_READERLOADNETCDF_H_
-#define TEST_IODA_READERLOADNETCDF_H_
+#ifndef TEST_IODA_READERLOAD_H_
+#define TEST_IODA_READERLOAD_H_
 
 #include <memory>
 #include <sstream>
@@ -22,12 +22,12 @@
 #include "eckit/testing/Test.h"
 
 #include "ioda/containers/FrameCols.h"
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ObsDataIoParameters.h"
-#include "ioda/obsIoPool/ObsIoPool.hpp"
-#include "ioda/reader/load/loadObsContainerFromNetcdf.hpp"
+#include "ioda/reader/load/loadObs.hpp"
 
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -38,37 +38,15 @@ namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
-void populateOsdfFromNetcdf(const ioda::ObsDataInParameters & dataInParams,
-                            const ioda::ObsIoPool::ObsIoPool & obsIoPool,
-                            std::unique_ptr<osdf::IFrame> & testOsdf) {
-  // Collectively call the loadOsdfFromNetcdf function with all io pool members.
-  if (obsIoPool.inIoPool()) {
-    reader::loadOsdfFromNetcdf(dataInParams, obsIoPool.commPool(), testOsdf);
-  }
-
-  // Distribute the column metadata (definitions) from an io pool rank to all
-  // non-io pool ranks so that all ranks have consistent column definitions.
-  reader::distributeOsdfColumnMetadata(obsIoPool.commAll(), obsIoPool.inIoPool(), testOsdf);
-}
-
-// -----------------------------------------------------------------------------
 void checkOsdf(const eckit::LocalConfiguration & testConfig,
-               const ioda::ObsIoPool::ObsIoPool & obsIoPool,
-               const std::unique_ptr<osdf::IFrame> & testOsdf) {
-  // Check if we are in the correct io pool communicator
-  const int myMainRank = obsIoPool.commAll().rank();
-  const int myMainSize = obsIoPool.commAll().size();
-  const int myPoolRank = obsIoPool.commPool().rank();
-  const int myPoolSize = obsIoPool.commPool().size();
-
-  const std::string sizeRankKey = "mpi size" + std::to_string(myMainSize) +
-                                  ".rank" + std::to_string(myMainRank);
-
-  // Verify the io pool size and rank
-  const int expectedPoolSize = testConfig.getInt(sizeRankKey + ".pool comm size");
-  const int expectedPoolRank = testConfig.getInt(sizeRankKey + ".pool comm rank");
-  EXPECT_EQUAL(myPoolSize, expectedPoolSize);
-  EXPECT_EQUAL(myPoolRank, expectedPoolRank);
+               const eckit::mpi::Comm & commAll,
+               const std::unique_ptr<osdf::IFrame> & testOsdf,
+               const osdf::FrameMetadata & osdfMetadata) {
+  // Get the proper config for expected data
+  const int myRank = commAll.rank();
+  const int mySize = commAll.size();
+  const std::string sizeRankKey = "mpi size" + std::to_string(mySize) +
+                                  ".rank" + std::to_string(myRank);
 
   // Verify the shape of the OSDF container
   const std::size_t expectedNumRows = testConfig.getUnsigned(sizeRankKey + ".nlocs");
@@ -84,6 +62,12 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   for (const auto & colName : sampleColNames) {
     EXPECT(testOsdf->hasColumn(colName));
   }
+
+  // Check the date time epoch value (this is the only osdf frame metadata item
+  // that is set by the load step).
+  const std::string expectedDateTimeEpoch = testConfig.getString("date time epoch");
+  const std::string dateTimeEpoch = osdfMetadata.getDateTimeEpoch();
+  EXPECT_EQUAL(dateTimeEpoch, expectedDateTimeEpoch);
 }
 
 // -----------------------------------------------------------------------------
@@ -103,20 +87,18 @@ void testFrameRows() {
     ioda::ObsDataInParameters dataInParams;
     dataInParams.deserialize(obsDataInConfig);
 
-    // Create an IoPool object, and pass the pool communicator to the
-    // populateOsdfFromNetcdf function.
     const eckit::LocalConfiguration ioPoolConfig = config.getSubConfiguration("io pool");
     ioda::IoPool::IoPoolParameters ioPoolParams;
     ioPoolParams.validateAndDeserialize(ioPoolConfig);
-    std::unique_ptr<ioda::ObsIoPool::ObsIoPool> obsIoPool =
-      std::make_unique<ioda::ObsIoPool::ObsIoPool>(ioPoolParams, oops::mpi::world());
 
     // Create a row-oriented OSDF
     std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
 
-    // Collectively call the populateOsdfFromNetcdf with all io pool members
-    populateOsdfFromNetcdf(dataInParams, *obsIoPool, testOsdf);
-    checkOsdf(testConfig, *obsIoPool, testOsdf);
+    // Collectively call the loadObs function with all io pool members
+    osdf::FrameMetadata osdfMetadata;
+    const eckit::mpi::Comm & commAll = oops::mpi::world();
+    reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
+    checkOsdf(testConfig, commAll, testOsdf, osdfMetadata);
   }
 }
 
@@ -137,38 +119,36 @@ void testFrameCols() {
     ioda::ObsDataInParameters dataInParams;
     dataInParams.deserialize(obsDataInConfig);
 
-    // Create an IoPool object, and pass the pool communicator to the
-    // populateOsdfFromNetcdf function.
     const eckit::LocalConfiguration ioPoolConfig = config.getSubConfiguration("io pool");
     ioda::IoPool::IoPoolParameters ioPoolParams;
     ioPoolParams.validateAndDeserialize(ioPoolConfig);
-    std::unique_ptr<ioda::ObsIoPool::ObsIoPool> obsIoPool =
-      std::make_unique<ioda::ObsIoPool::ObsIoPool>(ioPoolParams, oops::mpi::world());
 
     // Create a column-oriented OSDF
     std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameCols>();
 
-    // Collectively call the populateOsdfFromNetcdf with all io pool members
-    populateOsdfFromNetcdf(dataInParams, *obsIoPool, testOsdf);
-    checkOsdf(testConfig, *obsIoPool, testOsdf);
+    // Collectively call the loadObs function with all io pool members
+    osdf::FrameMetadata osdfMetadata;
+    const eckit::mpi::Comm & commAll = oops::mpi::world();
+    reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
+    checkOsdf(testConfig, commAll, testOsdf, osdfMetadata);
   }
 }
 
 // -----------------------------------------------------------------------------
-class ReaderLoadNetcdf : public oops::Test {
+class ReaderLoad : public oops::Test {
  public:
-  ReaderLoadNetcdf() {}
-  virtual ~ReaderLoadNetcdf() {}
+  ReaderLoad() {}
+  virtual ~ReaderLoad() {}
 
  private:
-  std::string testid() const override {return "test::ReaderLoadNetcdf";}
+  std::string testid() const override {return "test::ReaderLoad";}
 
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ReaderLoadNetcdf/testFrameRows")
+    ts.emplace_back(CASE("ioda/ReaderLoad/testFrameRows")
       { testFrameRows(); });
-    ts.emplace_back(CASE("ioda/ReaderLoadNetcdf/testFrameCols")
+    ts.emplace_back(CASE("ioda/ReaderLoad/testFrameCols")
       { testFrameCols(); });
   }
 
@@ -180,4 +160,4 @@ class ReaderLoadNetcdf : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_IODA_READERLOADNETCDF_H_
+#endif  // TEST_IODA_READERLOAD_H_

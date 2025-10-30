@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/reader/load/loadObsContainerFromNetcdf.hpp"
+#include "ioda/reader/load/loadObsFromNetcdf.hpp"
 
 #include <netcdf>
 
@@ -19,6 +19,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsDataIoParameters.h"
@@ -135,18 +136,24 @@ static int64_t getNcVarDefaultFillValue(const int64_t & fillValue);
 static float getNcVarDefaultFillValue(const float & fillValue);
 static std::string getNcVarDefaultFillValue(const std::string & fillValue);
 
+/// \brief get the epoch string from the given netcdf variable
+/// \param ncVar netcdf variable
+std::string getNcVarDtEpochString(const netCDF::NcVar & var);
+
 /// \brief  transfer variable data to the destination OSDF container
 /// \tparam VarType
 /// \param varName hierarchical name of variable
 /// \param varData variable data
 /// \param chanNums channel numbers
 /// \param destOSDF destination OSDF container
+/// \param osdfMetadata frame metadata for dest OSDF
 template <typename VarType>
 static void transferVarDataToOSDF(const std::string & varName,
                                   const std::vector<VarType> & varData,
                                   const std::size_t numlocs,
                                   const std::vector<int> & chanNums,
-                                  std::unique_ptr<osdf::IFrame> & destOSDF);
+                                  std::unique_ptr<osdf::IFrame> & destOSDF,
+                                  osdf::FrameMetadata & osdfMetadata);
 
 /// \brief load specified range of locations from the input file to the OSDF container
 /// \details This function is not MPI aware, rather it is the low level function that handles
@@ -161,10 +168,12 @@ static void transferVarDataToOSDF(const std::string & varName,
 /// \param startLoc beginning of location range
 /// \param locCount number of locations in range
 /// \param destOSDF destination OSDF container object
+/// \param osdfMetadata frame metadata for dest OSDF
 int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                            const std::size_t startLoc,
                            const std::size_t locCount,
-                           std::unique_ptr<osdf::IFrame> & destOSDF);
+                           std::unique_ptr<osdf::IFrame> & destOSDF,
+                           osdf::FrameMetadata & osdfMetadata);
 
 //--------------------------------------------------------------------------------
 // Function definitions for "private" functions
@@ -379,12 +388,58 @@ std::string getNcVarDefaultFillValue(const std::string & fillValue) {
 }
 
 //--------------------------------------------------------------------------------
+std::string getNcVarDtEpochString(const netCDF::NcVar & var) {
+  // Assume that var is a date time variable with an attribute name "units" which
+  // is a string with the epoch sped. Here's an example of the units value:
+  //    "seconds since 1970-01-01T00:00:00Z"
+  // We want the ISO-8601 date time after the "seconds since", so we need to strip
+  // that part off.
+  netCDF::NcVarAtt epochAttr = var.getAtt("units");
+  checkNcObj(epochAttr,
+    "ioda::reader::getNcVarDtEpochString: Failed to open attribute 'units' on variable: "
+     + var.getName());
+
+  // We need to detect which string type (fixed length vs variable length) we have
+  // in the "units" attribute before attempting to read it because the underlying
+  // calls need to be different for these two cases.
+  //     Variable length string -> use the char** version of getValues which
+  //                               calls the underlying function: nc_get_attr_string
+  //     Fixed length string -> use the std::string version of getValues which
+  //                            calls the underlying function: nc_get_attr_text
+  //
+  // The epochAttr.getType().getName() function calls will return "string" for
+  // a variable length string, and return "char" for a fixed length string.
+  const std::string epochTypeName = epochAttr.getType().getName();
+  std::string unitsString;
+  if (epochTypeName == "string") {
+    // variable length string
+    char * tempString;
+    epochAttr.getValues(&tempString);
+    unitsString = std::string(tempString);
+  } else if (epochTypeName == "char") {
+    // fixed length string
+    epochAttr.getValues(unitsString);
+  } else {
+    // unrecognized type name for string type
+    const std::string errMsg = std::string("ioda::reader::getNcVarDtEpochString: Unrecognized ") +
+      std::string("string type name for the 'units' attribute: ") + epochTypeName;
+    throw std::runtime_error(errMsg);
+  }
+
+  // Strip off the leading "seconds since" part of the units value.
+  const std::string unitsPrefix("seconds since ");
+  const std::size_t strPos = unitsString.find(unitsPrefix);
+  return unitsString.substr(strPos + unitsPrefix.length());
+}
+
+//--------------------------------------------------------------------------------
 template <typename VarType>
 void transferVarDataToOSDF(const std::string & varName,
                            const std::vector<VarType> & varData,
                            const std::size_t numLocs,
                            const std::vector<int> & chanNums,
-                           std::unique_ptr<osdf::IFrame> & destOSDF) {
+                           std::unique_ptr<osdf::IFrame> & destOSDF,
+                           osdf::FrameMetadata & osdfMetadata) {
   // varData should be the proper size. It is either 1D (Location)
   // or 2D (Location X Channel). For the 2D variable, the number of
   // channels can be inferred from the chanNums vector.
@@ -402,10 +457,16 @@ void transferVarDataToOSDF(const std::string & varName,
         varName + std::string("_") + std::to_string(chanNums[i]),
         dataChannel);
     }
+    osdfMetadata.addVarToVarsWithChans(varName);
   } else {
     // The size of the variable data is not correct. This should never happen.
     throw std::runtime_error(
       "ioda::reader::transferVarDataToOSDF: Variable data size is not correct.");
+  }
+
+  // Count variable (in numVars) if it is in the ObsValue group
+  if (varName.find("ObsValue/") != std::string::npos) {
+    osdfMetadata.incrNumVars();
   }
 }
 
@@ -413,7 +474,8 @@ void transferVarDataToOSDF(const std::string & varName,
 int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                            const std::size_t startLoc,
                            const std::size_t locCount,
-                           std::unique_ptr<osdf::IFrame> & destOSDF) {
+                           std::unique_ptr<osdf::IFrame> & destOSDF,
+                           osdf::FrameMetadata & osdfMetadata) {
   // Get a list of all the dimensions in the file. We won't store dimensions directly in
   // the destOSDF container, but we need to get the channel numbers if they exist.
   // The number of locations that will be read from the file is given by the locCount
@@ -441,6 +503,7 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
       }
       chanNums.resize(var.getDim(0).getSize());
       var.getVar(chanNums.data());
+      osdfMetadata.setChanNums(chanNums);
     }
   }
 
@@ -454,26 +517,35 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
     netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
     checkNcObj(var, "ioda::reader::loadObsBlockFromNetcdf: Failed to open variable: " + varName);
 
+    // Record the date time epoch value for downstream operations
+    if (varName == "MetaData/dateTime") {
+      osdfMetadata.setDateTimeEpoch(getNcVarDtEpochString(var));
+    }
+
     if (keepNetcdfVarForOSDF(varName, var)) {
       // Get the variable type for transferring its data to the OSDF
       const netCDF::NcType varType = var.getType();
       if (varType.getName() == "int") {
         std::vector<int> varData = getSelectNcVarData<int>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int>(var, varData);
-        transferVarDataToOSDF<int>(varName, varData, locCount, chanNums, destOSDF);
+        transferVarDataToOSDF<int>(
+          varName, varData, locCount, chanNums, destOSDF, osdfMetadata);
       } else if (varType.getName() == "int64") {
         std::vector<int64_t> varData = getSelectNcVarData<int64_t>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int64_t>(var, varData);
-        transferVarDataToOSDF<int64_t>(varName, varData, locCount, chanNums, destOSDF);
+        transferVarDataToOSDF<int64_t>(
+          varName, varData, locCount, chanNums, destOSDF, osdfMetadata);
       } else if (varType.getName() == "float") {
         std::vector<float> varData = getSelectNcVarData<float>(startLoc, locCount, var);
         replaceFillValuesWithMissing<float>(var, varData);
-        transferVarDataToOSDF<float>(varName, varData, locCount, chanNums, destOSDF);
+        transferVarDataToOSDF<float>(
+          varName, varData, locCount, chanNums, destOSDF, osdfMetadata);
       } else if (varType.getName() == "string") {
         std::vector<std::string> varData =
                                  getSelectNcVarData<std::string>(startLoc, locCount, var);
         replaceFillValuesWithMissing<std::string>(var, varData);
-        transferVarDataToOSDF<std::string>(varName, varData, locCount, chanNums, destOSDF);
+        transferVarDataToOSDF<std::string>(
+          varName, varData, locCount, chanNums, destOSDF, osdfMetadata);
       } else {
         oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
                           << varName << " is not int, int64, float or string. Skipping."
@@ -492,7 +564,8 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
 
 void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
                         const eckit::mpi::Comm & ioPoolComm,
-                        std::unique_ptr<osdf::IFrame> & destOSDF) {
+                        std::unique_ptr<osdf::IFrame> & destOSDF,
+                        osdf::FrameMetadata & osdfMetadata) {
   const int myMpiRank = ioPoolComm.rank();
   const int myMpiSize = ioPoolComm.size();
 
@@ -536,7 +609,7 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
   int count;
   ioPoolComm.scatter(starts, start, 0);
   ioPoolComm.scatter(counts, count, 0);
-  const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF);
+  const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF, osdfMetadata);
   if (rc != 0) {
     const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
                                " start: " + std::to_string(start) +
@@ -544,52 +617,6 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
     throw std::runtime_error(errMsg);
   }
   inFile.close();
-}
-
-//--------------------------------------------------------------------------------
-void distributeOsdfColumnMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
-                                  std::unique_ptr<osdf::IFrame> & destOSDF) {
-  // Find the rank in the io pool that will send the serialized column metadata
-  // This will be the lowest rank in the main comm that is also in the io pool.
-  // Note that converting inIoPool to an integer value (1 == true, 0 == false)
-  // facilitates the MPI transfers (vector of bool implementation is platform
-  // dependent).
-  std::vector<int> ioPoolMembers(1, (inIoPool ? 1 : 0));
-  oops::mpi::allGatherv(mainComm, ioPoolMembers);
-  const int rootRank = std::distance(ioPoolMembers.begin(),
-                                     std::find(ioPoolMembers.begin(), ioPoolMembers.end(), 1));
-
-  // Send the serialized column metadata from the rootRank to all non-io pool ranks
-  // During the send/recv sequence, the tag values are:
-  //  0 - send/receive the size of the serialized metadata
-  //  1 - send/receive the serialized metadata
-  const int myRank = mainComm.rank();
-  const int mySize = mainComm.size();
-  if (mySize > 1) {
-    if (myRank == rootRank) {
-      const std::string serializedColMetadata = destOSDF->serializeColumnMetadata();
-      const int metadataSize = serializedColMetadata.size();
-      for (std::size_t i = 0; i < mainComm.size(); ++i) {
-        if (ioPoolMembers[i] == 0) {
-          mainComm.send(metadataSize, i, 0);
-          mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
-        }
-      }
-    } else {
-      // Remaining ranks, some will be in the pool, but all of the non-pool ranks
-      // will be here. Only the non-pool ranks will receive the metadata.
-      if (!inIoPool) {
-        int metadataSize;
-        mainComm.receive(metadataSize, rootRank, 0);
-        std::vector<char> serializedColMetadata(metadataSize);
-        mainComm.receive(serializedColMetadata.data(), metadataSize, rootRank, 1);
-        // Now deserialize the metadata into the destOSDF container
-        destOSDF->deserializeColumnMetadata(std::string(serializedColMetadata.data(),
-                                                        serializedColMetadata.size()));
-      }
-    }
-    mainComm.barrier();
-  }
 }
 
 }  // namespace reader

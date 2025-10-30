@@ -239,7 +239,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
   testinput/iodatest_reader_filter.yaml
-  testinput/iodatest_reader_load_netcdf.yaml
+  testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -1635,21 +1635,21 @@ ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
 #####################################################################
 # Test the reader load step
 #####################################################################
-ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf
-                  SOURCES mains/TestReaderLoadNetcdf.cc
-                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+ecbuild_add_test( TARGET  test_ioda_reader_load
+                  SOURCES mains/TestReaderLoad.cc
+                  ARGS    "testinput/iodatest_reader_load.yaml"
                   LIBS  ioda_test
                   )
-ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf_mpi_2
-                  COMMAND test_ioda_reader_load_netcdf
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_2
+                  COMMAND test_ioda_reader_load
                   MPI 2
-                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+                  ARGS    "testinput/iodatest_reader_load.yaml"
                   LIBS  ioda_test
                   )
-ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf_mpi_4
-                  COMMAND test_ioda_reader_load_netcdf
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_4
+                  COMMAND test_ioda_reader_load
                   MPI 4
-                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+                  ARGS    "testinput/iodatest_reader_load.yaml"
                   LIBS  ioda_test
                   )
 

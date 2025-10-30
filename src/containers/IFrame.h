@@ -9,6 +9,7 @@
 #define CONTAINERS_IFRAME_H_
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 

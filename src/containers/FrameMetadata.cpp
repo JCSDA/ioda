@@ -16,9 +16,10 @@ namespace osdf {
 //----------------------------------------------------------------------
 FrameMetadata::FrameMetadata()
                   : frameType_("None"),
-                    chanNums_(),
-                    varsWithChans_(),
-                    numVars_(0) {
+                    chanNums_({}),
+                    varsWithChans_({}),
+                    numVars_(0),
+                    dateTimeEpoch_("None") {
 }
 
 //----------------------------------------------------------------------
@@ -47,22 +48,30 @@ void FrameMetadata::setNumVars(const int numVars) {
   numVars_ = numVars;
 }
 
+void FrameMetadata::setDateTimeEpoch(const std::string & epochString) {
+  dateTimeEpoch_ = epochString;
+}
+
 //----------------------------------------------------------------------
 // getters
 std::string FrameMetadata::getFrameType() const {
   return frameType_;
 }
 
-std::vector<int> FrameMetadata::getChanNums() const {
+const std::vector<int> & FrameMetadata::getChanNums() const {
   return chanNums_;
 }
 
-std::unordered_set<std::string> FrameMetadata::getVarsWithChans() const {
+const std::unordered_set<std::string> & FrameMetadata::getVarsWithChans() const {
   return varsWithChans_;
 }
 
 int FrameMetadata::getNumVars() const {
   return numVars_;
+}
+
+std::string FrameMetadata::getDateTimeEpoch() const {
+  return dateTimeEpoch_;
 }
 
 //----------------------------------------------------------------------

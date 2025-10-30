@@ -131,7 +131,11 @@ std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
 
 // -----------------------------------------------------------------------------
 std::string fullVarName(const std::string & groupName, const std::string & varName) {
-    return groupName + std::string("/") + varName;
+    std::string fullName = varName;
+    if (!groupName.empty() && groupName != "/") {
+        fullName = groupName + std::string("/") + varName;
+    }
+    return fullName;
 }
 
 //------------------------------------------------------------------------------------

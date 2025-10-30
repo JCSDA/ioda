@@ -11,14 +11,11 @@
 namespace ioda {
     //-------------------------------------------------------------------------------------
     struct ObsSourceStats {
-      ObsSourceStats() : nlocs(0), nchans(0), sourceNlocs(0), gNlocs(0),
+      ObsSourceStats() : nlocs(0), sourceNlocs(0), gNlocs(0),
                          gNlocsOutsideTimewindow(0), gNlocsRejectQc(0),
                          nrecs(0), locIndices(), recNums() {}
       /// \brief total number of locations from the input source (file or generator)
       std::size_t nlocs;
-
-      /// \brief total number of locations from the input source (file or generator)
-      std::size_t nchans;
 
       /// \brief total number of locations from the input source (file or generator)
       std::size_t sourceNlocs;

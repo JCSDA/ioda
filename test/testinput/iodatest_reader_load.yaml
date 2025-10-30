@@ -13,6 +13,7 @@ obs types:
   io pool:
     max pool size: 2
   test data:
+    date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
     - "MetaData/dateTime"
     - "MetaData/latitude"
@@ -65,6 +66,7 @@ obs types:
   io pool:
     max pool size: 2
   test data:
+    date time epoch: "1970-01-01T00:00:00Z"
     sample column names:
     - "MetaData/dateTime"
     - "MetaData/latitude"

@@ -127,10 +127,16 @@ ioPool/WriterSinglePool.h
 obsIoPool/ObsIoPool.cpp
 obsIoPool/ObsIoPool.hpp
 
-reader/filter/filterObsContainer.cpp
-reader/filter/filterObsContainer.hpp
-reader/load/loadObsContainerFromNetcdf.cpp
-reader/load/loadObsContainerFromNetcdf.hpp
+reader/distribute/distributeObs.cpp
+reader/distribute/distributeObs.hpp
+reader/filter/filterObs.cpp
+reader/filter/filterObs.hpp
+reader/load/loadObs.cpp
+reader/load/loadObs.hpp
+reader/load/loadObsFromNetcdf.cpp
+reader/load/loadObsFromNetcdf.hpp
+reader/ObsReader.cpp
+reader/ObsReader.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp
