@@ -191,7 +191,7 @@ void osdf::FrameCols::removeRow(const std::int64_t index) {
 }
 
 void osdf::FrameCols::removeRows(const std::vector<bool> & keepRows) {
-  if (keepRows.size() == data_.getSizeRows()) {
+  if (keepRows.size() == static_cast<std::size_t>(data_.getSizeRows())) {
     for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
       if (!keepRows[i]) {
           removeRow(i);

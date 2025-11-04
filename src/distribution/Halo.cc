@@ -180,8 +180,6 @@ void Halo::computePatchLocs() {
       }
     }
 
-    size_t npatchobs = std::count(patchObsBool_.begin(), patchObsBool_.end(), true);
-
     computeGlobalUniqueConsecutiveLocIndices(dist_and_lidx_glb);
   }
 }
