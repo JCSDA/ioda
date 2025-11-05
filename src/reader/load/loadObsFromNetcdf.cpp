@@ -10,7 +10,6 @@
 #include <netcdf>
 
 #include <map>
-#include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -603,7 +602,11 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
     for (std::size_t i = 0; i < remainder; ++i) {
       counts[i]++;
     }
-    std::exclusive_scan(counts.begin(), counts.end(), starts.begin(), 0);
+    int seed = 0;
+    for (size_t i = 1; i < counts.size(); i++) {
+        seed += counts[i-1];
+        starts[i] = seed;
+    }
   }
   int start;
   int count;
