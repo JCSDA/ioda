@@ -195,16 +195,6 @@ void testIndexRecnum() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully.
-  typedef ObsSpaceTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsSpaceIndexRecnum : public oops::Test {
  public:
   ObsSpaceIndexRecnum() {}
@@ -219,11 +209,12 @@ class ObsSpaceIndexRecnum : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testIndexRecnum")
       { testIndexRecnum(); });
-    ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsSpaceTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // -----------------------------------------------------------------------------

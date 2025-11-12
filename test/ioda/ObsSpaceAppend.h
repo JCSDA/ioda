@@ -329,16 +329,6 @@ void testAppend() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully.
-  typedef ObsSpaceTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsSpaceAppend : public oops::Test {
  public:
   ObsSpaceAppend() {}
@@ -353,11 +343,12 @@ class ObsSpaceAppend : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpaceAppend/testAppend")
       { testAppend(); });
-    ts.emplace_back(CASE("ioda/ObsSpaceAppend/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsSpaceTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // -----------------------------------------------------------------------------
