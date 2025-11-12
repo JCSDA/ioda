@@ -139,6 +139,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
+  testinput/iodatest_obsspace_has.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
@@ -688,6 +689,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_has
+                  SOURCES mains/TestIodaObsSpaceHas.cc
+                  ARGS    "testinput/iodatest_obsspace_has.yaml"
+                  LIBS    ioda_test
                   )
 
 # The next two tests are verifying that an exception is thrown (ie, error) when the input

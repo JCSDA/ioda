@@ -446,20 +446,8 @@ bool ObsSpace::has(const std::string & group) const {
     if (this->empty()) {
         hasgrp = true;
     } else {
-        if (use_dataframe_) {
-            // TODO(srh) Placeholder for now to enable the ability to
-             // do preliminary profiling of the OSDF container. The impact
-            // on the OSDF profiling with the hofx3d application by
-             // always returning false is to forego some diagnostic
-            // printing near the end.
-             //
-            // https://github.com/JCSDA-internal/ioda/issues/1433 has
-            // been created to remind us to fill this part in.
-            hasgrp = false;
-        } else {
-            std::vector<std::string> grps = this->listGroups();
-            hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
-        }
+        std::vector<std::string> grps = this->listGroups();
+        hasgrp = std::find(grps.begin(), grps.end(), group) != grps.end();
     }
     return hasgrp;
 }
@@ -585,27 +573,36 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
 
 // -----------------------------------------------------------------------------
 std::vector<std::string> ObsSpace::listGroups() const {
-    // TODO(srh) This function eventually needs an OSDF
-    // implementation. The lack of such implementation is
-    // not impacting the hofx applications, so no immediate
-    // change is needed for the OSDF profiling effort.
-    //
-    // https://github.com/JCSDA-internal/ioda/issues/1433 has
-    // been created to remind us to fill this part in.
-    return obs_group_->listObjects<ObjectType::Group>(true);
+    std::vector<std::string> groupList;
+    if (use_dataframe_) {
+        // columnNames() returns all of the hierarchical variable names such
+        // as a/b or c/d/e, etc. Need to strip off the final "/<name>" section of
+        // of these and store the remaining (unique) names. Use a set to
+        // uniquify the list of groups.
+        std::vector<std::string> columnNames = osdf_->columnNames();
+        std::set<std::string> groupNames;
+        for (auto & colName : columnNames) {
+            const std::size_t pos = colName.find_last_of("/");
+            std::string grpName;
+            if (pos != std::string::npos) {
+                grpName = colName.substr(0, pos);
+            } else {
+                grpName = std::string("");
+            }
+            groupNames.insert(grpName);
+        }
+        groupList.assign(groupNames.begin(), groupNames.end());
+    } else {
+        groupList = obs_group_->listObjects<ObjectType::Group>(true);
+    }
+    return groupList;
 }
 
 // -----------------------------------------------------------------------------
 std::vector<std::string> ObsSpace::listVariables() const {
     std::vector<std::string> varList;
     if (use_dataframe_) {
-        // TODO(srh) To enable the OSDF profiling, for now return
-        // an empty list. This should have the impact of disabling
-        // some print statements near the end of the hofx application.
-        //
-        // https://github.com/JCSDA-internal/ioda/issues/1433 has
-        // been created to remind us to fill this part in.
-        varList.clear();
+        varList = osdf_->columnNames();
     } else {
         varList = obs_group_->listObjects<ObjectType::Variable>(true);
     }
