@@ -33,14 +33,14 @@ module obsdatavector_mod
 			type(c_ptr) :: r
 		end function
 		function obsdatavector_int_c_get_row_cxx_str(p,s) result(r) &
-			 bind(C,name="obsdatavector_int_c_get_row_i")
+			 bind(C,name="obsdatavector_int_c_get_row_cxx_str")
 			import C_ptr
 			type(c_ptr),value :: p
 			type(c_ptr),value :: s
 			type(c_ptr) :: r
 		end function
 		function obsdatavector_int_c_get_row_str(p,s) result(r) &
-			 bind(C,name="obsdatavector_int_c_get_row_i")
+			 bind(C,name="obsdatavector_int_c_get_row_str")
 			import C_ptr
 			type(c_ptr),value :: p
 			type(c_ptr),value :: s

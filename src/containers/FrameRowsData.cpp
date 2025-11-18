@@ -103,6 +103,10 @@ const osdf::DataRow& osdf::FrameRowsData::getDataRow(const std::int64_t index) c
   return dataRows_.at(static_cast<std::size_t>(index));
 }
 
+osdf::ColumnMetadata& osdf::FrameRowsData::getColumnMetadata() {
+  return columnMetadata_;
+}
+
 const osdf::ColumnMetadata& osdf::FrameRowsData::getColumnMetadata() const {
   return columnMetadata_;
 }

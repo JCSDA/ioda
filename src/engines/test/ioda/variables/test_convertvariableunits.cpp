@@ -5,17 +5,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/Variables/Has_Variables.h"
-
+#include "eckit/testing/Test.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/WriterFactory.h"
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/Variables/Has_Variables.h"
 #include "ioda/testconfig.h"
-
-#include "eckit/testing/Test.h"
-
 #include "oops/mpi/mpi.h"
 #include "oops/util/FloatCompare.h"
 
@@ -25,22 +22,23 @@ using namespace ioda;
 namespace ioda {
 namespace test {
 
-const int locations = 40;
-const int channels = 30;
 CASE("Convert variables") {
   typedef std::string str;
-  str mappingFile = str(IODA_ENGINES_TEST_SOURCE_DIR)
-    + "/variables/hasvariables_unitconversion_map.yaml";
+  str mappingFile
+    = str(IODA_ENGINES_TEST_SOURCE_DIR) + "/variables/hasvariables_unitconversion_map.yaml";
+
+  const int locations = 40;
+  const int channels  = 30;
+
+  Group backend;
   // Create an HDF5 file backend for writing and attach to an ObsGroup
   // Third and fourth arguments to constructFileWriterFromConfig are
   // "write multiple files" and "is parallel io" respectively.
-  eckit::LocalConfiguration engineConfig =
-      Engines::constructFileBackendConfig("hdf5",
-          "ioda-engines_hasvariables_unitconv-file.hdf5");
-  std::unique_ptr<Engines::WriterBase> writerEngine =
-      Engines::constructFileWriterFromConfig(oops::mpi::world(), oops::mpi::myself(), 
-              false, false, engineConfig);
-  Group backend = writerEngine->getObsGroup();
+  eckit::LocalConfiguration engineConfig
+    = Engines::constructFileBackendConfig("hdf5", {"ioda-engines_hasvariables_unitconv-file.hdf5"});
+  std::unique_ptr<Engines::WriterBase> writerEngine = Engines::constructFileWriterFromConfig(
+    oops::mpi::world(), oops::mpi::myself(), false, false, engineConfig);
+  backend = writerEngine->getObsGroup();
 
   ioda::Variable temp = backend.vars.create<double>("temp", {3});
   temp.write<double>({0.0, 50.0, 100.0});
@@ -57,19 +55,20 @@ CASE("Convert variables") {
   ioda::Variable undefinedUnit = backend.vars.create<double>("bar", {3});
   undefinedUnit.write<double>({0.0, 50.0, 100.0});
 
-  ObsGroup og = ObsGroup::generate(
-          backend,
-          {
-            NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations),
-            NewDimensionScale<int>("Channel", channels, channels, channels) },
-          detail::DataLayoutPolicy::generate("ObsGroupODB",
-                                             mappingFile));
+  ObsGroup og;
+  og = ObsGroup::generate(
+    backend,
+    {NewDimensionScale<int>("Location", locations, ioda::Unlimited, locations),
+     NewDimensionScale<int>("Channel", channels, channels, channels)},
+    detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB, mappingFile,
+                                       {"Location", "Channel"}));
 
   std::vector<double> expectedValue = {0.0, 50.0, 100.0};
   std::vector<double> retrievedValue;
   og.vars.open("temp").read<double>(retrievedValue);
   EXPECT(retrievedValue == expectedValue);
   og.vars.convertVariableUnits();
+
   temp = og.vars.open("temp");
   EXPECT(temp.atts.exists("units"));
   std::string tempUnit;
@@ -104,6 +103,4 @@ CASE("Convert variables") {
 }  // namespace test
 }  // namespace ioda
 
-int main(int argc, char** argv) {
-  return run_tests(argc, argv);
-}
+int main(int argc, char** argv) { return run_tests(argc, argv); }

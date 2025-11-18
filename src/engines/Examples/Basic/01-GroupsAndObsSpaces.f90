@@ -14,16 +14,13 @@ program ioda_fortran_01_groupsandobsspaces
     use :: ioda_engines_mod
     implicit none
 
-    type(ioda_group) :: groot, g1, g2, g3, g4, g5, g6, g7, g8, reopened_g4
+    type(ioda_group) :: groot, g1, g2, g3, g4, g5, g6, g7, reopened_g4
     type(cxx_vector_string) :: listed_groups_g3,listed_groups_g4
     integer(int64) :: nsz
     integer(int64) :: msz
     character(len=*),parameter :: root_file = 'Example-01.hdf5'
     ! Create a file
     !grpFromFile = engines%obsstore%createRootGroup()
-    integer :: create_mode
-    
-    create_mode = 1             
 
     groot =  ioda_engines_construct_from_command_line(root_file) 
     

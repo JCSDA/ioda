@@ -105,7 +105,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_remove_hdf5_variable.yaml
   testinput/iodatest_copy_attributes.yaml
   testinput/iodatest_obs_data_frame.yaml
-  testinput/iodatest_obserror.yaml
+  testinput/iodatest_obs_io_pool.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_distribution.yaml
   testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
@@ -119,6 +119,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml
   testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml
+  testinput/iodatest_osdf_dist_allgatherv.yaml
   testinput/iodatest_engine_construct_utils.yaml
   testinput/iodatest_engine_construct_utils_odc.yaml
   testinput/iodatest_engine_factory.yaml
@@ -137,6 +138,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
+  testinput/iodatest_obsspace_has.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
@@ -237,7 +239,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
   testinput/iodatest_reader_filter.yaml
-  testinput/iodatest_reader_load_netcdf.yaml
+  testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_reader_pool.yaml
@@ -256,6 +258,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_bufr_python_encoder.py
   testinput/iodatest_bufr_python_parallel.yaml
   testinput/iodatest_bufr_python_parallel.py
+  testinput/iodatest_script_args.yaml
+  testinput/iodatest_script_args.py
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -362,6 +366,14 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
                     "testwork/distribution_mpi_3/obsspace_grouping_round_robin_0000.nc4"
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_prep_file_info.nc4"
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_0000.nc4" )
+
+# OSDF distribute tests
+ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
+                  MPI     2
+                  SOURCES mains/TestOsdfDistAllgatherv.cc
+                  ARGS    "testinput/iodatest_osdf_dist_allgatherv.yaml"
+                  LIBS  ioda_test
+                  )
 
 # build file sets for obsspace_grouping, communicator target sizes 2, 3, 4
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_2_file_set
@@ -475,6 +487,21 @@ ecbuild_add_test( TARGET  test_ioda_copy_attributes
 ecbuild_add_test( TARGET  test_ioda_obs_data_frame
                   SOURCES mains/TestObsDataFrame.cc
                   ARGS    "testinput/iodatest_obs_data_frame.yaml"
+                  LIBS  ioda_test )
+
+#####################################################################
+# ObsIoPool tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obs_io_pool
+                  SOURCES mains/TestObsIoPool.cc
+                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
+                  LIBS  ioda_test )
+
+ecbuild_add_test( TARGET  test_ioda_obs_io_pool_mpi_7
+                  MPI 7
+                  COMMAND test_ioda_obs_io_pool
+                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
                   LIBS  ioda_test )
 
 #####################################################################
@@ -661,6 +688,12 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_missing_obs_file_warn_mpi
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_has
+                  SOURCES mains/TestIodaObsSpaceHas.cc
+                  ARGS    "testinput/iodatest_obsspace_has.yaml"
+                  LIBS    ioda_test
                   )
 
 # The next two tests are verifying that an exception is thrown (ie, error) when the input
@@ -1495,7 +1528,7 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_dist_write_atlas
 add_fctest( TARGET  test_ioda_obsspace_fortran
             SOURCES ioda/obsspace.F90
             ARGS    --config testinput/iodatest_obsspace_fortran.yaml
-            LINKER_LANGUAGE Fortran
+            LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
             LIBS  ioda_test
             )
 
@@ -1595,22 +1628,23 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
                   )
 
 #####################################################################
-# ObsErrorCovariance tests
-#####################################################################
-
-# OOPS ObsErrorCovariance interface (dependent on ObsVector)
-ecbuild_add_test( TARGET  test_ioda_oops_obserrorcovariance
-                  SOURCES mains/TestObsErrorCovariance.cc
-                  ARGS    "testinput/iodatest_obserror.yaml"
-                  LIBS  ioda_test
-                  )
-
-#####################################################################
 # Test the reader load step
 #####################################################################
-ecbuild_add_test( TARGET  test_ioda_reader_load_netcdf
-                  SOURCES mains/TestReaderLoadNetcdf.cc
-                  ARGS    "testinput/iodatest_reader_load_netcdf.yaml"
+ecbuild_add_test( TARGET  test_ioda_reader_load
+                  SOURCES mains/TestReaderLoad.cc
+                  ARGS    "testinput/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_2
+                  COMMAND test_ioda_reader_load
+                  MPI 2
+                  ARGS    "testinput/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_4
+                  COMMAND test_ioda_reader_load
+                  MPI 4
+                  ARGS    "testinput/iodatest_reader_load.yaml"
                   LIBS  ioda_test
                   )
 
@@ -2108,6 +2142,12 @@ if (BUILD_PYTHON_BINDINGS)
   ecbuild_add_test( TARGET      test_ioda_time_io_script
                     COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS        "testinput/iodatest_time_io_script.yaml"
+                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+
+  ecbuild_add_test( TARGET      test_ioda_script_args
+                    TYPE        SCRIPT
+                    COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS        "testinput/iodatest_script_args.yaml"
                     ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
 endif()
 

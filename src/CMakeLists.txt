@@ -23,6 +23,8 @@ containers/DataRow.h
 containers/Datum.cpp
 containers/Datum.h
 containers/DatumBase.h
+containers/FrameMetadata.cpp
+containers/FrameMetadata.h
 containers/FrameCols.cpp
 containers/FrameCols.h
 containers/FrameColsData.cpp
@@ -31,6 +33,7 @@ containers/FrameRows.cpp
 containers/FrameRows.h
 containers/FrameRowsData.cpp
 containers/FrameRowsData.h
+containers/FrameUtils.cpp
 containers/FrameUtils.h
 containers/Functions.cpp
 containers/Functions.h
@@ -50,10 +53,13 @@ containers/ViewRows.h
 containers/ViewRowsData.cpp
 containers/ViewRowsData.h
 
+core/ObsDimInfo.h
+core/ObsDimInfo.cc
 core/FileFormat.cc
 core/FileFormat.h
 core/IodaUtils.cc
 core/IodaUtils.h
+core/ObsSourceStats.h
 core/obsspace_f.cc
 core/obsspace_f.h
 core/ParameterTraitsFileFormat.cc
@@ -118,10 +124,19 @@ ioPool/WriterPoolUtils.h
 ioPool/WriterSinglePool.cpp
 ioPool/WriterSinglePool.h
 
-reader/filter/filterObsContainer.cpp
-reader/filter/filterObsContainer.hpp
-reader/load/loadObsContainerFromNetcdf.cpp
-reader/load/loadObsContainerFromNetcdf.hpp
+obsIoPool/ObsIoPool.cpp
+obsIoPool/ObsIoPool.hpp
+
+reader/distribute/distributeObs.cpp
+reader/distribute/distributeObs.hpp
+reader/filter/filterObs.cpp
+reader/filter/filterObs.hpp
+reader/load/loadObs.cpp
+reader/load/loadObs.hpp
+reader/load/loadObsFromNetcdf.cpp
+reader/load/loadObsFromNetcdf.hpp
+reader/ObsReader.cpp
+reader/ObsReader.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

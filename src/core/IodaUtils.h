@@ -27,9 +27,24 @@
 #include "oops/util/Duration.h"
 #include "oops/util/missingValues.h"
 
+namespace osdf {
+  class IFrame;
+  class FrameMetadata;
+}
 
 namespace ioda {
   class ObsSpaceParameters;
+
+  /// \brief split a string on a given delimiter
+  /// \param str string to split
+  /// \param delim delimiter to split on
+  std::vector<std::string> splitString(const std::string & str, char delim);
+
+  /// \brief remove channel number suffixes from osdf column names
+  /// \param srcOsdf osdf container
+  /// \param frameMetadata osdf frame metadata object
+  std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & srcOsdf,
+                                                  const osdf::FrameMetadata & frameMetadata);
 
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.

@@ -5,11 +5,16 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <algorithm>
 #include <cmath>
 
-#include "ioda/reader/filter/filterObsContainer.hpp"
+#include "eckit/mpi/Comm.h"
 
+#include "ioda/reader/filter/filterObs.hpp"
+
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/core/ObsSourceStats.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -19,8 +24,11 @@ namespace ioda {
 namespace reader {
 
 //---------------------------------------------------------------------
-void filterObsContainer(const util::TimeWindow & timeWindow,
-                        std::unique_ptr<osdf::IFrame> & osdfCont) {
+void filterObs(const util::TimeWindow & timeWindow,
+               const eckit::mpi::Comm & commAll,
+               ObsSourceStats & obsSourceStats,
+               std::unique_ptr<osdf::IFrame> & osdfCont,
+               osdf::FrameMetadata & osdfMetadata) {
     // First need to check that we have all the required variables
     // which are latitude, longitude and dateTime.
     const std::string dateTimeColName = "MetaData/dateTime";
@@ -53,15 +61,16 @@ void filterObsContainer(const util::TimeWindow & timeWindow,
     // If we made it to here, we have the required variables to do the filtering.
     // Read in the dateTime values and do the window check (built into the
     // TimeWindow class).
-    // TODO(srh) We don't have a way to store the epoch in an OSDF yet, so
-    // for now use a default of Jan 1, 1970, 0Z.
     std::vector<int64_t> dateTimeVals;
     osdfCont->getColumn(dateTimeColName, dateTimeVals);
-    util::DateTime epochDt("1970-01-01T00:00:00Z");
+    util::DateTime epochDt(osdfMetadata.getDateTimeEpoch());
     timeWindow.setEpoch(epochDt);
     std::vector<bool> filterMask = timeWindow.createTimeMask(dateTimeVals);
+    const std::size_t locsOutsideTimewindow =
+      std::count(filterMask.begin(), filterMask.end(), false);
 
     // Add missing date/time and lat/lon values to the filter mask.
+    std::size_t locsRejectQc = 0;
     std::vector<float> latVals, lonVals;
     osdfCont->getColumn(latColName, latVals);
     osdfCont->getColumn(lonColName, lonVals);
@@ -73,12 +82,35 @@ void filterObsContainer(const util::TimeWindow & timeWindow,
                 (latVals[i] == floatMissingVal) ||
                 (lonVals[i] == floatMissingVal)) {
                 filterMask[i] = false;
+                ++locsRejectQc;
             }
         }
     }
 
-    // Remove all masked rows
+    // Remove all masked rows. Keep count of locations (row) both
+    // before and after the row removal.
+    const std::size_t sourceNlocs = osdfCont->numRows();
     osdfCont->removeRows(filterMask);
+    const std::size_t localNlocs = osdfCont->numRows();
+
+    // Fill in the obsSourceStats struct
+    obsSourceStats.nlocs = localNlocs;
+    commAll.allReduce(sourceNlocs, obsSourceStats.sourceNlocs, eckit::mpi::sum());
+    commAll.allReduce(localNlocs, obsSourceStats.gNlocs, eckit::mpi::sum());
+    commAll.allReduce(locsOutsideTimewindow, obsSourceStats.gNlocsOutsideTimewindow,
+                      eckit::mpi::sum());
+    commAll.allReduce(locsRejectQc, obsSourceStats.gNlocsRejectQc, eckit::mpi::sum());
+
+    // Record the source location indices that were kept, these are
+    // the indices in the filterMask vector which contain a true value.
+    obsSourceStats.locIndices.resize(localNlocs);
+    std::size_t iloc = 0;
+    for (std::size_t i = 0; i < filterMask.size(); ++i) {
+      if (filterMask[i]) {
+        obsSourceStats.locIndices[iloc] = i;
+        ++iloc;
+      }
+    }
 }
 
 }  // namespace reader

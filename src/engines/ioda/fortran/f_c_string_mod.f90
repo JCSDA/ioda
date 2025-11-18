@@ -17,11 +17,6 @@ module f_c_string_mod
 			type(c_ptr),value :: p
 			integer(c_int64_t) :: n
 		end function
-		function c_strdup(p) result(pc) bind(C,name='strdup')
-			import C_ptr
-			type(c_ptr),value :: p
-			type(c_ptr) :: pc
-		end function
 	end interface
 contains
 	subroutine f_string_to_c_copy(fstr,cstr_ptr,n)

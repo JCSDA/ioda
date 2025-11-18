@@ -6,7 +6,6 @@ multichannel varnos: [233,238]
 variables:
 - name: azimuth
 - name: field_of_regard
-- name: general_quality_flag
 - name: initial_obsvalue
 - name: initial_vertco_reference
 - name: detector_quality_1

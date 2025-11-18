@@ -59,18 +59,8 @@ void osdf::FrameRows::configColumns(const std::initializer_list<ColumnMetadatum>
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<std::int8_t>& values) {
-  appendNewColumn(name, values, consts::eInt8);
-}
-
-void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<std::int16_t>& values) {
-  appendNewColumn(name, values, consts::eInt16);
-}
-
-void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<std::int32_t>& values) {
-  appendNewColumn(name, values, consts::eInt32);
+                                      const std::vector<int>& values) {
+  appendNewColumn(name, values, consts::eInt);
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
@@ -84,11 +74,6 @@ void osdf::FrameRows::appendNewColumn(const std::string& name,
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<double>& values) {
-  appendNewColumn(name, values, consts::eDouble);
-}
-
-void osdf::FrameRows::appendNewColumn(const std::string& name,
                                       const std::vector<char>& values) {
   appendNewColumn(name, values, consts::eChar);
 }
@@ -98,16 +83,8 @@ void osdf::FrameRows::appendNewColumn(const std::string& name,
   appendNewColumn(name, values, consts::eString);
 }
 
-void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::int8_t>& values) const {
-  getColumn<std::int8_t>(name, values, consts::eInt8);
-}
-
-void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::int16_t>& values) const {
-  getColumn<std::int16_t>(name, values, consts::eInt16);
-}
-
-void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::int32_t>& values) const {
-  getColumn<std::int32_t>(name, values, consts::eInt32);
+void osdf::FrameRows::getColumn(const std::string& name, std::vector<int>& values) const {
+  getColumn<int>(name, values, consts::eInt);
 }
 
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::int64_t>& values) const {
@@ -116,10 +93,6 @@ void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::int64_
 
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<float>& values) const {
   getColumn<float>(name, values, consts::eFloat);
-}
-
-void osdf::FrameRows::getColumn(const std::string& name, std::vector<double>& values) const {
-  getColumn<double>(name, values, consts::eDouble);
 }
 
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<char>& values) const {
@@ -131,18 +104,8 @@ void osdf::FrameRows::getColumn(const std::string& name, std::vector<std::string
 }
 
 void osdf::FrameRows::setColumn(const std::string& name,
-                                const std::vector<std::int8_t>& data) const {
-  setColumn<std::int8_t>(name, data, consts::eInt8);
-}
-
-void osdf::FrameRows::setColumn(const std::string& name,
-                                const std::vector<std::int16_t>& data) const {
-  setColumn<std::int16_t>(name, data, consts::eInt16);
-}
-
-void osdf::FrameRows::setColumn(const std::string& name,
-                                const std::vector<std::int32_t>& data) const {
-  setColumn<std::int32_t>(name, data, consts::eInt32);
+                                const std::vector<int>& data) const {
+  setColumn<int>(name, data, consts::eInt);
 }
 
 void osdf::FrameRows::setColumn(const std::string& name,
@@ -153,11 +116,6 @@ void osdf::FrameRows::setColumn(const std::string& name,
 void osdf::FrameRows::setColumn(const std::string& name,
                                 const std::vector<float>& data) const {
   setColumn<float>(name, data, consts::eFloat);
-}
-
-void osdf::FrameRows::setColumn(const std::string& name,
-                                const std::vector<double>& data) const {
-  setColumn<double>(name, data, consts::eDouble);
 }
 
 void osdf::FrameRows::setColumn(const std::string& name,
@@ -227,7 +185,7 @@ void osdf::FrameRows::removeRow(const std::int64_t index) {
 }
 
 void osdf::FrameRows::removeRows(const std::vector<bool> & keepRows) {
-  if (keepRows.size() == data_.getSizeRows()) {
+  if (keepRows.size() == static_cast<std::size_t>(data_.getSizeRows())) {
     for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
       if (!keepRows[i]) {
           removeRow(i);
@@ -281,6 +239,22 @@ std::vector<std::string> osdf::FrameRows::columnNames() const {
   return data_.getColumnMetadata().columnNames();
 }
 
+std::string osdf::FrameRows::serializeColumnMetadata() const {
+  return FrameUtils::serializeColumnMetadata(data_.getColumnMetadata().get());
+}
+
+void osdf::FrameRows::deserializeColumnMetadata(const std::string & columnMetadataTokens) {
+  // Don't allow deserialization into non-empty ColumnMetadata
+  if (data_.getColumnMetadata().get().size() != 0) {
+    const std::string errMsg =
+      std::string("ERROR: Column metadata can only be deserialized into an empty container.");
+    throw eckit::BadValue(errMsg, Here());
+  }
+  const std::vector<ColumnMetadatum> columnMetadata =
+          FrameUtils::deserializeColumnMetadataTokens(columnMetadataTokens);
+  data_.configColumns(columnMetadata);
+}
+
 void osdf::FrameRows::print() const {
   data_.print();
 }
@@ -293,18 +267,8 @@ void osdf::FrameRows::clear() {
 /// Other public functions
 
 osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const std::int8_t threshold) const {
-  return sliceRows<std::int8_t>(name, comparison, threshold);
-}
-
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const std::int16_t threshold) const {
-  return sliceRows<std::int16_t>(name, comparison, threshold);
-}
-
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const std::int32_t threshold) const {
-  return sliceRows<std::int32_t>(name, comparison, threshold);
+                                       const int threshold) const {
+  return sliceRows<int>(name, comparison, threshold);
 }
 
 osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
@@ -315,11 +279,6 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
 osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
                                        const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
-}
-
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const double threshold) const {
-  return sliceRows<double>(name, comparison, threshold);
 }
 
 osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,

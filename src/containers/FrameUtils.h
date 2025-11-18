@@ -6,11 +6,14 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <vector>
+
 #include "ioda/containers/Constants.h"
 
 #include "ioda/Exception.h"
 
 namespace osdf {
+  class ColumnMetadatum;
 
 namespace FrameUtils {
 
@@ -35,18 +38,12 @@ namespace FrameUtils {
 template <typename Action>
 auto callWithSupportedType(const int8_t dtype, const Action &action) {
   switch (dtype) {
-    case consts::eInt8:
-      return action(int8_t());
-    case consts::eInt16:
-      return action(int16_t());
-    case consts::eInt32:
-      return action(int32_t());
+    case consts::eInt:
+      return action(int());
     case consts::eInt64:
       return action(int64_t());
     case consts::eFloat:
       return action(float());
-    case consts::eDouble:
-      return action(double());
     case consts::eChar:
       return action(char());
     case consts::eString:
@@ -55,6 +52,18 @@ auto callWithSupportedType(const int8_t dtype, const Action &action) {
       throw ioda::Exception("ERROR: Data type misconfiguration...", ioda_Here());
   }
 }
+
+/// \brief Serialize a vector of ColumnMetadatum objects into a string
+/// containing column tokens.
+/// \param columnMetadata vector of ColumnMetadatum objects to serialize
+std::string serializeColumnMetadata(
+                const std::vector<ColumnMetadatum> & columnMetadata);
+
+/// \brief Return a vector of ColumnMetadatum objects deserialized from a string
+/// containing column tokens.
+/// \param columnMetadataTokens string containing serialized column metadata
+std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
+                                 const std::string & columnMetadataTokens);
 
 }  // end namespace FrameUtils
 }  // end namespace osdf

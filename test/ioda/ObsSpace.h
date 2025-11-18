@@ -811,16 +811,6 @@ void testDerivedObsError() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully.
-  typedef ObsSpaceTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsSpace : public oops::Test {
  public:
   ObsSpace() {}
@@ -844,11 +834,12 @@ class ObsSpace : public oops::Test {
       { testWriteableGroup(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testMultiDimTransfer")
       { testMultiDimTransfer(); });
-    ts.emplace_back(CASE("ioda/ObsSpace/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsSpaceTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // -----------------------------------------------------------------------------

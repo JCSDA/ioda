@@ -74,7 +74,6 @@ contains
 
    type(c_ptr) function obsspace_construct(c_obsconf, c_timewinconf)
       use fckit_configuration_module, only: fckit_configuration
-      use datetime_mod, only: datetime
       implicit none
       type(fckit_configuration), intent(in) :: c_obsconf
       type(fckit_configuration), intent(in) :: c_timewinconf

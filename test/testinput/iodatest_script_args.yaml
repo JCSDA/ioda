@@ -1,0 +1,30 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2023-12-15T03:00:00Z"
+
+observations:
+  - obs space:
+      name: "MHS"
+      simulated variables: ['antennaTemperature']
+      obsdatain:
+        engine:
+          type: script
+          script file: "testinput/iodatest_script_args.py"
+          args:
+            str_input: "mystring"
+            int_input: 42
+            float_input: 3.14
+            int_list_input: [1, 2, 3]
+            float_list_input: [1.1, 2.2, 3.3]
+            str_list_input: ["1", "2", "3"]
+            nested_input:
+              nested_str: "nested_string"
+              nested_int: 100
+              nested_float: 2.718
+              nested_list_input: [5, 6]
+              nested_nested_input:
+                nested_nested_str: "nested_nested_string"
+                nested_nested_int: 200
+                nested_nested_float: 3.14159
+                nested_nested_list_input: [7, 8]

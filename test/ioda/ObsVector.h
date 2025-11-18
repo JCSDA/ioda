@@ -493,16 +493,6 @@ void testRandom() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces from the test fixture and ensures that they evict
-  // their contents to disk successfully.
-  typedef ObsVecTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsVector : public oops::Test {
  public:
   ObsVector() {}
@@ -532,11 +522,12 @@ class ObsVector : public oops::Test {
       { testDistributedMath(); });
      ts.emplace_back(CASE("ioda/ObsVector/testRandom")
       { testRandom(); });
-     ts.emplace_back(CASE("ioda/ObsVector/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsVecTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // =============================================================================

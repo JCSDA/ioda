@@ -1,0 +1,57 @@
+---
+time window:
+  begin: "1970-01-01T00:00:00Z"
+  end: "1970-01-01T00:01:30Z"
+
+test column data:
+  mpi size2:
+    rank0:
+    - name: "MetaData/dateTime"
+      type: "int64"
+      values: [ 20, 50 ]
+    - name: "MetaData/latitude"
+      type: "float"
+      values: [ 3.5, 6.5 ]
+    - name: "MetaData/longitude"
+      type: "float"
+      values: [ 13.5, 16.5 ]
+    - name: "MetaData/stationIdentification"
+      type: "string"
+      values: [ "sta102", "sta104" ]
+    - name: "ObsValue/myObsInst"
+      type: "float"
+      values: [ 30.5, 60.5 ]
+    rank1:
+    - name: "MetaData/dateTime"
+      type: "int64"
+      values: [ 80, 90 ]
+    - name: "MetaData/latitude"
+      type: "float"
+      values: [  8.5, 9.5 ]
+    - name: "MetaData/longitude"
+      type: "float"
+      values: [ 18.5, 19.5 ]
+    - name: "MetaData/stationIdentification"
+      type: "string"
+      values: [ "missing", "sta107" ]
+    - name: "ObsValue/myObsInst"
+      type: "float"
+      values: [ 80.5, missing ]
+expected gathered data:
+  - name: "MetaData/dateTime"
+    type: "int64"
+    values: [ 20, 50, 80, 90 ]
+  - name: "MetaData/latitude"
+    type: "float"
+    values: [ 3.5, 6.5, 8.5, 9.5 ]
+  - name: "MetaData/longitude"
+    type: "float"
+    values: [ 13.5, 16.5, 18.5, 19.5 ]
+  - name: "MetaData/stationIdentification"
+    type: "string"
+    values: [ "sta102", "sta104", "MISSING*", "sta107" ]
+  - name: "ObsValue/myObsInst"
+    type: "float"
+    values: [ 30.5, 60.5, 80.5, missing ]
+tolerance: 1.0e-6
+

@@ -1,17 +1,16 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2025 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "oops/runs/Run.h"
-#include "oops/test/base/ObsErrorCovariance.h"
 
-#include "ioda/IodaTrait.h"
+#include "ioda/test/ioda/OsdfDistAllgatherv.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsErrorCovariance<ioda::IodaTrait> tests;
+  ioda::test::OsdfDistAllgatherv tests;
   return run.execute(tests);
 }

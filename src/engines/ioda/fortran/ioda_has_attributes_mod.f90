@@ -207,7 +207,6 @@ contains
           type(ioda_attribute) :: att
           integer(int64) :: n
           character(len=*),intent(in) :: fstr
-          logical :: r
           type(c_ptr) :: cstr
 
           cstr = f_string_to_c_dup(fstr)

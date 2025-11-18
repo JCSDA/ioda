@@ -226,8 +226,11 @@ void mergeRecordsSplitAcrossChunks(const eckit::mpi::Comm &comm,
 
   std::vector<int> send_displacements;
   send_displacements.reserve(num_processes);
-  std::exclusive_scan(send_counts.begin(), send_counts.end(),
-                      std::back_inserter(send_displacements), 0);
+  int seed = 0;
+  for (size_t i = 0; i < send_counts.size(); i++){
+    send_displacements.push_back(seed);
+    seed += send_counts[i];
+  }
 
   // Second, prepare the data needed by the receiving process...
   std::vector<int> receive_counts(num_processes);
@@ -250,8 +253,11 @@ void mergeRecordsSplitAcrossChunks(const eckit::mpi::Comm &comm,
 
   std::vector<int> receive_displacements;
   receive_displacements.reserve(num_processes);
-  std::exclusive_scan(receive_counts.begin(), receive_counts.end(),
-                      std::back_inserter(receive_displacements), 0);
+  seed = 0;
+  for (size_t i = 0; i < receive_counts.size(); i++){
+    receive_displacements.push_back(seed);
+    seed += receive_counts[i];
+  }
   const size_t receive_buffer_size = receive_displacements.back() + receive_counts.back();
   std::vector<double> receive_buffer(receive_buffer_size);
 

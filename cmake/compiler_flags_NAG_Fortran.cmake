@@ -1,0 +1,2 @@
+set( FORTRAN_LINKER_LANGUAGE "CXX") 
+

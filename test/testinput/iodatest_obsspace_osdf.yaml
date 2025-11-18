@@ -9,10 +9,9 @@ observations:
 - obs space:
     name: "Contrived data with channels for OSDF"
     simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
-      name: InefficientDistribution
+      name: ReaderDependentDistribution
     obsdatain:
       engine:
         type: H5File
@@ -54,11 +53,13 @@ observations:
 - obs space:
     name: "OSDF Sondes (FrameCols)"
     simulated variables: ['airTemperature']
-    observed variables: ['airTemperature']
+    distribution:
+      name: ReaderDependentDistribution
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/obsspace_osdf_sondes.nc4"
+        obsfiles:
+        - "Data/testinput_tier_1/obsspace_osdf_sondes.nc4"
     obs perturbations seed: 25
     use data frame container: true
   test data:
@@ -89,11 +90,12 @@ observations:
 - obs space:
     name: "OSDF Sondes (FrameRows)"
     simulated variables: ['airTemperature']
-    observed variables: ['airTemperature']
+    distribution:
+      name: ReaderDependentDistribution
     obsdatain:
       engine:
         type: H5File
-        obsfile: "Data/testinput_tier_1/obsspace_osdf_sondes.nc4"
+        obsfiles: [ "Data/testinput_tier_1/obsspace_osdf_sondes.nc4" ]
     obs perturbations seed: 25
     use data frame container: true
     data frame type: FrameRows
@@ -125,8 +127,9 @@ observations:
 - obs space:
     name: "OSDF AMSU-A (FrameCols)"
     simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
     channels: 1-15
+    distribution:
+      name: ReaderDependentDistribution
     obsdatain:
       engine:
         type: H5File

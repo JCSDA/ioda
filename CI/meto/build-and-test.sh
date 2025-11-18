@@ -61,8 +61,9 @@ cmake -B . -S "${HERE}" -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release \
 cmake --build . -j "${NPROC}"
 
 # -- Test
-ctest --test-dir "${TESTDIR}" -E 'coding_norms' --output-on-failure
+ctest --output-on-failure --timeout 60 --test-dir "${TESTDIR}" -E 'coding_norms'
 echo "-- Run Met Office model-interface tests"
-ctest -R 'orca|unifiedmodel|lfric' -E 'coding_norms|xios_server_mode|_C192$' --output-on-failure
+ctest --output-on-failure --timeout 180 \
+    -R 'orca|unifiedmodel|lfric' -E 'coding_norms|xios_server_mode|_C192$'
 
 exit

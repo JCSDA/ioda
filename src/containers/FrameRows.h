@@ -59,30 +59,21 @@ class FrameRows : public IFrame {
   void configColumns(const std::vector<ColumnMetadatum>) override;
   void configColumns(const std::initializer_list<ColumnMetadatum>) override;
 
-  void appendNewColumn(const std::string&, const std::vector<std::int8_t>&) override;
-  void appendNewColumn(const std::string&, const std::vector<std::int16_t>&) override;
-  void appendNewColumn(const std::string&, const std::vector<std::int32_t>&) override;
+  void appendNewColumn(const std::string&, const std::vector<int>&) override;
   void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) override;
   void appendNewColumn(const std::string&, const std::vector<float>&) override;
-  void appendNewColumn(const std::string&, const std::vector<double>&) override;
   void appendNewColumn(const std::string&, const std::vector<char>&) override;
   void appendNewColumn(const std::string&, const std::vector<std::string>&) override;
 
-  void getColumn(const std::string&, std::vector<std::int8_t>&) const override;
-  void getColumn(const std::string&, std::vector<std::int16_t>&) const override;
-  void getColumn(const std::string&, std::vector<std::int32_t>&) const override;
+  void getColumn(const std::string&, std::vector<int>&) const override;
   void getColumn(const std::string&, std::vector<std::int64_t>&) const override;
   void getColumn(const std::string&, std::vector<float>&) const override;
-  void getColumn(const std::string&, std::vector<double>&) const override;
   void getColumn(const std::string&, std::vector<char>&) const override;
   void getColumn(const std::string&, std::vector<std::string>&) const override;
 
-  void setColumn(const std::string&, const std::vector<std::int8_t>&) const override;
-  void setColumn(const std::string&, const std::vector<std::int16_t>&) const override;
-  void setColumn(const std::string&, const std::vector<std::int32_t>&) const override;
+  void setColumn(const std::string&, const std::vector<int>&) const override;
   void setColumn(const std::string&, const std::vector<std::int64_t>&) const override;
   void setColumn(const std::string&, const std::vector<float>&) const override;
-  void setColumn(const std::string&, const std::vector<double>&) const override;
   void setColumn(const std::string&, const std::vector<char>&) const override;
   void setColumn(const std::string&, const std::vector<std::string>&) const override;
 
@@ -102,6 +93,9 @@ class FrameRows : public IFrame {
   std::size_t numCols() const override { return data_.getSizeCols(); }
   std::vector<std::string> columnNames() const override;
 
+  std::string serializeColumnMetadata() const override;
+  void deserializeColumnMetadata(const std::string & columnMetadataTokens) override;
+
   void print() const override;
   void clear();
 
@@ -110,12 +104,9 @@ class FrameRows : public IFrame {
   /// \param Target column name.
   /// \param One of five enum values.
   /// \param The value to compare against.
-  FrameRows sliceRows(const std::string&, const std::int8_t, const std::int8_t) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const std::int16_t) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const std::int32_t) const;
+  FrameRows sliceRows(const std::string&, const std::int8_t, const int) const;
   FrameRows sliceRows(const std::string&, const std::int8_t, const std::int64_t) const;
   FrameRows sliceRows(const std::string&, const std::int8_t, const float) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const double) const;
   FrameRows sliceRows(const std::string&, const std::int8_t, const std::string) const;
 
   /// \brief Additional to the interface, this function accepts a custom lambda comparator function.

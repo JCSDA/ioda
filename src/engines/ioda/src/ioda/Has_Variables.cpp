@@ -119,14 +119,14 @@ void Has_Variables_Base::convertVariableUnits(std::ostream& out) {
       // NOTE(Ryan): C++17 will supersede this with std::optional.
       // Check for unit. If found, unit.first == true, and unit.second is the unit.
       auto unit = layout_->getUnit(destinationName);
-      if (unit.first == true) {
+      if (unit.first) {
         Variable variableToConvert = this->open(destinationName);
         try {
           std::vector<double> outputData = variableToConvert.readAsVector<double>();
           convertColumn(unit.second, outputData);
           variableToConvert.write(outputData);
           variableToConvert.atts.add<std::string>("units", getSIUnit(unit.second));
-        } catch (const std::invalid_argument&) {
+        } catch (const Exception&) {
           out << "The unit specified in ODB mapping file '" << unit.second
               << "' does not have a unit conversion defined in"
               << " UnitConversions.h, and the variable will be stored in"

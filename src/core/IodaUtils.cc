@@ -5,9 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <algorithm>
 #include <iomanip>
 #include <set>
+#include <unordered_set>
 
+#include "ioda/containers/IFrame.h"
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/VarUtils.h"
@@ -18,7 +22,53 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
+std::vector<std::string> splitString(const std::string & str, char delim) {
+  // Use a string stream with getline to pull out the tokens between the delimiters.
+  std::stringstream ss(str);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (std::getline(ss, item, delim)) {
+    tokens.push_back(item);
+  }
+  return tokens;
+}
 
+// -----------------------------------------------------------------------------
+std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & srcOsdf,
+                                                const osdf::FrameMetadata & frameMetadata) {
+  // Get the full list of column names(with numeric suffixes, ie "_<number>")
+  const std::vector<std::string> colNames = srcOsdf.columnNames();
+
+  // Create a copy of list of column names without the numeric suffixes
+  std::vector<std::string> colNamesWithoutNumericSuffixes(colNames.size());
+  std::transform(colNames.begin(), colNames.end(), colNamesWithoutNumericSuffixes.begin(),
+    [](const std::string & s) {
+      const std::size_t pos = s.rfind('_');
+      if ((pos != std::string::npos) && (pos + 1 < s.size())) {
+        const bool allDigits = std::all_of(s.begin() + pos + 1, s.end(),
+          [](const unsigned char c) { return std::isdigit(c); });
+        if (allDigits) {
+          return s.substr(0, pos);
+        }
+      }
+      return s;
+    });
+
+  // If a name without a numeric suffix is in the list of vars with channels,
+  // keep that name, otherwise use the name with the numeric suffix.
+  const std::unordered_set<std::string> varsWithChans = frameMetadata.getVarsWithChans();
+  std::set<std::string> uniqueVars;
+  for (std::size_t i = 0; i < colNamesWithoutNumericSuffixes.size(); ++i) {
+    if (varsWithChans.find(colNamesWithoutNumericSuffixes[i]) != varsWithChans.end()) {
+      uniqueVars.insert(colNamesWithoutNumericSuffixes[i]);
+    } else {
+      uniqueVars.insert(colNames[i]);
+    }
+  }
+  return std::vector<std::string>(uniqueVars.begin(), uniqueVars.end());
+}
+
+// -----------------------------------------------------------------------------
 std::vector<std::size_t> CharShapeFromStringVector(
                                   const std::vector<std::string> & StringVector) {
   std::size_t MaxStrLen = 0;
@@ -120,7 +170,11 @@ std::size_t FindMaxStringLength(const std::vector<std::string> & StringVector) {
 
 // -----------------------------------------------------------------------------
 std::string fullVarName(const std::string & groupName, const std::string & varName) {
-    return groupName + std::string("/") + varName;
+    std::string fullName = varName;
+    if (!groupName.empty() && groupName != "/") {
+        fullName = groupName + std::string("/") + varName;
+    }
+    return fullName;
 }
 
 //------------------------------------------------------------------------------------

@@ -36,8 +36,12 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
+
 #include "ioda/containers/IFrame.h"
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/core/IodaUtils.h"
+#include "ioda/core/ObsDimInfo.h"
+#include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
@@ -52,36 +56,6 @@ namespace eckit {
 
 namespace ioda {
     class ObsVector;
-
-    //-------------------------------------------------------------------------------------
-    struct ObsSourceStats {
-      /// \brief total number of locations from the input source (file or generator)
-      std::size_t nlocs;
-
-      /// \brief total number of locations from the input source (file or generator)
-      std::size_t nchans;
-
-      /// \brief total number of locations from the input source (file or generator)
-      std::size_t sourceNlocs;
-
-      /// \brief total number of locations across all MPI tasks
-      std::size_t gNlocs;
-
-      /// \brief number of nlocs from the obs source that are outside the time window
-      std::size_t gNlocsOutsideTimewindow;
-
-      /// \brief number of nlocs from the obs source that are outside the time window
-      std::size_t gNlocsRejectQc;
-
-      /// \brief number of records
-      std::size_t nrecs;
-
-      /// \brief indexes of locations to extract from the input obs file
-      std::vector<std::size_t> locIndices;
-
-      /// \brief record numbers associated with the location indexes
-      std::vector<std::size_t> recNums;
-    };
 
     //-------------------------------------------------------------------------------------
     /// Enum type for compare actions
@@ -125,43 +99,6 @@ namespace ioda {
         String,
         DateTime,
         Bool
-    };
-
-    /// \brief Enum type for obs dimension ids
-    /// \details The first two dimension names for now are Location and Channel. This will
-    /// likely expand in the future, so make sure that this enum class and the following
-    /// initializer function stay in sync.
-    enum class ObsDimensionId {
-        Location,
-        Channel
-    };
-
-    /// \brief Wrapper class that maps dimension ids to names.
-    class ObsDimInfo {
-     public:
-        ObsDimInfo();
-
-        /// \brief return the standard id value for the given dimension name
-        ObsDimensionId get_dim_id(const std::string & dimName) const;
-
-        /// \brief return the dimension name for the given dimension id
-        std::string get_dim_name(const ObsDimensionId dimId) const;
-
-        /// \brief return the dimension size for the given dimension id
-        std::size_t get_dim_size(const ObsDimensionId dimId) const;
-
-        /// \brief set the dimension size for the given dimension id
-        void set_dim_size(const ObsDimensionId dimId, std::size_t dimSize);
-
-     private:
-        /// \brief map going from dim id to dim name
-        std::map<ObsDimensionId, std::string> dim_id_name_;
-
-        /// \brief map going from dim id to dim size
-        std::map<ObsDimensionId, std::size_t> dim_id_size_;
-
-        /// \brief map going from dim name to id
-        std::map<std::string, ObsDimensionId> dim_name_id_;
     };
 
     /// @brief Template handlers for implicit variable conversion.
@@ -268,26 +205,28 @@ namespace ioda {
         /// @{
 
         /// \brief true if obs space is empty (ie, zero locations in the input source)
-        bool empty() const {return (source_nlocs_ == 0);}
+        bool empty() const {return (obs_src_stats_.sourceNlocs == 0);}
 
         /// \brief return the total nubmer of locations from the obs source (input file
         ///  or generator)
         /// \details Note that this value includes the additional number of locations due to
         ///  extending the obs space
-        std::size_t sourceNumLocs() const {return source_nlocs_;}
+        std::size_t sourceNumLocs() const {return obs_src_stats_.sourceNlocs;}
 
         /// \brief return the total number of locations in the corresponding obs spaces
         ///  across all MPI tasks
         /// \details Note that this value includes the additional number of locations due to
         ///  extending the obs space
-        std::size_t globalNumLocs() const {return gnlocs_;}
+        std::size_t globalNumLocs() const {return obs_src_stats_.gNlocs;}
 
         /// \brief return number of locations from obs source that were outside the time window
-        std::size_t globalNumLocsOutsideTimeWindow() const {return gnlocs_outside_timewindow_;}
+        std::size_t globalNumLocsOutsideTimeWindow() const {
+            return obs_src_stats_.gNlocsOutsideTimewindow;
+        }
 
         /// \brief return number of locations from obs source that were rejected by the
         ///  quality checks
-        std::size_t globalNumLocsRejectQC() const {return gnlocs_reject_qc_;}
+        std::size_t globalNumLocsRejectQC() const {return obs_src_stats_.gNlocsRejectQc;}
 
         /// \brief return the number of locations in the obs space.
         /// Note that nlocs may be smaller than global unique nlocs due to distribution of obs
@@ -301,7 +240,7 @@ namespace ioda {
         /// \brief return the number of records in the obs space container
         /// \details This is the number of sets of locations after applying the
         /// optional grouping.
-        std::size_t nrecs() const {return nrecs_;}
+        std::size_t nrecs() const {return obs_src_stats_.nrecs;}
 
         /// \brief return the number of variables in the obs space container.
         /// "Variables" refers to the quantities that can be assimilated as opposed to meta data.
@@ -341,7 +280,7 @@ namespace ioda {
         std::string distname() const {return dist_->name();}
 
         /// \brief return reference to the record number vector
-        const std::vector<std::size_t> & recnum() const {return recnums_;}
+        const std::vector<std::size_t> & recnum() const {return obs_src_stats_.recNums;}
 
         /// \brief return data frame container flag
         bool useDataframe() const {return use_dataframe_;}
@@ -369,21 +308,19 @@ namespace ioda {
         /// Example 2: Suppose MPI is not used and the file contains 10 locations in total,
         /// but locations 2, 3 and 7 are outside the DA timing window. In this case,
         /// `ObsSpace::index()` will return `0, 1, 4, 5, 6, 8, 9`.
-        const std::vector<std::size_t> & index() const {return indx_;}
+        const std::vector<std::size_t> & index() const {return obs_src_stats_.locIndices;}
 
         /// Check if group exists
+        /// \param group Group name
         bool has(const std::string & group) const;
 
         /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
         /// is set to true) `"Derived" + `group`. Also returns true if ObsSpace is empty.
         /// Backward compatible with names with channel suffixes.
+        /// \param group Group name
+        /// \param name Variable name
+        /// \param skipDerived
         bool has(const std::string & group, const std::string & name,
-                 bool skipDerived = false) const;
-
-        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
-        /// is set to true) `"Derived" + `group` in the ObsSpace container.
-        /// (Returns false if ObsSpace is empty.)
-        bool strictHas(const std::string & group, const std::string & name,
                  bool skipDerived = false) const;
 
         /// \brief return data type for group/variable
@@ -601,27 +538,11 @@ namespace ioda {
         ///        4DVar)
         const eckit::mpi::Comm & commTime_;
 
-        /// \brief total number of locations from the input source (file or generator)
-        std::size_t source_nlocs_;
-
-        /// \brief total number of locations across all MPI tasks
-        std::size_t gnlocs_;
-
-        /// \brief number of nlocs from the obs source that are outside the time window
-        std::size_t gnlocs_outside_timewindow_;
-
-        /// \brief number of nlocs from the obs source that are outside the time window
-        std::size_t gnlocs_reject_qc_;
-
-        /// \brief number of records
-        std::size_t nrecs_;
+        /// \brief obs source statistics
+        ObsSourceStats obs_src_stats_;
 
         /// \brief dimension information for variables in this obs space
         ObsDimInfo dim_info_;
-
-        /// \brief map to go from channel number (not necessarily consecutive)
-        ///        to channel index (consecutive, starting from zero).
-        std::map<int, int> chan_num_to_index_;
 
         /// \brief legacy observation data store
         std::unique_ptr<ObsGroup> obs_group_;
@@ -655,12 +576,6 @@ namespace ioda {
         /// \brief MPI distribution object
         std::shared_ptr<Distribution> dist_;
 
-        /// \brief indexes of locations to extract from the input obs file
-        std::vector<std::size_t> indx_;
-
-        /// \brief record numbers associated with the location indexes
-        std::vector<std::size_t> recnums_;
-
         /// \brief profile ordering
         RecIdxMap recidx_;
 
@@ -674,17 +589,8 @@ namespace ioda {
         /// \brief indicator whether to use the new dataframe container
         bool use_dataframe_;
 
-        /// \brief data frame type (i.e. FrameCols or FrameRows)
-        std::string dataframe_type_;
-
-        /// \brief data frame channel numbers
-        std::vector<int> osdf_chan_nums_;
-
-        /// \brief data frame variables with channels
-        std::vector<std::string> osdf_vars_with_chans_;
-
-        /// \brief data frame number of variables
-        int osdf_num_vars_;
+        /// \brief dataframe container meta data
+        osdf::FrameMetadata osdfMetadata_;
 
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state
@@ -700,7 +606,19 @@ namespace ioda {
         /// \param os output stream
         void print(std::ostream & os) const;
 
-        /// \brief transfer values from the indx_ data member to the Location variable
+        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
+        /// is set to true) `"Derived" + `group` in the ObsSpace container.
+        /// (Returns false if ObsSpace is empty.)
+        bool strictHas(const std::string & group, const std::string & name,
+                 bool skipDerived = false) const;
+
+        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
+        /// is set to true) `"Derived" + `group` in the ObsSpace container.
+        /// (Returns false if ObsSpace is empty.)
+        bool strictHas(const std::string & group) const;
+
+        /// \brief transfer location index values from the obs_src_stats data
+        //         member to the Location variable
         void assignLocationValues();
 
         /// \brief load the obs space data from an obs source (file or generator)
@@ -710,6 +628,9 @@ namespace ioda {
         /// of the obs source
         void load(const eckit::LocalConfiguration & backendConfig, ObsGroup & destObsGroup,
                   ObsSourceStats & obsSourceStats);
+
+        /// \brief set data members that are based on the ObsSpace parameter values
+        void recordCheckParameterInfo();
 
         /// \brief expand the obsdatain parameter to a vector of obsdatain configs
         /// \details This function will take the obsdatain ObsDataInParameters object
@@ -745,14 +666,22 @@ namespace ioda {
         /// \brief For each simulated variable that has a derived error
         /// (DerivedObsError group), fill the newly appended locations with
         /// missing values
-        /// \param obsSourceStats struct holding counts, etc. that describe the contents
+        /// \param appendNlocs number of newly appended locations
         /// of the obs source
-        void appendMissingObsErrors(ObsSourceStats & obsSourceStats);
+        void appendMissingObsErrors(const std::size_t appendNlocs);
+
+        /// \brief categorize the obs variables
+        /// \details This function will inspect the obs_params_ data member along
+        /// with the contents of the obs container (ObsGroup or OSDF) and determine
+        /// the lists of obs variables held in the obsvars_, initial_obsvars_,
+        /// derived_obsvars_, and assimvars_ data members.
+        void categorizeObsVariables();
 
         /// \brief build the recidx_ data member
-        /// \details Build the recidx_ data member using the indx_ and recnums_
-        /// data members. The entries of the map have each existing record number as
-        /// keys, and the values are the location indices that belong to that record.
+        /// \details Build the recidx_ data member using the indices and recnums in
+        /// the obs_src_stats_ data member. The entries of the map have each
+        /// existing record number as keys, and the values are the location indices
+        /// that belong to that record.
         void buildRecIdx();
 
         /// \brief Create the recidx data structure holding sorted record groups
@@ -837,7 +766,8 @@ namespace ioda {
                 for (auto & dimName : varDimList) {
                     Variable dimVar = obs_group_->vars.open(dimName);
                     if (dimName == "Location") {
-                        chunkDims.push_back(VarUtils::getLocationChunkSize(gnlocs_));
+                        chunkDims.push_back(
+                            VarUtils::getLocationChunkSize(obs_src_stats_.gNlocs));
                     } else {
                         chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
                     }
@@ -935,37 +865,6 @@ namespace ioda {
         std::string groupToUse(const std::string & group,
                                const std::string & variable,
                                bool skipDerived) const;
-
-        /// \brief determine if the osdf variable (column) has channels
-        /// \param group group name
-        /// \param canonicalName canonical variable name
-        /// \param skipDerived if false, also check for var in derived group
-        bool osdfVarHasChannels(const std::string & group,
-                                const std::string & canonicalName,
-                                const bool skipDerived) const;
-
-        /// \brief transfer data from an ObsGroup to an OSDF
-        /// \param numLocs number of locations (size of Location dimension)
-        /// \param numChans number of channels (size of Channel dimension)
-        /// \param srcObsGroup source ObsGroup container
-        /// \param destOSDF destination OSDF container
-        void osdfTransferDataFromObsGroup(const std::size_t numLocs,
-                                    const std::size_t numChans,
-                                    const std::unique_ptr<ObsGroup> & srcObsGroup,
-                                    std::unique_ptr<osdf::IFrame> & destOSDF);
-
-        /// \param srcVar ioda::Variable object from the source ObsGroup
-        /// \param varName variable name
-        /// \param chanNums numbers of all the channels
-        /// \param destOSDF destination OSDF container
-        /// \param numLocs number of locations (size of Location dimension)
-        /// \param destOSDF destination OSDF container
-        template<typename VarType>
-        void osdfTransferVariableFromObsGroup(const Variable & srcVar,
-                                    const std::string & varName,
-                                    const std::vector<int> & chanNums,
-                                    const Dimensions_t numLocs,
-                                    std::unique_ptr<osdf::IFrame> & destOSDF);
     };
 
 }  // namespace ioda

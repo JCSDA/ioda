@@ -125,16 +125,6 @@ void testInvalidNumeric() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully.
-  typedef ObsSpaceTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsSpaceInvalidNumeric : public oops::Test {
  public:
   ObsSpaceInvalidNumeric() {}
@@ -148,11 +138,12 @@ class ObsSpaceInvalidNumeric : public oops::Test {
 
     ts.emplace_back(CASE("ioda/ObsSpace/testInvalidNumeric")
       { testInvalidNumeric(); });
-    ts.emplace_back(CASE("ioda/ObsSpace/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsSpaceTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // -----------------------------------------------------------------------------

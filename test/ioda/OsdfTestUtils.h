@@ -69,17 +69,13 @@ void populateFrame(const std::vector<eckit::LocalConfiguration> & config,
       // create and write column
       std::vector<float> expectedValues = replaceMissingValues<float>(stringVals);
       osdf->appendNewColumn(name, expectedValues);
-    } else if (type == "double") {
-      // create and write column
-      std::vector<double> expectedValues = replaceMissingValues<double>(stringVals);
-      osdf->appendNewColumn(name, expectedValues);
     } else if (type == "string") {
       // create and write column
       std::vector<std::string> expectedValues = replaceMissingValues<std::string>(stringVals);
       osdf->appendNewColumn(name, expectedValues);
     } else {
       std::string errMsg = std::string("Unrecognized data type: ") + type +
-          std::string("\nMust use one of: 'int', 'float', 'double' or 'string'");
+          std::string("\nMust use one of: 'int', 'int64', 'float' or 'string'");
       throw eckit::BadParameter(errMsg, Here());
     }
   }
@@ -129,15 +125,6 @@ void compareFrames(const std::unique_ptr<osdf::IFrame> & testOsdf,
           < testValues.size(); ++j) {
         EXPECT(fabs(testValues[j] - refValues[j]) < tolerance);
       }
-    } else if (testColumnTypes[i] == "double") {
-      std::vector<double> testValues;
-      testOsdf->getColumn(testColumnNames[i], testValues);
-      std::vector<double> refValues;
-      refOsdf->getColumn(refColumnNames[i], refValues);
-      EXPECT(testValues.size() == refValues.size());
-      for (std::size_t j = 0; j < testValues.size(); ++j) {
-        EXPECT(fabs(testValues[j] - refValues[j]) < tolerance);
-      }
     } else if (testColumnTypes[i] == "string") {
       std::vector<std::string> testValues;
       testOsdf->getColumn(testColumnNames[i], testValues);
@@ -149,7 +136,7 @@ void compareFrames(const std::unique_ptr<osdf::IFrame> & testOsdf,
       }
     } else {
       std::string errMsg = std::string("Unrecognized data type: ") + testColumnTypes[i] +
-          std::string("\nMust use one of: 'int', 'float', 'double' or 'string'");
+          std::string("\nMust use one of: 'int', 'int64', 'float' or 'string'");
       throw eckit::BadParameter(errMsg, Here());
     }
   }

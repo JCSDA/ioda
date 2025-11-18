@@ -17,16 +17,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(ENABLE_MPI ON CACHE BOOL "Compile with MPI")
 set(ENABLE_OMP ON CACHE BOOL "Compile with OpenMP")
-option(
-  ENABLE_IODA_DATA
-  "Obtain ioda test data from ioda-data repository (vs tarball)"
-  ON
-)
-option(
-  ENABLE_UFO_DATA
-  "Obtain ufo test data from ufo-data repository (vs tarball)"
-  ON
-)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/jedicmake")
 if(NOT DEFINED jedicmake_DIR)
@@ -35,11 +25,14 @@ endif()
 
 set(
   include_names
-  "$ENV{REPO}" "$ENV{REPO}-data"
-  "orca-jedi" "ops-um-jedi" "jjtests" "lfric-jedi")
+  "$ENV{REPO}" "orca-jedi" "ops-um-jedi" "jjtests" "lfric-jedi")
+if(DEFINED ENV{REPO_TEST_DATA})
+  list(APPEND include_names "$ENV{REPO_TEST_DATA}")
+endif()
 foreach(
   name
   "oops"
+  "jedi-model-data"
   "vader"
   "saber"
   "ioda-data"

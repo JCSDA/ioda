@@ -64,6 +64,17 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/oops
 
+      - name: Checkout jedi-model-data
+        uses: actions/checkout@v4
+        with:
+          path: ./${{ env.PR }}/jedi-model-data
+          repository: JCSDA-internal/jedi-model-data
+          token: ${{ secrets.GH_PAT }}
+          lfs: true
+      - name: Check build-group for jedi-model-data
+        if: github.event_name == 'pull_request'
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/jedi-model-data
+
       - name: Checkout vader
         uses: actions/checkout@v4
         with:
@@ -185,19 +196,18 @@ jobs:
         run: |
           az acr login --name ngmssboxjediacr
           ln -sf /testdata/mobb-data -t ${{ github.workspace }}
-          ln -sf /testdata/emis_data -t ${{ github.workspace }}
 
           docker run --rm \
             --name ${REPO}_${PR}_${GITHUB_SHA::7} \
             --volume ${{ github.workspace }}/${PR}:${WORKDIR} \
             --volume ${{ github.workspace }}/mobb-data:${MOBB_DATA} \
-            --volume ${{ github.workspace }}/emis_data:/usr/local/etc/emis_data \
             --env ATLAS_DATA_PATH="${MOBB_DATA}" \
             --env LFRICJEDI_TEST_TIER=0 \
             --env MOBB_DATA="${MOBB_DATA}" \
             --env OMPI_ALLOW_RUN_AS_ROOT=1 \
             --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
             --env REPO="${REPO}" \
+            --env REPO_TEST_DATA='ioda-data' \
             --workdir="${WORKDIR}" \
             --entrypoint="${WORKDIR}/build-and-test.sh" \
             'ngmssboxjediacr.azurecr.io/jedibase:alma9'

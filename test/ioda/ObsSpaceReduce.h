@@ -321,16 +321,6 @@ void testReduce() {
 
 // -----------------------------------------------------------------------------
 
-void testCleanup() {
-  // This test removes the obsspaces and ensures that they evict their contents
-  // to disk successfully.
-  typedef ObsSpaceTestFixture Test_;
-
-  Test_::cleanup();
-}
-
-// -----------------------------------------------------------------------------
-
 class ObsSpaceReduce : public oops::Test {
  public:
   ObsSpaceReduce() {}
@@ -345,11 +335,12 @@ class ObsSpaceReduce : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpaceReduce/testReduce")
       { testReduce(); });
-    ts.emplace_back(CASE("ioda/ObsSpaceReduce/testCleanup")
-      { testCleanup(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    typedef ObsSpaceTestFixture Test_;
+    Test_::cleanup();
+  }
 };
 
 // -----------------------------------------------------------------------------

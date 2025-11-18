@@ -110,6 +110,7 @@ class FrameRowsData : public IFrameData  {
   DataRow& getDataRow(const std::int64_t);
   const DataRow& getDataRow(const std::int64_t) const;
 
+  ColumnMetadata& getColumnMetadata();
   const ColumnMetadata& getColumnMetadata() const;
   const std::vector<DataRow>& getDataRows() const;
   std::vector<DataRow>& getDataRows();

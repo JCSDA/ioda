@@ -90,7 +90,6 @@ contains
    function ioda_engines_hh_open_file(fname, open_mode) result(new_grp)
       implicit none
       type(ioda_group) :: new_grp
-      integer(int64) :: sz_fname
       character(len=*), intent(in) :: fname
       integer(int32) :: open_mode
       type(C_ptr) :: fname_p
@@ -105,9 +104,8 @@ contains
    function ioda_engines_hh_create_file(fname, create_mode) result(new_grp)
       implicit none
       type(ioda_group) :: new_grp
-      integer(int64) :: sz_fname
       character(len=*), intent(in) :: fname
-      integer(int32) :: create_mode
+      integer(int32), intent(inout) :: create_mode
       type(C_ptr) :: fname_p
 
       if (create_mode > 3) create_mode = 0

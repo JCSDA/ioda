@@ -21,8 +21,8 @@ program ioda_fortran_02_attributes
 
     type(ioda_group) :: grpFromFile
     type(ioda_has_attributes) :: g_has_att
-    type(ioda_attribute) :: intatt1, intatt2, floatatt1, doubleatt1, stratt1, check_intatt2
-    type(cxx_vector_string) :: check_strs, att_list
+    type(ioda_attribute) :: intatt1, intatt2, floatatt1, stratt1, check_intatt2
+    type(cxx_vector_string) :: att_list
     type(cxx_string) :: xstr
     type(ioda_dimensions) :: dims
     logical :: res1     ! Return value. Mostly unchecked in this example.
@@ -31,17 +31,18 @@ program ioda_fortran_02_attributes
     real(real32),dimension(4) :: fint
     integer(int64) :: ns,nd;
     character(len=256) :: test_str
+    integer(int32) :: create_mode
     
     test_str  = 'this is a test'         
     ! Create a file
     !grpFromFile = engines%obsstore%createRootGroup()
-    grpFromFile = ioda_engines_hh_create_file('Example-02-F.hdf5', 1)
+    create_mode = 1
+    grpFromFile = ioda_engines_hh_create_file('Example-02-F.hdf5', create_mode)
 
 !    call ioda_attribute_init(intatt1)
 !    call ioda_attribute_init(intatt2)
 !    call ioda_attribute_init(floatatt1)
 !    call ioda_attribute_init(stratt1)
-!    call ioda_attribute_init(doubleatt1)
 !    call ioda_attribute_init(check_intatt2)
 !    call ioda_has_attributes_init(g_has_att)
 

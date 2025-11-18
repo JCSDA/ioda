@@ -1,0 +1,127 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+# note that the test_ioda_obsspace code currently depends on specifying
+# ALL of the channels in the "obs space.channels" spec.
+observations:
+- obs space:
+    name: "AMSUA NOAA19 (ObsGroup)"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+  test data:
+    has group var checks:
+      - group: "MetaData"
+        variable: "latitude"
+        result: true
+      - group: "MetaData"
+        variable: "longitude"
+        result: true
+      - group: "MetaData"
+        variable: "xyz"
+        result: false
+    has group checks:
+      - group: "ObsValue"
+        result: true
+      - group: "ObsError"
+        result: true
+      - group: "XXX"
+        result: false
+
+- obs space:
+    name: "Radiosonde (ObsGroup)"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+  test data:
+    has group var checks:
+      - group: "MetaData"
+        variable: "latitude"
+        result: true
+      - group: "MetaData"
+        variable: "longitude"
+        result: true
+      - group: "MetaData"
+        variable: "stationIdentification"
+        result: true
+      - group: "PreQC"
+        variable: "stationPressure"
+        result: true
+    has group checks:
+      - group: "ObsValue"
+        result: true
+      - group: "ObsError"
+        result: true
+      - group: "XXX"
+        result: false
+
+- obs space:
+    name: "AMSUA NOAA19 (OSDF)"
+    simulated variables: ['brightnessTemperature']
+    observed variables: ['brightnessTemperature']
+    channels: 1-15
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    use data frame container: true
+    distribution:
+      name: ReaderDependentDistribution
+  test data:
+    has group var checks:
+      - group: "MetaData"
+        variable: "latitude"
+        result: true
+      - group: "MetaData"
+        variable: "longitude"
+        result: true
+      - group: "MetaData"
+        variable: "xyz"
+        result: false
+    has group checks:
+      - group: "ObsValue"
+        result: true
+      - group: "ObsError"
+        result: true
+      - group: "XXX"
+        result: false
+
+- obs space:
+    name: "Radiosonde (OSDF)"
+    simulated variables: ['airTemperature']
+    observed variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    use data frame container: true
+    distribution:
+      name: ReaderDependentDistribution
+  test data:
+    has group var checks:
+      - group: "MetaData"
+        variable: "latitude"
+        result: true
+      - group: "MetaData"
+        variable: "longitude"
+        result: true
+      - group: "MetaData"
+        variable: "stationIdentification"
+        result: true
+      - group: "PreQC"
+        variable: "stationPressure"
+        result: true
+    has group checks:
+      - group: "ObsValue"
+        result: true
+      - group: "ObsError"
+        result: true
+      - group: "XXX"
+        result: false

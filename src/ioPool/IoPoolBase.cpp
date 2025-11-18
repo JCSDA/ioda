@@ -27,8 +27,6 @@
 namespace ioda {
 namespace IoPool {
 
-constexpr int defaultMaxPoolSize = 4;
-
 //------------------------------------------------------------------------------------
 // Common io pool creation parameters
 //------------------------------------------------------------------------------------
@@ -56,22 +54,14 @@ IoPoolBase::IoPoolBase(
 //--------------------------------------------------------------------------------------
 void IoPoolBase::setTargetPoolSize(const int numMpiTasks) {
     if (commAll().rank() == 0) {
-        // Determine the maximum pool size. Use the default if the io pool spec is not
-        // present, which is done for backward compatibility.
-        int maxPoolSize = defaultMaxPoolSize;
-        if (configParams_.maxPoolSize.value() > 0) {
-            maxPoolSize = configParams_.maxPoolSize.value();
+        // Determine the target pool size. The io pool parameter, maxPoolSize, is
+        // where the default maximum pool size (currently 4) is set. The target pool
+        // size will be the minimum of the maximum pool size spec and the number of
+        // available mpi tasks (numMpiTasks argument).
+        targetPoolSize_ = configParams_.maxPoolSize.value();
+        if (numMpiTasks < targetPoolSize_) {
+            targetPoolSize_ = numMpiTasks;
         }
-
-        // The pool size will be the minimum of the maxPoolSize or the numMpiTasks
-        // argument.
-        int poolSize = maxPoolSize;
-        if (numMpiTasks <= maxPoolSize) {
-            poolSize = numMpiTasks;
-        }
-
-        // Broadcast the target pool size to the other ranks
-        targetPoolSize_ = poolSize;
     }
     commAll().broadcast(targetPoolSize_, 0);
 }

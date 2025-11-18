@@ -9,6 +9,7 @@
 #define CONTAINERS_IFRAME_H_
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -48,12 +49,9 @@ class IFrame {
   /// \brief The following functions are used to add a new column of data to the container.
   /// \param The target column name.
   /// \param A reference to a vector containing the data to populate the new column.
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int8_t>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int16_t>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int32_t>&) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<int>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<float>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<double>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<char>&) = 0;
   virtual void appendNewColumn(const std::string&, const std::vector<std::string>&) = 0;
 
@@ -63,24 +61,18 @@ class IFrame {
   /// Otherwise it would return a vector of copied data.
   /// \param The target column name.
   /// \param A reference to a vector that will be used to store the copied data.
-  virtual void getColumn(const std::string&, std::vector<std::int8_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int16_t>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<std::int32_t>&) const = 0;
+  virtual void getColumn(const std::string&, std::vector<int>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::int64_t>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<float>&) const = 0;
-  virtual void getColumn(const std::string&, std::vector<double>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<char>&) const = 0;
   virtual void getColumn(const std::string&, std::vector<std::string>&) const = 0;
 
   /// \brief The following functions are used to replace the data on an existing column.
   /// \param The target column name.
   /// \param A reference to a vector containing the data to overwrite the new column.
-  virtual void setColumn(const std::string&, const std::vector<std::int8_t>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<std::int16_t>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<std::int32_t>&) const = 0;
+  virtual void setColumn(const std::string&, const std::vector<int>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<std::int64_t>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<float>&) const = 0;
-  virtual void setColumn(const std::string&, const std::vector<double>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<char>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<std::string>&) const = 0;
 
@@ -125,6 +117,17 @@ class IFrame {
 
   /// \brief Returns vector of strings containing the column names.
   virtual std::vector<std::string> columnNames() const = 0;
+
+  /// \brief Returns serialization of the column metadata.
+  /// \details A simple tokenized string is used for the serialization. The first
+  /// token contains columns:<number of columns>" and subsequent tokens contain
+  /// information about each column: "<name>:<type>:<permission>:<width>". The tokens
+  /// are space separated, and the items within each token are colon separated.
+  virtual std::string serializeColumnMetadata() const = 0;
+
+  /// \brief Accepts a serialized column metadata string and uses it to configure the columns
+  /// in an empty OSDF container.
+  virtual void deserializeColumnMetadata(const std::string & columnMetadataTokens) = 0;
 
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.
   virtual void print() const = 0;
