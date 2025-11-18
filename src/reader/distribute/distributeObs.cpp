@@ -41,6 +41,12 @@ void distributeObs(const DistributionParametersBase & distParams,
   obsSourceStats.nrecs = obsSourceStats.nlocs;
   obsSourceStats.recNums.resize(obsSourceStats.locIndices.size());
   std::iota(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(), 0);
+
+  // todo(SRH): For now, set the number of locations in the obspaceDist
+  // (which is ReaderDependentDistribution), to the number of rows
+  // in the osdfCont. This will allow the allGather.v functions in the
+  // distribution to operate correctly.
+  ospaceDist->setNumberLocations(osdfCont->numRows());
 }
 
 }  // namespace reader

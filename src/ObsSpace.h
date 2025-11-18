@@ -311,18 +311,16 @@ namespace ioda {
         const std::vector<std::size_t> & index() const {return obs_src_stats_.locIndices;}
 
         /// Check if group exists
+        /// \param group Group name
         bool has(const std::string & group) const;
 
         /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
         /// is set to true) `"Derived" + `group`. Also returns true if ObsSpace is empty.
         /// Backward compatible with names with channel suffixes.
+        /// \param group Group name
+        /// \param name Variable name
+        /// \param skipDerived
         bool has(const std::string & group, const std::string & name,
-                 bool skipDerived = false) const;
-
-        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
-        /// is set to true) `"Derived" + `group` in the ObsSpace container.
-        /// (Returns false if ObsSpace is empty.)
-        bool strictHas(const std::string & group, const std::string & name,
                  bool skipDerived = false) const;
 
         /// \brief return data type for group/variable
@@ -607,6 +605,17 @@ namespace ioda {
         /// \brief print function for oops::Printable class
         /// \param os output stream
         void print(std::ostream & os) const;
+
+        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
+        /// is set to true) `"Derived" + `group` in the ObsSpace container.
+        /// (Returns false if ObsSpace is empty.)
+        bool strictHas(const std::string & group, const std::string & name,
+                 bool skipDerived = false) const;
+
+        /// \brief return true if variable `name` exists in group `group` or (unless `skipDerived`
+        /// is set to true) `"Derived" + `group` in the ObsSpace container.
+        /// (Returns false if ObsSpace is empty.)
+        bool strictHas(const std::string & group) const;
 
         /// \brief transfer location index values from the obs_src_stats data
         //         member to the Location variable

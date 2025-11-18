@@ -9,7 +9,6 @@ observations:
 - obs space:
     name: "Contrived data with channels for OSDF"
     simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
       name: ReaderDependentDistribution
@@ -54,7 +53,6 @@ observations:
 - obs space:
     name: "OSDF Sondes (FrameCols)"
     simulated variables: ['airTemperature']
-    observed variables: ['airTemperature']
     distribution:
       name: ReaderDependentDistribution
     obsdatain:
@@ -92,7 +90,6 @@ observations:
 - obs space:
     name: "OSDF Sondes (FrameRows)"
     simulated variables: ['airTemperature']
-    observed variables: ['airTemperature']
     distribution:
       name: ReaderDependentDistribution
     obsdatain:
@@ -130,7 +127,6 @@ observations:
 - obs space:
     name: "OSDF AMSU-A (FrameCols)"
     simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
       name: ReaderDependentDistribution

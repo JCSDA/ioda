@@ -379,28 +379,6 @@ std::string ObsSpace::obs_sort_order() const {
 /*!
  * \details This method checks for the existence of the group, name combination
  *          in the obs container. If the combination exists, "true" is returned,
- *          otherwise "false" is returned. Returns false if the ObsSpace is empty.
- *          Searches for name without any alteration for channel suffixes.
- *          Unless skipDerived is true, checks for the existence of both "Derived"
- *          and non-"Derived" groups, and returns true if either group/name is present.
- */
-bool ObsSpace::strictHas(const std::string & group, const std::string & name,
-                         bool skipDerived) const {
-    bool returnVal = false;
-    if (use_dataframe_) {
-        returnVal = osdf_->hasColumn(fullVarName(group, name)) ||
-                (!skipDerived && osdf_->hasColumn(fullVarName("Derived" + group, name)));
-    } else {
-        returnVal = obs_group_->vars.exists(fullVarName(group, name)) ||
-            (!skipDerived && obs_group_->vars.exists(fullVarName("Derived" + group, name)));
-    }
-    return returnVal;
-}
-
-// -----------------------------------------------------------------------------
-/*!
- * \details This method checks for the existence of the group, name combination
- *          in the obs container. If the combination exists, "true" is returned,
  *          otherwise "false" is returned. Also returns true if the ObsSpace is empty.
  *          Backward compatible with names with channel suffixes.
  */
@@ -934,6 +912,39 @@ void ObsSpace::print(std::ostream & os) const {
 
   os << obsname() << ": nlocs: " << totalNlocs
      << ", nvars: " << nvars << ", nobs: " << nobs;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method checks for the existence of the group, name combination
+ *          in the obs container. If the combination exists, "true" is returned,
+ *          otherwise "false" is returned. Returns false if the ObsSpace is empty.
+ *          Searches for name without any alteration for channel suffixes.
+ *          Unless skipDerived is true, checks for the existence of both "Derived"
+ *          and non-"Derived" groups, and returns true if either group/name is present.
+ */
+bool ObsSpace::strictHas(const std::string & group, const std::string & name,
+                         bool skipDerived) const {
+    bool returnVal = false;
+    if (use_dataframe_) {
+        returnVal = osdf_->hasColumn(fullVarName(group, name)) ||
+                (!skipDerived && osdf_->hasColumn(fullVarName("Derived" + group, name)));
+    } else {
+        returnVal = obs_group_->vars.exists(fullVarName(group, name)) ||
+            (!skipDerived && obs_group_->vars.exists(fullVarName("Derived" + group, name)));
+    }
+    return returnVal;
+}
+
+// -----------------------------------------------------------------------------
+/*!
+ * \details This method checks for the existence of the group in the obs container.
+ *          If the group exists, "true" is returned, otherwise "false" is returned.
+ *          Returns false if the ObsSpace is empty.
+ */
+bool ObsSpace::strictHas(const std::string & group) const {
+    std::vector<std::string> grps = this->listGroups();
+    return std::find(grps.begin(), grps.end(), group) != grps.end();
 }
 
 // -----------------------------------------------------------------------------
@@ -1636,24 +1647,38 @@ void ObsSpace::categorizeObsVariables() {
     } else if (usingObsGenerator) {
         obsvars_ = obs_params_.top_level_.simVars;
     } else {
-        if (use_dataframe_) {
-            // OSDF container
-        } else {
-            // ObsGroup container
-            // Use all variables found in the ObsValue group in the file. If there is no ObsValue
-            // group (rare), then copy the simulated variables list.
-            if (obs_group_->exists("ObsValue")) {
-                Group obsValueGroup = obs_group_->open("ObsValue");
-                const std::vector<std::string>
-                        allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
-                // ToDo (JAW): Get the channels from the input file (currently using the ones from
-                //             simVars)
-                std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
-                oops::ObsVariables obVars(allObsVars, channels);
-                obsvars_ = obVars;
+        if (this->strictHas("ObsValue")) {
+            // Have an ObsValue group that came from the file. Get the list of
+            // variables that exist in the ObsValue group.
+            std::vector<std::string> allObsVars;
+            if (use_dataframe_) {
+                // OSDF container
+                // Grab the column names with the channel suffixes stripped off and
+                // trim down to only those with "ObsValue/" prefix on their names.
+                std::set<std::string> uniqueObsVars;
+                const std::vector<std::string> colsMinusChanSuffixes =
+                    osdfColNamesWithoutChanSuffixes(*osdf_, osdfMetadata_);
+                for (auto colName : colsMinusChanSuffixes) {
+                    const std::vector<std::string> tokens = ioda::splitString(colName, '/');
+                    if (tokens[0] == "ObsValue") {
+                        uniqueObsVars.insert(tokens[1]);
+                    }
+                }
+                allObsVars.assign(uniqueObsVars.begin(), uniqueObsVars.end());
             } else {
-                obsvars_ = obs_params_.top_level_.simVars;
+                // ObsGroup container
+                const Group obsValueGroup = obs_group_->open("ObsValue");
+                allObsVars = obsValueGroup.listObjects<ObjectType::Variable>(false);
             }
+            // ToDo (JAW): Get the channels from the input file (currently using the ones from
+            //             simVars)
+            std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
+            oops::ObsVariables obsVars(allObsVars, channels);
+            obsvars_ = obsVars;
+        } else {
+            // Don't have an ObsValue group (rare), get the list from the simulated
+            // variables list.
+            obsvars_ = obs_params_.top_level_.simVars;
         }
     }
 
