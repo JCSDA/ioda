@@ -15,6 +15,7 @@ obs types:
   test data:
     date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
+    - "sourceLocationIndices"
     - "MetaData/dateTime"
     - "MetaData/latitude"
     - "MetaData/longitude"
@@ -24,39 +25,39 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  974
-        nvars:  63
+        nvars:  64
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  487
-        nvars:  63
+        nvars:  64
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  487
-        nvars:  63
+        nvars:  64
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  487
-        nvars:  63
+        nvars:  64
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  0
-        nvars:  63
+        nvars:  64
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  487
-        nvars:  63
+        nvars:  64
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  63
+        nvars:  64
 
 - name: "AMSU-A NOAA 19"
   obsdatain:
@@ -68,6 +69,7 @@ obs types:
   test data:
     date time epoch: "1970-01-01T00:00:00Z"
     sample column names:
+    - "sourceLocationIndices"
     - "MetaData/dateTime"
     - "MetaData/latitude"
     - "MetaData/longitude"
@@ -79,36 +81,36 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  100
-        nvars:  116
+        nvars:  117
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  50
-        nvars:  116
+        nvars:  117
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  50
-        nvars:  116
+        nvars:  117
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  50
-        nvars:  116
+        nvars:  117
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  0
-        nvars:  116
+        nvars:  117
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  50
-        nvars:  116
+        nvars:  117
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  116
+        nvars:  117

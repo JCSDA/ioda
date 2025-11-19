@@ -38,6 +38,11 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 394.92537024564496
+
+      - name: "sourceLocationIndices"
+        group: ""
+        type: "integer"
+        norm: 16.881943016134134
     tolerance:
       - 1.0e-11
     variables for putget test:
@@ -83,6 +88,10 @@ observations:
         type: "float"
         norm: 394.92537024564496
 
+      - name: "sourceLocationIndices"
+        group: ""
+        type: "integer"
+        norm: 16.881943016134134
     tolerance:
       - 1.0e-14
     variables for putget test: []
@@ -120,6 +129,10 @@ observations:
         type: "float"
         norm: 394.92537024564496
 
+      - name: "sourceLocationIndices"
+        group: ""
+        type: "integer"
+        norm: 16.881943016134134
     tolerance:
       - 1.0e-14
     variables for putget test: []
@@ -157,6 +170,10 @@ observations:
         type: "float"
         norm: 84.797943041426024
 
+      - name: "sourceLocationIndices"
+        group: ""
+        type: "integer"
+        norm: 16.881943016134134
     tolerance:
       - 1.0e-14
     variables for putget test: []
