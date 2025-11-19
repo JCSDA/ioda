@@ -242,6 +242,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
+  testinput/iodatest_time_io_osdf.yaml
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
   testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml
@@ -1680,6 +1681,8 @@ ecbuild_add_test( TARGET  test_ioda_clean_time_io_files
                           "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
                           "testoutput/sondes_obs_2018041500_m_time.nc4"
                           "testoutput/gnssro_obs_2021080606_s_time.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_osdf.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4"
@@ -1723,6 +1726,31 @@ ecbuild_add_test( TARGET  test_ioda_time_io_cmp_gnssro
                           "echo Checking time io GNSSRO"
                           gnssro_obs_2021080606_s_time.nc4
                   TEST_DEPENDS test_ioda_time_io)
+
+# this test creates new output files
+ecbuild_add_test( TARGET  test_ioda_time_io_osdf
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
+                  TEST_DEPENDS test_ioda_clean_time_io_files )
+
+# the following tests compare the output files
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_sondes_osdf
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes (osdf)"
+                          sondes_obs_2018041500_m_time_osdf.nc4
+                  TEST_DEPENDS test_ioda_time_io_osdf)
+
+ecbuild_add_test( TARGET  test_ioda_time_io_cmp_amsua_n19_osdf
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io AMSU-A NOAA19 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf.nc4
+                  TEST_DEPENDS test_ioda_time_io_osdf)
 
 # this test creates new output files
 ecbuild_add_test( TARGET  test_ioda_time_io_reader_pool

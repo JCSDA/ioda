@@ -51,6 +51,7 @@
 #include "ioda/reader/ObsReader.hpp"
 #include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
+#include "ioda/writer/obsWriteEmptyFile.hpp"
 
 namespace ioda {
 namespace {
@@ -293,40 +294,58 @@ void ObsSpace::save() {
             util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
         }
 
-        std::vector<bool> patchObsVec(nlocs());
-        dist_->patchObs(patchObsVec);
+        if (use_dataframe_) {
+          // todo(SRH): we don't have a writer yet that directly transfers data
+          // from an OSDF to the output file, so for now write out an "empty"
+          // output file. This is being done to keep skylab experiments happy -
+          // they need to have an output file that is readable by a netCDF API,
+          // and it is okay for these to be empty.
+          oops::Log::info() << obsname() << " : the OSDF writer is not implemented yet, "
+                                         << "writing an empty ioda output file for now."
+                                         << std::endl;
 
-        IoPool::WriterPoolCreationParameters createParams(
-            obs_params_.comm(), obs_params_.timeComm() ,
-            obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
-            patchObsVec, obs_params_.top_level_.obsDataOut.value()->writeMultipleFiles);
-        std::unique_ptr<IoPool::WriterPoolBase> writePool =
-            IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+          // todo(SRH): For now, have rank 0 create the output file, this will change
+          // later on when an OSDF, io pool based writer is implemented.
+          if (this->comm().rank() == 0) {
+            writer::obsWriteEmptyFile(*(obs_params_.top_level_.obsDataOut.value()),
+                                      dim_info_.get_dim_name(ObsDimensionId::Location));
+          }
+        } else {
+          std::vector<bool> patchObsVec(nlocs());
+          dist_->patchObs(patchObsVec);
 
-        writePool->initialize();
-        writePool->save(*obs_group_);
-        // Wait for all processes to finish the save call so that we know the file
-        // is complete and closed.
-        oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
-        this->comm().barrier();
-        writePool->finalize();
+          IoPool::WriterPoolCreationParameters createParams(
+              obs_params_.comm(), obs_params_.timeComm() ,
+              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
+              patchObsVec, obs_params_.top_level_.obsDataOut.value()->writeMultipleFiles);
+          std::unique_ptr<IoPool::WriterPoolBase> writePool =
+              IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
 
-        // Call the mpi barrier command here to force all processes to wait until
-        // all processes have finished writing their files. This is done to prevent
-        // the early processes continuing and potentially executing their obs space
-        // destructor before others finish writing. This situation is known to have
-        // issues with hdf file handles getting deallocated before some of the MPI
-        // processes are finished with them.
-        this->comm().barrier();
+          writePool->initialize();
+          writePool->save(*obs_group_);
+          // Wait for all processes to finish the save call so that we know the file
+          // is complete and closed.
+          oops::Log::info() << obsname() << ": save database to " << *writePool << std::endl;
+          this->comm().barrier();
+          writePool->finalize();
+
+          // Call the mpi barrier command here to force all processes to wait until
+          // all processes have finished writing their files. This is done to prevent
+          // the early processes continuing and potentially executing their obs space
+          // destructor before others finish writing. This situation is known to have
+          // issues with hdf file handles getting deallocated before some of the MPI
+          // processes are finished with them.
+          this->comm().barrier();
+        }
         if (print_run_stats_ > 0) {
             util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true, comm());
         }
       } else {
-        oops::Log::info() << obsname() << " :  skipping output due to an empty obs space "
+        oops::Log::info() << obsname() << " : skipping output due to an empty obs space "
                                        << "with the skip output action enabled" << std::endl;
       }
     } else {
-        oops::Log::info() << obsname() << " :  no output" << std::endl;
+        oops::Log::info() << obsname() << " : no output" << std::endl;
     }
 }
 

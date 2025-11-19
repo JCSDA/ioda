@@ -138,6 +138,9 @@ reader/load/loadObsFromNetcdf.hpp
 reader/ObsReader.cpp
 reader/ObsReader.hpp
 
+writer/obsWriteEmptyFile.cpp
+writer/obsWriteEmptyFile.hpp
+
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp
 )
