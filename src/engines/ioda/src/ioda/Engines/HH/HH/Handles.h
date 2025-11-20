@@ -137,7 +137,7 @@ struct InvalidHDF5Handle {
 namespace Closers {
 struct CloseHDF5Attribute {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Aclose(h);
     if (err != 0) throw Exception(std::string("H5Aclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -148,7 +148,7 @@ struct CloseHDF5Attribute {
 };
 struct CloseHDF5File {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Fclose(h);
     if (err != 0) throw Exception(std::string("H5Fclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -161,7 +161,7 @@ struct CloseHDF5File {
 };
 struct CloseHDF5Dataset {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Dclose(h);
     if (err != 0) throw Exception(std::string("H5Dclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -172,7 +172,7 @@ struct CloseHDF5Dataset {
 };
 struct CloseHDF5Dataspace {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Sclose(h);
     if (err != 0) throw Exception(std::string("H5Sclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -183,7 +183,7 @@ struct CloseHDF5Dataspace {
 };
 struct CloseHDF5Datatype {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Tclose(h);
     if (err != 0) throw Exception(std::string("H5Tclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -194,7 +194,7 @@ struct CloseHDF5Datatype {
 };
 struct CloseHDF5Group {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Gclose(h);
     if (err != 0) throw Exception(std::string("H5Gclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
@@ -205,7 +205,7 @@ struct CloseHDF5Group {
 };
 struct CloseHDF5PropertyList {
   static inline void Close(hid_t h) {
-    if(h == H5I_INVALID_HID) return;
+    if (h == H5I_INVALID_HID) return;
     herr_t err = H5Pclose(h);
     if (err != 0) throw Exception(std::string("H5Pclose failed, error code = ") + std::to_string(err), ioda_Here());
   }
