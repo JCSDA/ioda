@@ -343,6 +343,7 @@ target_link_libraries(ioda_engines PUBLIC gsl::gsl-lite)
 target_link_libraries(ioda_engines PUBLIC Eigen3::Eigen)
 target_link_libraries(ioda_engines PUBLIC udunits::udunits)
 target_link_libraries(ioda_engines PUBLIC eckit)
+target_link_libraries(ioda_engines PUBLIC EXPAT::EXPAT)
 
 if(BUILD_PYTHON_BINDINGS)
 	target_link_libraries(ioda_engines PRIVATE Python3::Python pybind11::headers)

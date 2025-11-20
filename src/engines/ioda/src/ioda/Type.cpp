@@ -178,7 +178,7 @@ Type::Type(std::shared_ptr<detail::Type_Backend> b, std::type_index t)
     : Type_Base(b, b->provider_), as_type_index_(t) {}
 
 Type::Type(BasicTypes typ, gsl::not_null<::ioda::detail::Type_Provider*> t)
-    : Type_Base(nullptr, t.get()), as_type_index_(typeid(void)) {
+    : Type_Base(nullptr, static_cast<::ioda::detail::Type_Provider*>(t)), as_type_index_(typeid(void)) {
   static const std::map<BasicTypes, std::type_index> workable_types
     = {{BasicTypes::float_, typeid(float)},    // NOLINT: cpplint doesn't understand this!
        {BasicTypes::double_, typeid(double)},  // NOLINT

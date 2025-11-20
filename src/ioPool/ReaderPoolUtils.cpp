@@ -1958,7 +1958,7 @@ void readerLoadSourceVarReplaceFill(const ReaderPoolBase & ioPool,
         [&](auto typeDiscriminator) {
             typedef decltype(typeDiscriminator) T;
             const Type srcType =
-                Types::GetType_Wrapper<T>::GetType(srcVar.getTypeProvider());
+                Types::GetType_Wrapper<T>::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(srcVar.getTypeProvider()));
             srcVar.read(srcBuffer, srcType, srcSelect, srcSelect);
             const ioda::Dimensions_t numElements = srcVar.getDimensions().numElements;
             replaceFillWithMissing<T>(ioPool, srcVar, numElements, srcBuffer);
@@ -2016,7 +2016,7 @@ void readerSaveDestVar(const std::string & varName, const std::vector<char> & de
         [&](auto typeDiscriminator) {
             typedef decltype(typeDiscriminator) T;
             const Type destType =
-                    Types::GetType_Wrapper<T>::GetType(destVar.getTypeProvider());
+                    Types::GetType_Wrapper<T>::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(destVar.getTypeProvider()));
             destVar.write(destBuffer, destType, destSelect, destSelect);
             },
             VarUtils::ThrowIfVariableIsOfUnsupportedType(varName));

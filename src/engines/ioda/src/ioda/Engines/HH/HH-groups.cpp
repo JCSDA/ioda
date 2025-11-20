@@ -178,10 +178,17 @@ std::map<ObjectType, std::vector<std::string>> HH_Group::listObjects(ObjectType 
 
   herr_t search_res
     = (recurse)
-        ? H5Lvisit(backend_(), idxclass, H5_ITER_NATIVE, iterate_find_by_link,
-                   reinterpret_cast<void*>(&iter_data))
-        : H5Literate(backend_(), idxclass, H5_ITER_NATIVE, 0, iterate_find_by_link,
-                     reinterpret_cast<void*>(&iter_data));  // NOLINT: 0 is not a nullptr here.
+#if H5_VERSION_GE(1, 12, 0)
+        ? H5Lvisit2(backend_(), idxclass, H5_ITER_NATIVE, iterate_find_by_link,
+                    reinterpret_cast<void*>(&iter_data))
+        : H5Literate2(backend_(), idxclass, H5_ITER_NATIVE, 0, iterate_find_by_link,
+                      reinterpret_cast<void*>(&iter_data));  // NOLINT: 0 is not a nullptr here.
+#else
+        ? H5Lvisit1(backend_(), idxclass, H5_ITER_NATIVE, iterate_find_by_link,
+                    reinterpret_cast<void*>(&iter_data))
+        : H5Literate1(backend_(), idxclass, H5_ITER_NATIVE, 0, iterate_find_by_link,
+                      reinterpret_cast<void*>(&iter_data));  // NOLINT: 0 is not a nullptr here.
+#endif
 
   if (search_res < 0) throw Exception("H5Lvisit / H5Literate failed.", ioda_Here())
     .add("recurse", recurse);

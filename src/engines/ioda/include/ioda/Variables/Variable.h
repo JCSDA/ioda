@@ -100,7 +100,7 @@ public:
   /// \throws ioda::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
-    Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
+    Type templateType = Types::GetType_Wrapper<DataType>::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider()));
 
     return isA(templateType);
   }
@@ -108,7 +108,7 @@ public:
   virtual bool isA(Type lhs) const;
 
   /// Python compatability function
-  inline bool isA(BasicTypes dataType) const { return isA(Type(dataType, getTypeProvider())); }
+  inline bool isA(BasicTypes dataType) const { return isA(Type(dataType, gsl::not_null<::ioda::detail::Type_Provider*>(getTypeProvider()))); }
   /// \internal pybind11
   inline bool _py_isA2(BasicTypes dataType) { return isA(dataType); }
   /// Convenience function to query type
@@ -293,7 +293,7 @@ public:
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
-                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+                   TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
     }
@@ -309,7 +309,7 @@ public:
       return parallelWrite(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
-                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+                   TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
     }
@@ -339,7 +339,7 @@ public:
       return write(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
-                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+                   TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
     }
@@ -355,7 +355,7 @@ public:
       return parallelWrite(gsl::make_span<const char>(
                       reinterpret_cast<const char*>(d->DataPointers.data()),
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
-                   TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+                   TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())), mem_selection, file_selection);
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
     }
@@ -531,7 +531,7 @@ public:
              // reading in a string, then mutable data type is char*,
              // which works because address pointers have the same size.
              p->DataPointers.size() * Marshaller::bytesPerElement_),
-           TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
+           TypeWrapper::GetType(gsl::not_null<const ::ioda::detail::Type_Provider*>(getTypeProvider())), mem_selection, file_selection);
       m.deserialize(p, data, &atts);
 
       return Variable_Implementation{backend_};
