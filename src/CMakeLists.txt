@@ -129,6 +129,8 @@ obsIoPool/ObsIoPool.hpp
 
 reader/distribute/distributeObs.cpp
 reader/distribute/distributeObs.hpp
+reader/distribute/osdfDistributeUtils.cpp
+reader/distribute/osdfDistributeUtils.hpp
 reader/filter/filterObs.cpp
 reader/filter/filterObs.hpp
 reader/load/loadObs.cpp

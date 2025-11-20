@@ -238,6 +238,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
+  testinput/iodatest_reader_distribute_assignrecords.yaml
   testinput/iodatest_reader_filter.yaml
   testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
@@ -373,6 +374,11 @@ ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
                   MPI     2
                   SOURCES mains/TestOsdfDistAllgatherv.cc
                   ARGS    "testinput/iodatest_osdf_dist_allgatherv.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_osdf_dist_assignrecords
+                  SOURCES mains/TestOsdfAssignRecords.cc
+                  ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
                   LIBS  ioda_test
                   )
 
