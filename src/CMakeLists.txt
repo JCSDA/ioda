@@ -129,6 +129,8 @@ obsIoPool/ObsIoPool.hpp
 
 reader/distribute/distributeObs.cpp
 reader/distribute/distributeObs.hpp
+reader/distribute/osdfDistributeUtils.cpp
+reader/distribute/osdfDistributeUtils.hpp
 reader/filter/filterObs.cpp
 reader/filter/filterObs.hpp
 reader/load/loadObs.cpp
@@ -137,6 +139,9 @@ reader/load/loadObsFromNetcdf.cpp
 reader/load/loadObsFromNetcdf.hpp
 reader/ObsReader.cpp
 reader/ObsReader.hpp
+
+writer/obsWriteEmptyFile.cpp
+writer/obsWriteEmptyFile.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

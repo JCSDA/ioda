@@ -10,6 +10,7 @@
 #include <netcdf>
 
 #include <map>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -552,6 +553,18 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
       }
     }
   }
+
+  // Create a special column in the destOSDF container that holds the location
+  // indices from the file for this block of locations. This is needed by UFO
+  // testing to synchronize the resulting ObsSpace locations with the geovals
+  // test file. Note: the input ioda obs file and the test geovals file are required
+  // to have the same locations in the same order.
+  //
+  // Since we are not removing any locations during the load process, the startLoc
+  // and locCount parameters can be used to create this location index column.
+  std::vector<int> locationIndices(locCount);
+  std::iota(locationIndices.begin(), locationIndices.end(), startLoc);
+  destOSDF->appendNewColumn("sourceLocationIndices", locationIndices);
 
   return 0;
 }

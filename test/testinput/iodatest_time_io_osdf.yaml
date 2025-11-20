@@ -1,0 +1,36 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+- obs space:
+    name: "AMSUA NOAA19"
+    distribution:
+      name: "ReaderDependentDistribution"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    use data frame container: true
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf.nc4"
+
+- obs space:
+    name: "Radiosonde"
+    distribution:
+      name: "ReaderDependentDistribution"
+    simulated variables: ['airTemperature']
+    use data frame container: true
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf.nc4"
