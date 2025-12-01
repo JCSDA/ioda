@@ -3031,7 +3031,17 @@ if (odc_FOUND)
                             ../share/test/testinput/odb_radiance_name_map.yaml ../share/test/testinput/iodatest_odb_iasi.yaml"
                             test-IASI.hdf
                     )
-
+  ecbuild_add_test( TARGET  test_ioda-convert_imssnow_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            IMSSNOW
+                            Data/testinput_tier_1/imssnow.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_imssnow.yaml"
+                            test-IMSSNOW.hdf
+     )
   ecbuild_add_test( TARGET  test_ioda-convert_mtgirs_odc
                     TYPE    SCRIPT
                     COMMAND bash

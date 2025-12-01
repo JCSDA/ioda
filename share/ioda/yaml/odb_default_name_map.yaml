@@ -927,6 +927,8 @@ varno-dependent columns:
       - name: "soilMoistureNormalized"
         varno: 298
         unit: "percentage"
+      - name: "snowCoverFraction"
+        varno: 299
   # Map initial_obsvalue at varno 235 to MetaData/air_pressure rather than ObsValue/air_pressure
   - source: "initial_obsvalue"
     group name: "MetaData"

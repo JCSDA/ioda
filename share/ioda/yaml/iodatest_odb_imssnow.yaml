@@ -1,0 +1,13 @@
+where:
+  varno: [299]
+variables:
+- name: date
+- name: initial_obsvalue
+- name: lat
+- name: lon
+- name: ops_obsgroup
+- name: receipt_date
+- name: receipt_time
+- name: seqno
+- name: time
+- name: varno
