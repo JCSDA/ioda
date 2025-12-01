@@ -18,11 +18,10 @@
 #include <exception>
 #include <vector>
 
-#include "ioda/defs.h"
-#include "ioda/Exception.h"
 #include "./Layout_ObsGroup.h"
-
+#include "ioda/Exception.h"
 #include "ioda/config.h"
+#include "ioda/defs.h"
 
 #define ENABLE_ODB_LAYOUT
 #include "./Layout_ObsGroup_ODB.h"
@@ -48,8 +47,8 @@ std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(Policies pol)
 }
 
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
-    const std::string &polid, const std::string &mapPath,
-    const std::vector<std::string> &nonODBVariables) {
+  const std::string &polid, const std::string &mapPath,
+  const std::vector<std::string> &nonODBVariables) {
   std::string errorMessage;
   if (polid != "ObsGroupODB") {
     errorMessage = "A mapping file is not relevant for the policy '" + polid + "'.";
@@ -58,13 +57,14 @@ std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
 #ifdef ENABLE_ODB_LAYOUT
   return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath, nonODBVariables);
 #else
-  errorMessage = "Cannot generate the policy '" + polid + "', as either eckit or oops are disabled.";
+  errorMessage
+    = "Cannot generate the policy '" + polid + "', as either eckit or oops are disabled.";
   throw Exception(errorMessage.c_str(), ioda_Here());
 #endif
 }
 
 std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
-    Policies pol, const std::string &mapPath, const std::vector<std::string> &nonODBVariables) {
+  Policies pol, const std::string &mapPath, const std::vector<std::string> &nonODBVariables) {
   std::string policyId;
   if (pol == Policies::None) {
     policyId = "None";
@@ -81,14 +81,13 @@ std::shared_ptr<const DataLayoutPolicy> DataLayoutPolicy::generate(
 #ifdef ENABLE_ODB_LAYOUT
   return std::make_shared<DataLayoutPolicy_ObsGroup_ODB>(mapPath, nonODBVariables);
 #else
-  errorMessage = "Cannot generate the policy '" + policyId +
-      "', as eckit or oops are disabled.";
+  errorMessage = "Cannot generate the policy '" + policyId + "', as eckit or oops are disabled.";
   throw Exception(errorMessage.c_str(), ioda_Here());
 #endif
 }
 
-DataLayoutPolicy::~DataLayoutPolicy(){}
-DataLayoutPolicy::DataLayoutPolicy(){}
+DataLayoutPolicy::~DataLayoutPolicy() {}
+DataLayoutPolicy::DataLayoutPolicy() {}
 void DataLayoutPolicy::initializeStructure(Group_Base &) const {
   // Do nothing in the default policy.
 }
@@ -101,8 +100,8 @@ bool DataLayoutPolicy::isMapped(const std::string &) const { return false; }
 
 bool DataLayoutPolicy::isMapOutput(const std::string &) const { return false; }
 
-std::pair<bool, std::string> DataLayoutPolicy::getUnit(const std::string &) const {
-  throw Exception("Illogical operation for non-ODB data layout policies.", ioda_Here());
+std::pair<bool, std::string> DataLayoutPolicy::getUnitFromIodaName(const std::string &) const {
+  throw Exception("Illogical operation for chosen data layout policy.", ioda_Here());
 }
 
 }  // namespace detail

@@ -6,13 +6,13 @@
  */
 #include "ioda/Variables/Has_Variables.h"
 
+#include <stdexcept>
+
 #include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/Misc/UnitConversions.h"
-
-#include <stdexcept>
 
 namespace ioda {
 namespace detail {
@@ -21,13 +21,12 @@ Has_Variables_Base::~Has_Variables_Base() = default;
 
 Has_Variables_Base::Has_Variables_Base(std::shared_ptr<Has_Variables_Backend> b,
                                        std::shared_ptr<const DataLayoutPolicy> layoutPolicy)
-    : backend_{b}, layout_{layoutPolicy}
-{
+    : backend_{b}, layout_{layoutPolicy} {
   try {
     if (!layout_) layout_ = DataLayoutPolicy::generate(DataLayoutPolicy::Policies::None);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred in ioda in Has_Variables_Base's constructor.", ioda_Here()));
+    std::throw_with_nested(
+      Exception("An exception occurred in ioda in Has_Variables_Base's constructor.", ioda_Here()));
   }
 }
 
@@ -46,7 +45,7 @@ FillValuePolicy Has_Variables_Base::getFillValuePolicy() const {
     return backend_->getFillValuePolicy();
   } catch (...) {
     std::throw_with_nested(Exception(
-      "An exception occurred in ioda while determining the fill value policy of a backend.", 
+      "An exception occurred in ioda while determining the fill value policy of a backend.",
       ioda_Here()));
   }
 }
@@ -61,9 +60,9 @@ Type_Provider* Has_Variables_Base::getTypeProvider() const {
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
     return backend_->getTypeProvider();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred in ioda while getting a backend's type provider interface.",
-      ioda_Here()));
+    std::throw_with_nested(
+      Exception("An exception occurred in ioda while getting a backend's type provider interface.",
+                ioda_Here()));
   }
 }
 
@@ -71,13 +70,12 @@ bool Has_Variables_Base::exists(const std::string& name) const {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr)
-      throw Exception("Missing layout.", ioda_Here());
+    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
     return backend_->exists(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while checking variable existence.", ioda_Here())
-      .add("name", name));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while checking variable existence.", ioda_Here())
+        .add("name", name));
   }
 }
 
@@ -85,13 +83,12 @@ void Has_Variables_Base::remove(const std::string& name) {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr)
-      throw Exception("Missing layout.", ioda_Here());
+    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
     backend_->remove(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while removing a variable.", ioda_Here())
-      .add("name", name));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while removing a variable.", ioda_Here())
+        .add("name", name));
   }
 }
 
@@ -99,44 +96,24 @@ Variable Has_Variables_Base::open(const std::string& name) const {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr)
-      throw Exception("Missing layout.", ioda_Here());
+    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
     return backend_->open(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while opening a variable.", ioda_Here())
-      .add("name", name));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while opening a variable.", ioda_Here())
+        .add("name", name));
   }
 }
 
-void Has_Variables_Base::convertVariableUnits(std::ostream& out) {
+std::pair<bool, std::string> Has_Variables_Base::getUnitPassthrough(
+  const std::string& iodaVariableName) {
   try {
-    if (layout_->name() != std::string("ObsGroup ODB v1")) return;
-    std::vector<std::string> variableList = list();
-    for (auto const& name : variableList) {
-      const std::string destinationName = layout_->doMap(name);
-      if (!layout_->isMapped(destinationName)) continue;
-      // NOTE(Ryan): C++17 will supersede this with std::optional.
-      // Check for unit. If found, unit.first == true, and unit.second is the unit.
-      auto unit = layout_->getUnit(destinationName);
-      if (unit.first) {
-        Variable variableToConvert = this->open(destinationName);
-        try {
-          std::vector<double> outputData = variableToConvert.readAsVector<double>();
-          convertColumn(unit.second, outputData);
-          variableToConvert.write(outputData);
-          variableToConvert.atts.add<std::string>("units", getSIUnit(unit.second));
-        } catch (const Exception&) {
-          out << "The unit specified in ODB mapping file '" << unit.second
-              << "' does not have a unit conversion defined in"
-              << " UnitConversions.h, and the variable will be stored in"
-              << " its original form.\n";
-          variableToConvert.atts.add<std::string>("units", unit.second);
-        }
-      }
-    }
+    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
+    return layout_->getUnitFromIodaName(layout_->doMap(iodaVariableName));
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while getting a variable's units.", ioda_Here())
+        .add("ioda variable name", iodaVariableName));
   }
 }
 
@@ -156,11 +133,10 @@ std::vector<std::string> Has_Variables_Base::list() const {
 
 /// @todo Extend collective variable creation interface to Python.
 Variable Has_Variables_Base::_create_py(const std::string& name, BasicTypes dataType,
-                             const std::vector<Dimensions_t>& cur_dimensions,
-                             const std::vector<Dimensions_t>& max_dimensions,
-                             const std::vector<Variable>& dimension_scales,
-                             const VariableCreationParameters& params
-                             ) {
+                                        const std::vector<Dimensions_t>& cur_dimensions,
+                                        const std::vector<Dimensions_t>& max_dimensions,
+                                        const std::vector<Variable>& dimension_scales,
+                                        const VariableCreationParameters& params) {
   try {
     Type typ = Type(dataType, getTypeProvider());
     if (dimension_scales.size()) {
@@ -190,8 +166,7 @@ Variable Has_Variables_Base::_create_py(const std::string& name, BasicTypes data
     } else
       return create(name, typ, cur_dimensions, max_dimensions, params);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
   }
 }
 
@@ -221,8 +196,7 @@ void Has_Variables_Base::_py_fvp_helper(BasicTypes dataType, FillValuePolicy& fv
               {BasicTypes::ullint_, applyFillValuePolicy<unsigned long long int>},
               {BasicTypes::ushort_, applyFillValuePolicy<unsigned short int>},
               {BasicTypes::datetime_, applyFillValuePolicy<int64_t>},
-              {BasicTypes::duration_, applyFillValuePolicy<int64_t>}
-              };
+              {BasicTypes::duration_, applyFillValuePolicy<int64_t>}};
     if (fvp_map.count(dataType))
       fvp_map.at(dataType)(fvp, params.fillValue_);
     else
@@ -266,8 +240,7 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr)
-      throw Exception("Missing layout.", ioda_Here());
+    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
 
     std::vector<Dimensions_t> fixed_max_dimensions
       = (max_dimensions.size()) ? max_dimensions : dimensions;
@@ -276,17 +249,18 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
                                    fixed_max_dimensions, params);
 
     params.applyImmediatelyAfterVariableCreation(newVar);
-    if (layout_->name() == std::string("ObsGroup ODB v1") && !(layout_->isMapped(name) ||
-                                                               layout_->isMapOutput(name))) {
-      std::string eMessage = "The following variable was not remapped in the YAML file: '" + name +
-        "'. Ensure that the fundamental dimensions are declared in 'generate'.";
+    if (layout_->name() == std::string("ObsGroup ODB v1")
+        && !(layout_->isMapped(name) || layout_->isMapOutput(name))) {
+      std::string eMessage
+        = "The following variable was not remapped in the YAML file: '" + name
+          + "'. Ensure that the fundamental dimensions are declared in 'generate'.";
       throw Exception(eMessage.c_str());
     }
     return newVar;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while creating a variable.", ioda_Here())
-      .add("name", name));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while creating a variable.", ioda_Here())
+        .add("name", name));
   }
 }
 
@@ -294,7 +268,7 @@ void Has_Variables_Base::createWithScales(const NewVariables_t& newvars) {
   try {
     if (backend_ == nullptr)
       throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    
+
     using std::pair;
     using std::vector;
     vector<pair<Variable, vector<Variable>>> scaleMappings;
@@ -337,8 +311,8 @@ void Has_Variables_Base::createWithScales(const NewVariables_t& newvars) {
 
     attachDimensionScales(scaleMappings);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while creating variable(s).", ioda_Here()));
+    std::throw_with_nested(
+      Exception("An exception occurred inside ioda while creating variable(s).", ioda_Here()));
   }
 }
 
@@ -379,7 +353,6 @@ VariableCreationParameters& VariableCreationParameters::operator=(
   return *this;
 }
 
-
 void VariableCreationParameters::noCompress() {
   szip_ = false;
   gzip_ = false;
@@ -405,6 +378,5 @@ Variable VariableCreationParameters::applyImmediatelyAfterVariableCreation(Varia
     std::throw_with_nested(Exception(
       "An exception occurred inside ioda while adding attributes to an object.", ioda_Here()));
   }
-
 }
 }  // namespace ioda

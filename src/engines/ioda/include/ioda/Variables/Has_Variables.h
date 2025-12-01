@@ -55,7 +55,7 @@ inline bool Chunking_Max(const std::vector<Dimensions_t>& in, std::vector<Dimens
 /// \ingroup ioda_cxx_variable
 struct IODA_DL VariableCreationParameters {
 private:
-  std::vector<std::pair<unsigned int, Variable> > dimsToAttach_;
+  std::vector<std::pair<unsigned int, Variable>> dimsToAttach_;
   std::string dimScaleName_;
 
 public:
@@ -97,9 +97,7 @@ public:
   }
   /// \brief Set chunks to specified size.
   /// \param chunk_dims holds the chunk sizes for each dimension.
-  void setChunks(const std::vector<Dimensions_t> & chunk_dims) {
-    chunks = chunk_dims;
-  }
+  void setChunks(const std::vector<Dimensions_t>& chunk_dims) { chunks = chunk_dims; }
 
   bool gzip_                        = false;
   bool szip_                        = false;
@@ -122,7 +120,7 @@ public:
   VariableCreationParameters(const VariableCreationParameters&);
   VariableCreationParameters& operator=(const VariableCreationParameters&);
 
-  template<class DataType>
+  template <class DataType>
   static VariableCreationParameters defaulted() {
     VariableCreationParameters ret;
     ret.chunk = true;
@@ -165,19 +163,16 @@ struct IODA_DL NewVariable_Base : std::enable_shared_from_this<NewVariable_Base>
   virtual ~NewVariable_Base() {}
 
   NewVariable_Base(const std::string& name, const Type& dataType,
-                   const NewVariables_Scales_t& scales,
-                   const VariableCreationParameters& params)
-      : name_(name), dataType_(typeid(void)), dataTypeKnown_(dataType),
+                   const NewVariables_Scales_t& scales, const VariableCreationParameters& params)
+      : name_(name),
+        dataType_(typeid(void)),
+        dataTypeKnown_(dataType),
         scales_(scales),
         vcp_(params) {}
 
   NewVariable_Base(const std::string& name, const std::type_index& dataType,
-                   const NewVariables_Scales_t& scales,
-                   const VariableCreationParameters& params)
-      : name_(name),
-        dataType_(dataType),
-        scales_(scales),
-        vcp_(params) {}
+                   const NewVariables_Scales_t& scales, const VariableCreationParameters& params)
+      : name_(name), dataType_(dataType), scales_(scales), vcp_(params) {}
 };
 typedef std::vector<std::shared_ptr<NewVariable_Base>> NewVariables_t;
 
@@ -188,14 +183,12 @@ inline std::shared_ptr<NewVariable_Base> NewVariable(
   return std::make_shared<NewVariable_Base>(name, typeid(DataType), scales, params);
 }
 
-inline std::shared_ptr<NewVariable_Base> NewVariable(const std::string& name,
-                                                     const Type& DataType,
+inline std::shared_ptr<NewVariable_Base> NewVariable(const std::string& name, const Type& DataType,
                                                      const NewVariables_Scales_t& scales,
                                                      const VariableCreationParameters& params
                                                      = VariableCreationParameters()) {
   return std::make_shared<NewVariable_Base>(name, DataType, scales, params);
 }
-
 
 namespace detail {
 
@@ -262,12 +255,9 @@ public:
   ///   if you need recursion.
   inline std::vector<std::string> operator()() const { return list(); }
 
-  /// \brief Converts unit to SI for all eligible variables. If conversion function not defined,
-  /// stores unit as attribute.
-  ///
-  /// Makes the conversion if the variable's unit is defined in the mapping file and the unit conversion
-  /// is defined in UnitConversions.h.
-  void convertVariableUnits(std::ostream &out = std::cerr);
+  /// \brief Gets unit from ODB layout_ given variable name in ioda format
+  /// Required as layout_ is  a private member of Has_Variable, but ODC.cpp needs access to units.
+  std::pair<bool, std::string> getUnitPassthrough(const std::string& iodaVariableName);
 
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.
@@ -284,11 +274,10 @@ public:
   /// \note Multiple ways to specify dimensions to match possible
   ///   Python function signatures.
   Variable _create_py(const std::string& name, BasicTypes dataType,
-                             const std::vector<Dimensions_t>& cur_dimensions = {1},
-                             const std::vector<Dimensions_t>& max_dimensions = {},
-                             const std::vector<Variable>& dimension_scales   = {},
-                             const VariableCreationParameters& params
-                             = VariableCreationParameters());
+                      const std::vector<Dimensions_t>& cur_dimensions = {1},
+                      const std::vector<Dimensions_t>& max_dimensions = {},
+                      const std::vector<Variable>& dimension_scales   = {},
+                      const VariableCreationParameters& params = VariableCreationParameters());
 
   inline Variable create(const std::string& name, const Type& in_memory_dataType,
                          const ioda::Dimensions& dims,
@@ -305,13 +294,13 @@ public:
   template <class DataType>
   Variable create(const std::string& name, const std::vector<Dimensions_t>& dimensions = {1},
                   const std::vector<Dimensions_t>& max_dimensions = {},
-                  const VariableCreationParameters& params        = VariableCreationParameters::defaulted<DataType>()) {
+                  const VariableCreationParameters& params
+                  = VariableCreationParameters::defaulted<DataType>()) {
     try {
       VariableCreationParameters params2 = params;
       FillValuePolicies::applyFillValuePolicy<DataType>(getFillValuePolicy(), params2.fillValue_);
       Type in_memory_dataType = Types::GetType<DataType>(getTypeProvider());
-      auto var                = create(name, in_memory_dataType, dimensions,
-        max_dimensions, params2);
+      auto var = create(name, in_memory_dataType, dimensions, max_dimensions, params2);
       return var;
     } catch (...) {
       std::throw_with_nested(Exception(ioda_Here()));
@@ -338,8 +327,7 @@ public:
   ///   vector is a dimension with a certain size.
   /// \returns A Variable that can be written to.
   template <class DataType>
-  Variable createWithScales(const std::string& name,
-                            const std::vector<Variable>& dimension_scales,
+  Variable createWithScales(const std::string& name, const std::vector<Variable>& dimension_scales,
                             const VariableCreationParameters& params
                             = VariableCreationParameters::defaulted<DataType>()) {
     try {
@@ -364,9 +352,9 @@ public:
   ///   such an operation would produce better performance results than a loop of serial
   ///   function calls.
   /// @{
-  
+
   /// @brief Attach dimension scales to many Dimension Numbers in a set of Variables.
-  /// @param DimensionNumber 
+  /// @param DimensionNumber
   /// @param mapping is the scale mappings for each variable. The first part of the pair refers
   ///   to the variable that you are attaching scales to. The second part is a sequence of
   ///   scales that are attached along each dimension (indexed by the vector).

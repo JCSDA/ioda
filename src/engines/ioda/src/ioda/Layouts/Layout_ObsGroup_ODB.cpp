@@ -14,13 +14,14 @@
  */
 
 #include "./Layout_ObsGroup_ODB.h"
+
+#include <exception>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "./Layout_ObsGroup_ODB_Params.h"
-
-#include "ioda/Group.h"
-#include "ioda/Layout.h"
-#include "ioda/Misc/StringFuncs.h"
-#include "ioda/defs.h"
-
 #include "boost/none_t.hpp"
 #include "boost/optional.hpp"
 #include "eckit/config/Configuration.h"
@@ -29,21 +30,18 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/filesystem/LocalPathName.h"
 #include "eckit/filesystem/PathName.h"
+#include "ioda/Group.h"
+#include "ioda/Layout.h"
+#include "ioda/Misc/StringFuncs.h"
+#include "ioda/defs.h"
 #include "oops/util/parameters/Parameters.h"
-
-#include <exception>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace ioda {
 namespace detail {
-DataLayoutPolicy_ObsGroup_ODB::~DataLayoutPolicy_ObsGroup_ODB(){}
+DataLayoutPolicy_ObsGroup_ODB::~DataLayoutPolicy_ObsGroup_ODB() {}
 
 DataLayoutPolicy_ObsGroup_ODB::DataLayoutPolicy_ObsGroup_ODB(
-    const std::string &fileMappingName, const std::vector<std::string> &nonODBVariables)
-{
+  const std::string &fileMappingName, const std::vector<std::string> &nonODBVariables) {
   parseMappingFile(fileMappingName);
   for (auto const &str : nonODBVariables) {
     addUnchangedVariableName(str);
@@ -59,11 +57,9 @@ void DataLayoutPolicy_ObsGroup_ODB::parseMappingFile(const std::string &nameMapF
   parseVarnoDependentColumns(mappingParams);
 }
 
-void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const ODBLayoutParameters &params)
-{
-  for (VariableParameters const& variable : params.variables.value()) {
-    if (variable.mode != IoMode::WRITE)
-      addMapping(variable.source, variable.name, variable.unit);
+void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const ODBLayoutParameters &params) {
+  for (VariableParameters const &variable : params.variables.value()) {
+    if (variable.mode != IoMode::WRITE) addMapping(variable.source, variable.name, variable.unit);
   }
 }
 
@@ -86,13 +82,12 @@ void DataLayoutPolicy_ObsGroup_ODB::addMapping(const std::string &inputName,
 }
 
 void DataLayoutPolicy_ObsGroup_ODB::parseVarnoDependentColumns(const ODBLayoutParameters &params) {
-  for (VarnoDependentColumnParameters const& column : params.varnoDependentColumns.value()) {
-    const std::string inputPrefix = column.source.value() + "/";
+  for (VarnoDependentColumnParameters const &column : params.varnoDependentColumns.value()) {
+    const std::string inputPrefix  = column.source.value() + "/";
     const std::string outputPrefix = convertV1PathToV2Path(column.groupName.value()) + "/";
-    for (VarnoToVariableNameMappingParameters const& mapping : column.mappings.value()) {
+    for (VarnoToVariableNameMappingParameters const &mapping : column.mappings.value()) {
       addMapping(inputPrefix + std::to_string(mapping.varno.value()),
-                 outputPrefix + mapping.name.value(),
-                 mapping.unit);
+                 outputPrefix + mapping.name.value(), mapping.unit);
     }
   }
 }
@@ -136,23 +131,23 @@ bool DataLayoutPolicy_ObsGroup_ODB::isMapped(const std::string &input) const {
   return (Mapping.find(input) != Mapping.end());
 }
 
-bool DataLayoutPolicy_ObsGroup_ODB::isMapOutput(const std::string &output) const
-{
+bool DataLayoutPolicy_ObsGroup_ODB::isMapOutput(const std::string &output) const {
   for (const std::pair<const std::string, variableStorageInformation> &entry : Mapping) {
-    if (entry.second.iodaName == output)
-      return true;
+    if (entry.second.iodaName == output) return true;
   }
 
   return false;
 }
 
-std::pair<bool, std::string> DataLayoutPolicy_ObsGroup_ODB::getUnit(
-    const std::string & input) const {
-  auto mappingIt = Mapping.find(input);
-  if (mappingIt != Mapping.end()) {
-    return mappingIt->second.inputUnit;
+// Gets units given ioda style name
+std::pair<bool, std::string> DataLayoutPolicy_ObsGroup_ODB::getUnitFromIodaName(
+  const std::string &iodaName) const {
+  for (const std::pair<const std::string, variableStorageInformation> &entry : Mapping) {
+    if (entry.second.iodaName == iodaName) {
+      return entry.second.inputUnit;
+    }
   }
-  throw eckit::ReadError(input + " was not found to to be an ODB source variable.");
+  throw eckit::ReadError(iodaName + " was not found to correspond to an ODB source variable.");
 }
 
 std::string DataLayoutPolicy_ObsGroup_ODB::name() const { return std::string{"ObsGroup ODB v1"}; }

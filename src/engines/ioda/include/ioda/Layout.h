@@ -14,9 +14,9 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <typeindex>
 #include <utility>
+#include <vector>
 
 #include "ioda/defs.h"
 
@@ -56,8 +56,8 @@ public:
   /// \p nonODBVariables variables such as nlocs which are not declared as either keys or
   /// values in the mapping yaml file. Needs to be filled out to prevent an exception.
   static std::shared_ptr<const DataLayoutPolicy> generate(
-      const std::string &polid, const std::string &mapPath,
-      const std::vector<std::string> &nonODBVariables = {});
+    const std::string &polid, const std::string &mapPath,
+    const std::vector<std::string> &nonODBVariables = {});
   /// Factory generator.
   static std::shared_ptr<const DataLayoutPolicy> generate(Policies pol = Policies::None);
   /// Factory generator (ODB-specific)
@@ -66,8 +66,7 @@ public:
   /// \p nonODBVariables variables such as nlocs which are not declared as either keys or
   /// values in the mapping yaml file. Needs to be filled out to prevent an exception.
   static std::shared_ptr<const DataLayoutPolicy> generate(
-      Policies pol, const std::string &mapPath,
-      const std::vector<std::string> &nonODBVariables = {});
+    Policies pol, const std::string &mapPath, const std::vector<std::string> &nonODBVariables = {});
   /// \internal pybind11 overload casts do not work on some compilers.
   static inline std::shared_ptr<const DataLayoutPolicy> _py_generate1(const std::string &polid) {
     return generate(polid);
@@ -101,10 +100,10 @@ public:
   /// Check if the named variable matches one of the output (ioda) names.
   virtual bool isMapOutput(const std::string &) const;
 
-  /// Returns the variable's unit if it has been specified.
+  /// Checks whether a ioda-name in the mapping has a unit specified and returns the unit if true.
   /// \returns A pair of (found, unit) indicating if a unit was found and what it is.
-  /// \throws If the input is not listed in Variables section of mapping file.
-  virtual std::pair<bool, std::string> getUnit(const std::string &) const;
+  /// \throws If the input is not a ioda-name in the mapping file.
+  virtual std::pair<bool, std::string> getUnitFromIodaName(const std::string &) const;
 
   /// A descriptive name for the policy.
   virtual std::string name() const;

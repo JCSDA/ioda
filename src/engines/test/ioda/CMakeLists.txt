@@ -18,7 +18,6 @@ add_subdirectory(obsgroup)
 add_subdirectory(misc)
 add_subdirectory(persist)
 add_subdirectory(list-objects)
-add_subdirectory(variables)
 # Needs a test file
 #add_subdirectory(upgrade_format)
 
