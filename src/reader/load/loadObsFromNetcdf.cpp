@@ -449,12 +449,14 @@ void transferVarDataToOSDF(const std::string & varName,
     destOSDF->appendNewColumn(varName, varData);
   } else if (varData.size() == (numLocs * numChannels)) {
     // 2D variable, expand into one column per channel
-    for (std::size_t i = 0; i < numChannels; ++i) {
-      auto first = varData.begin() + (numLocs * i);
-      auto last = varData.begin() + (numLocs * (i + 1));
-      std::vector<VarType> dataChannel(first, last);
+    for (std::size_t ichan = 0; ichan < numChannels; ++ichan) {
+      std::vector<VarType> dataChannel(numLocs);
+      for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
+        const std::size_t idata = (numChannels * iloc) + ichan;
+        dataChannel[iloc] = varData[idata];
+      }
       destOSDF->appendNewColumn(
-        varName + std::string("_") + std::to_string(chanNums[i]),
+        varName + std::string("_") + std::to_string(chanNums[ichan]),
         dataChannel);
     }
     osdfMetadata.addVarToVarsWithChans(varName);

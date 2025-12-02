@@ -43,6 +43,11 @@ observations:
         group: ""
         type: "integer"
         norm: 16.881943016134134
+
+      - name: "brightnessTemperature_3"
+        group: "ObsValue"
+        type: "float"
+        norm: 646.73410301297702
     tolerance:
       - 1.0e-11
     variables for putget test:
@@ -174,6 +179,11 @@ observations:
         group: ""
         type: "integer"
         norm: 16.881943016134134
+
+      - name: "brightnessTemperature_7"
+        group: "ObsValue"
+        type: "float"
+        norm: 701.02636507846978
     tolerance:
       - 1.0e-14
     variables for putget test: []
