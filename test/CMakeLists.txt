@@ -239,6 +239,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
   testinput/iodatest_reader_distribute_assignrecords.yaml
+  testinput/iodatest_reader_distribute_calc_dist.yaml
   testinput/iodatest_reader_filter.yaml
   testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
@@ -379,6 +380,18 @@ ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
 ecbuild_add_test( TARGET  test_ioda_osdf_dist_assignrecords
                   SOURCES mains/TestOsdfAssignRecords.cc
                   ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_2
+                  MPI     2
+                  SOURCES mains/TestCalculateDistribution.cc
+                  ARGS    "testinput/iodatest_reader_distribute_calc_dist.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_4
+                  MPI     4
+                  SOURCES mains/TestCalculateDistribution.cc
+                  ARGS    "testinput/iodatest_reader_distribute_calc_dist.yaml"
                   LIBS  ioda_test
                   )
 
