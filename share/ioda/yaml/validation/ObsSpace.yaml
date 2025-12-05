@@ -652,6 +652,8 @@ Variables:
     Attributes: { units: "m" }
   - Variable: [ "precipitableWater" ]
     Attributes: { units: "kg m-2" }
+  - Variable: [ "snowArealDensity" ]
+    Attributes: { units: "kg m-2" }  
   - Variable: [ "totalSnowDepth" ]
     Attributes: { units: "m" }
   - Variable: [ "freshSnowDepth" ]
