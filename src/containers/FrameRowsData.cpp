@@ -127,7 +127,11 @@ void osdf::FrameRowsData::initialise(const std::int64_t sizeRows) {
     DataRow dataRow(static_cast<std::int64_t>(dataRows_.size()));
     dataRows_.push_back(std::move(dataRow));
   }
-  columnMetadata_.updateMaxId(static_cast<std::int64_t>(dataRows_.size() - 1));
+  if (dataRows_.empty()) {
+    columnMetadata_.resetMaxId();
+  } else {
+    columnMetadata_.updateMaxId(static_cast<std::int64_t>(dataRows_.size() - 1));
+  }
 }
 
 void osdf::FrameRowsData::print() const {

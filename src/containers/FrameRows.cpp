@@ -385,30 +385,26 @@ template <typename T>
 void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector<T>& values,
                                       const std::int8_t type) {
   if (data_.columnExists(name) == false) {
-    if (values.size() != 0) {
-      const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
-      if (data_.getSizeRows() == 0) {
-        data_.initialise(valuesSize);
+    const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
+    if (data_.getSizeRows() == 0 && data_.getColumnMetadata().getSizeCols() == 0) {
+      data_.initialise(valuesSize);
+    }
+    if (valuesSize == data_.getSizeRows()) {
+      const std::int32_t columnIndex = data_.getSizeCols();
+      data_.appendNewColumn(name, type);
+      std::int64_t rowIndex = 0;
+      for (const T& value : values) {
+        DataRow& dataRow = data_.getDataRow(rowIndex);
+        const std::shared_ptr<DatumBase> datum = funcs_.createDatum(value);
+        dataRow.insert(datum);
+        const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
+        data_.updateColumnWidth(columnIndex, datumSize);
+        rowIndex++;
       }
-      if (valuesSize == data_.getSizeRows()) {
-        const std::int32_t columnIndex = data_.getSizeCols();
-        data_.appendNewColumn(name, type);
-        std::int64_t rowIndex = 0;
-        for (const T& value : values) {
-          DataRow& dataRow = data_.getDataRow(rowIndex);
-          const std::shared_ptr<DatumBase> datum = funcs_.createDatum(value);
-          dataRow.insert(datum);
-          const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
-          data_.updateColumnWidth(columnIndex, datumSize);
-          rowIndex++;
-        }
-        notify();
-      } else {
-        oops::Log::error() << "ERROR: Number of rows in new column incompatible "
-                              "with current data frame." << std::endl;
-      }
+      notify();
     } else {
-      oops::Log::error() << "ERROR: No values present in data vector." << std::endl;
+      oops::Log::error() << "ERROR: Number of rows in new column incompatible "
+                            "with current data frame." << std::endl;
     }
   } else {
     oops::Log::error() << "ERROR: A column named \"" << name << "\" already exists." << std::endl;

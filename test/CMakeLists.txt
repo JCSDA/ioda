@@ -371,6 +371,11 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_0000.nc4" )
 
 # OSDF distribute tests
+ecbuild_add_test( TARGET  test_ioda_osdf_empty_column
+                  SOURCES mains/TestOsdfEmptyColumn.cc
+                  ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
+                  LIBS  ioda_test
+                  )
 ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
                   MPI     2
                   SOURCES mains/TestOsdfDistAllgatherv.cc

@@ -334,23 +334,21 @@ template <typename T>
 void osdf::FrameCols::appendNewColumn(const std::string& name, const std::vector<T>& values,
                                       const std::int8_t type) {
   if (data_.columnExists(name) == false) {
-    if (values.size() != 0) {
-      const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
-      if (data_.getSizeRows() == 0) {
-        data_.initialise(valuesSize);
-      }
-      if (valuesSize == data_.getSizeRows()) {
-        const std::shared_ptr<DataBase> data = funcs_.createData(values);
-        const std::int32_t columnIndex = data_.getSizeCols();
-        data_.appendNewColumn(data, name, type);
+    const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
+    if (data_.getSizeRows() == 0 && data_.getColumnMetadata().getSizeCols() == 0) {
+      data_.initialise(valuesSize);
+    }
+    if (valuesSize == data_.getSizeRows()) {
+      const std::shared_ptr<DataBase> data = funcs_.createData(values);
+      const std::int32_t columnIndex = data_.getSizeCols();
+      data_.appendNewColumn(data, name, type);
+      if (data_.getSizeRows() > 0) {
         data_.updateColumnWidth(columnIndex, funcs_.getSize<T>(data));
-        notify();
-      } else {
-        oops::Log::error() << "ERROR: Number of rows in new column incompatible "
-                              "with current FrameCols." << std::endl;
       }
+      notify();
     } else {
-      oops::Log::error() << "ERROR: No values present in data vector." << std::endl;
+      oops::Log::error() << "ERROR: Number of rows in new column incompatible "
+                            "with current FrameCols." << std::endl;
     }
   } else {
     oops::Log::error() << "ERROR: A column named \"" + name + "\" already exists." << std::endl;

@@ -15,7 +15,7 @@
 #include "ioda/core/IodaUtils.h"
 #include "oops/util/Logger.h"
 
-osdf::ColumnMetadata::ColumnMetadata(): maxId_(0) {}
+osdf::ColumnMetadata::ColumnMetadata(): maxId_(-1) {}
 
 const std::int8_t osdf::ColumnMetadata::exists(const std::string& name) const {
   auto it = std::find_if(columnMetadata_.begin(), columnMetadata_.end(),
@@ -120,7 +120,7 @@ const osdf::ColumnMetadatum& osdf::ColumnMetadata::get(const std::int32_t column
 }
 
 void osdf::ColumnMetadata::resetMaxId() {
-  maxId_ = 0;
+  maxId_ = -1;
 }
 
 void osdf::ColumnMetadata::updateMaxId(const std::int64_t id) {

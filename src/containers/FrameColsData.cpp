@@ -172,7 +172,11 @@ void osdf::FrameColsData::initialise(const std::int64_t sizeRows) {
   for (std::int64_t rowIndex = 0; rowIndex < sizeRows; ++rowIndex) {
     ids_.push_back(rowIndex);
   }
-  columnMetadata_.updateMaxId(static_cast<std::int64_t>(ids_.size() - 1));
+  if (ids_.empty()) {
+    columnMetadata_.resetMaxId();
+  } else {
+    columnMetadata_.updateMaxId(static_cast<std::int64_t>(ids_.size() - 1));
+  }
 }
 
 void osdf::FrameColsData::print() const {
