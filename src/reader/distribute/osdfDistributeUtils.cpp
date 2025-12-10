@@ -96,5 +96,27 @@ void osdfAssignRecordNumbers(const osdf::IFrame & srcFrame,
     }
 }
 
+void osdfSelectRankData(const std::unique_ptr<osdf::IFrame> &  srcGlobalFrame,
+                        std::unique_ptr<osdf::IFrame> &  destRankFrame,
+                        const std::string & columnName,
+                        const std::vector<std::size_t> & sourceLocIndices) {
+    ASSERT(srcGlobalFrame->hasColumn(columnName));
+    ASSERT(!destRankFrame->hasColumn(columnName));  // This function is intended to add a new column
+    auto columnType = srcGlobalFrame->getColumnType(columnName);
+    osdf::FrameUtils::callWithSupportedType(
+        columnType,
+        [&](auto typeDiscriminator) {
+            using T = decltype(typeDiscriminator);
+            std::vector<T> srcValues;
+            srcGlobalFrame->getColumn(columnName, srcValues);
+            std::vector<T> destValues;
+            destValues.reserve(sourceLocIndices.size());
+            for (auto globalIndex : sourceLocIndices) {
+                destValues.push_back(srcValues[globalIndex]);
+            }
+            destRankFrame->appendNewColumn(columnName, destValues);
+        });
+}
+
 }  // namespace reader
 }  // namespace ioda
