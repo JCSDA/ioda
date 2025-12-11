@@ -601,38 +601,45 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
 
   std::vector<int> starts(myMpiSize, 0);
   std::vector<int> counts(myMpiSize, 0);
+  int emptyFile = 0;   // 0 - file is not empty, 1 - file is empty
   if (myMpiRank == 0) {
     netCDF::NcDim dim = inFile.getDim("Location");
     checkNcObj(dim, "ioda::reader::loadOsdfFromNetcdf: Failed to get dimension: Location");
     const std::size_t numLocations = dim.getSize();
-
-    // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
-    // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
-    // Express this distribution in start and count values which are appropriate for calling
-    // the loadObsBlockFromNetcdf function. Use mpi scatter to distribute the start and
-    // count values to each rank.
-    const std::size_t locationsPerRank = numLocations / myMpiSize;
-    const std::size_t remainder = numLocations % myMpiSize;
-    counts.assign(myMpiSize, locationsPerRank);
-    for (std::size_t i = 0; i < remainder; ++i) {
-      counts[i]++;
-    }
-    int seed = 0;
-    for (size_t i = 1; i < counts.size(); i++) {
-        seed += counts[i-1];
-        starts[i] = seed;
+    if (numLocations == 0) {
+      emptyFile = 1;
+    } else {
+      // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
+      // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
+      // Express this distribution in start and count values which are appropriate for calling
+      // the loadObsBlockFromNetcdf function. Use mpi scatter to distribute the start and
+      // count values to each rank.
+      const std::size_t locationsPerRank = numLocations / myMpiSize;
+      const std::size_t remainder = numLocations % myMpiSize;
+      counts.assign(myMpiSize, locationsPerRank);
+      for (std::size_t i = 0; i < remainder; ++i) {
+        counts[i]++;
+      }
+      int seed = 0;
+      for (size_t i = 1; i < counts.size(); i++) {
+          seed += counts[i-1];
+          starts[i] = seed;
+      }
     }
   }
-  int start;
-  int count;
-  ioPoolComm.scatter(starts, start, 0);
-  ioPoolComm.scatter(counts, count, 0);
-  const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF, osdfMetadata);
-  if (rc != 0) {
-    const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
-                               " start: " + std::to_string(start) +
-                               " count: " + std::to_string(count);
-    throw std::runtime_error(errMsg);
+  ioPoolComm.broadcast(emptyFile, 0);
+  if (emptyFile == 0) {
+    int start;
+    int count;
+    ioPoolComm.scatter(starts, start, 0);
+    ioPoolComm.scatter(counts, count, 0);
+    const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF, osdfMetadata);
+    if (rc != 0) {
+      const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
+                                 " start: " + std::to_string(start) +
+                                 " count: " + std::to_string(count);
+      throw std::runtime_error(errMsg);
+    }
   }
   inFile.close();
 }

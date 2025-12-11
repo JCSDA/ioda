@@ -712,67 +712,81 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int> & vdata,
                      const std::vector<std::string> & dimList) {
-    saveVar(group, name, vdata, dimList);
+    if (!this->empty()) {
+      saveVar(group, name, vdata, dimList);
+    }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int64_t> & vdata,
                      const std::vector<std::string> & dimList) {
-    saveVar(group, name, vdata, dimList);
+    if (!this->empty()) {
+      saveVar(group, name, vdata, dimList);
+    }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<float> & vdata,
                      const std::vector<std::string> & dimList) {
-    saveVar(group, name, vdata, dimList);
+    if (!this->empty()) {
+      saveVar(group, name, vdata, dimList);
+    }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<double> & vdata,
                      const std::vector<std::string> & dimList) {
-    // convert to float, then save to the database
-    std::vector<float> floatData;
-    ConvertVarType<double, float>(vdata, floatData);
-    saveVar(group, name, floatData, dimList);
+    if (!this->empty()) {
+      // convert to float, then save to the database
+      std::vector<float> floatData;
+      ConvertVarType<double, float>(vdata, floatData);
+      saveVar(group, name, floatData, dimList);
+    }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<std::string> & vdata,
                      const std::vector<std::string> & dimList) {
-    saveVar(group, name, vdata, dimList);
+    if (!this->empty()) {
+      saveVar(group, name, vdata, dimList);
+    }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<util::DateTime> & vdata,
                      const std::vector<std::string> & dimList) {
-    // Make sure the variable exists before calling saveVar. Doing it this way instead
-    // of through the openCreateVar call in saveVar because of the need to get the
-    // epoch value for converting the data before calling saveVar. Use the epoch DateTime
-    // parameter for the units if creating a new variable.
-    std::vector<int64_t> timeOffsets;
-    if (use_dataframe_) {
-        const util::DateTime epochDtime(osdfMetadata_.getDateTimeEpoch());
-        timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
-    } else {
-        Variable dtVar;
-        openCreateEpochDtimeVar(group, name, obs_src_stats_.gNlocs,
-                                obs_params_.top_level_.epochDateTime,
-                                dtVar, obs_group_->vars);
-        const util::DateTime epochDtime = getEpochAsDtime(dtVar);
-        timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+    if (!this->empty()) {
+      // Make sure the variable exists before calling saveVar. Doing it this way instead
+      // of through the openCreateVar call in saveVar because of the need to get the
+      // epoch value for converting the data before calling saveVar. Use the epoch DateTime
+      // parameter for the units if creating a new variable.
+      std::vector<int64_t> timeOffsets;
+      if (use_dataframe_) {
+          const util::DateTime epochDtime(osdfMetadata_.getDateTimeEpoch());
+          timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+      } else {
+          Variable dtVar;
+          openCreateEpochDtimeVar(group, name, obs_src_stats_.gNlocs,
+                                  obs_params_.top_level_.epochDateTime,
+                                  dtVar, obs_group_->vars);
+          const util::DateTime epochDtime = getEpochAsDtime(dtVar);
+          timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
+      }
+      saveVar(group, name, timeOffsets, dimList);
     }
-    saveVar(group, name, timeOffsets, dimList);
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::vector<bool> & vdata,
                       const std::vector<std::string> & dimList) {
-    // Boolean variables are currently stored internally as arrays of bytes (with each byte
-    // holding one element of the variable).
-    // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
-    // to reduce memory consumption and speed up the get_db and put_db functions.
-    std::vector<char> boolsAsBytes(vdata.begin(), vdata.end());
-    saveVar(group, name, boolsAsBytes, dimList);
+    if (!this->empty()) {
+      // Boolean variables are currently stored internally as arrays of bytes (with each byte
+      // holding one element of the variable).
+      // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
+      // to reduce memory consumption and speed up the get_db and put_db functions.
+      std::vector<char> boolsAsBytes(vdata.begin(), vdata.end());
+      saveVar(group, name, boolsAsBytes, dimList);
+    }
 }
 
 // -----------------------------------------------------------------------------

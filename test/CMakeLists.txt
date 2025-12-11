@@ -135,6 +135,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
+  testinput/iodatest_obsspace_empty_obs_file_osdf.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
@@ -686,6 +687,12 @@ endif()
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_osdf
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
                   LIBS  ioda_test
                   )
 

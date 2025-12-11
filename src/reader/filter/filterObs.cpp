@@ -29,7 +29,22 @@ void filterObs(const util::TimeWindow & timeWindow,
                ObsSourceStats & obsSourceStats,
                std::unique_ptr<osdf::IFrame> & osdfCont,
                osdf::FrameMetadata & osdfMetadata) {
-    // First need to check that we have all the required variables
+  // Want to treat an empty input file (sourceNlocs == 0) as a special case
+  // in the obs space. sourceNlocs == 0 when there are zero rows in all osdf
+  // containers across all MPI ranks. Figure that out first, and if so,
+  // fill in the obsSourceStats struct accordingly and skip the filtering steps.
+  commAll.allReduce(osdfCont->numRows(), obsSourceStats.sourceNlocs, eckit::mpi::sum());
+
+  if (obsSourceStats.sourceNlocs == 0) {
+    // All ranks have zero rows in their osdfCont containers.
+    // Fill in the obsSourceStats struct
+    obsSourceStats.nlocs = 0;
+    obsSourceStats.gNlocs = 0;
+    obsSourceStats.gNlocsOutsideTimewindow = 0;
+    obsSourceStats.gNlocsRejectQc = 0;
+    obsSourceStats.locIndices.resize(0);
+  } else {
+    // Check that we have all the required variables
     // which are latitude, longitude and dateTime.
     const std::string dateTimeColName = "MetaData/dateTime";
     const std::string latColName = "MetaData/latitude";
@@ -89,13 +104,11 @@ void filterObs(const util::TimeWindow & timeWindow,
 
     // Remove all masked rows. Keep count of locations (row) both
     // before and after the row removal.
-    const std::size_t sourceNlocs = osdfCont->numRows();
     osdfCont->removeRows(filterMask);
     const std::size_t localNlocs = osdfCont->numRows();
 
     // Fill in the obsSourceStats struct
     obsSourceStats.nlocs = localNlocs;
-    commAll.allReduce(sourceNlocs, obsSourceStats.sourceNlocs, eckit::mpi::sum());
     commAll.allReduce(localNlocs, obsSourceStats.gNlocs, eckit::mpi::sum());
     commAll.allReduce(locsOutsideTimewindow, obsSourceStats.gNlocsOutsideTimewindow,
                       eckit::mpi::sum());
@@ -111,6 +124,7 @@ void filterObs(const util::TimeWindow & timeWindow,
         ++iloc;
       }
     }
+  }
 }
 
 }  // namespace reader
