@@ -44,6 +44,16 @@ observations:
         type: "integer"
         norm: 16.881943016134134
 
+      - name: "brightnessTemperature_1"
+        group: "ObsValue"
+        type: "float"
+        norm: 645.1201438491903
+
+      - name: "brightnessTemperature_2"
+        group: "ObsValue"
+        type: "float"
+        norm: 643.57206278706656
+
       - name: "brightnessTemperature_3"
         group: "ObsValue"
         type: "float"
@@ -184,6 +194,83 @@ observations:
         group: "ObsValue"
         type: "float"
         norm: 701.02636507846978
+
+      - name: "brightnessTemperature_8"
+        group: "ObsValue"
+        type: "float"
+        norm: 685.32924065190537
+
+      - name: "brightnessTemperature_9"
+        group: "ObsValue"
+        type: "float"
+        norm: 668.37105231955377
+    tolerance:
+      - 1.0e-14
+    variables for putget test: []
+
+- obs space:
+    name: "OSDF AMSU-A NOAA-19 HofX Output (FrameCols)"
+    simulated variables: ['brightnessTemperature']
+    channels: 1-15
+    distribution:
+      name: ReaderDependentDistribution
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sample_hofx_output_amsua_n19.nc4"
+    obs perturbations seed: 25
+    use data frame container: true
+  test data:
+    gnlocs: 17
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 17
+    nrecs: 17
+    obs perturbations seed: 25
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 174.74296898080357
+
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 681.01874573090015
+
+      - name: "sourceLocationIndices"
+        group: ""
+        type: "integer"
+        norm: 38.678159211627431
+
+      - name: "brightnessTemperature_7"
+        group: "ObsValue"
+        type: "float"
+        norm: 924.07117844406002
+
+      - name: "brightnessTemperature_9"
+        group: "ObsValue"
+        type: "float"
+        norm: 864.93869196586388
+
+      - name: "brightnessTemperature_11"
+        group: "ObsValue"
+        type: "float"
+        norm: 906.97626708238408
+
+      # Try some channel metadata variables
+      - name: "sensorCentralFrequency_4"
+        group: "MetaData"
+        type: "float"
+        norm: 217.70269490009031
+
+      - name: "sensorCentralWavenumber_11"
+        group: "MetaData"
+        type: "float"
+        norm: 7.8792549056047481
     tolerance:
       - 1.0e-14
     variables for putget test: []
