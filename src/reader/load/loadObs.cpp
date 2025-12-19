@@ -114,9 +114,34 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
           mainComm.send(metadataSize, i, 0);
           mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
 
-          // Only item we need to synchronize for the osdfMetada object is the
-          // date time epoch string.
+          // Need to synchronize the osdfMetada object:
+          //   frameType
+          //   chanNums
+          //   numVars
+          //   dateTimeEpoch
+          //   varsWithChans
+
+          // frameType
+          oops::mpi::sendString(mainComm, osdfMetadata.getFrameType(), i);
+
+          // chanNums
+          int sendInt = osdfMetadata.getChanNums().size();
+          mainComm.send(sendInt, i, 2);
+          mainComm.send(osdfMetadata.getChanNums().data(), sendInt, i , 3);
+
+          // numVars
+          sendInt = osdfMetadata.getNumVars();
+          mainComm.send(sendInt, i, 4);
+
+          // dateTimeEpoch
           oops::mpi::sendString(mainComm, osdfMetadata.getDateTimeEpoch(), i);
+
+          // varsWithChans
+          sendInt = osdfMetadata.getVarsWithChans().size();
+          mainComm.send(sendInt, i, 5);
+          for (const auto & varName : osdfMetadata.getVarsWithChans()) {
+            oops::mpi::sendString(mainComm, varName, i);
+          }
         }
       }
     } else {
@@ -132,10 +157,40 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
         destOsdf->deserializeColumnMetadata(std::string(serializedColMetadata.data(),
                                                         serializedColMetadata.size()));
 
-        // Receive and store the osdf date time epoch value
-        std::string dateTimeEpoch;
-        oops::mpi::receiveString(mainComm, dateTimeEpoch, rootRank);
-        osdfMetadata.setDateTimeEpoch(dateTimeEpoch);
+        // Need to read and store the osdfMetada data members:
+        //   frameType
+        //   chanNums
+        //   numVars
+        //   dateTimeEpoch
+        //   varsWithChans
+
+        // frameType
+        std::string recvString;
+        oops::mpi::receiveString(mainComm, recvString, rootRank);
+        osdfMetadata.setFrameType(recvString);
+
+        // chanNums
+        int recvInt;
+        mainComm.receive(recvInt, rootRank, 2);
+        std::vector<int> chanNums(recvInt);
+        mainComm.receive(chanNums.data(), recvInt, rootRank, 3);
+        osdfMetadata.setChanNums(chanNums);
+
+        // numVars
+        mainComm.receive(recvInt, rootRank, 4);
+        osdfMetadata.setNumVars(recvInt);
+
+        // dateTimeEpoch
+        oops::mpi::receiveString(mainComm, recvString, rootRank);
+        osdfMetadata.setDateTimeEpoch(recvString);
+
+        // varsWithChans
+        mainComm.receive(recvInt, rootRank, 5);
+        for (int i = 0; i < recvInt; ++i) {
+          std::string varName;
+          oops::mpi::receiveString(mainComm, varName, rootRank);
+          osdfMetadata.addVarToVarsWithChans(varName);
+        }
       }
     }
     mainComm.barrier();

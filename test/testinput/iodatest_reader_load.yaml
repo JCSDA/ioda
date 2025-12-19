@@ -13,6 +13,9 @@ obs types:
   io pool:
     max pool size: 2
   test data:
+    channel numbers: []
+    variables with channels: []
+    number of variables: 5
     date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
     - "sourceLocationIndices"
@@ -67,6 +70,16 @@ obs types:
   io pool:
     max pool size: 2
   test data:
+    channel numbers: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+    variables with channels:
+    - "GsiBc/brightnessTemperature"
+    - "GsiFinalObsError/brightnessTemperature"
+    - "GsiHofX/brightnessTemperature"
+    - "GsiHofXBc/brightnessTemperature"
+    - "ObsValue/brightnessTemperature"
+    - "ObsError/brightnessTemperature"
+    - "PreQC/brightnessTemperature"
+    number of variables: 1
     date time epoch: "1970-01-01T00:00:00Z"
     sample column names:
     - "sourceLocationIndices"
