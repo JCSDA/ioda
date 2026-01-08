@@ -984,7 +984,11 @@ bool ObsSpace::strictHas(const std::string & group) const {
 // -----------------------------------------------------------------------------
 void ObsSpace::assignLocationValues() {
     if (use_dataframe_) {
-        // OSDF container
+        // TODO(srh) function is, for now, only for the ObsGroup container. Location
+        // is the dimension variable in the ObsGroup, and the concept of dimensions
+        // does not exist in the OSDF dataframe container. For now the source location
+        // indices for the OSDF are held in the sourceLocationIndices column. Perhaps
+        // we should rename that to "Location" to be consistent with ObsGroup?
     } else {
         // ObsGroup container
         // Only do the assignment if the Location variable exists and if there

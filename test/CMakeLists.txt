@@ -166,6 +166,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml
+  testinput/iodatest_obsspace_index_recnum_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
@@ -994,22 +995,42 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_twfilt_mpi_4_reader_po
                   )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files
-                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_2
                   MPI 2
-                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_multiple_input_files_mpi_4
                   MPI 4
-                  SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
+                  COMMAND test_ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_osdf
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_osdf_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_obsspace_index_recnum_osdf_mpi_4
+                  MPI 4
+                  COMMAND test_ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
                   LIBS  ioda_test
                   )
 

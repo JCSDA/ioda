@@ -1,0 +1,105 @@
+---
+time window:
+  begin: "2021-01-15T12:00:00Z"
+  end: "2021-01-15T18:00:00Z"
+
+observations:
+- obs space:
+    name: "Reader dependent distribution"
+    simulated variables: ['windEastward']
+    distribution:
+      name: "ReaderDependentDistribution"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 4
+  test data:
+    gnlocs: 16
+    gnlocs outside time window: 4
+    nlocs: 16
+    nrecs: 16
+    obs are sorted: false
+    mpi size1:
+      rank0:
+        index: [ 0, 1, 3, 4, 5, 6, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+          rec8: [ 8 ]
+          rec9: [ 9 ]
+          rec10: [ 10 ]
+          rec11: [ 11 ]
+          rec12: [ 12 ]
+          rec13: [ 13 ]
+          rec14: [ 14 ]
+          rec15: [ 15 ]
+
+    mpi size2:
+      rank0:
+        index: [ 0, 1, 3, 4, 5, 6, 8, 9 ]
+        recnum: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+          rec4: [ 4 ]
+          rec5: [ 5 ]
+          rec6: [ 6 ]
+          rec7: [ 7 ]
+      rank1:
+        index: [ 10, 11, 14, 15, 16, 17, 18, 19 ]
+        recnum: [ 8, 9, 10, 11, 12, 13, 14, 15 ]
+        recidx:
+          rec8: [ 0 ]
+          rec9: [ 1 ]
+          rec10: [ 2 ]
+          rec11: [ 3 ]
+          rec12: [ 4 ]
+          rec13: [ 5 ]
+          rec14: [ 6 ]
+          rec15: [ 7 ]
+    mpi size4:
+      rank0:
+        index: [ 0, 1, 3, 4 ]
+        recnum: [ 0, 1, 2, 3 ]
+        recidx:
+          rec0: [ 0 ]
+          rec1: [ 1 ]
+          rec2: [ 2 ]
+          rec3: [ 3 ]
+      rank1:
+        index: [ 5, 6, 8, 9 ]
+        recnum: [ 4, 5, 6, 7 ]
+        recidx:
+          rec4: [ 0 ]
+          rec5: [ 1 ]
+          rec6: [ 2 ]
+          rec7: [ 3 ]
+      rank2:
+        index: [ 10, 11, 14 ]
+        recnum: [ 8, 9, 10 ]
+        recidx:
+          rec8: [ 0 ]
+          rec9: [ 1 ]
+          rec10: [ 2 ]
+      rank3:
+        index: [ 15, 16, 17, 18, 19 ]
+        recnum: [ 11, 12, 13, 14, 15 ]
+        recidx:
+          rec11: [ 0 ]
+          rec12: [ 1 ]
+          rec13: [ 2 ]
+          rec14: [ 3 ]
+          rec15: [ 4 ]

@@ -114,16 +114,12 @@ void filterObs(const util::TimeWindow & timeWindow,
                       eckit::mpi::sum());
     commAll.allReduce(locsRejectQc, obsSourceStats.gNlocsRejectQc, eckit::mpi::sum());
 
-    // Record the source location indices that were kept, these are
-    // the indices in the filterMask vector which contain a true value.
-    obsSourceStats.locIndices.resize(localNlocs);
-    std::size_t iloc = 0;
-    for (std::size_t i = 0; i < filterMask.size(); ++i) {
-      if (filterMask[i]) {
-        obsSourceStats.locIndices[iloc] = i;
-        ++iloc;
-      }
-    }
+    // Record the source location indices that were kept, which are
+    // simply the values in the sourceLocationIndices column.
+    std::vector<int> sourceLocationIndices(localNlocs);
+    osdfCont->getColumn("sourceLocationIndices", sourceLocationIndices);
+    obsSourceStats.locIndices.assign(sourceLocationIndices.begin(),
+                                    sourceLocationIndices.end());
   }
 }
 

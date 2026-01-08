@@ -15,6 +15,7 @@
 #include "ioda/containers/IFrame.h"
 #include "ioda/distribution/DistributionFactory.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
 namespace ioda {
@@ -34,19 +35,22 @@ void distributeObs(const DistributionParametersBase & distParams,
   // this and if we get to here we are good to go.
   ospaceDist = DistributionFactory::create(commAll, distParams);
 
-  // todo(SRH): For now, update the ObsSourceStats assuming that there
-  // was no obs grouping, and using the non-overlapping
-  // ReaderDependentDistribution. This boils down to making the records
-  // line up one-for-one with the location indices.
-  obsSourceStats.nrecs = obsSourceStats.nlocs;
-  obsSourceStats.recNums.resize(obsSourceStats.locIndices.size());
-  std::iota(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(), 0);
-
   // todo(SRH): For now, set the number of locations in the obspaceDist
   // (which is ReaderDependentDistribution), to the number of rows
   // in the osdfCont. This will allow the allGather.v functions in the
   // distribution to operate correctly.
   ospaceDist->setNumberLocations(osdfCont->numRows());
+
+  // todo(SRH): For now, update the ObsSourceStats assuming that there
+  // was no obs grouping, and using the non-overlapping
+  // ReaderDependentDistribution. This boils down to making the records
+  // line up one-for-one with the location indices. However, the record
+  // nubmers need to be assigned in a global consecutive manner.
+  obsSourceStats.nrecs = obsSourceStats.nlocs;
+  std::size_t startRecNum = obsSourceStats.nrecs;
+  oops::mpi::exclusiveScan(commAll, startRecNum);
+  obsSourceStats.recNums.resize(obsSourceStats.locIndices.size());
+  std::iota(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(), startRecNum);
 }
 
 }  // namespace reader
