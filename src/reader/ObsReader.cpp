@@ -20,6 +20,7 @@
 #include "ioda/reader/load/loadObs.hpp"
 
 #include "oops/util/TimeWindow.h"
+#include "oops/util/Timer.h"
 
 namespace ioda {
 namespace reader {
@@ -34,6 +35,7 @@ void obsRead(const ioda::ObsDataInParameters & dataInParams,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              ioda::ObsSourceStats & obsSourceStats,
              osdf::FrameMetadata & osdfMetadata) {
+  util::Timer timer("ioda::reader", "obsRead");
   // The read is done in three indepndent steps:
   //   1. Load: collectively load data from the input file into an OSDF
   //   2. Filter: apply any filters to the OSDF to remove unwanted rows

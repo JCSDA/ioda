@@ -137,6 +137,8 @@ namespace ioda {
     /// optionally during the the destructor (write from obs container into the file).
     class ObsSpace : public oops::ObsSpaceBase {
      public:
+        static const std::string classname() {return "ioda::ObsSpace";}
+
         //---------------------------- typedefs -------------------------------
         typedef std::map<std::size_t, std::vector<std::size_t>> RecIdxMap;
         typedef RecIdxMap::const_iterator RecIdxIter;
@@ -555,9 +557,6 @@ namespace ioda {
 
         /// \brief name of obs space
         std::string obsname_;
-
-        /// \brief When greater than zero print run stats (runtime, memory usage)
-        int print_run_stats_;
 
         /// \brief Initial observation variables to be processed (observations
         /// present in input file)

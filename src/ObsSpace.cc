@@ -28,9 +28,9 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
-#include "oops/util/printRunStats.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
+#include "oops/util/Timer.h"
 
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameCols.h"
@@ -157,26 +157,11 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                        obs_group_(), obs_params_(config, timeWindow_, comm, timeComm),
                        obsvars_()
 {
-    // Determine if run stats should be dumped out from the environment variable
-    // IODA_PRINT_RUNSTATS.
-    //    IODA_PRINT_RUNSTATS == 0 -> disable printing of run stats
-    //    IODA_PRINT_RUNSTATS > 0 -> enable printing of run stats
-    //         Leave open the possibility of setting verbosity levels in this case
-    //             1 - print runstats at beginning and end of both ObsSpace constructor
-    //                 and ObsSpace save function.
-    //            >1 - for now, same as level 1
-    char * iodaPrintRunstats = std::getenv("IODA_PRINT_RUNSTATS");
-    if (iodaPrintRunstats == nullptr) {
-        print_run_stats_ = 0;
-    } else {
-        // strtol returns zero if a conversion from the input string could not be made
-        // this will result in the print stats being disabled
-        print_run_stats_ = std::strtol(iodaPrintRunstats, nullptr, 10);
-    }
-
     // Save some of the more frequently used parameter values, as well as some
     // derived values, into data members for easy access. Also check some settings
     // for the use of the new OSDF container (which for now has limited functionality).
+    // The recordCheckParameterInfo function needs to be called first thing since
+    // it sets data members that are used in the constructor (eg, obsname_).
     recordCheckParameterInfo();
 
     // Create a vector of obsdatain configs (one per input file) for the loop below
@@ -274,9 +259,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     << " observations were rejected by QC checks out of " << sourceNumLocs() << std::endl;
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
-    if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::ObsSpace: end " + obsname_ + ": ", true, comm);
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -290,10 +272,6 @@ void ObsSpace::save() {
 
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
       if (create_empty_output_file_ || obs_src_stats_.gNlocs > 0) {
-        if (print_run_stats_ > 0) {
-            util::printRunStats("ioda::ObsSpace::save: start " + obsname_ + ": ", true, comm());
-        }
-
         if (use_dataframe_) {
           // todo(SRH): we don't have a writer yet that directly transfers data
           // from an OSDF to the output file, so for now write out an "empty"
@@ -336,9 +314,6 @@ void ObsSpace::save() {
           // issues with hdf file handles getting deallocated before some of the MPI
           // processes are finished with them.
           this->comm().barrier();
-        }
-        if (print_run_stats_ > 0) {
-            util::printRunStats("ioda::ObsSpace::save: end " + obsname_ + ": ", true, comm());
         }
       } else {
         oops::Log::info() << obsname() << " : skipping output due to an empty obs space "
@@ -623,6 +598,7 @@ std::vector<std::string> ObsSpace::listVariables() const {
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(int)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -633,6 +609,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int64_t> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(int64)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -643,6 +620,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(float)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -653,6 +631,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(double)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -666,6 +645,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(string)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -676,6 +656,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
                      const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(DateTime)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -695,6 +676,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<bool> & vdata,
                       const std::vector<int> & chanSelect, bool skipDerived) const {
+    util::Timer timer(classname(), "get_db(bool)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
@@ -712,6 +694,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(int)");
     if (!this->empty()) {
       saveVar(group, name, vdata, dimList);
     }
@@ -720,6 +703,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int64_t> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(int64)");
     if (!this->empty()) {
       saveVar(group, name, vdata, dimList);
     }
@@ -728,6 +712,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<float> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(float)");
     if (!this->empty()) {
       saveVar(group, name, vdata, dimList);
     }
@@ -736,6 +721,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<double> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(double)");
     if (!this->empty()) {
       // convert to float, then save to the database
       std::vector<float> floatData;
@@ -747,6 +733,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<std::string> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(string)");
     if (!this->empty()) {
       saveVar(group, name, vdata, dimList);
     }
@@ -755,6 +742,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<util::DateTime> & vdata,
                      const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(DateTime)");
     if (!this->empty()) {
       // Make sure the variable exists before calling saveVar. Doing it this way instead
       // of through the openCreateVar call in saveVar because of the need to get the
@@ -779,6 +767,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::vector<bool> & vdata,
                       const std::vector<std::string> & dimList) {
+    util::Timer timer(classname(), "put_db(bool)");
     if (!this->empty()) {
       // Boolean variables are currently stored internally as arrays of bytes (with each byte
       // holding one element of the variable).
@@ -1032,10 +1021,7 @@ void ObsSpace::assignLocationValues() {
 // -----------------------------------------------------------------------------
 void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
                     ioda::ObsGroup & destObsGroup, ObsSourceStats & obsSourceStats) {
-    if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::load: start " + obsname_ + ": ", true, comm());
-    }
-
+    util::Timer timer(classname(), "load");
     // Open the source of the data for initializing the destObsGroup
     // Temporarily allow for the new reader to be selected. This is done to allow
     // the new reader to be developed in parallel with the current reader. When the
@@ -1080,10 +1066,6 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
     oops::Log::info() << obsname() << ": read database from " << *readPool << std::endl;
     this->comm().barrier();
     readPool->finalize();
-
-    if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::load: end " + obsname_ + ": ", true, comm());
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1131,12 +1113,9 @@ void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSou
 
 // -----------------------------------------------------------------------------
 void ObsSpace::recordCheckParameterInfo() {
-    // Read the obs space name
+    // Record the obs space name. Note that obsname_ is used early on so this function
+    // needs to be called early in the ObsSpace constructor.
     obsname_ = obs_params_.top_level_.obsSpaceName;
-    if (print_run_stats_ > 0) {
-        util::printRunStats("ioda::ObsSpace::ObsSpace: start " + obsname_ + ": ",
-                            true, this->comm());
-    }
 
     // Check the empty obs space action to see if we should continue with the save operation.
     // Want to do the check here for valid actions because we don't want to wait until the entire
