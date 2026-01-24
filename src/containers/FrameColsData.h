@@ -108,7 +108,7 @@ class FrameColsData : public IFrameData, public IColsData {
   const std::int8_t columnExists(const std::string&) const;
 
   std::vector<std::int64_t>& getIds();
-  const std::vector<std::int64_t>& getIds() const;
+  const std::vector<std::int64_t>& getIds() const override;
 
   std::shared_ptr<DataBase>& getDataColumn(const std::int32_t);
   const std::shared_ptr<DataBase>& getDataColumn(const std::int32_t) const override;
@@ -117,7 +117,7 @@ class FrameColsData : public IFrameData, public IColsData {
   const ColumnMetadata& getColumnMetadata() const override;
 
   std::vector<std::shared_ptr<DataBase>>& getDataCols();
-  const std::vector<std::shared_ptr<DataBase>>& getDataCols() const;
+  const std::vector<std::shared_ptr<DataBase>>& getDataCols() const override;
 
   /// \brief Initialises the row IDs with no columns of data
   /// \param The number of IDs to create.
