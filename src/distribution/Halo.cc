@@ -181,6 +181,11 @@ void Halo::computePatchLocs() {
     }
 
     computeGlobalUniqueConsecutiveLocIndices(dist_and_lidx_glb);
+  } else {
+    // If globally empty, clear state
+    patchObsBool_.clear();
+    globalUniqueConsecutiveLocIndices_.clear();
+    recordsInHalo_.clear();
   }
 }
 
