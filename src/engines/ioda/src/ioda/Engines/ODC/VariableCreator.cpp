@@ -80,7 +80,8 @@ ioda::Variable VariableCreator::createTypedVariable(
   const size_t numValues = numLocations * numValuesPerLocation;
 
   std::vector<T> values(numValues);
-  if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float>)
+  if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float> ||
+                std::is_same_v<T, std::string>)
     std::fill(values.begin(), values.end(), odb_missing<T>());
   else if constexpr (std::is_same_v<T, char>)
     std::fill(values.begin(), values.end(), 0);
@@ -93,7 +94,8 @@ ioda::Variable VariableCreator::createTypedVariable(
       gsl::make_span(firstValueAtLocation, firstValueAtLocation + numValuesPerLocation));
   }
 
-  if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float>)
+  if constexpr (std::is_same_v<T, int> || std::is_same_v<T, float> ||
+                std::is_same_v<T, std::string>)
     params.setFillValue<T>(odb_missing<T>());
   ioda::Variable variable = og.vars.createWithScales<T>(name_, scales, params);
   variable.write(values);
