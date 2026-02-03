@@ -122,7 +122,9 @@ contains
       implicit none
       type(c_ptr), value, intent(in) :: obss
 
-      obsspace_obsvariables = obs_variables(c_obsspace_obsvariables(obss))
+      ! directly call constructor overload instead of the obs_variables(...)
+      ! interface, to work around a Cray compiler failure
+      obsspace_obsvariables = ctor_from_ptr(c_obsspace_obsvariables(obss))
    end function obsspace_obsvariables
 
 !-------------------------------------------------------------------------------
