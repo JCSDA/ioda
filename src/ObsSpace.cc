@@ -1133,19 +1133,11 @@ void ObsSpace::recordCheckParameterInfo() {
       }
     }
 
-    // Record if we are using the OSDF obs container. If so, then (for now) limit
-    // the Distribution to the ReaderDependentDistribution type, and limit the
+    // Record if we are using the OSDF obs container. If so, limit the
     // input file type to HDF5 (H5File).
-    // TODO(srh) In the future, we will want to allow other distribution types
-    // and other input file types (e.g. ODB, BUFR).
+    // TODO(srh) In the future, we will want to allow other
+    // input file types (e.g. ODB, BUFR).
     use_dataframe_ = obs_params_.top_level_.useDataFrame.value();
-    if (use_dataframe_) {
-        if (obs_params_.top_level_.distribution.value().params.value().name.value() !=
-            "ReaderDependentDistribution") {
-          throw eckit::UserError("When using the OSDF obs container, the distribution type "
-                                 "must be ReaderDependentDistribution", Here());
-        }
-    }
 }
 
 // -----------------------------------------------------------------------------

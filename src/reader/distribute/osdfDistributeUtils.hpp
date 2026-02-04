@@ -46,11 +46,11 @@ void osdfAssignRecordNumbers(const osdf::IFrame & srcFrame,
 /// @param[in]  srcGlobalFrame     IFrame object holding ALL locations/rows of columnName
 /// @param[out] destRankFrame      IFrame object to hold only the locations for this rank
 /// @param[in]  columnName         Name of the column being worked on
-/// @param[in]  sourceLocIndices   List of global indexes asssigned to this rank
+/// @param[in]  localLocIndices    List of global indexes asssigned to this rank
 void osdfSelectRankData(const std::unique_ptr<osdf::IFrame> & srcGlobalFrame,
                         std::unique_ptr<osdf::IFrame> & destRankFrame,
                         const std::string & columnName,
-                        const std::vector<std::size_t> & sourceLocIndices);
+                        const std::vector<std::size_t> & localLocIndices);
 
 }  // namespace reader
 }  // namespace ioda

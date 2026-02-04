@@ -1,0 +1,138 @@
+---
+function inputs:
+  # In this test, 10 locations begin on just the first two ranks. We use
+  # RoundRobin distribution to put them on 4 ranks, with record grouping by
+  # stationIdentification.
+  distribution:
+    name: "RoundRobin"
+  number of locations: 10
+  column data:
+    mpisize4:
+      rank0:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 1.5, 2.5, 3.5, 4.5 ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 11.5, 12.5, 13.5, 14.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta100", "sta101", "sta102", "sta103" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 10.5, 20.5, 30.5, 40.5 ]
+      rank1:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 5.5, 6.5, 7.5, 8.5, 9.5, 10.5 ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 15.5, 16.5, 17.5, 18.5, 19.5, 110.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta104", "sta104", "sta100", "sta103", "sta107", "sta108" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 50.5, 60.5, 70.5, 80.5, 90.5, 100.5 ]
+      rank2:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ ]
+      rank3:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ ]
+  grouping variables: [ "stationIdentification" ]
+expected results:
+  mpisize4:
+    rank0:
+      expected local data:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 1.5, 5.5, 6.5, 7.5 ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 11.5, 15.5, 16.5, 17.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta100", "sta104", "sta104", "sta100" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 10.5, 50.5, 60.5, 70.5 ]
+      local loc indices: [ 0, 4, 5, 6 ]
+      local record numbers: [ 0, 4, 4, 0 ]
+      local num locations: 4
+      local num records: 2
+    rank1:
+      expected local data:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 2.5, 9.5]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 12.5, 19.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta101", "sta107" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 20.5, 90.5 ]
+      local loc indices: [ 1, 8 ]
+      local record numbers: [ 1, 5 ]
+      local num locations: 2
+      local num records: 2
+    rank2:
+      expected local data:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 3.5, 10.5 ]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 13.5, 110.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta102", "sta108" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 30.5, 100.5 ]
+      local loc indices: [ 2, 9 ]
+      local record numbers: [ 2, 6 ]
+      local num locations: 2
+      local num records: 2
+    rank3:
+      expected local data:
+      - name: "MetaData/latitude"
+        type: "float"
+        values: [ 4.5, 8.5]
+      - name: "MetaData/longitude"
+        type: "float"
+        values: [ 14.5, 18.5 ]
+      - name: "MetaData/stationIdentification"
+        type: "string"
+        values: [ "sta103", "sta103" ]
+      - name: "ObsValue/myObsInst"
+        type: "float"
+        values: [ 40.5, 80.5 ]
+      local loc indices: [ 3, 7 ]
+      local record numbers: [ 3, 3 ]
+      local num locations: 2
+      local num records: 1
+tolerance: 1.0e-6

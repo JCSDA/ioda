@@ -19,6 +19,7 @@
 #include "ioda/reader/filter/filterObs.hpp"
 #include "ioda/reader/load/loadObs.hpp"
 
+#include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
 #include "oops/util/Timer.h"
 
@@ -35,14 +36,12 @@ void obsRead(const ioda::ObsDataInParameters & dataInParams,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              ioda::ObsSourceStats & obsSourceStats,
              osdf::FrameMetadata & osdfMetadata) {
+  oops::Log::trace() << "reader::obsRead start" << std::endl;
   util::Timer timer("ioda::reader", "obsRead");
   // The read is done in three indepndent steps:
   //   1. Load: collectively load data from the input file into an OSDF
   //   2. Filter: apply any filters to the OSDF to remove unwanted rows
   //   3. Distribute: distribute the OSDF rows to all ranks in comm
-  //
-  // todo(SRH): for now, the distribute step is skipped, and will be filled
-  // in later.
 
   //----- Load step -----
   // Populate all MPI tasks with an appropriate OSDF container.
@@ -58,7 +57,10 @@ void obsRead(const ioda::ObsDataInParameters & dataInParams,
 
   //----- Distribute step -----
   // Move obs to their intended MPI ranks in the main communicator group
-  distributeObs(distParams, commAll, obsSourceStats, ospaceDist, destOsdf);
+  const auto obsGroupVarList = dataInParams.obsGrouping.value().obsGroupVars.value();
+  distributeObs(distParams, commAll, obsGroupVarList, osdfMetadata, obsSourceStats, ospaceDist,
+                destOsdf);
+  oops::Log::trace() << "reader::obsRead end" << std::endl;
 }
 
 }  // namespace reader

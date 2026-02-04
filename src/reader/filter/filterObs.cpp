@@ -29,6 +29,7 @@ void filterObs(const util::TimeWindow & timeWindow,
                ObsSourceStats & obsSourceStats,
                std::unique_ptr<osdf::IFrame> & osdfCont,
                osdf::FrameMetadata & osdfMetadata) {
+  oops::Log::trace() << "reader::filterObs start" << std::endl;
   // Want to treat an empty input file (sourceNlocs == 0) as a special case
   // in the obs space. sourceNlocs == 0 when there are zero rows in all osdf
   // containers across all MPI ranks. Figure that out first, and if so,
@@ -121,6 +122,7 @@ void filterObs(const util::TimeWindow & timeWindow,
     obsSourceStats.locIndices.assign(sourceLocationIndices.begin(),
                                     sourceLocationIndices.end());
   }
+  oops::Log::trace() << "reader::filterObs end" << std::endl;
 }
 
 }  // namespace reader

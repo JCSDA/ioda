@@ -52,6 +52,7 @@ void loadObs(const ObsDataInParameters & dataInParams,
              const eckit::mpi::Comm & commAll,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              osdf::FrameMetadata & osdfMetadata) {
+  oops::Log::trace() << "reader::loadObs start" << std::endl;
   // todo(SRH): for now only supporting load from a netcdf file.
   // will want to eventually support ODB and BUFR files.
   const std::string inputFileType =
@@ -78,6 +79,7 @@ void loadObs(const ObsDataInParameters & dataInParams,
       + inputFileType + std::string(". Must use 'H5File' for now.");
     throw eckit::BadParameter(errMsg, Here());
   }
+  oops::Log::trace() << "reader::loadObs end" << std::endl;
 }
 
 //--------------------------------------------------------------------------------

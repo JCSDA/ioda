@@ -205,7 +205,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_inclusive_lower_bound.yaml
   testinput/iodatest_obsspace_osdf.yaml
   testinput/iodatest_obsvector.yaml
+  testinput/iodatest_obsvector_osdf.yaml
   testinput/iodatest_obsvector_grouped.yaml
+  testinput/iodatest_obsvector_grouped_osdf.yaml
   testinput/iodatest_obsvector_missing_locs.yaml
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
@@ -243,6 +245,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_reader_distribute_assignrecords.yaml
   testinput/iodatest_reader_distribute_calc_dist.yaml
   testinput/iodatest_reader_distribute_select_rank.yaml
+  testinput/iodatest_reader_distributeobs.yaml
   testinput/iodatest_reader_filter.yaml
   testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
@@ -412,6 +415,13 @@ ecbuild_add_test( TARGET  test_ioda_reader_distribute_select_rank_4
                   MPI     4
                   SOURCES mains/TestOsdfDistSelectRank.cc
                   ARGS    "testinput/iodatest_reader_distribute_select_rank.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distributeobs_rank_4
+                  MPI     4
+                  SOURCES mains/TestDistributeObs.cc
+                  ARGS    "testinput/iodatest_reader_distributeobs.yaml"
                   LIBS  ioda_test
                   )
 
@@ -1652,11 +1662,24 @@ ecbuild_add_test( TARGET  test_ioda_oops_obsvector
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  test_ioda_oops_obsvector_osdf
+                  MPI     4
+                  SOURCES mains/TestObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
 ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector
                   SOURCES mains/TestObsDataVector.cc
                   ARGS    "testinput/iodatest_obsvector.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_oops_obsvector )
+
+ecbuild_add_test( TARGET  test_ioda_oops_obsdatavector_osdf
+                  SOURCES mains/TestObsDataVector.cc
+                  ARGS    "testinput/iodatest_obsvector_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS test_ioda_oops_obsvector_osdf )
 
 # IODA ObsVector class
 ecbuild_add_test( TARGET  test_ioda_obsvector
@@ -1665,6 +1688,13 @@ ecbuild_add_test( TARGET  test_ioda_obsvector
                   ARGS    "testinput/iodatest_obsvector_grouped.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_oops_obsvector test_ioda_oops_obsdatavector )
+
+ecbuild_add_test( TARGET  test_ioda_obsvector_osdf
+                  MPI     4
+                  SOURCES mains/TestIodaObsVector.cc
+                  ARGS    "testinput/iodatest_obsvector_grouped_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS test_ioda_oops_obsvector_osdf test_ioda_oops_obsdatavector_osdf )
 
 ecbuild_add_test( TARGET  test_ioda_obsvector_missing_locs
                   MPI     4
