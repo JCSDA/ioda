@@ -7,7 +7,7 @@
 
 #include "ioda/containers/ViewRows.h"
 
-#include "oops/util/Logger.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Datum.h"
@@ -76,8 +76,9 @@ void osdf::ViewRows::sortRows(const std::string& columnName, const std::int8_t o
       });
     }
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << columnName
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + columnName +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
@@ -108,8 +109,9 @@ void osdf::ViewRows::sortRows(const std::string& columnName, const std::function
       }
     }
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << columnName
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + columnName +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
@@ -140,12 +142,14 @@ void osdf::ViewRows::getColumn(const std::string& name, std::vector<T>& values,
         values.at(static_cast<std::size_t>(rowIndex)) = value;
       }
     } else {
-      oops::Log::error() << "ERROR: Input vector for column \"" << name
-                         << "\" is not the required data type." << std::endl;
+      const std::string errMsg = std::string("ERROR: Input vector for column \"") + name +
+            std::string("\" is not the required data type.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + name +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
@@ -171,8 +175,9 @@ osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int
       return retVal;
     });
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + name +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
   newDataRows.shrink_to_fit();
   return ViewRows(newColumnMetadata, newDataRows, parent_);

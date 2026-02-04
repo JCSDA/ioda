@@ -30,22 +30,20 @@ const std::int8_t osdf::ColumnMetadata::exists(const std::string& name) const {
 }
 
 const std::int32_t osdf::ColumnMetadata::add(const ColumnMetadatum col) {
-  if (exists(col.getName()) == false) {
-    const std::int32_t index = static_cast<std::int32_t>(columnMetadata_.size());
-    columnMetadata_.push_back(col);
-    return index;
-  } else {
-    return consts::kErrorReturnValue;
+  if (exists(col.getName())) {
+    const std::string errMsg = std::string("ERROR: Cannot add column named \"") + col.getName() +
+          std::string("\" to ColumnMetadata because a column with that name already exists.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+  const std::int32_t index = static_cast<std::int32_t>(columnMetadata_.size());
+  columnMetadata_.push_back(col);
+  return index;
 }
 
 const std::int32_t osdf::ColumnMetadata::add(const std::vector<ColumnMetadatum> columnMetadatums) {
   std::int32_t index = static_cast<std::int32_t>(columnMetadata_.size());
   for (const ColumnMetadatum& columnMetadatum : columnMetadatums) {
     index = add(columnMetadatum);
-    if (index == consts::kErrorReturnValue) {
-      break;
-    }
   }
   return index;
 }
@@ -142,27 +140,30 @@ void osdf::ColumnMetadata::remove(const std::int32_t index) {
 }
 
 const std::string& osdf::ColumnMetadata::getName(const std::int32_t index) const {
-  if (index >= 0 && index < static_cast<std::int32_t>(columnMetadata_.size())) {
-    return columnMetadata_.at(static_cast<std::size_t>(index)).getName();
-  } else {
-    return consts::kErrorReturnString;
+  if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
+    const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
+          std::string(" is out of bounds.");
+    throw eckit::OutOfRange(errMsg, Here());
   }
+  return columnMetadata_.at(static_cast<std::size_t>(index)).getName();
 }
 
 const std::int8_t osdf::ColumnMetadata::getType(const std::int32_t index) const {
-  if (index >= 0 && index < static_cast<std::int32_t>(columnMetadata_.size())) {
-    return columnMetadata_.at(static_cast<std::size_t>(index)).getType();
-  } else {
-    return static_cast<std::int8_t>(consts::kErrorReturnValue);
+  if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
+    const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
+          std::string(" is out of bounds.");
+    throw eckit::OutOfRange(errMsg, Here());
   }
+  return columnMetadata_.at(static_cast<std::size_t>(index)).getType();
 }
 
 const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) const {
-  if (index >= 0 && index < static_cast<std::int32_t>(columnMetadata_.size())) {
-    return columnMetadata_.at(static_cast<std::size_t>(index)).getPermission();
-  } else {
-    return static_cast<std::int8_t>(consts::kErrorReturnValue);
+  if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
+    const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
+          std::string(" is out of bounds.");
+    throw eckit::OutOfRange(errMsg, Here());
   }
+  return columnMetadata_.at(static_cast<std::size_t>(index)).getPermission();
 }
 
 const std::int32_t osdf::ColumnMetadata::getIndex(const std::string& name) const {
@@ -170,11 +171,12 @@ const std::int32_t osdf::ColumnMetadata::getIndex(const std::string& name) const
                   [&](ColumnMetadatum const& col) {
     return col.getName() == name;
   });
-  if (it != columnMetadata_.end()) {
-    return static_cast<std::int32_t>(std::distance(std::begin(columnMetadata_), it));
-  } else {
-    return consts::kErrorReturnValue;
+  if (it == columnMetadata_.end()) {
+    const std::string errMsg = std::string("ERROR: Cannot find column named \"") + name +
+          std::string("\" in ColumnMetadata.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+  return static_cast<std::int32_t>(std::distance(std::begin(columnMetadata_), it));
 }
 
 const std::int32_t osdf::ColumnMetadata::getSizeCols() const {

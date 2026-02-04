@@ -7,7 +7,7 @@
 
 #include "ioda/containers/ViewCols.h"
 
-#include "oops/util/Logger.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameCols.h"
@@ -80,12 +80,14 @@ void osdf::ViewCols::getColumn(const std::string& name, std::vector<T>& values,
       const std::shared_ptr<DataBase>& dataCol = data_.getDataColumn(columnIndex);
       values = funcs_.getDataValues<T>(dataCol);
     } else {
-      oops::Log::error() << "ERROR: Input vector for column \"" << name
-                         << "\" is not the required data type." << std::endl;
+      const std::string errMsg = std::string("ERROR: Input vector for column \"") + name +
+            std::string("\" is not the required data type.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + name +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
@@ -99,8 +101,9 @@ osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int
     funcs_.sliceRows(&data_, newDataColumns, newColumnMetadata,
                      newIds, name, comparison, threshold);
   } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+    const std::string errMsg = std::string("ERROR: Column named \"") + name +
+          std::string("\" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
   return ViewCols(newColumnMetadata, newIds, newDataColumns, parent_);
 }
