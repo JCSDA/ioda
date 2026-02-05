@@ -23,9 +23,8 @@ osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs, const ColumnMetad
         columnMetadata_(columnMetadata), dataRows_(dataRows) {}
 
 void osdf::FrameRowsData::configColumns(const std::vector<ColumnMetadatum> cols) {
-  if (columnMetadata_.add(std::move(cols)) == consts::kErrorReturnValue) {
-    throw ioda::Exception("ERROR: Column names cannot repeat.", ioda_Here());
-  }
+  // Note that add throws an exception if column(s) of a given name already exists.
+  columnMetadata_.add(std::move(cols));
 }
 
 void osdf::FrameRowsData::configColumns(const std::initializer_list<ColumnMetadatum> initList) {
@@ -42,9 +41,8 @@ void osdf::FrameRowsData::appendNewRow(const DataRow& newRow) {
 
 void osdf::FrameRowsData::appendNewColumn(const std::string& name, const std::int8_t type,
                                           const std::int8_t permission) {
-  if (columnMetadata_.add(ColumnMetadatum(name, type, permission)) == consts::kErrorReturnValue) {
-    throw ioda::Exception("ERROR: Column names cannot repeat.", ioda_Here());
-  }
+  // Note that `add` throws an exception if columnMetadata with name already exists
+  columnMetadata_.add(ColumnMetadatum(name, type, permission));
 }
 
 void osdf::FrameRowsData::removeColumn(const std::int32_t index) {

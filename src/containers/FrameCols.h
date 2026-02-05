@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "oops/util/Logger.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/ColumnMetadatum.h"
@@ -125,43 +126,41 @@ class FrameCols : public IFrame {
   template<typename... T>
   void appendNewRow(T... args) {
     const std::int32_t numParams = sizeof...(T);
-    if (data_.getSizeCols() > 0) {
-      if (numParams == data_.getSizeCols()) {
-        std::int8_t readWrite = true;
-        for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
-          const std::int8_t permission = data_.getPermission(columnIndex);
-          if (permission != consts::eReadWrite) {
-            const std::string name = data_.getName(columnIndex);
-            oops::Log::error() << "ERROR: Column named \"" << name
-                               << "\" is set to read-only." << std::endl;
-            readWrite = false;
-            break;
-          }
-        }
-        if (readWrite == true) {
-          DataRow newRow(data_.getMaxId() + 1);
-          std::int8_t typeMatch = true;
-          std::int32_t columnIndex = 0;
-          // Iterative function call to unpack variadic template
-          ((void) funcs_.addColumnToRow(&data_, newRow, typeMatch,
-                                        columnIndex, std::forward<T>(args)), ...);
-          if (typeMatch == true) {
-            data_.appendNewRow(newRow);
-            notify();
-          } else {
-            const std::string name = data_.getName(columnIndex);
-            oops::Log::error() << "ERROR: Data type for column \"" << name
-                      << "\" is incompatible with current data frame" << std::endl;
-          }
-        }
-      } else {
-        oops::Log::error() << "ERROR: Number of columns in new row are incompatible with "
-                              "this data frame." << std::endl;
-      }
-    } else {
-      oops::Log::error() << "ERROR: Cannot insert a new row without first setting column "
-                            "headings." << std::endl;
+    if (data_.getSizeCols() <= 0) {
+      const std::string errMsg = std::string(
+        "ERROR: Cannot insert a new row without first setting"
+        " column headings.");
+      throw eckit::BadValue(errMsg, Here());
     }
+    if (numParams != data_.getSizeCols()) {
+      const std::string errMsg = std::string(
+        "ERROR: Number of columns in new row are incompatible with "
+        "this data frame.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+
+    for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
+    const std::int8_t permission = data_.getPermission(columnIndex);
+      if (permission != consts::eReadWrite) {
+        const std::string errMsg = std::string("ERROR: Column named ") + data_.getName(columnIndex)
+                                   + std::string(" is set to read-only.");
+        throw eckit::BadParameter(errMsg, Here());
+      }
+    }
+
+    DataRow newRow(data_.getMaxId() + 1);
+    std::int8_t typeMatch = true;
+    std::int32_t columnIndex = 0;
+    // Iterative function call to unpack variadic template
+    ((void) funcs_.addColumnToRow(&data_, newRow, typeMatch,
+                                        columnIndex, std::forward<T>(args)), ...);
+    if (typeMatch != true) {
+      const std::string errMsg = "ERROR: Data type for column " + data_.getName(columnIndex)
+                                 + " is incompatible with current data frame.";
+      throw eckit::BadParameter(errMsg, Here());
+    }
+    data_.appendNewRow(newRow);
+    notify();
   }
 
  private:

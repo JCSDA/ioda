@@ -92,8 +92,8 @@ class FrameColsData : public IFrameData, public IColsData {
   const std::int64_t getSizeRows() const override;
   const std::int64_t getMaxId() const;
 
-  /// \brief Searches for and returns the index of a column using its name. May return a \see
-  /// Constants::::kErrorReturnValue for an unfound column.
+  /// \brief Searches for and returns the index of a column using its name.
+  /// Throws an exception if a column of that name is not found.
   /// \param Column name to search.
   /// \return The column index.
   const std::int32_t getIndex(const std::string&) const override;

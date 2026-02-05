@@ -6,6 +6,7 @@
  */
 
 #include "ioda/containers/FrameRows.h"
+#include <string>
 
 #include "eckit/exception/Exceptions.h"
 
@@ -129,72 +130,58 @@ void osdf::FrameRows::setColumn(const std::string& name,
 }
 
 void osdf::FrameRows::removeColumn(const std::string& name) {
-  if (data_.columnExists(name) == true) {
-    const std::int32_t index = data_.getIndex(name);
-    const std::int8_t permission = data_.getPermission(index);
-    if (permission == consts::eReadWrite) {
-      data_.removeColumn(index);
-      notify();
-    } else {
-      oops::Log::error() << "ERROR: Column named \"" << name
-                         << "\" is set to read-only." << std::endl;
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+  // no need to check if column with name exists, getIndex throws exception if not.
+  const std::int32_t index = data_.getIndex(name);
+  const std::int8_t permission = data_.getPermission(index);
+  if (permission != consts::eReadWrite) {
+    const std::string errMsg = std::string("ERROR: Column named ")
+      + name + std::string(" is set to read-only.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+  data_.removeColumn(index);
+  notify();
 }
 
 void osdf::FrameRows::removeColumn(const std::int32_t index) {
-  const std::string& name = data_.getName(index);
-  if (name == consts::kErrorReturnString) {
-    const std::int8_t permission = data_.getPermission(index);
-    if (permission == consts::eReadWrite) {
-      data_.removeColumn(index);
-      notify();
-    } else {
-      oops::Log::error() << "ERROR: Column at index \"" << index
-                         << "\" is set to read-only." << std::endl;
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column at index \"" << index
-                       << "\" not found in current data frame." << std::endl;
+  const std::int8_t permission = data_.getPermission(index);
+  if (permission != consts::eReadWrite) {
+    const std::string errMsg = std::string("ERROR: Column at index ")
+      + std::to_string(index) + std::string(" is set to read-only.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+  data_.removeColumn(index);
+  notify();
 }
 
 void osdf::FrameRows::removeRow(const std::int64_t index) {
-  if (index >= 0 && index < data_.getSizeRows()) {
-    std::int8_t canRemove = true;
-    for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-      const std::int8_t permission = data_.getPermission(colIndex);
-      if (permission == consts::eReadOnly) {
-        oops::Log::error() << "ERROR: Cannot remove row. Column \"" << data_.getName(colIndex)
-                           << "\" is set to read-only." << std::endl;
-        canRemove = false;
-        break;
-      }
-    }
-    if (canRemove == true) {
-      data_.removeRow(index);
-      notify();
-    }
-  } else {
-    oops::Log::error() << "ERROR: Row index \"" << index
-                       << "\" is incompatible with current data frame." << std::endl;
+  if (index < 0 || index >= data_.getSizeRows()) {
+    const std::string errMsg = std::string("ERROR: Row index ")
+      + std::to_string(index) + std::string(" is incompatible with current data frame.");
+    throw eckit::OutOfRange(errMsg, Here());
   }
+  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
+    const std::int8_t permission = data_.getPermission(colIndex);
+    if (permission == consts::eReadOnly) {
+      const std::string errMsg = std::string("ERROR: Cannot remove row. Column ")
+        + data_.getName(colIndex) + std::string(" is set to read-only.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+  }
+  data_.removeRow(index);
+  notify();
 }
 
 void osdf::FrameRows::removeRows(const std::vector<bool> & keepRows) {
-  if (keepRows.size() == static_cast<std::size_t>(data_.getSizeRows())) {
-    for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
-      if (!keepRows[i]) {
-          removeRow(i);
-      }
-    }
-  } else {
-    const std::string errMsg = std::string("keepRows vector size does not match ") +
-        std::string("the number of rows in the current data frame.");
+  if (keepRows.size() != static_cast<std::size_t>(data_.getSizeRows())) {
+    const std::string errMsg = std::string("keepRows vector size does not match ")
+                               + std::string("the number of rows in the current data frame.");
     throw eckit::BadValue(errMsg, Here());
+  }
+
+  for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
+    if (!keepRows[i]) {
+        removeRow(i);
+    }
   }
 }
 
@@ -203,36 +190,34 @@ std::int8_t osdf::FrameRows::getColumnType(const std::string& name) const {
 }
 
 void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t order) {
-  if (data_.columnExists(columnName) == true) {
-    std::int8_t canSort = true;
-    for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-      const std::int8_t permission = data_.getPermission(colIndex);
-      if (permission == consts::eReadOnly) {
-        oops::Log::error() << "ERROR: Column named \"" << data_.getName(colIndex)
-                           << "\" is set to read-only." << std::endl;
-        canSort = false;
-        break;
-      }
-    }
-    if (canSort == true) {
-      const std::int32_t index = data_.getIndex(columnName);
-      if (order == consts::eAscending) {
-        reorderDataRows(index, [&](std::shared_ptr<DatumBase>& datumA,
-                                   std::shared_ptr<DatumBase>& datumB) {
-          return funcs_.compareDatums(datumA, datumB);
-        });
-      } else if (order == consts::eDescending) {
-        reorderDataRows(index, [&](std::shared_ptr<DatumBase>& datumA,
-                                   std::shared_ptr<DatumBase>& datumB) {
-          return funcs_.compareDatums(datumB, datumA);
-        });
-      }
-      notify();
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << columnName
-                       << "\" not found in current data frame." << std::endl;
+  if (data_.columnExists(columnName) != true) {
+    const std::string errMsg = std::string("ERROR: Column named ")
+      + columnName + std::string(" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+
+  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
+    const std::int8_t permission = data_.getPermission(colIndex);
+    if (permission == consts::eReadOnly) {
+      const std::string errMsg = std::string("ERROR: Column named ")
+        + data_.getName(colIndex) + std::string(" is set to read-only.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+  }
+
+  const std::int32_t index = data_.getIndex(columnName);
+  if (order == consts::eAscending) {
+    reorderDataRows(index, [&](std::shared_ptr<DatumBase>& datumA,
+                                std::shared_ptr<DatumBase>& datumB) {
+      return funcs_.compareDatums(datumA, datumB);
+    });
+  } else if (order == consts::eDescending) {
+    reorderDataRows(index, [&](std::shared_ptr<DatumBase>& datumA,
+                                std::shared_ptr<DatumBase>& datumB) {
+      return funcs_.compareDatums(datumB, datumA);
+    });
+  }
+  notify();
 }
 
 std::vector<std::string> osdf::FrameRows::columnNames() const {
@@ -288,44 +273,41 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
 
 void osdf::FrameRows::sortRows(const std::string& columnName, const std::function<std::int8_t(
      const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)> func) {
-  if (data_.columnExists(columnName) == true) {
-    std::int8_t canSort = true;
-    for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-      const std::int8_t permission = data_.getPermission(colIndex);
-      if (permission == consts::eReadOnly) {
-        oops::Log::error() << "ERROR: Column named \"" << data_.getName(colIndex)
-                           << "\" is set to read-only." << std::endl;
-        canSort = false;
-        break;
-      }
-    }
-    if (canSort == true) {
-      // Build list of ordered indices.
-      const std::int32_t index = data_.getIndex(columnName);
-      const std::int64_t sizeRows = data_.getSizeRows();
-      const std::size_t sizeRowsSz = static_cast<std::size_t>(sizeRows);
-      std::vector<std::int64_t> indices(sizeRowsSz, 0);
-      std::iota(std::begin(indices), std::end(indices), 0);   // Initial sequential list of indices.
-      std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
-                                                            const std::int64_t& j) {
-        std::shared_ptr<DatumBase>& datumA = data_.getDataRow(i).getColumn(index);
-        std::shared_ptr<DatumBase>& datumB = data_.getDataRow(j).getColumn(index);
-        return func(datumA, datumB);
-      });
-      // Swap data values for whole rows - casting makes it look more confusing than it is.
-      for (std::size_t i = 0; i < sizeRowsSz; ++i) {
-        while (indices.at(i) != indices.at(static_cast<std::size_t>(indices.at(i)))) {
-          const std::size_t iIdx = static_cast<std::size_t>(indices.at(i));
-          std::swap(data_.getDataRow(indices.at(i)), data_.getDataRow(indices.at(iIdx)));
-          std::swap(indices.at(i), indices.at(iIdx));
-        }
-      }
-      notify();
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << columnName
-                       << "\" not found in current data frame." << std::endl;
+  if (data_.columnExists(columnName) != true) {
+    const std::string errMsg = std::string("ERROR: Column named ")
+      + columnName + std::string(" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
+    const std::int8_t permission = data_.getPermission(colIndex);
+    if (permission == consts::eReadOnly) {
+      const std::string errMsg = std::string("ERROR: Column named ") + data_.getName(colIndex)
+                                 + std::string(" is set to read-only.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+  }
+
+  // Build list of ordered indices.
+  const std::int32_t index = data_.getIndex(columnName);
+  const std::int64_t sizeRows = data_.getSizeRows();
+  const std::size_t sizeRowsSz = static_cast<std::size_t>(sizeRows);
+  std::vector<std::int64_t> indices(sizeRowsSz, 0);
+  std::iota(std::begin(indices), std::end(indices), 0);   // Initial sequential list of indices.
+  std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
+                                                        const std::int64_t& j) {
+    std::shared_ptr<DatumBase>& datumA = data_.getDataRow(i).getColumn(index);
+    std::shared_ptr<DatumBase>& datumB = data_.getDataRow(j).getColumn(index);
+    return func(datumA, datumB);
+  });
+  // Swap data values for whole rows - casting makes it look more confusing than it is.
+  for (std::size_t i = 0; i < sizeRowsSz; ++i) {
+    while (indices.at(i) != indices.at(static_cast<std::size_t>(indices.at(i)))) {
+      const std::size_t iIdx = static_cast<std::size_t>(indices.at(i));
+      std::swap(data_.getDataRow(indices.at(i)), data_.getDataRow(indices.at(iIdx)));
+      std::swap(indices.at(i), indices.at(iIdx));
+    }
+  }
+  notify();
 }
 
 osdf::FrameRows osdf::FrameRows::sliceRows(
@@ -381,89 +363,88 @@ std::vector<osdf::DataRow*> osdf::FrameRows::getViewDataRows() {
   }
   return newDataRows;
 }
+
 template <typename T>
 void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector<T>& values,
                                       const std::int8_t type) {
-  if (data_.columnExists(name) == false) {
-    const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
-    if (data_.getSizeRows() == 0 && data_.getColumnMetadata().getSizeCols() == 0) {
-      data_.initialise(valuesSize);
-    }
-    if (valuesSize == data_.getSizeRows()) {
-      const std::int32_t columnIndex = data_.getSizeCols();
-      data_.appendNewColumn(name, type);
-      std::int64_t rowIndex = 0;
-      for (const T& value : values) {
-        DataRow& dataRow = data_.getDataRow(rowIndex);
-        const std::shared_ptr<DatumBase> datum = funcs_.createDatum(value);
-        dataRow.insert(datum);
-        const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
-        data_.updateColumnWidth(columnIndex, datumSize);
-        rowIndex++;
-      }
-      notify();
-    } else {
-      oops::Log::error() << "ERROR: Number of rows in new column incompatible "
-                            "with current data frame." << std::endl;
-    }
-  } else {
-    oops::Log::error() << "ERROR: A column named \"" << name << "\" already exists." << std::endl;
+  if (data_.columnExists(name) != false) {
+    const std::string errMsg
+      = std::string("ERROR: A column named ") + name + std::string(" already exists.");
+    throw eckit::BadValue(errMsg, Here());
   }
+
+  const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
+  if (data_.getSizeRows() == 0 && data_.getColumnMetadata().getSizeCols() == 0) {
+    data_.initialise(valuesSize);
+  }
+
+  if (valuesSize != data_.getSizeRows()) {
+    const std::string errMsg
+      = std::string("ERROR: Number of rows in new column incompatible with current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  const std::int32_t columnIndex = data_.getSizeCols();
+  data_.appendNewColumn(name, type);
+  std::int64_t rowIndex = 0;
+  for (const T& value : values) {
+    DataRow& dataRow = data_.getDataRow(rowIndex);
+    const std::shared_ptr<DatumBase> datum = funcs_.createDatum(value);
+    dataRow.insert(datum);
+    const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
+    data_.updateColumnWidth(columnIndex, datumSize);
+    rowIndex++;
+  }
+  notify();
 }
 
-template<typename T>
+template <typename T>
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<T>& values,
                                 const std::int8_t type) const {
-  if (data_.columnExists(name) == true)  {
-    const std::int32_t columnIndex = data_.getIndex(name);
-    const std::int8_t columnType = data_.getType(columnIndex);
-    if (type == columnType) {
-      values.resize(static_cast<std::size_t>(data_.getSizeRows()));
-      for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
-        const std::shared_ptr<DatumBase>& datum = data_.getDataRow(rowIndex).getColumn(columnIndex);
-        const T value = funcs_.getDatumValue<T>(datum);
-        values.at(static_cast<std::size_t>(rowIndex)) = value;
-      }
-    } else {
-      oops::Log::error() << "ERROR: Input vector for column \"" << name
-                         << "\" is not the required data type." << std::endl;
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+  // no need to check if column exists as if not, then getIndex will throw an exception
+  const std::int32_t columnIndex = data_.getIndex(name);
+  const std::int8_t columnType   = data_.getType(columnIndex);
+
+  if (type != columnType) {
+    const std::string errMsg = std::string("ERROR: Input vector for column ")
+      + name + std::string(" is not the required data type.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  values.resize(static_cast<std::size_t>(data_.getSizeRows()));
+  for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+    const std::shared_ptr<DatumBase>& datum = data_.getDataRow(rowIndex).getColumn(columnIndex);
+    const T value                           = funcs_.getDatumValue<T>(datum);
+    values.at(static_cast<std::size_t>(rowIndex)) = value;
   }
 }
 
-template<typename T>
+template <typename T>
 void osdf::FrameRows::setColumn(const std::string& name, const std::vector<T>& data,
                                 const std::int8_t type) const {
-  if (data_.columnExists(name) == true)  {
-    const std::int32_t columnIndex = data_.getIndex(name);
-    const std::int8_t permission = data_.getPermission(columnIndex);
-    if (permission == consts::eReadWrite) {
-      std::int8_t columnType = data_.getType(columnIndex);
-      if (type == columnType) {
-        if (static_cast<std::int64_t>(data.size()) == data_.getSizeRows()) {
-          for (std::int64_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
-            const std::shared_ptr<DatumBase>& datum =
-                                              data_.getDataRow(rowIndex).getColumn(columnIndex);
-            funcs_.setDatumValue<T>(datum, data.at(static_cast<std::size_t>(rowIndex)));
-          }
-        } else {
-          oops::Log::error() << "ERROR: Input vector for column \"" << name
-                             << "\" is not the required size." << std::endl;
-        }
-      } else {
-        oops::Log::error() << "ERROR: Input vector for column \"" << name
-                           << "\" is not the required data type." << std::endl;
-      }
-    } else {
-      oops::Log::error() << "ERROR: The column \"" << name
-                         << "\" is set to read-only." << std::endl;
-    }
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+  // no need to check if column exists as getIndex will throw an exception if not
+  const std::int32_t columnIndex = data_.getIndex(name);
+  const std::int8_t permission   = data_.getPermission(columnIndex);
+
+  if (permission != consts::eReadWrite) {
+    const std::string errMsg = std::string("ERROR: The column ")
+      + name + std::string(" is set to read-only.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  std::int8_t columnType = data_.getType(columnIndex);
+  if (type != columnType) {
+    const std::string errMsg = std::string("ERROR: Input vector for column ")
+      + name + std::string(" is not the required data type.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  if (static_cast<std::int64_t>(data.size()) != data_.getSizeRows()) {
+    const std::string errMsg = std::string("ERROR: Input vector for column ")
+      + name + std::string(" is not the required size.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  for (std::int64_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+    const std::shared_ptr<DatumBase>& datum =
+                                      data_.getDataRow(rowIndex).getColumn(columnIndex);
+    funcs_.setDatumValue<T>(datum, data.at(static_cast<std::size_t>(rowIndex)));
   }
 }
 
@@ -472,26 +453,28 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
                                            const T threshold) const {
   std::vector<DataRow> newDataRows;
   ColumnMetadata newColumnMetadata;
-  if (data_.columnExists(name) == true)  {
-    newDataRows.reserve(static_cast<std::size_t>(data_.getSizeRows()));
-    newColumnMetadata = data_.getColumnMetadata();
-    newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
-    const std::int32_t index = data_.getIndex(name);
-    const std::vector<DataRow>& dataRows = data_.getDataRows();
-    std::copy_if(dataRows.begin(), dataRows.end(), std::back_inserter(newDataRows),
-                                                   [&](const DataRow& dataRow) {
-      const std::shared_ptr<DatumBase>& datum = dataRow.getColumn(index);
-      const T value = funcs_.getDatumValue<T>(datum);
-      const std::int8_t retVal = funcs_.compareToThreshold(comparison, threshold, value);
-      if (retVal == true) {
-        newColumnMetadata.updateMaxId(dataRow.getId());
-      }
-      return retVal;
-    });
-  } else {
-    oops::Log::error() << "ERROR: Column named \"" << name
-                       << "\" not found in current data frame." << std::endl;
+  if (data_.columnExists(name) != true) {
+    const std::string errMsg = std::string("ERROR: Column named ")
+      + name + std::string(" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
   }
+
+  newDataRows.reserve(static_cast<std::size_t>(data_.getSizeRows()));
+  newColumnMetadata = data_.getColumnMetadata();
+  newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
+  const std::int32_t index = data_.getIndex(name);
+  const std::vector<DataRow>& dataRows = data_.getDataRows();
+
+  std::copy_if(dataRows.begin(), dataRows.end(), std::back_inserter(newDataRows),
+               [&](const DataRow& dataRow) {
+                 const std::shared_ptr<DatumBase>& datum = dataRow.getColumn(index);
+                 const T value                           = funcs_.getDatumValue<T>(datum);
+                 const std::int8_t retVal = funcs_.compareToThreshold(comparison, threshold, value);
+                 if (retVal == true) {
+                   newColumnMetadata.updateMaxId(dataRow.getId());
+                 }
+                 return retVal;
+               });
   newDataRows.shrink_to_fit();
   return FrameRows(newColumnMetadata, newDataRows);
 }

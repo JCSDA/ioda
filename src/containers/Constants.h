@@ -41,10 +41,7 @@ namespace consts {
   };
 
   const std::string kSpace = " ";
-  const std::string kBigSpace = "   ";
-
-  const std::string kErrorReturnString = "ERROR: Not found.";
-  const std::int32_t kErrorReturnValue = -1;
+  const std::string kBigSpace = "   ";;
 }  // namespace consts
 }  // namespace osdf
 
