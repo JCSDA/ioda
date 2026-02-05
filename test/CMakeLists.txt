@@ -1244,9 +1244,9 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_mpi_4
                   LIBS  ioda_test
                   )
 
-###################################################################
-##### The following tests check the ObsSpace::reduce function. ####
-###################################################################
+##############################################################################################
+##### The following tests check the ObsSpace::reduce function with the ObsGroup and OSDF. ####
+##############################################################################################
 
 # this test removes the output files from prior testing
 ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_clean_files
@@ -1263,7 +1263,19 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_clean_files
                           "testoutput/obsspace_reduce_greater_than_2D_out.nc4"
                           "testoutput/obsspace_reduce_less_than_2D_out.nc4"
                           "testoutput/obsspace_reduce_greater_than_or_equal_2D_out.nc4"
-                          "testoutput/obsspace_reduce_less_than_or_equal_2D_out.nc4")
+                          "testoutput/obsspace_reduce_less_than_or_equal_2D_out.nc4"
+                          "testoutput/obsspace_reduce_equal_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_1D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_equal_2D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_not_equal_2D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_2D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_2D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_greater_than_or_equal_2D_osdf_out.nc4"
+                          "testoutput/obsspace_reduce_less_than_or_equal_2D_osdf_out.nc4")
 
 # this test creates the output files, and checks that obs space data members got
 # properly updated

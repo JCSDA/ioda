@@ -233,6 +233,7 @@ namespace ioda {
         /// \brief return the number of locations in the obs space.
         /// Note that nlocs may be smaller than global unique nlocs due to distribution of obs
         /// across multiple process elements.
+        /// For osdf-based obsspaces, this returns the number of rows in the dataframe.
         inline size_t nlocs() const { return get_dim_size(ObsDimensionId::Location); }
 
         /// \brief return the number of channels in the container. If this is not a radiance

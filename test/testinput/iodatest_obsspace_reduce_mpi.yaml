@@ -7,7 +7,7 @@ observations:
 
 ####################### 1D variables #######################
 
-- obs space:
+- obs space: &reduce_eq_1d_mpi
     name: "Reduce equal, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -16,7 +16,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_eq_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -120,6 +120,12 @@ observations:
           rec17: [ 3 ]
 
 - obs space:
+    <<: *reduce_eq_1d_mpi
+    name: "Reduce equal, 1D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_eq_1d_mpi_test_data
+
+- obs space: &reduce_eq_1d_halo
     name: "Reduce equal, 1D variables, Halo"
     simulated variables: ['airTemperature']
     distribution:
@@ -129,7 +135,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_eq_1d_halo_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -260,6 +266,12 @@ observations:
           rec19: [ 8 ]
 
 - obs space:
+    <<: *reduce_eq_1d_halo
+    name: "Reduce equal, 1D variables, halo (OSDF)"
+    use data frame container: true
+  test data: *reduce_eq_1d_halo_test_data
+
+- obs space: &reduce_eq_1d_inefficient
     name: "Reduce equal, 1D variables, Inefficient distribution"
     simulated variables: ['airTemperature']
     distribution:
@@ -268,7 +280,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_eq_1d_inefficient_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -399,6 +411,12 @@ observations:
           rec19: [ 8 ]
 
 - obs space:
+    <<: *reduce_eq_1d_inefficient
+    name: "Reduce equal, 1D variables, Inefficient distribution (OSDF)"
+    use data frame container: true
+  test data: *reduce_eq_1d_inefficient_test_data
+
+- obs space: &reduce_neq_1d_mpi
     name: "Reduce not equal, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -407,7 +425,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_neq_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -529,6 +547,12 @@ observations:
           rec17: [ 3 ]
 
 - obs space:
+    <<: *reduce_neq_1d_mpi
+    name: "Reduce equal, 1D variables, halo (OSDF)"
+    use data frame container: true
+  test data: *reduce_neq_1d_mpi_test_data
+
+- obs space: &reduce_greater_1d_mpi
     name: "Reduce, greater than, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -537,7 +561,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_greater_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -639,6 +663,12 @@ observations:
           rec11: [ 1 ]
 
 - obs space:
+    <<: *reduce_greater_1d_mpi
+    name: "Reduce, greater than, 1D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_greater_1d_mpi_test_data
+
+- obs space: &reduce_less_1d_mpi
     name: "Reduce, less than, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -647,7 +677,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_less_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -753,6 +783,12 @@ observations:
           rec17: [ 1 ]
 
 - obs space:
+    <<: *reduce_less_1d_mpi
+    name: "Reduce, less than, 1D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_less_1d_mpi_test_data
+
+- obs space: &reduce_geq_1d_mpi
     name: "Reduce, greater than or equal, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -761,7 +797,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_geq_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -867,6 +903,12 @@ observations:
           rec14: [ 3 ]
 
 - obs space:
+    <<: *reduce_geq_1d_mpi
+    name: "Reduce, greater than or equal, 1D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_geq_1d_mpi_test_data
+
+- obs space: &reduce_leq_1d_mpi
     name: "Reduce, less than or equal, 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -875,7 +917,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
-  test data:
+  test data: &reduce_leq_1d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -984,8 +1026,14 @@ observations:
           rec14: [ 2 ]
           rec17: [ 3 ]
 
-####################### 2D variables #######################
 - obs space:
+    <<: *reduce_leq_1d_mpi
+    name: "Reduce, less than or equal, 1D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_leq_1d_mpi_test_data
+
+####################### 2D variables #######################
+- obs space: &reduce_eq_2d_mpi
     name: "Reduce, equal 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -995,7 +1043,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_eq_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1099,6 +1147,12 @@ observations:
           rec17: [ 3 ]
 
 - obs space:
+    <<: *reduce_eq_2d_mpi
+    name: "Reduce equal, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_eq_2d_mpi_test_data
+
+- obs space: &reduce_neq_2d_mpi
     name: "Reduce, not equal 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -1108,7 +1162,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_neq_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1230,6 +1284,12 @@ observations:
           rec17: [ 3 ]
 
 - obs space:
+    <<: *reduce_neq_2d_mpi
+    name: "Reduce, not equal, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_neq_2d_mpi_test_data
+
+- obs space: &reduce_greater_2d_mpi
     name: "Reduce, greater than, 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -1239,7 +1299,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_greater_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1341,6 +1401,12 @@ observations:
           rec11: [ 1 ]
 
 - obs space:
+    <<: *reduce_greater_2d_mpi
+    name: "Reduce, greater than, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_greater_2d_mpi_test_data
+
+- obs space: &reduce_less_2d_mpi
     name: "Reduce, less than, 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -1350,7 +1416,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_less_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1456,6 +1522,12 @@ observations:
           rec17: [ 1 ]
 
 - obs space:
+    <<: *reduce_less_2d_mpi
+    name: "Reduce, less than, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_less_2d_mpi_test_data
+
+- obs space: &reduce_geq_2d_mpi
     name: "Reduce, greater than or equal, 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -1465,7 +1537,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_geq_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1571,6 +1643,12 @@ observations:
           rec14: [ 3 ]
 
 - obs space:
+    <<: *reduce_geq_2d_mpi
+    name: "Reduce, greater than or equal, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_geq_2d_mpi_test_data
+
+- obs space: &reduce_leq_2d_mpi
     name: "Reduce, less than or equal, 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -1580,7 +1658,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/obsspace_reduce_2D.nc4"
-  test data:
+  test data: &reduce_leq_2d_mpi_test_data
     gnlocs: 20
     gnlocs outside time window: 0
     nlocs: 20
@@ -1688,4 +1766,10 @@ observations:
           rec5: [ 1 ]
           rec14: [ 2 ]
           rec17: [ 3 ]
+
+- obs space:
+    <<: *reduce_less_2d_mpi
+    name: "Reduce, less than or equal, 2D variables (OSDF)"
+    use data frame container: true
+  test data: *reduce_less_2d_mpi_test_data
 

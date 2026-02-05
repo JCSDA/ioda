@@ -904,7 +904,12 @@ void ObsSpace::reduce(const ioda::CompareAction compareAction, const int thresho
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::reduce(const std::vector<bool> & keepLocs) {
+void ObsSpace::reduce(const std::vector<bool> &keepLocs) {
+  if (use_dataframe_) {
+    // Remove Locations (rows) from the dataframe and update the ObsSpace info
+    osdf_->removeRows(keepLocs);
+    dim_info_.set_dim_size(ObsDimensionId::Location, osdf_->numRows());
+  } else {
     // Reduce the data values stored in the obs_group_ container
     const std::size_t newNlocs = reduceVarDataValues(keepLocs);
 
@@ -912,15 +917,16 @@ void ObsSpace::reduce(const std::vector<bool> & keepLocs) {
     Variable locVar = obs_group_->vars.open("Location");
     obs_group_->resize({std::pair<Variable, Dimensions_t>(locVar, newNlocs)});
     dim_info_.set_dim_size(ObsDimensionId::Location, newNlocs);
+  }
 
-    // Update the obs_src_stats_ and recidx_ data members according to the reduce
-    // (ie, removed) locations.
-    adjustDataMembersAfterReduce(keepLocs);
+  // Update the obs_src_stats_ and recidx_ data members according to the reduce
+  // (ie, removed) locations.
+  adjustDataMembersAfterReduce(keepLocs);
 
-    // Reduce all the associated data structures
-    for (auto & data : obs_space_associated_) {
-      data.get().reduce(keepLocs);
-    }
+  // Reduce all the associated data structures
+  for (auto & data : obs_space_associated_) {
+    data.get().reduce(keepLocs);
+  }
 }
 
 // ----------------------------- private functions -----------------------------
