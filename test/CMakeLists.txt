@@ -3287,6 +3287,30 @@ if (odc_FOUND)
                             test-OceanColour.hdf
                     )
 
+  ecbuild_add_test( TARGET  test_ioda-convert_icethickness_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            IceThickness
+                            Data/testinput_tier_1/icethickness_test.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_icethickness.yaml"
+                            test-IceThickness.hdf
+                    )
+
+  ecbuild_add_test( TARGET  test_ioda-convert_radarfreeboard_odc
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            hdf5
+                            "${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
+                            RadarFreeboard
+                            Data/testinput_tier_1/radarfreeboard_test.odb
+                            ../share/test/testinput/odb_default_name_map.yaml ../share/test/testinput/iodatest_odb_radarfreeboard.yaml"
+                            test-RadarFreeboard.hdf
+                    )
+
   ecbuild_add_test( TARGET  test_ioda-convert_satsst_odc
                     TYPE    SCRIPT
                     COMMAND bash

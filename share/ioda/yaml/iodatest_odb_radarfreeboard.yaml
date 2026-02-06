@@ -1,0 +1,16 @@
+where:
+  varno: [297,300,301,302]
+  query: initial_obsvalue is not null
+variables:
+- name: receipt_time
+- name: receipt_date
+- name: initial_obsvalue
+- name: obs_error
+- name: instrument_type
+- name: lat
+- name: lon
+- name: date
+- name: time
+- name: ops_obsgroup
+- name: varno
+- name: seqno

@@ -544,6 +544,8 @@ varno-independent columns:
     source: "lowest_cloud_base_height"
   - name: "MetaData/maximum_ambiguous_wind"
     source: "max_amb"
+  - name: "MetaData/maxDetectableIceThicknessFraction"
+    source: "saturation_ratio"
   - name: "MetaData/meto_cloud_flags"
     source: "meto_cloud_flags"
   - name: "MetaData/meto_cloud_tests"
@@ -917,6 +919,16 @@ varno-dependent columns:
       - name: "brightnessTemperature"
         varno: 274
         auxiliary varnos: [275]
+      - name: "totalSnowDepth"
+        varno: 297
+      - name: "radarFreeboard"
+        varno: 300
+      - name: "iceDensity"
+        varno: 301
+      - name: "snowDensity"
+        varno: 302
+      - name: "iceThickness"
+        varno: 303
       - name: "chlorophyllMassConcentration"
         varno: 288
       - name: "kd490"

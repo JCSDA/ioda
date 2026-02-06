@@ -41,6 +41,7 @@ set(
   ioda/yaml/iodatest_odb_iasi.yaml
   ioda/yaml/iodatest_odb_iasi_write.yaml
   ioda/yaml/iodatest_odb_iasi_read_channels_from_yaml.yaml
+  ioda/yaml/iodatest_odb_icethickness.yaml
   ioda/yaml/iodatest_odb_imssnow.yaml
   ioda/yaml/iodatest_odb_mtgirs.yaml
   ioda/yaml/iodatest_odb_mwri.yaml
@@ -50,6 +51,7 @@ set(
   ioda/yaml/iodatest_odb_oceansound_truncate_profiles.yaml
   ioda/yaml/iodatest_odb_radar_doppler_wind.yaml
   ioda/yaml/iodatest_odb_radar_reflectivity.yaml
+  ioda/yaml/iodatest_odb_radarfreeboard.yaml
   ioda/yaml/iodatest_odb_satsst.yaml
   ioda/yaml/iodatest_odb_sattcwv.yaml
   ioda/yaml/iodatest_odb_satwind.yaml
