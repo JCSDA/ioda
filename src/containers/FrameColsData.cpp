@@ -8,12 +8,17 @@
 #include "ioda/containers/FrameColsData.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <memory>
 #include <utility>
 
-#include "oops/util/Logger.h"
-#include "ioda/containers/Constants.h"
-#include "ioda/containers/FrameUtils.h"
+#include "DataRow.h"
 #include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/Data.h"
+#include "ioda/containers/FrameUtils.h"
+#include "oops/util/Logger.h"
 
 osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs,
     const ColumnMetadata& columnMetadata, const std::vector<std::int64_t>& ids,
@@ -109,8 +114,20 @@ const std::int64_t osdf::FrameColsData::getSizeRows() const {
   return static_cast<std::int64_t>(ids_.size());
 }
 
-const std::int64_t osdf::FrameColsData::getMaxId() const {
-  return columnMetadata_.getMaxId();
+const std::int64_t osdf::FrameColsData::getMaxId() const { return columnMetadata_.getMaxId(); }
+
+const bool osdf::FrameColsData::compareColumnMetadata(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  return columnMetadata_.compareColumnMetadata(srcColumnMetadata);
+}
+
+const bool osdf::FrameColsData::compareColumnMetadataPermissions(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  return columnMetadata_.compareColumnMetadataPermissions(srcColumnMetadata);
+}
+
+const bool osdf::FrameColsData::canWriteAllData() const {
+  return columnMetadata_.canWriteAllData();
 }
 
 const std::int32_t osdf::FrameColsData::getIndex(const std::string& name) const {
@@ -164,6 +181,40 @@ std::vector<std::shared_ptr<osdf::DataBase>>& osdf::FrameColsData::getDataCols()
 
 const std::vector<std::shared_ptr<osdf::DataBase>>& osdf::FrameColsData::getDataCols() const {
   return dataColumns_;
+}
+
+osdf::DataRow osdf::FrameColsData::getDataRow(const std::int64_t index) const {
+  DataRow newRow(index);
+
+  const std::int32_t numColumns = static_cast<std::int32_t>(dataColumns_.size());
+  for (std::int32_t columnIndex = 0; columnIndex < numColumns; ++columnIndex) {
+    const std::shared_ptr<DataBase>& data = getDataColumn(columnIndex);
+
+    osdf::FrameUtils::callWithSupportedType(data->getType(), [&](auto typeDiscriminator) {
+      using T = decltype(typeDiscriminator);
+      const std::shared_ptr<Data<T>> dataType
+        = std::static_pointer_cast<Data<T>>(getDataColumn(columnIndex));
+      const T param = dataType->getValues().at(static_cast<std::size_t>(index));
+      std::shared_ptr<DatumBase> newDatum = funcs_.createDatum<T>(param);
+      newRow.insert(newDatum);
+    });
+  }
+
+  return newRow;
+}
+
+void osdf::FrameColsData::getDataRows(std::vector<DataRow>& dataRowsContainer) const {
+  if (dataRowsContainer.empty()
+      && (static_cast<std::int64_t> (dataRowsContainer.capacity()) == getSizeRows())) {
+    for (std::int32_t rowIndex = 0; rowIndex < getSizeRows(); ++rowIndex) {
+      dataRowsContainer.emplace_back(getDataRow(rowIndex));
+    }
+  } else {
+    const std::string errMsg = std::string(
+      "ERROR: dataRowsContainer must be empty with capacity equal to the number of rows in the "
+      "Frame.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
 }
 
 void osdf::FrameColsData::initialise(const std::int64_t sizeRows) {

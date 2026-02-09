@@ -13,13 +13,15 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "ioda/containers/DataBase.h"
-#include "ioda/containers/DataRow.h"
-#include "ioda/containers/DatumBase.h"
-#include "ioda/containers/IFrameData.h"
+#include "IFrameData.h"
 
 namespace osdf {
+
+class IFrameData;
+class DataRow;
+class DataBase;
+class DatumBase;
+
 class Functions {
  public:
   Functions();

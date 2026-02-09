@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2025 UCAR
+ * (C) Crown copyright 2026, Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,6 +8,7 @@
 
 #pragma once
 //
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,9 +17,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
-
+#include "eckit/testing/Test.h"
 #include "ioda/containers/IFrame.h"
-
 #include "oops/util/missingValues.h"
 
 namespace ioda {

@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "IFrameData.h"
 
 namespace osdf {
 class ColumnMetadatum;
@@ -75,6 +76,15 @@ class IFrame {
   virtual void setColumn(const std::string&, const std::vector<float>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<char>&) const = 0;
   virtual void setColumn(const std::string&, const std::vector<std::string>&) const = 0;
+
+  /// \brief The following function is used to get the data contained by an IFrame
+  /// e.g the FrameRowsData member object of a FrameRows object
+  virtual const IFrameData& getData() const = 0;
+
+  /// \brief The following function allows for a srcOsdf file to be appended to the end of
+  /// the current OSDF
+  /// \param srcOsdf file to be appended
+  virtual void append(const std::unique_ptr<IFrame>& srcOsdf) = 0;
 
   /// \brief Returns flag indicating the presence of a column with a specified name.
   /// \param The column name.

@@ -25,6 +25,7 @@
 #include "ioda/containers/FunctionsRows.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/ViewRows.h"
+#include "oops/util/Logger.h"
 
 namespace osdf {
 class FrameCols;
@@ -95,7 +96,9 @@ class FrameRows : public IFrame {
   std::vector<std::string> columnNames() const override;
 
   std::string serializeColumnMetadata() const override;
-  void deserializeColumnMetadata(const std::string & columnMetadataTokens) override;
+  void deserializeColumnMetadata(const std::string& columnMetadataTokens) override;
+
+  void append(const std::unique_ptr<IFrame>& srcOsdf) override;
 
   void print() const override;
   void clear();
@@ -125,7 +128,7 @@ class FrameRows : public IFrame {
   void detach(ViewRows*);
 
   /// \brief Returns a reference to the data model.
-  const FrameRowsData& getData() const;
+  const FrameRowsData& getData() const override;
 
   /// \brief Variadic function accepts zero or more parameters of any type. Input parameters are
   /// checked for errors, and added to the data model once a complete and compatible data row has

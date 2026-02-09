@@ -89,8 +89,12 @@ class FrameRowsData : public IFrameData  {
   void updateColumnWidth(const std::int32_t, const std::int16_t);
 
   const std::int32_t getSizeCols() const;
-  const std::int64_t getSizeRows() const;
-  const std::int64_t getMaxId() const;
+  const std::int64_t getSizeRows() const override;
+  const std::int64_t getMaxId() const override;
+  const bool compareColumnMetadata(const osdf::ColumnMetadata& srcColumnMetadata) const;
+  const bool compareColumnMetadataPermissions(
+    const osdf::ColumnMetadata& srcColumnMetadata) const;
+  const bool canWriteAllData() const;
 
   /// \brief Searches for and returns the index of a column using its name.
   /// Throws an exception if the column is not found.
@@ -111,9 +115,10 @@ class FrameRowsData : public IFrameData  {
   const DataRow& getDataRow(const std::int64_t) const;
 
   ColumnMetadata& getColumnMetadata();
-  const ColumnMetadata& getColumnMetadata() const;
+  const ColumnMetadata& getColumnMetadata() const override;
   const std::vector<DataRow>& getDataRows() const;
   std::vector<DataRow>& getDataRows();
+  void getDataRows(std::vector<DataRow>& dataRowsContainer) const override;
 
   /// \brief Initialises a set of DataRow objects with IDs but no columns of data.
   /// \param The number of data rows to create.

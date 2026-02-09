@@ -8,9 +8,10 @@
 #include "ioda/containers/ColumnMetadata.h"
 
 #include <algorithm>
+#include <string>
 
+#include "ColumnMetadatum.h"
 #include "eckit/exception/Exceptions.h"
-
 #include "ioda/containers/Constants.h"
 #include "ioda/core/IodaUtils.h"
 #include "oops/util/Logger.h"
@@ -139,6 +140,91 @@ void osdf::ColumnMetadata::remove(const std::int32_t index) {
   columnMetadata_.erase(std::next(columnMetadata_.begin(), index));
 }
 
+/// \brief Function to check whether ColumnMetadata of two OSDFs are compatible. The ColumnMetadata
+/// are considered compatible if they contain the same names and datatypes,
+/// in which case the function returns true. We do not compare
+/// permissions, as it is only necessary for the calling ColumnMetadata object
+/// to have write permissions in order to append, for example. We also do not
+/// compare widths, since the width is updated during the appending process.
+const bool osdf::ColumnMetadata::compareColumnMetadata(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  const std::int32_t numParams = this->getSizeCols();
+  if (srcColumnMetadata.getSizeCols() != numParams) {
+    const std::string errMsg = std::string("ERROR: Number of columns in the srcColumnMetadata (")
+                               + std::to_string(srcColumnMetadata.getSizeCols())
+                               + std::string(") does not match current ColumnMetadata (")
+                               + std::to_string(numParams)
+                               + std::string("). Unable to compare.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
+    const std::string& targetColumnName = this->getName(columnIndex);
+    const std::int8_t targetColumnType = this->getType(columnIndex);
+
+    if (srcColumnMetadata.getName(columnIndex) != targetColumnName) {
+      oops::Log::debug() << "Column named \"" << targetColumnName << "\" found at index "
+                         << columnIndex << " in targetOSDF not found at same index in srcOSDF."
+                         << std::endl;
+      return false;
+    }
+    if (srcColumnMetadata.getType(columnIndex) != targetColumnType) {
+      oops::Log::debug()
+        << "Column named \"" << targetColumnName
+        << "\" does not have same type in srcColumnMetadata as in current ColumnMetadata."
+        << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+/// \brief Function to check whether the ReadWrite Permissions of two OSDFs match.
+/// The function returns true if the columns at each index have matching
+/// permissions and false otherwise.
+const bool osdf::ColumnMetadata::compareColumnMetadataPermissions(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  // Check if comparison valid operation
+  const std::int32_t numParams = this->getSizeCols();
+  if (srcColumnMetadata.getSizeCols() != numParams) {
+    const std::string errMsg
+      = std::string("ERROR: Number of columns in the srcColumnMetadata ("
+                    + std::to_string(srcColumnMetadata.getSizeCols())
+                    + std::string(") does not match current ColumnMetadata (")
+                    + std::to_string(numParams) + std::string("). Unable to compare."));
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  // compare permissions of columns regardless of other metadata
+  for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
+    const std::int8_t targetColumnPermission = this->getPermission(columnIndex);
+    if (srcColumnMetadata.getPermission(columnIndex) != targetColumnPermission) {
+      oops::Log::debug() << "Column at index " << std::to_string(columnIndex)
+                         << " does not have same permissions in both the current "
+                            "ColumnMetadata and the srcColumnMetadata."
+                         << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+const bool osdf::ColumnMetadata::canWriteAllData() const {
+  const std::int32_t numParams = getSizeCols();
+
+  for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
+    const std::int8_t permission = getPermission(columnIndex);
+    const std::string& targetColumnName = getName(columnIndex);
+
+    if (permission != consts::eReadWrite) {
+      oops::Log::debug() << "Column named \"" << targetColumnName
+                         << "\" is set to read-only." << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
 const std::string& osdf::ColumnMetadata::getName(const std::int32_t index) const {
   if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
     const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
@@ -155,6 +241,15 @@ const std::int8_t osdf::ColumnMetadata::getType(const std::int32_t index) const 
     throw eckit::OutOfRange(errMsg, Here());
   }
   return columnMetadata_.at(static_cast<std::size_t>(index)).getType();
+}
+
+const std::int16_t osdf::ColumnMetadata::getWidth(const std::int32_t index) const {
+  if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
+    const std::string errMsg = std::string("Error: Column index ") + std::to_string(index)
+                               + std::string(" is out of bounds.");
+    throw eckit::OutOfRange(errMsg, Here());
+  }
+  return columnMetadata_.at(static_cast<std::size_t>(index)).getWidth();
 }
 
 const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) const {
@@ -183,20 +278,16 @@ const std::int32_t osdf::ColumnMetadata::getSizeCols() const {
   return static_cast<std::int32_t>(columnMetadata_.size());
 }
 
-const std::int64_t osdf::ColumnMetadata::getMaxId() const {
-  return maxId_;
-}
+const std::int64_t osdf::ColumnMetadata::getMaxId() const { return maxId_; }
 
 void osdf::ColumnMetadata::print(const Functions& funcs, const std::int32_t rowStringSize) const {
   oops::Log::info() << funcs.padString(consts::kSpace, rowStringSize) << consts::kBigSpace;
   for (const ColumnMetadatum& columnMetadatum : columnMetadata_) {
-    const std::string name = columnMetadatum.getName();
+    const std::string name   = columnMetadatum.getName();
     const std::int16_t width = columnMetadatum.getWidth();
     oops::Log::info() << funcs.padString(name, width) << consts::kBigSpace;
   }
   oops::Log::info() << std::endl;
 }
 
-void osdf::ColumnMetadata::clear() {
-  columnMetadata_.clear();
-}
+void osdf::ColumnMetadata::clear() { columnMetadata_.clear(); }

@@ -240,6 +240,48 @@ void osdf::FrameRows::deserializeColumnMetadata(const std::string & columnMetada
   data_.configColumns(columnMetadata);
 }
 
+void osdf::FrameRows::append(const std::unique_ptr<IFrame>& srcOsdf) {
+  const std::int32_t numParams = data_.getSizeCols();
+
+  // Check if it is possible to append to the current OSDF
+  if (!(numParams > 0)) {
+    const std::string errMsg
+      = std::string("Error: Cannot append to this OSDF without first setting column headings.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  const osdf::ColumnMetadata& srcColumnMetadata = srcOsdf->getData().getColumnMetadata();
+  const bool canWriteTo          = data_.canWriteAllData();
+  if (canWriteTo == false) {
+    const std::string errMsg = std::string(
+      "Error: Unable to append to an OSDF container containing columns with ReadOnly "
+      "permissions.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  // Check if the srcOSDF is compatible with the current OSDF
+  const bool validColumnMetadata = data_.compareColumnMetadata(srcColumnMetadata);
+  if (validColumnMetadata == false) {
+    const std::string errMsg
+      = std::string("Error: Unable to append two OSDF containers with different column metadata.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  // Append to the current OSDF
+  std::vector<osdf::DataRow> dataRowsToAppend;
+  dataRowsToAppend.reserve(srcOsdf->getData().getSizeRows());
+  srcOsdf->getData().getDataRows(dataRowsToAppend);
+
+  for (const osdf::DataRow& dataRow : dataRowsToAppend) {
+    DataRow newDataRow(data_.getMaxId() + 1);
+    for (std::int32_t index = 0; index < dataRow.getSize(); ++index) {
+      newDataRow.insert(dataRow.getColumn(index));
+    }
+    data_.appendNewRow(newDataRow);
+  }
+  notify();
+}
+
 void osdf::FrameRows::print() const {
   data_.print();
 }

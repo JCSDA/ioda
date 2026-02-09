@@ -36,8 +36,12 @@ class ColumnMetadata {
   void updateColumnWidth(const std::int32_t, const std::int16_t);
   void remove(const std::int32_t);
 
+  const bool compareColumnMetadata(const ColumnMetadata& srcColumnMetadata) const;
+  const bool compareColumnMetadataPermissions(const ColumnMetadata& srcColumnMetadata) const;
+  const bool canWriteAllData() const;
   const std::string& getName(const std::int32_t) const;
   const std::int8_t getType(const std::int32_t) const;
+  const std::int16_t getWidth(const std::int32_t index) const;
   const std::int8_t getPermission(const std::int32_t) const;
   const std::int32_t getIndex(const std::string&) const;
   const std::int32_t getSizeCols() const;

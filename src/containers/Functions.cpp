@@ -12,6 +12,7 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameUtils.h"
+#include "ioda/containers/DataRow.h"
 
 osdf::Functions::Functions() {}
 
@@ -26,7 +27,7 @@ void osdf::Functions::addColumnToRow(IFrameData* data, DataRow& row,
     std::int8_t& isValid, std::int32_t& columnIndex, const T param) const {
   if (isValid == true) {
     columnIndex = row.getSize();
-    const std::string name = data->getName(columnIndex);
+
     const std::int8_t type = data->getType(columnIndex);
     std::shared_ptr<DatumBase> newDatum = createDatum<T>(param);
     if (newDatum->getType() == type) {

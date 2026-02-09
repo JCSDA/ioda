@@ -11,8 +11,11 @@
 #include <stdexcept>
 #include <utility>
 
-#include "ioda/containers/Constants.h"
+#include "ColumnMetadata.h"
+#include "DataRow.h"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Exception.h"
+#include "ioda/containers/Constants.h"
 
 osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs) :
     IFrameData(), funcs_(funcs) {}
@@ -34,7 +37,6 @@ void osdf::FrameRowsData::configColumns(const std::initializer_list<ColumnMetada
 }
 
 void osdf::FrameRowsData::appendNewRow(const DataRow& newRow) {
-  std::string rowStr = std::to_string(newRow.getId());
   columnMetadata_.updateMaxId(newRow.getId());
   dataRows_.push_back(newRow);  // May need to update column widths based on new data
 }
@@ -69,8 +71,20 @@ const std::int64_t osdf::FrameRowsData::getSizeRows() const {
   return static_cast<std::int64_t>(dataRows_.size());
 }
 
-const std::int64_t osdf::FrameRowsData::getMaxId() const {
-  return columnMetadata_.getMaxId();
+const std::int64_t osdf::FrameRowsData::getMaxId() const { return columnMetadata_.getMaxId(); }
+
+const bool osdf::FrameRowsData::compareColumnMetadata(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  return columnMetadata_.compareColumnMetadata(srcColumnMetadata);
+}
+
+const bool osdf::FrameRowsData::compareColumnMetadataPermissions(
+  const osdf::ColumnMetadata& srcColumnMetadata) const {
+  return columnMetadata_.compareColumnMetadataPermissions(srcColumnMetadata);
+}
+
+const bool osdf::FrameRowsData::canWriteAllData() const {
+  return columnMetadata_.canWriteAllData();
 }
 
 const std::int32_t osdf::FrameRowsData::getIndex(const std::string& name) const {
@@ -113,8 +127,17 @@ const std::vector<osdf::DataRow>& osdf::FrameRowsData::getDataRows() const {
   return dataRows_;
 }
 
-std::vector<osdf::DataRow>& osdf::FrameRowsData::getDataRows() {
-  return dataRows_;
+std::vector<osdf::DataRow>& osdf::FrameRowsData::getDataRows() { return dataRows_; }
+
+void osdf::FrameRowsData::getDataRows(std::vector<osdf::DataRow>& dataRowsContainer) const {
+  if (dataRowsContainer.empty() && (dataRowsContainer.capacity() == getSizeRows())) {
+    dataRowsContainer = dataRows_;
+  } else {
+    const std::string errMsg = std::string(
+      "ERROR: dataRowsContainer must be empty with capacity equal to the number of rows in the "
+      "Frame.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
 }
 
 void osdf::FrameRowsData::initialise(const std::int64_t sizeRows) {

@@ -9,17 +9,14 @@
 
 #include <string>
 
-#include "oops/util/Logger.h"
-
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Functions.h"
+#include "oops/util/Logger.h"
 
 osdf::DataRow::DataRow(std::int64_t id) : id_(id) {}
 
-const std::int64_t osdf::DataRow::getId() const {
-  return id_;
-}
+const std::int64_t osdf::DataRow::getId() const { return id_; }
 
 const std::int32_t osdf::DataRow::getSize() const {
   return static_cast<std::int32_t>(dataColumns_.size());

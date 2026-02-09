@@ -1,4 +1,5 @@
 # (C) Copyright 2017 UCAR.
+# (C) Crown copyright 2026, Met Office
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -380,6 +381,26 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
 ecbuild_add_test( TARGET  test_ioda_osdf_empty_column
                   SOURCES mains/TestOsdfEmptyColumn.cc
                   ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_osdf_get_data_rows
+                  SOURCES mains/TestOsdfGetDataRows.cc
+                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_osdf_validate_column_metadata
+                  SOURCES mains/TestOsdfValidateColumnMetadata.cc
+                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_osdf_get_column_metadata
+                  SOURCES mains/TestOsdfGetColumnMetadata.cc
+                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+ecbuild_add_test( TARGET  test_ioda_osdf_append
+                  SOURCES mains/TestOsdfAppend.cc
+                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
                   LIBS  ioda_test
                   )
 ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv

@@ -78,9 +78,9 @@ class FrameColsData : public IFrameData, public IColsData {
   /// \param The index (not ID) of the row.
   void removeRow(const std::int64_t);
 
-  /// \brief Updating of the higest numerical ID given to each row. The column-priority container
+  /// \brief Updating of the highest numerical ID given to each row. The column-priority container
   /// has to maintain this outside of each data row.
-  /// \param The new, higest ID.
+  /// \param The new, highest ID.
   void updateMaxId(const std::int64_t);
 
   /// \brief Used to adapt the outputting of whitespace for column alignment when printing.
@@ -90,7 +90,11 @@ class FrameColsData : public IFrameData, public IColsData {
 
   const std::int32_t getSizeCols() const override;
   const std::int64_t getSizeRows() const override;
-  const std::int64_t getMaxId() const;
+  const std::int64_t getMaxId() const override;
+  const bool compareColumnMetadata(const osdf::ColumnMetadata& srcColumnMetadata) const;
+  const bool compareColumnMetadataPermissions(
+    const osdf::ColumnMetadata& srcColumnMetadata) const;
+  const bool canWriteAllData() const;
 
   /// \brief Searches for and returns the index of a column using its name.
   /// Throws an exception if a column of that name is not found.
@@ -118,6 +122,10 @@ class FrameColsData : public IFrameData, public IColsData {
 
   std::vector<std::shared_ptr<DataBase>>& getDataCols();
   const std::vector<std::shared_ptr<DataBase>>& getDataCols() const override;
+
+  DataRow getDataRow(const std::int64_t index) const;
+
+  void getDataRows(std::vector<DataRow>& dataRowsContainer) const override;
 
   /// \brief Initialises the row IDs with no columns of data
   /// \param The number of IDs to create.
