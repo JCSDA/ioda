@@ -1212,7 +1212,10 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_append_clean_files
                   ARGS    "-f"
                           "testoutput/obsspace_append_1D_out.nc4"
                           "testoutput/obsspace_append_2D_out.nc4"
-                          "testoutput/obsspace_append_no_obsserror_out.nc4" )
+                          "testoutput/obsspace_append_no_obsserror_out.nc4"
+                          "testoutput/obsspace_append_1D_osdf_out.nc4"
+                          "testoutput/obsspace_append_2D_osdf_out.nc4"
+                          "testoutput/obsspace_append_no_obsserror_osdf_out.nc4" )
 
 # this test creates the output files, and checks that obs space data members got
 # properly updated

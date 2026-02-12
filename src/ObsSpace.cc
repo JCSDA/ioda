@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "containers/IFrame.h"
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -181,13 +182,12 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
             osdf_ = std::make_unique<osdf::FrameRows>();
         }
 
-        // Transfer obs from the input file to the OSDF container.
-        // Only allowing for one input file at this time.
-        ObsDataInParameters readerParams;
-        readerParams.deserialize(obsDataInConfigs[0]);
-        reader::obsRead(readerParams, obs_params_.top_level_.ioPool.value(),
-                        obs_params_.top_level_.distribution.value().params.value(),
-                        comm, timeWindow_, dist_, osdf_, obs_src_stats_, osdfMetadata_);
+        // Transfer obs from the input files to the OSDF container.
+        reader::obsRead(obsDataInConfigs,
+                        obs_params_.top_level_.ioPool.value(),
+                        obs_params_.top_level_.distribution.value().params.value(), comm,
+                        timeWindow_, dist_, osdf_,
+                        obs_src_stats_, osdfMetadata_);
 
         // Set the sizes of the dimensions
         dim_info_.set_dim_size(ObsDimensionId::Location, obs_src_stats_.nlocs);
@@ -210,8 +210,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         for (size_t i = 0; i < obsDataInConfigs.size(); ++i) {
             load(obsDataInConfigs[i], tempObsGroup, obsSourceStats);
             if (obsSourceStats.gNlocs > 0) {
-                hasObservations = true;
-                appendObsGroup(tempObsGroup, obsSourceStats);
+              hasObservations = true;
+              appendObsGroup(tempObsGroup, obsSourceStats);
             }
         }
         if (!hasObservations) {
@@ -860,28 +860,47 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
         newFileName += "/" + origFileName.substr(pos + 1);
         }
         if (checkFileExists(newFileName)) {
-            oops::Log::info() << this->obsname() << ": Appending obs data: "
-                                                    << newFileName << std::endl;
+          oops::Log::info() << this->obsname() << ": Appending obs data: " << newFileName
+                            << std::endl;
+          ObsSourceStats obsSourceStats;
+          eckit::LocalConfiguration obsDataInConfig;
+          obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
+          obsDataInConfig.set("engine.obsfile", newFileName);
+
+          if (use_dataframe_) {
+            // Create temporary osdf to append to
+            std::unique_ptr<osdf::IFrame> tempOsdf;
+            if (osdfMetadata_.getFrameType() == "FrameCols") {
+              tempOsdf = std::make_unique<osdf::FrameCols>();
+            } else if (osdfMetadata_.getFrameType() == "FrameRows") {
+              tempOsdf = std::make_unique<osdf::FrameRows>();
+            }
+
+            // Read file into temp osdf using the same metadata, distribution, etc  as osdf_
+            reader::obsRead({obsDataInConfig},
+                            obs_params_.top_level_.ioPool.value(),
+                            obs_params_.top_level_.distribution.value().params.value(), commMPI_,
+                            timeWindow_, dist_,
+                            tempOsdf, obsSourceStats, osdfMetadata_);
+            appendOsdf(tempOsdf, obsSourceStats);
+          } else {
             // Load data into a temporary ObsGroup object and append that to the obs_group_
             // data member.
-            eckit::LocalConfiguration obsDataInConfig;
-            obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
-            obsDataInConfig.set("engine.obsfile", newFileName);
-            ObsSourceStats obsSourceStats;
             ObsGroup tempObsGroup;
             load(obsDataInConfig, tempObsGroup, obsSourceStats);
             appendObsGroup(tempObsGroup, obsSourceStats);
+          }
 
-            // Rebuild Location values, and ObsSpace data members dist_ (rebuild patch locations)
-            // and recidx_
-            assignLocationValues();
-            dist_->setNumberLocations(this->nlocs());
-            dist_->computePatchLocs();
-            buildRecIdx();
-            appendMissingObsErrors(obsSourceStats.nlocs);
-            for (auto & data : obs_space_associated_) {
-              data.get().append();
-            }
+          // Rebuild Location values, and ObsSpace data members dist_ (rebuild patch locations)
+          // and recidx_
+          assignLocationValues();
+          dist_->setNumberLocations(this->nlocs());
+          dist_->computePatchLocs();
+          buildRecIdx();
+          appendMissingObsErrors(obsSourceStats.nlocs);
+          for (auto &data : obs_space_associated_) {
+            data.get().append();
+          }
         } else {
             oops::Log::info() << this->obsname() << ":WARNING no new obs found,"
                                 << "Nothing Appended For: "<< newFileName << std::endl;
@@ -1079,43 +1098,59 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
 void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
     // append the ObsGroup
     obs_group_->append(appendObsGroup);
-
-    // Need to keep obs_src_stats_ indices record numbers unique and the
-    // load function will number these starting with zero. Simply add in
-    // the offset given by the current values of obs_src_stats_ sourceNlocs
-    // and gNrecs (MPI all reduce summation of the local obs_src_stats_ nrecs value)
-    // before those get updated.
-    std::for_each(obsSourceStats.locIndices.begin(), obsSourceStats.locIndices.end(),
-                  [&](std::size_t &n) { n += obs_src_stats_.sourceNlocs; });
-    std::size_t gNrecs;
-    this->comm().allReduce(obs_src_stats_.nrecs, gNrecs, eckit::mpi::Operation::SUM);
-    std::for_each(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(),
-                  [&](std::size_t &n) { n += gNrecs; });
-
-    // accumulate stats from the obs source
-    obs_src_stats_.nrecs += obsSourceStats.nrecs;
-    obs_src_stats_.gNlocs += obsSourceStats.gNlocs;
-    obs_src_stats_.gNlocsOutsideTimewindow += obsSourceStats.gNlocsOutsideTimewindow;
-    obs_src_stats_.gNlocsRejectQc += obsSourceStats.gNlocsRejectQc;
-    obs_src_stats_.sourceNlocs += obsSourceStats.sourceNlocs;
-    obs_src_stats_.locIndices.insert(obs_src_stats_.locIndices.end(),
-        obsSourceStats.locIndices.begin(), obsSourceStats.locIndices.end());
-    obs_src_stats_.recNums.insert(obs_src_stats_.recNums.end(),
-        obsSourceStats.recNums.begin(), obsSourceStats.recNums.end());
-
-    // Record locations and channels dimension sizes
-    // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
-    // size a zero is returned instead of the proper current size. As a workaround for this
-    // ask the frame how many locations it kept instead of asking the Location dimension for
-    // its size.
-    std::size_t nlocs = dim_info_.get_dim_size(ObsDimensionId::Location) + obsSourceStats.nlocs;
-    dim_info_.set_dim_size(ObsDimensionId::Location, nlocs);
+    updateSourceStatsRecordNumbers(obsSourceStats);
 
     std::string ChannelName = dim_info_.get_dim_name(ObsDimensionId::Channel);
     if (obs_group_->vars.exists(ChannelName)) {
         std::size_t nChans = obs_group_->vars.open(ChannelName).getDimensions().dimsCur[0];
         dim_info_.set_dim_size(ObsDimensionId::Channel, nChans);
     }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::appendOsdf(const std::unique_ptr<osdf::IFrame> &appendOsdf,
+                          ObsSourceStats &ObsSourceStats) {
+    osdf_->append(appendOsdf);
+    updateSourceStatsRecordNumbers(ObsSourceStats);
+    // (LN) Unlike in the obsGroup case, the osdf append does not currently allow for appending
+    // OSDFs with different metadata, so the number of channels does not need updating.
+    // If implemented, use osdfMetadata_.getChanNums().size() > 0
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpace::updateSourceStatsRecordNumbers(ObsSourceStats &obsSourceStats) {
+  // Need to keep obs_src_stats_ indices record numbers unique and the
+  // load function will number these starting with zero. Simply add in
+  // the offset given by the current values of obs_src_stats_ sourceNlocs
+  // and gNrecs (MPI all reduce summation of the local obs_src_stats_ nrecs value)
+  // before those get updated.
+  std::for_each(obsSourceStats.locIndices.begin(), obsSourceStats.locIndices.end(),
+                [&](std::size_t &n) { n += obs_src_stats_.sourceNlocs; });
+  std::size_t gNrecs;
+  this->comm().allReduce(obs_src_stats_.nrecs, gNrecs, eckit::mpi::Operation::SUM);
+  std::for_each(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(),
+                [&](std::size_t &n) { n += gNrecs; });
+
+  // accumulate stats from the obs source
+  obs_src_stats_.nrecs += obsSourceStats.nrecs;
+  obs_src_stats_.gNlocs += obsSourceStats.gNlocs;
+  obs_src_stats_.gNlocsOutsideTimewindow += obsSourceStats.gNlocsOutsideTimewindow;
+  obs_src_stats_.gNlocsRejectQc += obsSourceStats.gNlocsRejectQc;
+  obs_src_stats_.sourceNlocs += obsSourceStats.sourceNlocs;
+  obs_src_stats_.locIndices.insert(obs_src_stats_.locIndices.end(),
+                                   obsSourceStats.locIndices.begin(),
+                                   obsSourceStats.locIndices.end());
+  obs_src_stats_.recNums.insert(obs_src_stats_.recNums.end(), obsSourceStats.recNums.begin(),
+                                obsSourceStats.recNums.end());
+
+  // Record locations and channels dimension sizes
+  // The HDF library has an issue when a dimension marked UNLIMITED is queried for its
+  // size a zero is returned instead of the proper current size. As a workaround for this
+  // ask the frame how many locations it kept instead of asking the Location dimension for
+  // its size.
+  std::size_t nlocs = dim_info_.get_dim_size(ObsDimensionId::Location) + obsSourceStats.nlocs;
+  dim_info_.set_dim_size(ObsDimensionId::Location, nlocs);
 }
 
 // -----------------------------------------------------------------------------

@@ -116,7 +116,7 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
           mainComm.send(metadataSize, i, 0);
           mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
 
-          // Need to synchronize the osdfMetada object:
+          // Need to synchronize the osdfMetadata object:
           //   frameType
           //   chanNums
           //   numVars

@@ -646,17 +646,34 @@ namespace ioda {
 
         /// \brief append the given ObsGroup and update the obs source stats
         /// \details This function will append the given ObsGroup to the ObsSpace::obs_group_
-        /// data member. It will also update the obs suorce stats data members
+        /// data member. It will also update the obs source stats data members
         /// (nlocs, gnlocs, etc.) from the given ObsSourceStats struct.
         /// \param appendObsGroup ObsGroup to be appended to obs_group_
         /// \param obsSourceStats struct holding counts, etc. that describe the contents
         /// of the obs source
-        void appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats);
+        void appendObsGroup(ObsGroup &appendObsGroup, ObsSourceStats &obsSourceStats);
+
+        /// \brief append the given Osdf and update the obs source stats
+        /// \details This function will append the given Osdf to the ObsSpace::osdf_
+        /// data member. It will also update the obs source stats data members
+        /// (nlocs, gnlocs, etc.) from the given ObsSourceStats struct.
+        /// \param appendOsdf osdf to be appended to osdf_
+        /// \param obsSourceStats struct holding counts, etc. that describe the contents
+        /// of the obs source
+        void appendOsdf(const std::unique_ptr<osdf::IFrame> &appendOsdf,
+                                  ObsSourceStats &ObsSourceStats);
+
+          /// \brief Update the obs source stats data members
+          /// \details Update the obs source stats data members (nlocs, gnlocs, etc.) from
+          /// the given ObsSourceStats struct.
+          /// \param obsSourceStats struct holding counts, etc. that describe the contents
+          /// of the obs source
+          void updateSourceStatsRecordNumbers(ObsSourceStats &obsSourceStats);
 
         /// \brief Extend the ObsSpace according to the method requested in
         ///  the configuration file.
         /// \param params object containing specs for extending the ObsSpace
-        void extendObsSpace(const ObsExtendParameters & params);
+        void extendObsSpace(const ObsExtendParameters &params);
 
         /// \brief For each simulated variable that doesn't have an accompanying array
         /// in the ObsError or DerivedObsError group, create one, fill it with missing values

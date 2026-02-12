@@ -41,7 +41,7 @@ namespace consts {
   };
 
   const std::string kSpace = " ";
-  const std::string kBigSpace = "   ";;
+  const std::string kBigSpace = "   ";
 }  // namespace consts
 }  // namespace osdf
 

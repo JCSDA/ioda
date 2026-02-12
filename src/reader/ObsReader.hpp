@@ -7,6 +7,9 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 
 namespace util {
   class TimeWindow;
@@ -38,7 +41,7 @@ namespace ioda {
 namespace reader {
 
 /// \brief read observation data from a NetCDF file into an OSDF
-/// \param dataInParams obs space data input (obsdatain) parameters
+/// \param dataInParams obs space data inputs (obsdatain) parameters
 /// \param ioPoolParams io pool parameters
 /// \param distParams ioda Distribution parameters
 /// \param commAll MPI communicator for all ranks
@@ -47,7 +50,7 @@ namespace reader {
 /// \param destOsdf destination OSDF to be populated
 /// \param obsSourceStats statistics about the obs source (file)
 /// \param osdfMetadata frame metadata object for the caller's obs space
-void obsRead(const ioda::ObsDataInParameters & dataInParams,
+void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
              const ioda::IoPool::IoPoolParameters & ioPoolParams,
              const ioda::DistributionParametersBase & distParams,
              const eckit::mpi::Comm & commAll,

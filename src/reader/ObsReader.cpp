@@ -18,6 +18,8 @@
 #include "ioda/reader/distribute/distributeObs.hpp"
 #include "ioda/reader/filter/filterObs.hpp"
 #include "ioda/reader/load/loadObs.hpp"
+#include "ioda/containers/FrameCols.h"
+#include "ioda/containers/FrameRows.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
@@ -27,29 +29,46 @@ namespace ioda {
 namespace reader {
 
 // -----------------------------------------------------------------------------
-void obsRead(const ioda::ObsDataInParameters & dataInParams,
-             const ioda::IoPool::IoPoolParameters & ioPoolParams,
-             const ioda::DistributionParametersBase & distParams,
-             const eckit::mpi::Comm & commAll,
-             const util::TimeWindow & timeWindow,
-             std::shared_ptr<Distribution> & ospaceDist,
-             std::unique_ptr<osdf::IFrame> & destOsdf,
-             ioda::ObsSourceStats & obsSourceStats,
-             osdf::FrameMetadata & osdfMetadata) {
+void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
+             const ioda::IoPool::IoPoolParameters &ioPoolParams,
+             const ioda::DistributionParametersBase &distParams, const eckit::mpi::Comm &commAll,
+             const util::TimeWindow &timeWindow, std::shared_ptr<Distribution> &ospaceDist,
+             std::unique_ptr<osdf::IFrame> &destOsdf, ioda::ObsSourceStats &obsSourceStats,
+             osdf::FrameMetadata &osdfMetadata) {
   oops::Log::trace() << "reader::obsRead start" << std::endl;
   util::Timer timer("ioda::reader", "obsRead");
-  // The read is done in three indepndent steps:
+  // The read is done in three independent steps:
   //   1. Load: collectively load data from the input file into an OSDF
   //   2. Filter: apply any filters to the OSDF to remove unwanted rows
   //   3. Distribute: distribute the OSDF rows to all ranks in comm
 
   //----- Load step -----
   // Populate all MPI tasks with an appropriate OSDF container.
-  // Members of the io pool get obs data from the input file, and
+  // Members of the io pool get obs data from the input files, and
   // non-io pool members get an "empty" OSDF container (which contains
   // a column metadata row matching the io pool member OSDFs, but has
   // zero data rows).
-  loadObs(dataInParams, ioPoolParams, commAll, destOsdf, osdfMetadata);
+
+  // Loop through input files, load into a temporary osdf, then append to destOsdf
+  // obsSourceStats are updated in the filter and distribute steps.
+  for (size_t index = 0; index < dataInParams.size(); ++index) {
+    ObsDataInParameters dataInParamsSingleFile;
+    dataInParamsSingleFile.deserialize(dataInParams[index]);
+
+    // Handle first osdf separately so that destOsdf has correct metadata for append.
+    if (index == 0) {
+      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, destOsdf, osdfMetadata);
+    } else {
+      std::unique_ptr<osdf::IFrame> tempOsdf;
+      if (osdfMetadata.getFrameType() == "FrameCols") {
+        tempOsdf = std::make_unique<osdf::FrameCols>();
+      } else if (osdfMetadata.getFrameType() == "FrameRows") {
+        tempOsdf = std::make_unique<osdf::FrameRows>();
+      }
+      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, tempOsdf, osdfMetadata);
+      destOsdf->append(tempOsdf);
+    }
+  }
 
   //----- Filter step -----
   // Apply filters to the OSDF to remove unwanted rows
@@ -57,7 +76,14 @@ void obsRead(const ioda::ObsDataInParameters & dataInParams,
 
   //----- Distribute step -----
   // Move obs to their intended MPI ranks in the main communicator group
-  const auto obsGroupVarList = dataInParams.obsGrouping.value().obsGroupVars.value();
+  // (LN) currently only use first file to get variable list, since append only
+  // allows files of same metadata (column names and types),
+  // so all files must share same list of variables.
+
+  ObsDataInParameters dataInParamsSingleFile;
+  dataInParamsSingleFile.deserialize(dataInParams[0]);
+  const auto obsGroupVarList = dataInParamsSingleFile.obsGrouping.value().obsGroupVars.value();
+
   distributeObs(distParams, commAll, obsGroupVarList, osdfMetadata, obsSourceStats, ospaceDist,
                 destOsdf);
   oops::Log::trace() << "reader::obsRead end" << std::endl;

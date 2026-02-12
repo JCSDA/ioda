@@ -5,7 +5,7 @@ time window:
 
 observations:
 
-- obs space:
+- obs space: &append_1d
     name: "Append 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -18,7 +18,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/obsspace_append_1D_out.nc4"
-  test data:
+  test data: &append_1d_test_data
     # These input files contain ObsError variables so there is
     # no need to work with DerivedObsError, thus no need to update
     # the missing values that are placed into DerivedObsError
@@ -74,6 +74,15 @@ observations:
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
 - obs space:
+    <<: *append_1d
+    name: Append 1D variables (OSDF)
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_1D_osdf_out.nc4"
+  test data: *append_1d_test_data
+
+- obs space: &append_2d
     name: "Append 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -87,7 +96,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/obsspace_append_2D_out.nc4"
-  test data:
+  test data: &append_2d_test_data
     # These input files contain ObsError variables so there is
     # no need to work with DerivedObsError, thus no need to update
     # the missing values that are placed into DerivedObsError
@@ -143,6 +152,15 @@ observations:
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
 - obs space:
+    <<: *append_2d
+    name: Append 2D variables (OSDF)
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_2D_osdf_out.nc4"
+  test data: *append_2d_test_data
+
+- obs space: &append_no_obserror
     name: "Append no ObsError"
     simulated variables: ['airTemperature']
     distribution:
@@ -155,7 +173,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/obsspace_append_no_obserror_out.nc4"
-  test data:
+  test data: &append_no_obserror_test_data
     # These files do not contain variables in the ObsError group, thus
     # the DerivedObsError is being used. Emulate the update of the
     # DerivedObsError after each of the append calls (and before the
@@ -220,3 +238,12 @@ observations:
           rec18: [ 18 ]
           rec19: [ 19 ]
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+
+- obs space:
+    <<: *append_no_obserror
+    name: Append no ObsError variables (OSDF)
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_no_obserror_out.nc4"
+  test data: *append_no_obserror_test_data
