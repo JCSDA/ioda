@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
-#define TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_
+#pragma once
 
 #include <algorithm>
 #include <limits>
@@ -262,4 +261,3 @@ class DistributionMethods : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_DISTRIBUTION_DISTRIBUTIONMETHODS_H_

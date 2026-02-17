@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_ENGINES_REMOVEHDF5VARIABLE_H_
-#define TEST_ENGINES_REMOVEHDF5VARIABLE_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -95,4 +94,3 @@ class RemoveHdf5Variable : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_ENGINES_REMOVEHDF5VARIABLE_H_

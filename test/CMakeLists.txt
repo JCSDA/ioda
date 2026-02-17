@@ -103,30 +103,7 @@ endif()
 list( APPEND ioda_test_input
   testinput/iodatest.yaml
   testinput/iodatest_fileformat.yaml
-  testinput/iodatest_remove_hdf5_variable.yaml
-  testinput/iodatest_copy_attributes.yaml
-  testinput/iodatest_obs_data_frame.yaml
-  testinput/iodatest_obs_io_pool.yaml
   testinput/iodatest_departuresensemble.yaml
-  testinput/iodatest_distribution.yaml
-  testinput/iodatest_distribution_masterandreplica_mpi_2.yaml
-  testinput/iodatest_distribution_masterandreplica_mpi_3.yaml
-  testinput/iodatest_distribution_masterandreplica_mpi_4.yaml
-  testinput/iodatest_distribution_methods.yaml
-  testinput/iodatest_distribution_timewindow.yaml
-  testinput/iodatest_distribution_build_round_robin_mpi_2.yaml
-  testinput/iodatest_distribution_build_round_robin_mpi_3.yaml
-  testinput/iodatest_distribution_build_round_robin_mpi_4.yaml
-  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml
-  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml
-  testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml
-  testinput/iodatest_osdf_dist_allgatherv.yaml
-  testinput/iodatest_engine_construct_utils.yaml
-  testinput/iodatest_engine_construct_utils_odc.yaml
-  testinput/iodatest_engine_factory.yaml
-  testinput/iodatest_engine_factory_odc.yaml
-  testinput/iodatest_engine_uniquify_file_name.yaml
-  testinput/iodatest_io_pool_factory.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
@@ -243,12 +220,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
-  testinput/iodatest_reader_distribute_assignrecords.yaml
-  testinput/iodatest_reader_distribute_calc_dist.yaml
-  testinput/iodatest_reader_distribute_select_rank.yaml
-  testinput/iodatest_reader_distributeobs.yaml
-  testinput/iodatest_reader_filter.yaml
-  testinput/iodatest_reader_load.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
   testinput/iodatest_time_io_osdf.yaml
@@ -270,6 +241,42 @@ list( APPEND ioda_test_input
   testinput/iodatest_bufr_python_parallel.py
   testinput/iodatest_script_args.yaml
   testinput/iodatest_script_args.py
+
+  testinput/containers/iodatest_obs_data_frame.yaml
+  testinput/containers/iodatest_osdf_dummy_config.yaml
+
+  testinput/distribution/iodatest_distribution.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_mpi_2.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_mpi_3.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_mpi_4.yaml
+  testinput/distribution/iodatest_distribution_methods.yaml
+  testinput/distribution/iodatest_distribution_timewindow.yaml
+  testinput/distribution/iodatest_distribution_build_round_robin_mpi_2.yaml
+  testinput/distribution/iodatest_distribution_build_round_robin_mpi_3.yaml
+  testinput/distribution/iodatest_distribution_build_round_robin_mpi_4.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml
+  testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml
+
+  testinput/engines/iodatest_copy_attributes.yaml
+  testinput/engines/iodatest_engine_construct_utils.yaml
+  testinput/engines/iodatest_engine_construct_utils_odc.yaml
+  testinput/engines/iodatest_engine_factory.yaml
+  testinput/engines/iodatest_engine_factory_odc.yaml
+  testinput/engines/iodatest_engine_uniquify_file_name.yaml
+  testinput/engines/iodatest_remove_hdf5_variable.yaml
+
+  testinput/ioPool/iodatest_io_pool_factory.yaml
+
+  testinput/obsIoPool/iodatest_obs_io_pool.yaml
+
+  testinput/reader/iodatest_reader_filter.yaml
+  testinput/reader/iodatest_reader_load.yaml
+  testinput/reader/iodatest_osdf_dist_allgatherv.yaml
+  testinput/reader/iodatest_reader_distribute_assignrecords.yaml
+  testinput/reader/iodatest_reader_distribute_calc_dist.yaml
+  testinput/reader/iodatest_reader_distribute_select_rank.yaml
+  testinput/reader/iodatest_reader_distributeobs.yaml
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -321,48 +328,169 @@ target_include_directories(ioda_test INTERFACE $<BUILD_INTERFACE:${BUILD_DIR_TES
 target_link_libraries(ioda_test INTERFACE ioda)
 
 #####################################################################
+# OSDF unit tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_obs_data_frame
+                  SOURCES mains/containers/TestObsDataFrame.cc
+                  ARGS    "testinput/containers/iodatest_obs_data_frame.yaml"
+                  LIBS  ioda_test )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_empty_column
+                  SOURCES mains/containers/TestOsdfEmptyColumn.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_get_data_rows
+                  SOURCES mains/containers/TestOsdfGetDataRows.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_validate_column_metadata
+                  SOURCES mains/containers/TestOsdfValidateColumnMetadata.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_get_column_metadata
+                  SOURCES mains/containers/TestOsdfGetColumnMetadata.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_append
+                  SOURCES mains/containers/TestOsdfAppend.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+#####################################################################
+# OSDF based reader tests
+#####################################################################
+
+# Reader load step
+ecbuild_add_test( TARGET  test_ioda_reader_load
+                  SOURCES mains/reader/TestReaderLoad.cc
+                  ARGS    "testinput/reader/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_2
+                  COMMAND test_ioda_reader_load
+                  MPI 2
+                  ARGS    "testinput/reader/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_4
+                  COMMAND test_ioda_reader_load
+                  MPI 4
+                  ARGS    "testinput/reader/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+
+# Reader filter step
+ecbuild_add_test( TARGET  test_ioda_reader_filter
+                  SOURCES mains/reader/TestReaderFilter.cc
+                  ARGS    "testinput/reader/iodatest_reader_filter.yaml"
+                  LIBS  ioda_test
+                  )
+
+# Reader distribute step
+
+ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
+                  MPI     2
+                  SOURCES mains/reader/TestOsdfDistAllgatherv.cc
+                  ARGS    "testinput/reader/iodatest_osdf_dist_allgatherv.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_dist_assignrecords
+                  SOURCES mains/reader/TestOsdfAssignRecords.cc
+                  ARGS    "testinput/reader/iodatest_reader_distribute_assignrecords.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_2
+                  MPI     2
+                  SOURCES mains/reader/TestCalculateDistribution.cc
+                  ARGS    "testinput/reader/iodatest_reader_distribute_calc_dist.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_4
+                  MPI     4
+                  SOURCES mains/reader/TestCalculateDistribution.cc
+                  ARGS    "testinput/reader/iodatest_reader_distribute_calc_dist.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_select_rank_2
+                  MPI     2
+                  SOURCES mains/reader/TestOsdfDistSelectRank.cc
+                  ARGS    "testinput/reader/iodatest_reader_distribute_select_rank.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distribute_select_rank_4
+                  MPI     4
+                  SOURCES mains/reader/TestOsdfDistSelectRank.cc
+                  ARGS    "testinput/reader/iodatest_reader_distribute_select_rank.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_reader_distributeobs_rank_4
+                  MPI     4
+                  SOURCES mains/reader/TestDistributeObs.cc
+                  ARGS    "testinput/reader/iodatest_reader_distributeobs.yaml"
+                  LIBS  ioda_test
+                  )
+
+#####################################################################
 # Distribution tests
 #####################################################################
 ecbuild_add_test( TARGET  test_ioda_distribution
                   MPI     4
-                  SOURCES mains/TestDistribution.cc
-                  ARGS    "testinput/iodatest_distribution.yaml"
+                  SOURCES mains/distribution/TestDistribution.cc
+                  ARGS    "testinput/distribution/iodatest_distribution.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_2
                   MPI     2
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_2.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_mpi_2.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_3
                   MPI     3
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_3.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_mpi_3.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_mpi_4.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_mpi_4.yaml"
                   LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
                   MPI     4
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_timewindow.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_timewindow.yaml"
                   LIBS  ioda_test
                   )
 
 # Disrtibution method tests
 ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   MPI     4
-                  SOURCES mains/TestDistributionMethods.cc
-                  ARGS    "testinput/iodatest_distribution_methods.yaml"
+                  SOURCES mains/distribution/TestDistributionMethods.cc
+                  ARGS    "testinput/distribution/iodatest_distribution_methods.yaml"
                   LIBS  ioda_test
                   )
 
@@ -377,110 +505,41 @@ ecbuild_add_test( TARGET  test_ioda_distribution_clean_build_file_set_files
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_prep_file_info.nc4"
                     "testwork/distribution_mpi_4/obsspace_grouping_round_robin_0000.nc4" )
 
-# OSDF distribute tests
-ecbuild_add_test( TARGET  test_ioda_osdf_empty_column
-                  SOURCES mains/TestOsdfEmptyColumn.cc
-                  ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_get_data_rows
-                  SOURCES mains/TestOsdfGetDataRows.cc
-                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_validate_column_metadata
-                  SOURCES mains/TestOsdfValidateColumnMetadata.cc
-                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_get_column_metadata
-                  SOURCES mains/TestOsdfGetColumnMetadata.cc
-                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_append
-                  SOURCES mains/TestOsdfAppend.cc
-                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_dist_allgatherv
-                  MPI     2
-                  SOURCES mains/TestOsdfDistAllgatherv.cc
-                  ARGS    "testinput/iodatest_osdf_dist_allgatherv.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_osdf_dist_assignrecords
-                  SOURCES mains/TestOsdfAssignRecords.cc
-                  ARGS    "testinput/iodatest_reader_distribute_assignrecords.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_2
-                  MPI     2
-                  SOURCES mains/TestCalculateDistribution.cc
-                  ARGS    "testinput/iodatest_reader_distribute_calc_dist.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_distribute_calc_dist_4
-                  MPI     4
-                  SOURCES mains/TestCalculateDistribution.cc
-                  ARGS    "testinput/iodatest_reader_distribute_calc_dist.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_distribute_select_rank_2
-                  MPI     2
-                  SOURCES mains/TestOsdfDistSelectRank.cc
-                  ARGS    "testinput/iodatest_reader_distribute_select_rank.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_distribute_select_rank_4
-                  MPI     4
-                  SOURCES mains/TestOsdfDistSelectRank.cc
-                  ARGS    "testinput/iodatest_reader_distribute_select_rank.yaml"
-                  LIBS  ioda_test
-                  )
-
-ecbuild_add_test( TARGET  test_ioda_reader_distributeobs_rank_4
-                  MPI     4
-                  SOURCES mains/TestDistributeObs.cc
-                  ARGS    "testinput/iodatest_reader_distributeobs.yaml"
-                  LIBS  ioda_test
-                  )
-
 # build file sets for obsspace_grouping, communicator target sizes 2, 3, 4
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_2_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
-                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_2.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_build_round_robin_mpi_2.yaml"
                   TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_3_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
-                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_3.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_build_round_robin_mpi_3.yaml"
                   TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_build_round_robin_mpi_4_file_set
                   COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-buildInputFileSet.x
-                  ARGS    "testinput/iodatest_distribution_build_round_robin_mpi_4.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_build_round_robin_mpi_4.yaml"
                   TEST_DEPENDS test_ioda_distribution_clean_build_file_set_files )
 
 # run distribution tests using the input file sets generated in the above tests
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_2
                   MPI     2
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_2.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_2_file_set )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_3
                   MPI     3
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_3.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_3_file_set )
 
 ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_4
                   MPI     4
                   COMMAND test_ioda_distribution
-                  ARGS    "testinput/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml"
+                  ARGS    "testinput/distribution/iodatest_distribution_masterandreplica_io_pool_mpi_4.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_distribution_build_round_robin_mpi_4_file_set )
 
@@ -489,8 +548,8 @@ ecbuild_add_test( TARGET  test_ioda_distribution_masterandreplica_io_pool_mpi_4
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable
-                  SOURCES mains/TestRemoveHdf5Variable.cc
-                  ARGS    "testinput/iodatest_remove_hdf5_variable.yaml"
+                  SOURCES mains/engines/TestRemoveHdf5Variable.cc
+                  ARGS    "testinput/engines/iodatest_remove_hdf5_variable.yaml"
                   LIBS  ioda_engines ioda_test
                   )
 
@@ -504,75 +563,66 @@ ecbuild_add_test( TARGET  test_ioda_remove_hdf5_variable_cmp
                   TEST_DEPENDS test_ioda_remove_hdf5_variable )
 
 ecbuild_add_test( TARGET  test_ioda_engine_construct_utils
-                  SOURCES mains/TestEngineConstructUtils.cc
-                  ARGS    "testinput/iodatest_engine_construct_utils.yaml"
+                  SOURCES mains/engines/TestEngineConstructUtils.cc
+                  ARGS    "testinput/engines/iodatest_engine_construct_utils.yaml"
                   LIBS  ioda_engines ioda_test
                   )
 if (odc_FOUND)
   ecbuild_add_test( TARGET  test_ioda_engine_construct_utils_odc
-                    SOURCES mains/TestEngineConstructUtils.cc
-                    ARGS    "testinput/iodatest_engine_construct_utils_odc.yaml"
+                    COMMAND test_ioda_engine_construct_utils
+                    ARGS    "testinput/engines/iodatest_engine_construct_utils_odc.yaml"
                     LIBS  ioda_engines ioda_test
                     )
 endif()
 
 ecbuild_add_test( TARGET  test_ioda_engine_factory
-                  SOURCES mains/TestEngineFactory.cc
-                  ARGS    "testinput/iodatest_engine_factory.yaml"
+                  SOURCES mains/engines/TestEngineFactory.cc
+                  ARGS    "testinput/engines/iodatest_engine_factory.yaml"
                   LIBS  ioda_engines ioda_test
                   )
 
 ecbuild_add_test( TARGET  test_ioda_engine_uniquify_file_name
-                  SOURCES mains/TestEngineUniquifyFileName.cc
-                  ARGS    "testinput/iodatest_engine_uniquify_file_name.yaml"
-                  LIBS  ioda_engines ioda_test
-                  )
-
-ecbuild_add_test( TARGET  test_ioda_io_pool_factory
-                  SOURCES mains/TestIoPoolFactory.cc
-                  ARGS    "testinput/iodatest_io_pool_factory.yaml"
+                  SOURCES mains/engines/TestEngineUniquifyFileName.cc
+                  ARGS    "testinput/engines/iodatest_engine_uniquify_file_name.yaml"
                   LIBS  ioda_engines ioda_test
                   )
 
 if (odc_FOUND)
     ecbuild_add_test( TARGET  test_ioda_engine_factory_odc
                       COMMAND test_ioda_engine_factory
-                      ARGS    "testinput/iodatest_engine_factory_odc.yaml"
+                      ARGS    "testinput/engines/iodatest_engine_factory_odc.yaml"
                       LIBS  ioda_engines ioda_test
                       TEST_DEPENDS test_ioda_engine_factory )
 endif()
 
-#####################################################################
-# ioda utilities tests
-#####################################################################
-
 ecbuild_add_test( TARGET  test_ioda_copy_attributes
-                  SOURCES mains/TestCopyAttributes.cc
-                  ARGS    "testinput/iodatest_copy_attributes.yaml"
+                  SOURCES mains/engines/TestCopyAttributes.cc
+                  ARGS    "testinput/engines/iodatest_copy_attributes.yaml"
                   LIBS  ioda_engines ioda_test )
 
 #####################################################################
-# ObsDataFrame tests
+# ioPool tests
 #####################################################################
 
-ecbuild_add_test( TARGET  test_ioda_obs_data_frame
-                  SOURCES mains/TestObsDataFrame.cc
-                  ARGS    "testinput/iodatest_obs_data_frame.yaml"
-                  LIBS  ioda_test )
+ecbuild_add_test( TARGET  test_ioda_io_pool_factory
+                  SOURCES mains/ioPool/TestIoPoolFactory.cc
+                  ARGS    "testinput/ioPool/iodatest_io_pool_factory.yaml"
+                  LIBS  ioda_engines ioda_test
+                  )
 
 #####################################################################
 # ObsIoPool tests
 #####################################################################
 
 ecbuild_add_test( TARGET  test_ioda_obs_io_pool
-                  SOURCES mains/TestObsIoPool.cc
-                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
+                  SOURCES mains/obsIoPool/TestObsIoPool.cc
+                  ARGS    "testinput/obsIoPool/iodatest_obs_io_pool.yaml"
                   LIBS  ioda_test )
 
 ecbuild_add_test( TARGET  test_ioda_obs_io_pool_mpi_7
                   MPI 7
                   COMMAND test_ioda_obs_io_pool
-                  ARGS    "testinput/iodatest_obs_io_pool.yaml"
+                  ARGS    "testinput/obsIoPool/iodatest_obs_io_pool.yaml"
                   LIBS  ioda_test )
 
 #####################################################################
@@ -1756,36 +1806,6 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
                   MPI     2
                   SOURCES mains/TestIodaObsDataVector.cc
                   ARGS    "testinput/iodatest_obsdatavector.yaml"
-                  LIBS  ioda_test
-                  )
-
-#####################################################################
-# Test the reader load step
-#####################################################################
-ecbuild_add_test( TARGET  test_ioda_reader_load
-                  SOURCES mains/TestReaderLoad.cc
-                  ARGS    "testinput/iodatest_reader_load.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_2
-                  COMMAND test_ioda_reader_load
-                  MPI 2
-                  ARGS    "testinput/iodatest_reader_load.yaml"
-                  LIBS  ioda_test
-                  )
-ecbuild_add_test( TARGET  test_ioda_reader_load_mpi_4
-                  COMMAND test_ioda_reader_load
-                  MPI 4
-                  ARGS    "testinput/iodatest_reader_load.yaml"
-                  LIBS  ioda_test
-                  )
-
-#####################################################################
-# Test the reader filter step
-#####################################################################
-ecbuild_add_test( TARGET  test_ioda_reader_filter
-                  SOURCES mains/TestReaderFilter.cc
-                  ARGS    "testinput/iodatest_reader_filter.yaml"
                   LIBS  ioda_test
                   )
 
@@ -3651,6 +3671,12 @@ ecbuild_add_test(
 
 # Create symlink to input YAML configuration files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/containers)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/distribution)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/engines)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/ioPool)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/obsIoPool)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/reader)
 
 foreach(FILENAME ${ioda_test_input})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink

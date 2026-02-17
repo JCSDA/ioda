@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_ENGINES_ENGINECONSTRUCTUTILS_H_
-#define TEST_ENGINES_ENGINECONSTRUCTUTILS_H_
+#pragma once
 
 #include <memory>
 #include <sstream>
@@ -172,4 +171,3 @@ class EngineConstructUtils : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_ENGINES_ENGINECONSTRUCTUTILS_H_

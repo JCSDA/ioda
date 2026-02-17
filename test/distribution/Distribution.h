@@ -8,8 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_DISTRIBUTION_DISTRIBUTION_H_
-#define TEST_DISTRIBUTION_DISTRIBUTION_H_
+#pragma once
 
 #include <algorithm>
 #include <cmath>
@@ -339,4 +338,3 @@ class Distribution : public oops::Test {
 }  // namespace test
 }  // namespace ioda
 
-#endif  // TEST_DISTRIBUTION_DISTRIBUTION_H_
