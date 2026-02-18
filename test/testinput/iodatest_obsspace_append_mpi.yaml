@@ -7,7 +7,7 @@ observations:
 
 ####################### 1D variables #######################
 
-- obs space:
+- obs space: &append_1d_mpi
     name: "Append 1D variables"
     simulated variables: ['airTemperature']
     distribution:
@@ -16,7 +16,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_1D.nc4"
-  test data:
+  test data: &append_1d_mpi_test_data
     after constructor:
       gnlocs: 7
       gnlocs outside time window: 0
@@ -128,6 +128,12 @@ observations:
         patch obs: [ 1, 1, 1, 1 ]
 
 - obs space:
+    <<: *append_1d_mpi
+    name: Append 1D variables (OSDF)
+    use data frame container: true
+  test data: *append_1d_mpi_test_data
+
+- obs space: &append_2d_mpi
     name: "Append 2D variables"
     simulated variables: ['brightnessTemperature']
     channels: 1-5
@@ -137,7 +143,7 @@ observations:
       engine:
         type: H5File
         obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_2D.nc4"
-  test data:
+  test data: &append_2d_mpi_test_data
     after constructor:
       gnlocs: 7
       gnlocs outside time window: 0
@@ -247,3 +253,10 @@ observations:
           rec15: [ 2 ]
           rec19: [ 3 ]
         patch obs: [ 1, 1, 1, 1 ]
+
+- obs space:
+    <<: *append_2d_mpi
+    name: Append 1D variables (OSDF)
+    use data frame container: true
+  test data: *append_2d_mpi_test_data
+

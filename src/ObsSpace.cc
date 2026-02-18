@@ -34,6 +34,7 @@
 #include "oops/util/stringFunctions.h"
 #include "oops/util/Timer.h"
 
+#include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameMetadata.h"
@@ -173,14 +174,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     // Transfer data from the input source (file or generator) into the obs container
     if (use_dataframe_) {
         // Using the new OSDF obs container.
-        // The osdfMetdata_.setFrameType function will check that we have
-        // a valid dataframe type.
-        osdfMetadata_.setFrameType(obs_params_.top_level_.dataFrameType);
-        if (osdfMetadata_.getFrameType() == "FrameCols") {
-            osdf_ = std::make_unique<osdf::FrameCols>();
-        } else if (osdfMetadata_.getFrameType() == "FrameRows") {
-            osdf_ = std::make_unique<osdf::FrameRows>();
-        }
+        // The standalone function createIFrame will check that
+        // we have a valid dataframe type.
+        osdf_ = osdf::createIFrame(obs_params_.top_level_.dataFrameType);
 
         // Transfer obs from the input files to the OSDF container.
         reader::obsRead(obsDataInConfigs,
@@ -869,19 +865,13 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
 
           if (use_dataframe_) {
             // Create temporary osdf to append to
-            std::unique_ptr<osdf::IFrame> tempOsdf;
-            if (osdfMetadata_.getFrameType() == "FrameCols") {
-              tempOsdf = std::make_unique<osdf::FrameCols>();
-            } else if (osdfMetadata_.getFrameType() == "FrameRows") {
-              tempOsdf = std::make_unique<osdf::FrameRows>();
-            }
+            std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(osdf_->frameType());
 
             // Read file into temp osdf using the same metadata, distribution, etc  as osdf_
-            reader::obsRead({obsDataInConfig},
-                            obs_params_.top_level_.ioPool.value(),
+            reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
-                            timeWindow_, dist_,
-                            tempOsdf, obsSourceStats, osdfMetadata_);
+                            timeWindow_, dist_, tempOsdf, obsSourceStats, osdfMetadata_);
+
             appendOsdf(tempOsdf, obsSourceStats);
           } else {
             // Load data into a temporary ObsGroup object and append that to the obs_group_
@@ -1096,7 +1086,7 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
 
 // -----------------------------------------------------------------------------
 void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSourceStats) {
-    // append the ObsGroup
+  // append the ObsGroup
     obs_group_->append(appendObsGroup);
     updateSourceStatsRecordNumbers(obsSourceStats);
 

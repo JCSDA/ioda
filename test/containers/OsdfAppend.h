@@ -210,8 +210,8 @@ class OsdfAppend : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ReaderFilter/testOsdfAppend") { testOsdfAppendPasses(); });
-    ts.emplace_back(CASE("ioda/ReaderFilter/testOsdfAppendFails") { testOsdfAppendFails(); });
+    ts.emplace_back(CASE("ioda/OsdfAppend/testOsdfAppend") { testOsdfAppendPasses(); });
+    ts.emplace_back(CASE("ioda/OsdfAppend/testOsdfAppendFails") { testOsdfAppendFails(); });
   }
 
   void clear() const override {}

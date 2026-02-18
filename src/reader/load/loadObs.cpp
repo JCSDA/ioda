@@ -117,14 +117,10 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
           mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
 
           // Need to synchronize the osdfMetadata object:
-          //   frameType
           //   chanNums
           //   numVars
           //   dateTimeEpoch
           //   varsWithChans
-
-          // frameType
-          oops::mpi::sendString(mainComm, osdfMetadata.getFrameType(), i);
 
           // chanNums
           int sendInt = osdfMetadata.getChanNums().size();
@@ -160,16 +156,10 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
                                                         serializedColMetadata.size()));
 
         // Need to read and store the osdfMetada data members:
-        //   frameType
         //   chanNums
         //   numVars
         //   dateTimeEpoch
         //   varsWithChans
-
-        // frameType
-        std::string recvString;
-        oops::mpi::receiveString(mainComm, recvString, rootRank);
-        osdfMetadata.setFrameType(recvString);
 
         // chanNums
         int recvInt;
@@ -183,6 +173,7 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool inIoPool,
         osdfMetadata.setNumVars(recvInt);
 
         // dateTimeEpoch
+        std::string recvString;
         oops::mpi::receiveString(mainComm, recvString, rootRank);
         osdfMetadata.setDateTimeEpoch(recvString);
 

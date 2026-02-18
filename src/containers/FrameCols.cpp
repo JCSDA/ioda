@@ -300,6 +300,10 @@ void osdf::FrameCols::print() const {
   data_.print();
 }
 
+std::string osdf::FrameCols::frameType() const {
+  return std::string("FrameCols");
+}
+
 void osdf::FrameCols::clear() {
   data_.clear();
   notify();

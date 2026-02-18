@@ -8,6 +8,7 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/core/ObsSourceStats.h"
@@ -59,12 +60,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
     if (index == 0) {
       loadObs(dataInParamsSingleFile, ioPoolParams, commAll, destOsdf, osdfMetadata);
     } else {
-      std::unique_ptr<osdf::IFrame> tempOsdf;
-      if (osdfMetadata.getFrameType() == "FrameCols") {
-        tempOsdf = std::make_unique<osdf::FrameCols>();
-      } else if (osdfMetadata.getFrameType() == "FrameRows") {
-        tempOsdf = std::make_unique<osdf::FrameRows>();
-      }
+      std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(destOsdf->frameType());
       loadObs(dataInParamsSingleFile, ioPoolParams, commAll, tempOsdf, osdfMetadata);
       destOsdf->append(tempOsdf);
     }
@@ -84,7 +80,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
   dataInParamsSingleFile.deserialize(dataInParams[0]);
   const auto obsGroupVarList = dataInParamsSingleFile.obsGrouping.value().obsGroupVars.value();
 
-  distributeObs(distParams, commAll, obsGroupVarList, osdfMetadata, obsSourceStats, ospaceDist,
+  distributeObs(distParams, commAll, obsGroupVarList, obsSourceStats, ospaceDist,
                 destOsdf);
   oops::Log::trace() << "reader::obsRead end" << std::endl;
 }

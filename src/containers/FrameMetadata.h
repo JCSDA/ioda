@@ -20,10 +20,6 @@ class FrameMetadata {
   //----------------------------------------------------------------------
   // Data member accessors
 
-  /// \brief set the frame type
-  /// \param frameType frame type, valid values are: "FrameRows" and "FrameCols"
-  void setFrameType(const std::string & frameType);
-
   /// \brief set channel numbers vector
   /// \param chanNums channel numbers used in column entries
   /// \details This set of channel numbers must line up with the names of
@@ -52,8 +48,6 @@ class FrameMetadata {
   /// represents the epoch for the MetaData/dateTime variable values.
   void setDateTimeEpoch(const std::string & epochString);
 
-  /// \brief return the frame type
-  std::string getFrameType() const;
 
   /// \brief return the channel numbers vector
   const std::vector<int> & getChanNums() const;
@@ -82,9 +76,6 @@ class FrameMetadata {
   bool varHasChannels(const std::string & varName) const;
 
  private:
-  /// \brief data frame type (row vs column oriented)
-  std::string frameType_;
-
   /// \brief frame channel numbers
   std::vector<int> chanNums_;
 

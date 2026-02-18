@@ -8,13 +8,11 @@
 #include "ioda/containers/FrameRowsData.h"
 
 #include <algorithm>
-#include <stdexcept>
 #include <utility>
 
 #include "ColumnMetadata.h"
 #include "DataRow.h"
 #include "eckit/exception/Exceptions.h"
-#include "ioda/Exception.h"
 #include "ioda/containers/Constants.h"
 
 osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs) :

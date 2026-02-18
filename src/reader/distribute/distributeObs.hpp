@@ -41,7 +41,6 @@ namespace reader {
 void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
-                   const osdf::FrameMetadata & osdfMetadata,
                    ObsSourceStats & obsSourceStats,
                    std::shared_ptr<Distribution> & ospaceDist,
                    std::unique_ptr<osdf::IFrame> & inOutOsdf);

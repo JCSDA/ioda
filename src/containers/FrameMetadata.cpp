@@ -6,17 +6,13 @@
  */
 
 #include "ioda/containers/FrameMetadata.h"
-
 #include "eckit/exception/Exceptions.h"
-
-#include "oops/util/Logger.h"
 
 namespace osdf {
 
 //----------------------------------------------------------------------
 FrameMetadata::FrameMetadata()
-                  : frameType_("None"),
-                    chanNums_({}),
+                  : chanNums_({}),
                     varsWithChans_({}),
                     numVars_(0),
                     dateTimeEpoch_("None") {
@@ -24,13 +20,6 @@ FrameMetadata::FrameMetadata()
 
 //----------------------------------------------------------------------
 // setters
-void FrameMetadata::setFrameType(const std::string & frameType) {
-  if ((frameType != "FrameCols") && (frameType != "FrameRows")) {
-    throw eckit::UserError("Unknown data frame type: " + frameType, Here());
-  }
-  frameType_ = frameType;
-}
-
 void FrameMetadata::setChanNums(const std::vector<int> & chanNums) {
   // For now, only set the first time. The assumption is that there exists
   // only one channel dimension and those channel numbers are being passed
@@ -54,10 +43,6 @@ void FrameMetadata::setDateTimeEpoch(const std::string & epochString) {
 
 //----------------------------------------------------------------------
 // getters
-std::string FrameMetadata::getFrameType() const {
-  return frameType_;
-}
-
 const std::vector<int> & FrameMetadata::getChanNums() const {
   return chanNums_;
 }

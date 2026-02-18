@@ -63,7 +63,7 @@ class OsdfGetColumnMetadata : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ReaderFilter/testGetColumnMetadata") {
+    ts.emplace_back(CASE("ioda/OsdfColumnMetadata/testGetColumnMetadata") {
       testGetColumnMetadata();
     });
   }

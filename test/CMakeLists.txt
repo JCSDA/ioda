@@ -486,7 +486,7 @@ ecbuild_add_test( TARGET  test_ioda_distribution_timewindow
                   LIBS  ioda_test
                   )
 
-# Disrtibution method tests
+# Distribution method tests
 ecbuild_add_test( TARGET  test_ioda_distribution_methods
                   MPI     4
                   SOURCES mains/distribution/TestDistributionMethods.cc
@@ -1249,6 +1249,13 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_put_db_channels_check
 ecbuild_add_test( TARGET  test_ioda_obsspace_osdf
                   COMMAND test_ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+# this test checks the creation of an iframe of a given type (FrameRows or FrameCols)
+ecbuild_add_test( TARGET test_ioda_osdf_create_iframe
+                  SOURCES mains/containers/TestOsdfCreateIFrame.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
 

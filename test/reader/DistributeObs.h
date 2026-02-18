@@ -63,7 +63,6 @@ void testCalculateDistribution() {
 
   // osdfMetadata
   osdf::FrameMetadata osdfMetadata;
-  osdfMetadata.setFrameType("FrameRows");
 
   // ObsSourceStats
   ioda::ObsSourceStats obsSourceStats;
@@ -72,7 +71,6 @@ void testCalculateDistribution() {
   // Call the function being tested
   ioda::reader::distributeObs(distParams, oops::mpi::world(),
                              obsGroupVarList,
-                             osdfMetadata,
                              obsSourceStats,
                              distribution,
                              inoutOsdf);

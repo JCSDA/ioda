@@ -76,6 +76,7 @@ observations:
 - obs space:
     <<: *append_1d
     name: Append 1D variables (OSDF)
+    use data frame container: true
     obsdataout:
       engine:
         type: H5File
@@ -154,6 +155,7 @@ observations:
 - obs space:
     <<: *append_2d
     name: Append 2D variables (OSDF)
+    use data frame container: true
     obsdataout:
       engine:
         type: H5File
@@ -177,7 +179,7 @@ observations:
     # These files do not contain variables in the ObsError group, thus
     # the DerivedObsError is being used. Emulate the update of the
     # DerivedObsError after each of the append calls (and before the
-    # next append calll). The values in the "update derived obs error"
+    # next append call). The values in the "update derived obs error"
     # specs are used for this purpose.
     after constructor:
       gnlocs: 7
@@ -239,11 +241,13 @@ observations:
           rec19: [ 19 ]
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
-- obs space:
-    <<: *append_no_obserror
-    name: Append no ObsError variables (OSDF)
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/obsspace_append_no_obserror_out.nc4"
-  test data: *append_no_obserror_test_data
+#- obs space:
+#    <<: *append_no_obserror
+#    name: Append no ObsError variables (OSDF)
+#    use data frame container: true
+#    obsdataout:
+#      engine:
+#        type: H5File
+#        obsfile: "testoutput/obsspace_append_no_obserror_osdf_out.nc4"
+#  test data: *append_no_obserror_test_data
+

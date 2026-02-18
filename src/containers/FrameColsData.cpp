@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "DataRow.h"
-#include "ioda/Exception.h"
 #include "eckit/exception/Exceptions.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"

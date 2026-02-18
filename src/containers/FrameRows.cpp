@@ -286,6 +286,10 @@ void osdf::FrameRows::print() const {
   data_.print();
 }
 
+std::string osdf::FrameRows::frameType() const {
+  return std::string("FrameRows");
+}
+
 void osdf::FrameRows::clear() {
   data_.clear();
   notify();

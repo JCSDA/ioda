@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "oops/util/Logger.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "ioda/containers/ColumnMetadata.h"
@@ -101,6 +100,7 @@ class FrameRows : public IFrame {
   void append(const std::unique_ptr<IFrame>& srcOsdf) override;
 
   void print() const override;
+  std::string frameType() const override;
   void clear();
 
   /// \brief The following functions return an instance of the derived type for chaining of function

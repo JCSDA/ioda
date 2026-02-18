@@ -10,18 +10,17 @@
 #include <numeric>
 
 #include "eckit/mpi/Comm.h"
-
-#include "ioda/core/ObsSourceStats.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/containers/CreateIFrame.h"
+#include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/ReaderDependentDistribution.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 #include "ioda/reader/distribute/osdfDistributeUtils.hpp"
-
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
@@ -32,7 +31,6 @@ namespace reader {
 void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
-                   const osdf::FrameMetadata & osdfMetadata,
                    ObsSourceStats & obsSourceStats,
                    std::shared_ptr<Distribution> & ospaceDist,
                    std::unique_ptr<osdf::IFrame> & inOutOsdf) {
@@ -128,15 +126,8 @@ void distributeObs(const DistributionParametersBase & distParams,
                                     localNrecs);
 
   // Create the rank-specific osdf container to hold only this rank's locations (Step 6.)
-  std::unique_ptr<osdf::IFrame> rankOsdf;
-  auto frameType = osdfMetadata.getFrameType();
-  if (frameType == "FrameCols") {
-    rankOsdf.reset(new osdf::FrameCols());
-  } else if (frameType == "FrameRows") {
-    rankOsdf.reset(new osdf::FrameRows());
-  } else {
-    throw eckit::UserError("Unsupported frame type in distributeObs", Here());
-  }
+  std::unique_ptr<osdf::IFrame> rankOsdf =
+    osdf::createIFrame(inOutOsdf->frameType());
 
   // For the global columns already in memory, select the rows from the globalOsdf that
   // correspond to this rank's locations, then remove each global column after it has been

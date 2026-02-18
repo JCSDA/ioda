@@ -64,16 +64,14 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
     EXPECT(testOsdf->hasColumn(colName));
   }
 
-  // Check the osdf metadata contents:
-  //   1) frame type
-  //   2) channel numbers
-  //   3) vars with channels
-  //   4) number of vars
-  //   5) date time epoch
+  // Check frame type
+  EXPECT_EQUAL(testOsdf->frameType(), expectedFrameType);
 
-  // Frame type
-  const std::string frameType = osdfMetadata.getFrameType();
-  EXPECT_EQUAL(frameType, expectedFrameType);
+  // Check the osdf metadata contents:
+  //   1) channel numbers
+  //   2) vars with channels
+  //   3) number of vars
+  //   4) date time epoch
 
   // Channel numbers
   const std::vector<int> expectedChannelNumbers =
@@ -128,7 +126,6 @@ void testFrameRows() {
     // Need to set the frame type in the osdf metadata before calling loadObs.
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
-    osdfMetadata.setFrameType("FrameRows");
     const eckit::mpi::Comm & commAll = oops::mpi::world();
     reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameRows", testOsdf, osdfMetadata);
@@ -160,10 +157,8 @@ void testFrameCols() {
     std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameCols>();
 
     // Collectively call the loadObs function with all io pool members
-    // Need to set the frame type in the osdf metadata before calling loadObs.
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
-    osdfMetadata.setFrameType("FrameCols");
     const eckit::mpi::Comm & commAll = oops::mpi::world();
     reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameCols", testOsdf, osdfMetadata);

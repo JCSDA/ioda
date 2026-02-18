@@ -141,6 +141,10 @@ class IFrame {
 
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.
   virtual void print() const = 0;
+
+  /// \brief Outputs a string corresponding to the subclass of IFrame being used
+  /// e.g. "FrameRows" or "FrameCols".
+  virtual std::string frameType() const = 0;
 };
 
 }  // namespace osdf

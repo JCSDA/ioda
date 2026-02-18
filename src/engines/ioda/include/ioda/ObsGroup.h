@@ -50,7 +50,7 @@ public:
   ///   with the ObsGroup.
   /// \param fundamentalDims is a collection of dimension names,
   ///   data types and dimension types (horizontal, vertical,
-  ///   temporal, other) that define the basic dimensiosn of
+  ///   temporal, other) that define the basic dimensions of
   ///   the ObsGroup.
   /// \param layout describes how the ObsGroup arranges its data internally.
   ///   Use nullptr to select the default policy.

@@ -145,13 +145,13 @@ class OsdfValidateColumnMetadata : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ReaderFilter/testColumnMetadataValidateWrite") {
+    ts.emplace_back(CASE("ioda/OsdfColumnMetadata/testColumnMetadataValidateWrite") {
       testColumnMetadataValidateWrite();
     });
-    ts.emplace_back(CASE("ioda/ReaderFilter/testColumnMetadataComparePermissions") {
+    ts.emplace_back(CASE("ioda/OsdfColumnMetadata/testColumnMetadataComparePermissions") {
       testColumnMetadataComparePermissions();
     });
-    ts.emplace_back(CASE("ioda/ReaderFilter/testColumnMetadataCompare") {
+    ts.emplace_back(CASE("ioda/OsdfColumnMetadata/testColumnMetadataCompare") {
       testColumnMetadataCompare();
     });
   }
