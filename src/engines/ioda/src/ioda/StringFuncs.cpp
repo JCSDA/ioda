@@ -113,4 +113,17 @@ std::string convertV1PathToV2Path(const std::string & path) {
   }
 }
 
+bool extractChannelSuffixIfPresent(const std::string &name,
+                                   std::string &nameWithoutChannelSuffix, int &channel) {
+    const std::string::size_type lastUnderscore = name.find_last_of('_');
+    if (lastUnderscore != std::string::npos &&
+        name.find_first_not_of("0123456789", lastUnderscore + 1) == std::string::npos) {
+        // The variable name has a numeric suffix.
+        channel = std::stoi(name.substr(lastUnderscore + 1));
+        nameWithoutChannelSuffix = name.substr(0, lastUnderscore);
+        return true;
+    }
+    return false;
+}
+
 }  // namespace ioda

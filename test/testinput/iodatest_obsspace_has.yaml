@@ -73,7 +73,7 @@ observations:
         obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
     use data frame container: true
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
   test data:
     has group var checks:
       - group: "MetaData"
@@ -103,7 +103,7 @@ observations:
         obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
     use data frame container: true
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
   test data:
     has group var checks:
       - group: "MetaData"

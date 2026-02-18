@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &aircraft_space
     name: "Aircraft"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -16,7 +16,7 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork/obsspace_odc_reader_pool
-  test data:
+  test data: &aircraft_test_data
     gnlocs: 157
     gnlocs outside time window: 43
     gnlocs rejected by qc: 0
@@ -44,3 +44,11 @@ observations:
     tolerance:
       - 1.0e-7
     variables for putget test: []
+
+- obs space:
+    <<: *aircraft_space
+    name: "Aircraft (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *aircraft_test_data

@@ -4,7 +4,7 @@ time window:
   end: "2024-01-01T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &radar_space
     name: Radar
     simulated variables: [radialVelocity]
     obsdatain:
@@ -15,7 +15,7 @@ observations:
         query file: ../share/test/testinput/iodatest_odb_radar_doppler_wind.yaml
       obsgrouping:
         group variables: [dateTime, beamTiltAngle, stationIdentification]
-  test data:
+  test data: &radar_test_data
     gnlocs: 495
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -37,4 +37,16 @@ observations:
         norm: 7958.6961460379634
     tolerance:
       - 1.0e-7
-    variables for putget test: []
+    variables for putget test: []    
+- obs space:
+    <<: *radar_space
+    name: "Radar (OSDF, RoundRobin)"
+    use data frame container: true
+  test data: *radar_test_data
+- obs space:
+    <<: *radar_space
+    name: "Radar (OSDF, Identity)"
+    use data frame container: true
+    distribution:
+      name: Identity
+  test data: *radar_test_data

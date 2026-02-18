@@ -67,10 +67,10 @@ NonoverlappingReaderPool::NonoverlappingReaderPool(
 //--------------------------------------------------------------------------------------
 void NonoverlappingReaderPool::initialize() {
   oops::Log::trace() << "NonoverlappingReaderPool::initialize, start" << std::endl;
-  if (distribution()->name() != "ReaderDependentDistribution")
+  if (distribution()->name() != "Identity")
     throw eckit::UserError("Distribution '" + distribution()->name() +
                            "' is incompatible with NonoverlappingReaderPool. "
-                           "Use the ReaderDependentDistribution instead.", Here());
+                           "Use the Identity distribution instead.", Here());
   // We need to copy the commAll_ communicator to the commPool_ communicator.
   // Two of the IoPoolBase virtual functions (setTargetPoolSize and groupRanks) are being
   // overridden here to accomplish this.

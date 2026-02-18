@@ -11,7 +11,7 @@ observations:
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     obsdatain:
       engine:
         type: H5File
@@ -74,7 +74,7 @@ observations:
     name: "OSDF Sondes (FrameCols)"
     simulated variables: ['airTemperature']
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     obsdatain:
       engine:
         type: H5File
@@ -115,7 +115,7 @@ observations:
     name: "OSDF Sondes (FrameRows)"
     simulated variables: ['airTemperature']
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     obsdatain:
       engine:
         type: H5File
@@ -157,7 +157,7 @@ observations:
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     obsdatain:
       engine:
         type: H5File
@@ -213,7 +213,7 @@ observations:
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     obsdatain:
       engine:
         type: H5File

@@ -105,18 +105,6 @@ Variable Has_Variables_Base::open(const std::string& name) const {
   }
 }
 
-std::pair<bool, std::string> Has_Variables_Base::getUnitPassthrough(
-  const std::string& iodaVariableName) {
-  try {
-    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
-    return layout_->getUnitFromIodaName(layout_->doMap(iodaVariableName));
-  } catch (...) {
-    std::throw_with_nested(
-      Exception("An exception occurred inside ioda while getting a variable's units.", ioda_Here())
-        .add("ioda variable name", iodaVariableName));
-  }
-}
-
 // This is a one-level search. For searching contents of an ObsGroup, you need to
 // list the Variables in each child group.
 std::vector<std::string> Has_Variables_Base::list() const {

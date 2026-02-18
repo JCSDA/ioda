@@ -7,9 +7,9 @@
 
 #include "ioda/Engines/ODC/ObsGroupTransform.h"
 
+#include "ioda/Engines/ContainerFacade.h"
 #include "ioda/Engines/ODC/OdbConstants.h"
 #include "ioda/Engines/ODC/ObsGroupTransformFactory.h"
-#include "ioda/ObsGroup.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/missingValues.h"
@@ -59,7 +59,7 @@ CreateDateTimeTransform::CreateDateTimeTransform(
     odcParameters_(odcParameters), variableCreationParameters_(variableCreationParameters)
 {}
 
-void CreateDateTimeTransform::transform(ObsGroup &og) const
+void CreateDateTimeTransform::transform(ContainerFacade &container) const
 {
   const util::DateTime missingDate = util::missingValue<util::DateTime>();
   const util::DateTime &timeWindowStart = odcParameters_.timeWindowStart;
@@ -74,12 +74,12 @@ void CreateDateTimeTransform::transform(ObsGroup &og) const
 
   const util::DateTime epoch = getEpochAsDtime(variableCreationParameters_.epoch);
 
-  const std::vector<int> date = og.vars[transformParameters_.inputDate].readAsVector<int>();
-  const std::vector<int> time = og.vars[transformParameters_.inputTime].readAsVector<int>();
+  const std::vector<int> date = container.variableValues<int>(transformParameters_.inputDate);
+  const std::vector<int> time = container.variableValues<int>(transformParameters_.inputTime);
 
   std::vector<int> timeDisp;
   if (transformParameters_.displaceBy.value() != boost::none) {
-    timeDisp = og.vars[*transformParameters_.displaceBy.value()].readAsVector<int>();
+    timeDisp = container.variableValues<int>(*transformParameters_.displaceBy.value());
   } else {
     timeDisp.resize(date.size(), odb_missing_int);
   }
@@ -115,12 +115,9 @@ void CreateDateTimeTransform::transform(ObsGroup &og) const
     }
   }
 
-  ioda::VariableCreationParameters varCreationParameters;
-  varCreationParameters.setFillValue<int64_t>(variableCreationParameters_.missingInt64);
-  ioda::Variable v = og.vars.createWithScales<int64_t>(
-    transformParameters_.output, {og.vars["Location"]}, varCreationParameters);
-  v.atts.add<std::string>("units", variableCreationParameters_.epoch);
-  v.write(offsets);
+  container.addVariable(transformParameters_.output, offsets, false /*hasChannelAxis?*/,
+                        MemoryLayout::RowMajor, variableCreationParameters_.missingInt64);
+  container.setVariableUnit(transformParameters_.output, variableCreationParameters_.epoch);
 }
 
 // -----------------------------------------------------------------------------
@@ -139,10 +136,10 @@ CreateStationIdTransform::CreateStationIdTransform(const Parameters_ &parameters
   : parameters_(parameters)
 {}
 
-void CreateStationIdTransform::transform(ObsGroup &og) const
+void CreateStationIdTransform::transform(ContainerFacade &container) const
 {
   std::vector<std::string> stationIDs =
-      og.vars[parameters_.destination.value()].readAsVector<std::string>();
+      container.variableValues<std::string>(parameters_.destination.value());
   const size_t nlocs = stationIDs.size();
   std::vector<bool> alreadySet(nlocs, false);
 
@@ -151,16 +148,16 @@ void CreateStationIdTransform::transform(ObsGroup &og) const
       const VariableSourceParameters &variableSourceParameters =
           *sourceParameters.variable.value();
       const std::string &name = variableSourceParameters.name.value();
-      if (!og.vars.exists(name))
+      if (!container.hasVariable(name))
         continue;
 
-      const Variable source = og.vars[name];
-      const TypeClass typeClass = source.getType().getClass();
-      if (typeClass == TypeClass::Integer) {
-        const std::vector<int> values = source.readAsVector<int>();
+      const ContainerVariableType type = container.variableType(name);
+      if (type == ContainerVariableType::Int) {
+        std::vector<int> values = container.variableValues<int>(name);
+        const std::optional<int> missingValue = container.missingValue<int>(name);
         std::ostringstream stream;
         for (size_t loc = 0; loc < nlocs; loc++) {
-          if (!alreadySet[loc] && values[loc] != odb_missing_int) {
+          if (!alreadySet[loc] && (!missingValue || values[loc] != *missingValue)) {
             stream.str("");
             if (variableSourceParameters.width.value() != boost::none)
               stream << std::setw(*variableSourceParameters.width.value());
@@ -171,10 +168,11 @@ void CreateStationIdTransform::transform(ObsGroup &og) const
             alreadySet[loc] = true;
           }
         }
-      } else if (typeClass == TypeClass::String) {
-        const std::vector<std::string> values = source.readAsVector<std::string>();
+      } else if (type == ContainerVariableType::String) {
+        const std::vector<std::string> values = container.variableValues<std::string>(name);
+        const std::optional<std::string> missingValue = container.missingValue<std::string>(name);
         for (size_t loc = 0; loc < nlocs; loc++) {
-          if (!alreadySet[loc] && values[loc] != odb_missing_string) {
+          if (!alreadySet[loc] && (!missingValue || values[loc] != *missingValue)) {
             stationIDs[loc] = values[loc];
             alreadySet[loc] = true;
           }
@@ -186,18 +184,23 @@ void CreateStationIdTransform::transform(ObsGroup &og) const
       }
     } else if (sourceParameters.wmoId.value() != boost::none) {
       const WmoIdSourceParameters &wmoIdParameters = *sourceParameters.wmoId.value();
-      if (!og.vars.exists(wmoIdParameters.blockNumber) ||
-          !og.vars.exists(wmoIdParameters.stationNumber))
+      if (!container.hasVariable(wmoIdParameters.blockNumber) ||
+          !container.hasVariable(wmoIdParameters.stationNumber))
         continue;
 
       const std::vector<int> blockNumbers =
-          og.vars[wmoIdParameters.blockNumber].readAsVector<int>();
+          container.variableValues<int>(wmoIdParameters.blockNumber);
+      const std::optional<int> missingBlockNumber =
+        container.missingValue<int>(wmoIdParameters.blockNumber);
       const std::vector<int> stationNumbers =
-          og.vars[wmoIdParameters.stationNumber].readAsVector<int>();
+          container.variableValues<int>(wmoIdParameters.stationNumber);
+      const std::optional<int> missingStationNumber =
+        container.missingValue<int>(wmoIdParameters.stationNumber);
       std::ostringstream stream;
       for (size_t loc = 0; loc < nlocs; loc++) {
         if (!alreadySet[loc] &&
-            blockNumbers[loc] != odb_missing_int && stationNumbers[loc] != odb_missing_int) {
+            (!missingBlockNumber || blockNumbers[loc] != *missingBlockNumber) &&
+            (!missingStationNumber || stationNumbers[loc] != *missingStationNumber)) {
           stream.str("");
           stream << std::setfill('0') << std::setw(2) << blockNumbers[loc]
                  << std::setfill('0') << std::setw(3) << stationNumbers[loc];
@@ -208,12 +211,15 @@ void CreateStationIdTransform::transform(ObsGroup &og) const
     }
   }
 
-  for (size_t loc = 0; loc < nlocs; loc++)
-    if (!alreadySet[loc] && stationIDs[loc].empty())
-      stationIDs[loc] = odb_missing_string;
+  const std::optional<std::string> missingStationID =
+    container.missingValue<std::string>(parameters_.destination.value());
+  if (missingStationID) {
+    for (size_t loc = 0; loc < nlocs; loc++)
+      if (!alreadySet[loc] && stationIDs[loc].empty())
+        stationIDs[loc] = *missingStationID;
+  }
 
-  ioda::Variable v = og.vars[parameters_.destination];
-  v.write(stationIDs);
+  container.setVariableValues(parameters_.destination, stationIDs);
 }
 
 // -----------------------------------------------------------------------------
@@ -224,29 +230,26 @@ ConcatenateVariablesTransform::ConcatenateVariablesTransform(
   : transformParameters_(transformParameters)
 {}
 
-void ConcatenateVariablesTransform::transform(ObsGroup &og) const
+void ConcatenateVariablesTransform::transform(ContainerFacade &container) const
 {
   const std::vector<std::string> &sourceNames = transformParameters_.sources.value();
   ASSERT(!sourceNames.empty());
   const size_t numSources = sourceNames.size();
 
-  // Gather all source variables.
-  std::vector<Variable> sources;
-  sources.reserve(sourceNames.size());
-  std::transform(sourceNames.begin(), sourceNames.end(), std::back_inserter(sources),
-                 [&og](const std::string &name) {
-                   Variable source = og.vars[name];
-                   if (source.getType().getClass() != TypeClass::String)
-                     throw eckit::UserError("All concatenated variables must be of type string. "
-                                            "Variable '" + name + "' is not.", Here());
-                   return source;
-                  });
+  // Check types of source variables.
+  for (const std::string &name : sourceNames) {
+    if (container.variableType(name) != ContainerVariableType::String)
+      throw eckit::UserError("All concatenated variables must be of type string. "
+                             "Variable '" + name + "' is not.", Here());
+  }
 
-  // Gather the values of these variables.
+  // Gather the values of all source variables.
   std::vector<std::vector<std::string>> sourceValues;
   sourceValues.reserve(sourceNames.size());
-  std::transform(sources.begin(), sources.end(), std::back_inserter(sourceValues),
-                 [&og](const Variable &source) { return source.readAsVector<std::string>(); });
+  std::transform(sourceNames.begin(), sourceNames.end(), std::back_inserter(sourceValues),
+                 [&container](const std::string &name) {
+                   return container.variableValues<std::string>(name, MemoryLayout::Native);
+                 });
 
   const size_t numElements = sourceValues.front().size();
   if (std::any_of(std::next(sourceValues.begin()), sourceValues.end(),
@@ -266,38 +269,10 @@ void ConcatenateVariablesTransform::transform(ObsGroup &og) const
       concatenatedValue += sourceValues[s][e];
   }
 
-  // Create the destination variable.
-  const std::vector<Variable> destinationDimScales = destinationDimensionScales(og, sources.front());
-  // Retrieval of creation attributes and dimensions seems not to be implemented yet.
-  const VariableCreationParameters varCreationParameters =
-      sources.front().getCreationParameters(false /*doAtts?*/, false /*doDims?*/);
-  ioda::Variable destination = og.vars.createWithScales<std::string>(
-    transformParameters_.destination, destinationDimScales, varCreationParameters);
-
   // Store the concatenated strings in the destination variable.
-  destination.write(concatenatedValues);
-}
-
-std::vector<Variable> ConcatenateVariablesTransform::destinationDimensionScales(
-    const ObsGroup &og, const Variable &firstSource)
-{
-  // Identify all existing dimension scales.
-  std::vector<std::string> allVarNames = og.vars.list();
-  const std::list<Named_Variable> allDimScales = identifyDimensionScales(og.vars, allVarNames);
-  // Identify the dimension scales associated with the first source variable.
-  const std::vector<std::vector<Named_Variable>> namedSourceDimScales =
-    firstSource.getDimensionScaleMappings(allDimScales);
-  ASSERT_MSG(std::all_of(namedSourceDimScales.begin(), namedSourceDimScales.end(),
-                         [](const auto &v) { return v.size() == 1; }),
-             "All dimensions of concatenated variables are expected to have an attached dimension "
-             "scale");
-  // Gather these scales in a flat vector.
-  std::vector<Variable> destinationDimScales;
-  destinationDimScales.reserve(namedSourceDimScales.size());
-  std::transform(namedSourceDimScales.begin(), namedSourceDimScales.end(),
-                 std::back_inserter(destinationDimScales),
-                 [](const std::vector<Named_Variable>& scales) { return scales.front().var; });
-  return destinationDimScales;
+  container.addVariable(transformParameters_.destination, concatenatedValues,
+                        container.hasChannelAxis(sourceNames.front()), MemoryLayout::Native,
+                        util::missingValue<std::string>());
 }
 
 }  // namespace ODC

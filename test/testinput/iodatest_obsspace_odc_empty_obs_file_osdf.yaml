@@ -6,6 +6,11 @@ time window:
 observations:
 - obs space: &empty_space
     name: "Empty ODC obs file"
+    distribution:
+      name: Identity
+    use data frame container: true
+    io pool:
+      max pool size: 2
     simulated variables: ['height']
     obsdatain:
       engine:
@@ -13,10 +18,6 @@ observations:
         obsfile: "Data/testinput_tier_1/surface-empty.odb"
         mapping file: ../share/test/testinput/odb_surface_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_surface.yaml
-    distribution:
-      name: Identity
-    io pool:
-      reader name: NonoverlappingPool
     obs perturbations seed: 25
   test data: &empty_test_data
     gnlocs: 0
@@ -47,11 +48,3 @@ observations:
     tolerance:
       - 1.0e-14
     variables for putget test: []
-
-- obs space:
-    <<: *empty_space
-    name: "Empty ODC obs file (OSDF)"
-    distribution:
-      name: Identity
-    use data frame container: true
-  test data: *empty_test_data

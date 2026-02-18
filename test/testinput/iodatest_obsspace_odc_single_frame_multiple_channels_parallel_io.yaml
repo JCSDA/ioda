@@ -4,7 +4,7 @@ time window:
   end: "2020-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &hirasfsr_space
     name: "HIRASFSR"
     simulated variables: ['radiance']
     channels: 1, 3, 5, 6, 8, 9, 10, 12, 14, 16, 18, 20, 21, 23, 25, 27, 28, 29, 30, 31, 32, 34, 40,
@@ -43,10 +43,10 @@ observations:
         mapping file: ../share/test/testinput/odb_radiance_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_hirasfsr.yaml
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     io pool:
       reader name: NonoverlappingPool
-  test data:
+  test data: &hirasfsr_test_data
     gnlocs: 16
     gnlocs outside time window: 4
     gnlocs rejected by qc: 0
@@ -74,3 +74,11 @@ observations:
     tolerance:
       - 1.0e-7
     variables for putget test: []
+
+- obs space:
+    <<: *hirasfsr_space
+    name: "Empty ODC obs file (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *hirasfsr_test_data

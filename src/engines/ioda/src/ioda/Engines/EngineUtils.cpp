@@ -345,7 +345,7 @@ eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileTyp
     return engineConfig;
 }
 
-Group constructBackend(BackendNames name, BackendCreationParameters& params) {
+Group constructBackend(BackendNames name, const BackendCreationParameters& params) {
   Group backend;
   if (name == BackendNames::Hdf5File) {
     if (params.action == BackendFileActions::Open) {

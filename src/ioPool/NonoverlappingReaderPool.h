@@ -26,7 +26,7 @@ class IoPoolParameters;
 /// these ObsGroups. The distribution of locations among processes is left entirely to the reader
 /// (in particular, the reader is responsible for placing all locations belonging to a given record
 /// on a single rank); the pool does not redistribute the locations in any way. Therefore this class
-/// must be used in combination with the ReaderDependentDistribution distribution type.
+/// must be used in combination with the IdentityDistribution distribution type.
 ///
 /// \ingroup ioda_cxx_io
 class NonoverlappingReaderPool : public ReaderPoolBase {

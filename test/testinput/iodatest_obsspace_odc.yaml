@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &aircraft_space
     name: "Aircraft"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -13,7 +13,7 @@ observations:
         obsfile: "Data/testinput_tier_1/aircraft.odb"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
-  test data:
+  test data: &aircraft_test_data
     gnlocs: 157
     gnlocs outside time window: 43
     gnlocs rejected by qc: 0
@@ -42,6 +42,13 @@ observations:
       - 1.0e-7
     variables for putget test: []
 - obs space:
+    <<: *aircraft_space
+    name: "Aircraft (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *aircraft_test_data
+- obs space: &aod_space
     name: "AOD"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -50,7 +57,7 @@ observations:
         obsfile: "Data/testinput_tier_1/aod.odb"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod.yaml
-  test data:
+  test data: &aod_test_data
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -75,6 +82,21 @@ observations:
         group: "ObsValue"
         type: "float"
         norm: 0.8028991220042816
+
+      # Tests missing value conversion
+      - name: "aerosol_small_mode_fraction"
+        group: "MetaData"
+        type: "float"
+        norm: 2.7110145727893036
+
     tolerance:
       - 1.0e-7
     variables for putget test: []
+
+- obs space:
+    <<: *aod_space
+    name: "AOD (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *aod_test_data

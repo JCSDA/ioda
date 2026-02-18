@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &empty_space
     name: "Empty ODC obs file"
     simulated variables: ['height']
     obsdatain:
@@ -14,7 +14,7 @@ observations:
         mapping file: ../share/test/testinput/odb_surface_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_surface.yaml
     obs perturbations seed: 25
-  test data:
+  test data: &empty_test_data
     gnlocs: 0
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0

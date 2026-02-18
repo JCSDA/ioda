@@ -121,8 +121,11 @@ list(APPEND SRCS_VARIABLES
 
 list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/Capabilities.h
+	include/ioda/Engines/ContainerFacade.h
+	include/ioda/Engines/ContainerVariableType.h
 	include/ioda/Engines/GenList.h
 	include/ioda/Engines/GenRandom.h
+	include/ioda/Engines/ObsGroupFacade.h
 	include/ioda/Engines/ReaderBase.h
 	include/ioda/Engines/ReadH5File.h
 	include/ioda/Engines/ReadOdbFile.h
@@ -135,6 +138,7 @@ list(APPEND SRCS_ENGINES_TOP
 	include/ioda/Engines/EngineUtils.h
 	src/ioda/Engines/GenList.cpp
 	src/ioda/Engines/GenRandom.cpp
+	src/ioda/Engines/ObsGroupFacade.cpp
 	src/ioda/Engines/ReaderBase.cpp
 	src/ioda/Engines/ReadH5File.cpp
 	src/ioda/Engines/ReadOdbFile.cpp

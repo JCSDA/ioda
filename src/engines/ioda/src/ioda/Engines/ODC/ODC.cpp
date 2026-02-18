@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <ctime>
 #include <ostream>
+#include <optional>
 #include <set>
 #include <string>
 #include <typeinfo>
@@ -24,6 +25,7 @@
 #include "eckit/io/MemoryHandle.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/utils/StringTools.h"
+#include "ioda/Engines/ContainerFacade.h"
 #include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Misc/UnitConversions.h"
@@ -160,32 +162,6 @@ std::vector<std::string> identifyRecordIdColumns(
     }
   }
   return result;
-}
-
-/// \brief Creates dimension scales for the ObsGroup that will receive data loaded from an ODB file.
-NewDimensionScales_t makeDimensionScales(const RowsByLocation &rowsByLocation,
-                                         const ChannelIndexerBase *channelIndexer,
-                                         const DataFromSQL &sqlData) {
-  NewDimensionScales_t scales;
-
-  const int numLocations = rowsByLocation.size();
-  scales.push_back(NewDimensionScale<int>("Location", numLocations, numLocations, numLocations));
-
-  if (channelIndexer) {
-    const std::vector<int> channelIndices = channelIndexer->channelIndices(rowsByLocation, sqlData);
-    const int numChannels                 = channelIndices.size();
-    scales.push_back(NewDimensionScale<int>("Channel", numChannels, numChannels, numChannels));
-  }
-
-  return scales;
-}
-
-/// \brief Creates the Channel variable, the sole ioda variable without a Location dimension.
-void createChannelVariable(ObsGroup &og, const ChannelIndexerBase &channelIndexer,
-                           const RowsByLocation &rowsByLocation, const DataFromSQL &sqlData) {
-  const std::vector<int> channelIndices = channelIndexer.channelIndices(rowsByLocation, sqlData);
-  ioda::Variable v                      = og.vars["Channel"];
-  v.write(channelIndices);
 }
 
 template <typename T>
@@ -441,6 +417,107 @@ std::vector<std::unique_ptr<ObsGroupTransformBase>> makeTransforms(
   // The layout file may list extra transforms to be applied as well.
   appendUserDefinedTransforms(odcParameters, varCreationParameters, transforms);
   return transforms;
+}
+
+/// \brief Returns `numberToRoundUp` rounded up to the nearest integral multiple of `factor`.
+template <typename T>
+T roundUpToMultipleOf(T numberToRoundUp, T factor) {
+  ASSERT(numberToRoundUp >= 0 && factor > 0);
+  return ((numberToRoundUp + factor - 1) / factor) * factor;
+}
+
+/// \brief If `container` needs to be equipped with a `sourceLocationIndices` variable numbering
+/// locations in the order of their appearance in the input file, construct and return an array that
+/// can be assigned to that variable. Otherwise return a `nullopt.`
+std::optional<std::vector<int>> maybeGetSourceLocationIndices(const RowsByLocation &rowsByLocation,
+                                                              const DataFromSQL &sql_data,
+                                                              const eckit::mpi::Comm *comm,
+                                                              ContainerFacade &container) {
+  if (!container.needsSourceLocationIndices())
+    return std::nullopt;
+
+  if (comm == nullptr) {
+    // We're running serially, so all locations have been read by this process and can be indexed
+    // consecutively from 0.
+    const size_t numLocations = rowsByLocation.size();
+    std::vector<int> globalLocationIndex(numLocations);
+    std::iota(globalLocationIndex.begin(), globalLocationIndex.end(), 0);
+    return globalLocationIndex;
+  }
+
+  const size_t myRank = comm->rank();
+  const size_t numRanks = comm->size();
+
+  // The parallel ODB file reader divides ODB rows into chunks (taking care not to split rows
+  // belonging to a single record, let alone a single location, into multiple chunks) and assigns
+  // chunks to MPI ranks in a round-robin fashion. To index locations in the order of their
+  // appearance in the input file, we need to know the number of locations read from each chunk.
+
+  const size_t numChunks = sql_data.getNumberOfChunks();
+  const size_t globalNumChunks = roundUpToMultipleOf(sql_data.getGlobalNumberOfChunks(), numRanks);
+  // Each rank has read this number of chunks or one less. For convenience, we'll pad some arrays to
+  // numChunksPerRank elements to ensure they have the same length on all ranks.
+  const size_t numChunksPerRank = globalNumChunks / numRanks;
+
+  // Count the locations in each chunk read by this rank.
+  std::vector<size_t> numLocationsInChunk(numChunksPerRank, 0);
+  {
+    const std::vector<size_t> chunkIndexByRow = sql_data.getRowToChunkIndexMapping();
+    for (const std::vector<size_t> &rows : rowsByLocation) {
+      // As mentioned above, the reader takes care not to split rows belonging to a single location
+      // into multiple chunks, so we can assign each location to the chunk from which its first row
+      // was read.
+      ASSERT(!rows.empty());
+      ++numLocationsInChunk.at(chunkIndexByRow.at(rows.front()));
+    }
+  }
+
+  // Gather these counts on rank 0 (the root). The resulting array will be ordered first by rank and
+  // then by the chunk index.
+  const size_t rootRank = 0;
+  std::vector<size_t> numLocationsInChunkSortedByRank(globalNumChunks);
+  comm->gather(numLocationsInChunk, numLocationsInChunkSortedByRank, rootRank);
+
+  // Calculate the total number of locations before the start of each chunk.
+  std::vector<size_t> numGlobalLocationsBeforeChunkSortedByRank(globalNumChunks);
+  if (myRank == rootRank) {
+    // First, reorder the gathered counts by the global chunk index...
+    std::vector<size_t> numGlobalLocationsBeforeChunkSortedByChunkIndex(globalNumChunks);
+    for (size_t chunkIndex = 0; chunkIndex < numChunksPerRank; ++chunkIndex)
+      for (size_t rank = 0; rank < numRanks; ++rank)
+        numGlobalLocationsBeforeChunkSortedByChunkIndex[chunkIndex * numRanks + rank] =
+          numLocationsInChunkSortedByRank[rank * numChunksPerRank + chunkIndex];
+    // ... and then perform an exclusing scan (a prefix sum).
+    std::exclusive_scan(numGlobalLocationsBeforeChunkSortedByChunkIndex.begin(),
+                        numGlobalLocationsBeforeChunkSortedByChunkIndex.end(),
+                        numGlobalLocationsBeforeChunkSortedByChunkIndex.begin(),
+                        0);
+    // Reorder the resulting array again first by rank and then by the chunk index so that it
+    // can be scattered to the individual ranks.
+    for (size_t rank = 0; rank < numRanks; ++rank)
+      for (size_t chunkIndex = 0; chunkIndex < numChunksPerRank; ++chunkIndex)
+        numGlobalLocationsBeforeChunkSortedByRank[rank * numChunksPerRank + chunkIndex] =
+          numGlobalLocationsBeforeChunkSortedByChunkIndex[chunkIndex * numRanks + rank];
+  }
+
+  // Scatter the array produced in the previous step from rank 0 to all ranks.
+  std::vector<size_t> numGlobalLocationsBeforeChunk(numChunksPerRank);
+  comm->scatter(numGlobalLocationsBeforeChunkSortedByRank, numGlobalLocationsBeforeChunk, rootRank);
+
+  // Calculate the global index of each location read by the current rank by adding (a) its "local"
+  // index within that chunk and (b) the number of locations read from all preceding chunks (on all
+  // ranks).
+  const size_t numLocations = rowsByLocation.size();
+  std::vector<int> globalLocationIndex(numLocations);
+  std::vector<int>::iterator nextLocationIt = globalLocationIndex.begin();
+  for (size_t chunkIndex = 0; chunkIndex < numChunks; ++chunkIndex) {
+    size_t numLocationsInCurrentChunk = numLocationsInChunk[chunkIndex];
+    std::iota(nextLocationIt, nextLocationIt + numLocationsInCurrentChunk,
+              numGlobalLocationsBeforeChunk[chunkIndex]);
+    nextLocationIt += numLocationsInCurrentChunk;
+  }
+
+  return globalLocationIndex;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1164,9 +1241,10 @@ void writeODB(const size_t num_varnos, const int number_of_rows, odc::Writer<>::
 
 /// Function to convert the units of variables in the ObsGroup from those specified in yaml to SI units.
 /// Iterates through variables in ObsGroup, checks for unit in yaml, then converts if a conversion is found in UnitConversions.h
-void convertVariableUnits(ObsGroup &og, std::ostream &out = std::cerr) {
+void convertVariableUnits(ContainerFacade &container, const detail::DataLayoutPolicy &dataLayoutPolicy,
+                          std::ostream &out = std::cerr) {
   try {
-    std::vector<std::string> variableList = og.listObjects<ObjectType::Variable>(true);
+    std::vector<std::string> variableList = container.iodaVariableNames();
 
     std::string debugString = "Variables found ObsGroup: ";
     for (auto const &name : variableList) {
@@ -1177,29 +1255,29 @@ void convertVariableUnits(ObsGroup &og, std::ostream &out = std::cerr) {
     debugString = "Variables converted: ";
     for (auto const &name : variableList) {
       // Check for unit. If found, unit.first == true, and unit.second is the unit.
-      std::pair<bool, std::string> unit = og.vars.getUnitPassthrough(name);
+      std::pair<bool, std::string> unit = dataLayoutPolicy.getUnitFromIodaName(
+            dataLayoutPolicy.doMap(name));
 
       if (unit.first) {
         debugString += (name + ", ");
-        Variable variableToConvert      = og.vars.open(name);
-        TypeClass variableToConvertType = variableToConvert.getType().getClass();
+        const ContainerVariableType variableToConvertType = container.variableType(name);
 
         try {
-          if (variableToConvertType == TypeClass::Float) {
-            convertColumn<float>(unit.second, variableToConvert);
-          } else if (variableToConvertType == TypeClass::Integer) {
-            convertColumn<int>(unit.second, variableToConvert);
+          if (variableToConvertType == ContainerVariableType::Float) {
+            convertVariable<float>(container, name, unit.second);
+          } else if (variableToConvertType == ContainerVariableType::Int) {
+            convertVariable<int>(container, name, unit.second);
           } else {
             throw Exception("unit is not of a convertable type.", ioda_Here());
           }
-          variableToConvert.atts.add<std::string>("units", getSIUnit(unit.second));
+          container.setVariableUnit(name, getSIUnit(unit.second));
 
         } catch (const Exception &) {
           out << "The unit specified in ODB mapping file '" << unit.second
               << "' does not have a unit conversion defined in"
               << " UnitConversions.h, and the variable will be stored in"
               << " its original form.\n";
-          variableToConvert.atts.add<std::string>("units", unit.second);
+          container.setVariableUnit(name, unit.second);
         }
       }
     }
@@ -1320,8 +1398,8 @@ Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
   return storageGroup;
 }
 
-ObsGroup openFile(const ODC_Parameters &odcparams, Group storageGroup,
-                  const eckit::mpi::Comm *comm) {
+void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,
+              const eckit::mpi::Comm *comm) {
   // 1. Check first that the ODB engine is enabled. If the engine
   // is not enabled, then throw an exception.
 #if odc_FOUND
@@ -1384,13 +1462,12 @@ ObsGroup openFile(const ODC_Parameters &odcparams, Group storageGroup,
   sql_data.select(columnsToSelect, odcparams.filename, varnos, queryParameters.where.value().query,
                   comm, odcparams.chunksPerProcess, recordIdColumns);
 
-  // 7. Create an ObsGroup, using the mapping file to set up the translation of ODB column names
-  // to ioda variable names
+  oops::Log::info() << "sql_data.varnos_: " << sql_data.getVarnos() << std::endl;
+
+  // 7. Initialize the container that will receive the data read from the ODB file. Use the mapping
+  //    file to set up the translation of ODB column names to ioda variable names.
 
   const RowsByLocation rowsByLocation = rowsIntoLocationsSplitter->groupRowsByLocation(sql_data);
-
-  NewDimensionScales_t dimensionScales
-    = makeDimensionScales(rowsByLocation, channelIndexer.get(), sql_data);
 
   std::vector<std::string> ignores;
   ignores.push_back("Location");
@@ -1413,16 +1490,32 @@ ObsGroup openFile(const ODC_Parameters &odcparams, Group storageGroup,
                    temporaryComponentVariables.end());
   }
 
-  auto og = ObsGroup::generate(
-    storageGroup, dimensionScales,
-    detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
-                                       odcparams.mappingFile, ignores));
+  std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy =
+      detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroupODB,
+                                         odcparams.mappingFile, ignores);
+
+  std::optional<std::vector<int>> channelIndices;
+  if (channelIndexer)
+    channelIndices = channelIndexer->channelIndices(rowsByLocation, sql_data);
+
+  Engines::ContainerOptions containerOptions;
+  containerOptions.epoch = queryParameters.variableCreation.epoch.value();
+  container.initialize(rowsByLocation.size(), channelIndices, dataLayoutPolicy, containerOptions);
+
+  // 7.1. If required, index locations by the order in which they appear in the input file.
+
+  // Note: This function needs to be called even if rowsByLocation is empty on this MPI rank (and
+  // hence we can return an almost empty container, without the sourceLocationIndices variable) to
+  // ensure that all MPI ranks participate in all collective calls.
+  std::optional<std::vector<int>> sourceLocationIndices = maybeGetSourceLocationIndices(
+    rowsByLocation, sql_data, comm, container);
 
   if (rowsByLocation.empty()) {
     // Returning here means that all dimension variables are defined but other variables aren't.
     // (Definition of other variables would require knowledge of their types, but if the input file
-    // is empty, these are not known.)
-    return og;
+    // is empty, these are not known.) If any other ranks have read any locations, their dimension
+    // variables and other metadata will later be copied to this rank as well.
+    return;
   }
 
   // 8. Populate the ObsGroup with variables
@@ -1430,37 +1523,39 @@ ObsGroup openFile(const ODC_Parameters &odcparams, Group storageGroup,
   const std::vector<VariableCreator> variableCreators = makeVariableCreators(
     layoutParameters, queryParameters, sql_data.getVarnos(), complementarityInfo);
 
-  ioda::VariableCreationParameters params;
-
-  // 8.1. Create location-independent variables
-
-  if (channelIndexer) createChannelVariable(og, *channelIndexer, rowsByLocation, sql_data);
-
-  // 8.2. Create location-dependent variables
+  // 8.1. Create location-dependent variables
 
   for (const VariableCreator &creator : variableCreators) {
-    creator.createVariable(og, params, rowsByLocation, sql_data);
+    creator.createVariable(container, rowsByLocation, sql_data);
   }
 
   std::vector<std::unique_ptr<ObsGroupTransformBase>> transforms
     = makeTransforms(odcparams, queryParameters.variableCreation, queryParameters.variables,
                      complementarityInfo.complementaryVariables());
   for (const std::unique_ptr<ObsGroupTransformBase> &transform : transforms)
-    transform->transform(og);
+    transform->transform(container);
 
-  // 8.3. Remove temporary variables, whose names start with a double underscore.
+  // 8.2. Remove temporary variables, whose names start with a double underscore.
 
-  for (const std::string &variablePath : og.listObjects<ObjectType::Variable>(true /*recurse*/)) {
+  for (const std::string &variablePath : container.iodaVariableNames()) {
     const std::vector<std::string> variablePathComponents = splitPaths(variablePath);
-    if (variablePathComponents.empty()) continue;  // should not happen but better safe than sorry
+    if (variablePathComponents.empty())
+      continue;  // should not happen but better safe than sorry
     const std::string &variableName = variablePathComponents.back();
-    if (eckit::StringTools::startsWith(variableName, "__")) og.vars.remove(variablePath);
+    if (eckit::StringTools::startsWith(variableName, "__"))
+      container.removeVariable(variablePath);
   }
 
-  // 8.4. Convert units of remaining variables to SI, if a unit is specified in the mapping file.
-  convertVariableUnits(og);
+  // 8.3. Convert units of remaining variables to SI, if a unit is specified in the mapping file.
+  convertVariableUnits(container, *dataLayoutPolicy);
 
-  return og;
+  // 9. If necessary, create the 'sourceLocationIndices' variable. (This must be done after the call
+  //    to convertVariableUnits(), since this variable is not listed in mapping files.)
+
+  if (sourceLocationIndices)
+    container.addVariable("sourceLocationIndices", *sourceLocationIndices,
+                          false /*hasChannelAxis?*/);
+
 #else
   throw Exception(odcMissingMessage, ioda_Here());
 #endif

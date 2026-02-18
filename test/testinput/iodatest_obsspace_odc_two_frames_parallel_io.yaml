@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &aod_space
     name: "AOD"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -15,10 +15,10 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod.yaml
     distribution:
-      name: ReaderDependentDistribution
+      name: Identity
     io pool:
       reader name: NonoverlappingPool
-  test data:
+  test data: &aod_test_data
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -46,3 +46,11 @@ observations:
     tolerance:
       - 1.0e-7
     variables for putget test: []
+
+- obs space:
+    <<: *aod_space
+    name: "AOD (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *aod_test_data

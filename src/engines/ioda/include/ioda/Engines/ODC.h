@@ -29,6 +29,9 @@ class Group;
 class ObsGroup;
 
 namespace Engines {
+
+class ContainerFacade;
+
 /// \brief Functions that are helpful in creating a new ioda::Group that is imported from an ODB database.
 namespace ODC {
 
@@ -72,17 +75,16 @@ struct ODC_Parameters {
 
 /// \brief Import an ODB file.
 /// \ingroup ioda_cxx_engines_pub_ODC
-/// \param emptyStorageGroup is the initial (empty) group, provided
-///   by another engine (ObsStore) that will be populated with the
-///   ODC data.
+/// \param container
+///   Wrapper of the container to be populated with data read from an ODC file.
 /// \param comm
 ///   (Optional) An MPI communicator. If it is non-null and its size is greater than 1, the ODB file
 ///   will be read in parallel, with each process in `comm` loading data from a subset of ODB frames
 ///   and then exchanging a (typically) small amount of data with other processes to prevent rows
 ///   associated with the same seqno from being split across multiple ranks.
- IODA_DL ObsGroup openFile(const ODC_Parameters& params,
-                           Group emptyStorageGroup = ioda::Engines::ObsStore::createRootGroup(),
-                           const eckit::mpi::Comm *comm = nullptr);
+ IODA_DL void openFile(const ODC_Parameters& params,
+                       ContainerFacade &container,
+                       const eckit::mpi::Comm *comm = nullptr);
 
  IODA_DL Group createFile(const ODC_Parameters& params, Group emptyStorageGroup = ioda::Engines::ObsStore::createRootGroup());
 

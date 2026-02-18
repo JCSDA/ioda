@@ -13,9 +13,10 @@
 
 namespace ioda {
 
-class ObsGroup;
-
 namespace Engines {
+
+class ContainerFacade;
+
 namespace ODC {
 
 /// \brief Parameters controlling the behavior of a subclass of ObsGroupTransformBase.
@@ -36,7 +37,8 @@ class EmptyObsGroupTransformParameters : public ObsGroupTransformParametersBase 
 
 // -----------------------------------------------------------------------------
 
-/// \brief Applies a certain transformation to an ObsGroup.
+/// \brief Applies a certain transformation to an ObsGroup or another container hidden by a
+/// ContainerFacade.
 ///
 /// Each subclass needs to typedef `Parameters_` to the type of a subclass of
 /// ObsGroupTransformParametersBase storing its configuration options, and to provide a constructor
@@ -56,8 +58,8 @@ class ObsGroupTransformBase {
 public:
   virtual ~ObsGroupTransformBase() {}
 
-  /// \brief Transform the ObsGroup `og` (in-place).
-  virtual void transform(ObsGroup &og) const = 0;
+  /// \brief Transform a given container (in-place).
+  virtual void transform(ContainerFacade &container) const = 0;
 };
 
 }  // namespace ODC

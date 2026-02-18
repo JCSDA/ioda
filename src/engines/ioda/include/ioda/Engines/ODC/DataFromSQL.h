@@ -54,7 +54,10 @@ private:
   std::vector<int> varnos_;
   /// Each element contains values from a particular column
   std::vector<std::vector<double>> data_;
-  size_t number_of_rows_           = 0;
+  size_t number_of_rows_ = 0;
+  size_t global_number_of_chunks_ = 0;
+  std::vector<size_t> number_of_rows_by_chunk_;
+
   /// \brief Populate structure with data from an sql
   /// \param sql The SQL string to generate the data for the structure
   /// \param filename Name of the file to extract data from.
@@ -83,6 +86,19 @@ public:
 
   /// \brief Returns the total number of rows.
   size_t getNumberOfRows() const;
+
+  /// \brief The number of chunks of the input ODB file that have been read by this MPI process.
+  size_t getNumberOfChunks() const;
+
+  /// \brief The total number of chunks of the input ODB file that have been read by all
+  /// MPI processes.
+  size_t getGlobalNumberOfChunks() const;
+
+  /// \brief A vector mapping the index of each row to the (local) index of the chunk from which
+  /// that row was read.
+  ///
+  /// ("Local" means the index runs only over chunks read by this MPI process.)
+  std::vector<size_t> getRowToChunkIndexMapping() const;
 
   /// \brief Populate structure with data from specified columns, file and varnos
   /// \param columns List of columns to extract

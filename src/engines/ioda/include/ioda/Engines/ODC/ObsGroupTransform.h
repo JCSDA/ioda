@@ -61,7 +61,7 @@ public:
                                    const ODC_Parameters &odcParameters,
                                    const OdbVariableCreationParameters &varCreationParameters);
 
-  void transform(ObsGroup &og) const override;
+  void transform(ContainerFacade &container) const override;
 
 private:
   Parameters_ transformParameters_;
@@ -146,7 +146,7 @@ public:
                                     const ODC_Parameters &,
                                     const OdbVariableCreationParameters &);
 
-  void transform(ObsGroup &og) const override;
+  void transform(ContainerFacade &container) const override;
 
 private:
   Parameters_ parameters_;
@@ -177,7 +177,7 @@ public:
                                 const ODC_Parameters &,
                                 const OdbVariableCreationParameters &);
 
-  void transform(ObsGroup &og) const override;
+  void transform(ContainerFacade &container) const override;
 
 private:
   /// \brief Return the vector of dimension scales to be attached to the destination variable.

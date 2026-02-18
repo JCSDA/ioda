@@ -51,6 +51,7 @@
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/ioPool/WriterPoolFactory.h"
+#include "ioda/Misc/StringFuncs.h"
 #include "ioda/reader/ObsReader.hpp"
 #include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
@@ -58,22 +59,6 @@
 
 namespace ioda {
 namespace {
-
-// If the variable name \p name ends with an underscore followed by a number (potentially a channel
-// number), split it at that underscore, store the two parts in \p nameWithoutChannelSuffix and
-// \p channel, and return true. Otherwise return false.
-bool extractChannelSuffixIfPresent(const std::string &name,
-                                   std::string &nameWithoutChannelSuffix, int &channel) {
-    const std::string::size_type lastUnderscore = name.find_last_of('_');
-    if (lastUnderscore != std::string::npos &&
-        name.find_first_not_of("0123456789", lastUnderscore + 1) == std::string::npos) {
-        // The variable name has a numeric suffix.
-        channel = std::stoi(name.substr(lastUnderscore + 1));
-        nameWithoutChannelSuffix = name.substr(0, lastUnderscore);
-        return true;
-    }
-    return false;
-}
 
 //--------------------------------------------------------------------------
 /// \brief place name and numerical suffix list into a canonical form

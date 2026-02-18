@@ -24,7 +24,7 @@
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
-#include "ioda/distribution/ReaderDependentDistribution.h"
+#include "ioda/distribution/IdentityDistribution.h"
 // #include "ioda/reader/filter/filterObsContainer.hpp"
 #include "ioda/test/containers/OsdfTestUtils.h"
 
@@ -56,7 +56,7 @@ void testDistAllgatherv() {
   populateFrame(configColumnData, rankOsdf, testColumnNames, testColumnTypes);
 
   std::unique_ptr<osdf::IFrame> gatheredOsdf = std::make_unique<osdf::FrameRows>();
-  ReaderDependentDistribution dist(oops::mpi::world(), ReaderDependentDistribution::Parameters_());
+  IdentityDistribution dist(oops::mpi::world(), IdentityDistribution::Parameters_());
   dist.setNumberLocations(rankOsdf->numRows());
   auto colNames = rankOsdf->columnNames();
   EXPECT(colNames.size() > 0);

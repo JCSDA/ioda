@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/distribution/ReaderDependentDistribution.h"
+#include "ioda/distribution/IdentityDistribution.h"
 
 #include <iostream>
 
@@ -16,27 +16,27 @@
 namespace ioda {
 
 // -----------------------------------------------------------------------------
-static DistributionMaker<ReaderDependentDistribution> maker("ReaderDependentDistribution");
+static DistributionMaker<IdentityDistribution> maker("Identity");
 
 // -----------------------------------------------------------------------------
-ReaderDependentDistribution::ReaderDependentDistribution(const eckit::mpi::Comm & Comm,
+IdentityDistribution::IdentityDistribution(const eckit::mpi::Comm & Comm,
                                          const Parameters_ &)
   : NonoverlappingDistribution(Comm) {
-  oops::Log::trace() << "ReaderDependentDistribution constructed" << std::endl;
+  oops::Log::trace() << "IdentityDistribution constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-ReaderDependentDistribution::~ReaderDependentDistribution() {
-  oops::Log::trace() << "ReaderDependentDistribution destructed" << std::endl;
+IdentityDistribution::~IdentityDistribution() {
+  oops::Log::trace() << "IdentityDistribution destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-std::string ReaderDependentDistribution::name() const {
-  return "ReaderDependentDistribution";
+std::string IdentityDistribution::name() const {
+  return "Identity";
 }
 
 // -----------------------------------------------------------------------------
-bool ReaderDependentDistribution::isMyRecord(std::size_t /*RecNum*/) const {
+bool IdentityDistribution::isMyRecord(std::size_t /*RecNum*/) const {
   return true;
 }
 

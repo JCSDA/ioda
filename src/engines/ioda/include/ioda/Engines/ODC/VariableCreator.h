@@ -15,11 +15,12 @@
 
 namespace ioda {
 
-class ObsGroup;
-class Variable;
 struct VariableCreationParameters;
 
 namespace Engines {
+
+class ContainerFacade;
+
 namespace ODC {
 
 class DataFromSQL;
@@ -51,26 +52,21 @@ public:
   ///
   /// \param og
   ///   ObsGroup that will receive the newly created variable.
-  /// \param params
-  ///   Parameters controlling aspects such as the fill value and variable compression.
   /// \param rowsByLocation
   ///   An object identifying ODB rows associated with individual locations.
   /// \param sqlData
   ///   Data table loaded from an ODB file, containing the column specified in the constructor and
   ///   any other columns required by the variable reader whose configuration was passed  the
   ///   constructor.
-  ioda::Variable createVariable(ObsGroup &og,
-                                const VariableCreationParameters &params,
-                                const RowsByLocation &rowsByLocation,
-                                const DataFromSQL &sqlData) const;
+  void createVariable(ContainerFacade &container,
+                      const RowsByLocation &rowsByLocation,
+                      const DataFromSQL &sqlData) const;
 
 private:
-  // Note: `params` are passed by value because they will be edited.
   template <typename T>
-  ioda::Variable createTypedVariable(ObsGroup &og, VariableCreationParameters params,
-                                     const std::vector<ioda::Variable> &scales,
-                                     const RowsByLocation &rowsByLocation, size_t numValuesPerLocation,
-                                     const VariableReaderBase& reader) const;
+  void createTypedVariable(ContainerFacade &container,
+                           const RowsByLocation &rowsByLocation, size_t numValuesPerLocation,
+                           const VariableReaderBase& reader) const;
 
   std::string name_;
   std::string column_;

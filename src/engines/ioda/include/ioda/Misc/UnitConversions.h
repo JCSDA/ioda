@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ioda/Engines/ContainerFacade.h"
 #include "ioda/Engines/ODC/OdbConstants.h"
 #include "ioda/Exception.h"
 #include "ioda/Variables/Variable.h"
@@ -47,12 +48,14 @@ const std::unordered_map<std::string, std::string> equivalentSIUnit{
 }  // namespace detail
 
 template <typename T>
-IODA_DL void convertColumn(const std::string &unit, Variable &variableToConvert) {
-  std::vector<T> dataToConvert = variableToConvert.readAsVector<T>();
+IODA_DL void convertVariable(Engines::ContainerFacade &container,
+                             const std::string &name, const std::string &unit) {
+  std::vector<T> dataToConvert = container.variableValues<T>(name, Engines::MemoryLayout::Native);
+  const std::optional<T> missingValue = container.missingValue<T>(name);
   try {
     std::function<T(T)> conversionFunction = detail::unitConversionEquations.at(unit);
     for (T &value : dataToConvert) {
-      if (value != Engines::ODC::odb_missing<T>()) {
+      if (!missingValue || value != *missingValue) {
         value = conversionFunction(value);
       }
     }
@@ -60,7 +63,7 @@ IODA_DL void convertColumn(const std::string &unit, Variable &variableToConvert)
     throw Exception("unit does not have a defined unit conversion equation", ioda_Here())
       .add("unit", unit);
   }
-  variableToConvert.write(dataToConvert);
+  container.setVariableValues(name, dataToConvert, Engines::MemoryLayout::Native);
 }
 
 IODA_DL std::string getSIUnit(const std::string &unit);

@@ -49,6 +49,11 @@ IODA_DL std::vector<std::string> concatenateStringVectors(
 /// @return The converted path.
 IODA_DL std::string convertV1PathToV2Path(const std::string & path);
 
+/// If the variable name `name` ends with an underscore followed by a number (potentially a channel
+/// number), split it at that underscore, store the two parts in `nameWithoutChannelSuffix` and
+/// `channel`, and return `true`. Otherwise return `false`.
+IODA_DL bool extractChannelSuffixIfPresent(const std::string &name,
+                                           std::string &nameWithoutChannelSuffix, int &channel);
 }  // namespace ioda
 
 /// @}

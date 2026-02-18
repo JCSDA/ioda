@@ -8,8 +8,10 @@ observations:
     name: "Empty obs file"
     use data frame container: true
     data frame type: "FrameCols"
+    io pool:
+      max pool size: 2
     distribution:
-      name: "ReaderDependentDistribution"
+      name: "Identity"
     simulated variables: ['dummy_variable']
     obsdatain:
       engine:
@@ -55,8 +57,10 @@ observations:
     name: "Empty obs file with channels"
     use data frame container: true
     data frame type: "FrameCols"
+    io pool:
+      max pool size: 2
     distribution:
-      name: "ReaderDependentDistribution"
+      name: "Identity"
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
     channels: 1, 3, 10, 999

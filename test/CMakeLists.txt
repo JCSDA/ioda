@@ -103,6 +103,7 @@ endif()
 list( APPEND ioda_test_input
   testinput/iodatest.yaml
   testinput/iodatest_fileformat.yaml
+  testinput/iodatest_container_facades.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
@@ -161,6 +162,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms_parallel_io.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml
+  testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml
   testinput/iodatest_obsspace_odc_radar.yaml
   testinput/iodatest_obsspace_odc_radar_parallel_io.yaml
   testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml
@@ -778,6 +780,22 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_osdf
                   LIBS  ioda_test
                   )
 
+# As many MPI processes as I/O pool members
+ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_osdf_mpi_2
+                  MPI 2
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+# More MPI processes than I/O pool members
+ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_osdf_mpi_4
+                  MPI 4
+                  COMMAND test_ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
 ecbuild_add_test( TARGET  test_ioda_obsspace_empty_obs_file_mpi
                   MPI 4
                   COMMAND test_ioda_obsspace
@@ -1203,6 +1221,28 @@ if (odc_FOUND)
                     MPI     2
                     COMMAND test_ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml"
+                    LIBS    ioda_test
+                    )
+
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file_osdf
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
+                    LIBS  ioda_test
+                    )
+
+  # As many MPI processes as I/O pool members
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file_osdf_mpi_2
+                    MPI     2
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
+                    LIBS    ioda_test
+                    )
+
+  # More MPI processes than I/O pool members
+  ecbuild_add_test( TARGET  test_ioda_obsspace_odc_empty_obs_file_osdf_mpi_4
+                    MPI     4
+                    COMMAND test_ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
                     LIBS    ioda_test
                     )
 
@@ -1817,6 +1857,15 @@ ecbuild_add_test( TARGET  test_ioda_obsdatavector
                   )
 
 #####################################################################
+# Test container facades used by the reader load step
+#####################################################################
+
+ecbuild_add_test( TARGET  test_ioda_container_facades
+                  SOURCES mains/TestContainerFacades.cc
+                  ARGS    "testinput/iodatest_container_facades.yaml"
+                  LIBS  ioda_test
+                  )
+
 # DeparturesEnsemble tests
 #####################################################################
 

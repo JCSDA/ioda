@@ -7,7 +7,7 @@ observations:
 - obs space:
     name: "AMSUA NOAA19"
     distribution:
-      name: "ReaderDependentDistribution"
+      name: "Identity"
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     use data frame container: true
@@ -23,7 +23,7 @@ observations:
 - obs space:
     name: "Radiosonde"
     distribution:
-      name: "ReaderDependentDistribution"
+      name: "Identity"
     simulated variables: ['airTemperature']
     use data frame container: true
     obsdatain:

@@ -70,8 +70,8 @@ core/ParameterTraitsObsDtype.h
 distribution/Accumulator.h
 distribution/AtlasDistribution.cc
 distribution/AtlasDistribution.h
-distribution/ReaderDependentDistribution.cc
-distribution/ReaderDependentDistribution.h
+distribution/IdentityDistribution.cc
+distribution/IdentityDistribution.h
 distribution/Distribution.cc
 distribution/Distribution.h
 distribution/DistributionFactory.cc
@@ -137,8 +137,12 @@ reader/load/loadObs.cpp
 reader/load/loadObs.hpp
 reader/load/loadObsFromNetcdf.cpp
 reader/load/loadObsFromNetcdf.hpp
+reader/load/loadObsFromOdb.cpp
+reader/load/loadObsFromOdb.hpp
 reader/ObsReader.cpp
 reader/ObsReader.hpp
+reader/OsdfFrameFacade.cpp
+reader/OsdfFrameFacade.hpp
 
 writer/obsWriteEmptyFile.cpp
 writer/obsWriteEmptyFile.hpp

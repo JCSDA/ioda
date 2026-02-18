@@ -10,6 +10,7 @@
 #include "oops/util/missingValues.h"
 
 #include "ioda/Engines/ReadOdbFile.h"
+#include "ioda/Engines/ObsGroupFacade.h"
 
 namespace ioda {
 namespace Engines {
@@ -47,7 +48,9 @@ ReadOdbFile::ReadOdbFile(const Parameters_ & params,
         odcparams.chunksPerProcess = params.frameDistributionSpread;
         const eckit::mpi::Comm * comm =
             createParams_.isParallelIo ? &createParams.comm : nullptr;
-        obs_group_ = Engines::ODC::openFile(odcparams, backend, comm);
+        Engines::ObsGroupFacade container(backend);
+        Engines::ODC::openFile(odcparams, container, comm);
+        obs_group_ = container.obsGroup();
         oops::Log::trace() << "ioda::Engines::ReadOdbFile end constructor" << std::endl;
     } else {
         // Input file does not exist (is not readable actually)

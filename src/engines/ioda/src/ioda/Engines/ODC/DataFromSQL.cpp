@@ -41,6 +41,21 @@ using Table = std::vector<Column>;
 
 size_t DataFromSQL::getNumberOfRows() const { return number_of_rows_; }
 
+size_t DataFromSQL::getNumberOfChunks() const { return number_of_rows_by_chunk_.size(); }
+
+size_t DataFromSQL::getGlobalNumberOfChunks() const { return global_number_of_chunks_; }
+
+std::vector<size_t> DataFromSQL::getRowToChunkIndexMapping() const {
+  std::vector<size_t> chunk_indices(number_of_rows_);
+  std::vector<size_t>::iterator it = chunk_indices.begin();
+  for (size_t chunk = 0; chunk < number_of_rows_by_chunk_.size(); ++chunk) {
+    const size_t num_rows_in_chunk = number_of_rows_by_chunk_[chunk];
+    std::fill(it, it + num_rows_in_chunk, chunk);
+    it += num_rows_in_chunk;
+  }
+  return chunk_indices;
+}
+
 int DataFromSQL::getColumnIndex(const std::string& col) const {
   for (size_t i = 0; i < columns_.size(); i++) {
     if (columns_.at(i) == col) {
@@ -137,9 +152,14 @@ void DataFromSQL::setData(const std::string& sql, const std::string &filename,
   }
 
   size_t num_rows = 0;
+  std::vector<size_t> num_rows_by_chunk;
+  num_rows_by_chunk.reserve(num_chunks);
   if (num_columns > 0) {
-    for (const Table &data_chunk : data_chunks)
-      num_rows += data_chunk.front().size();
+    for (const Table &data_chunk : data_chunks) {
+      const size_t &num_rows_in_chunk = data_chunk.front().size();
+      num_rows += num_rows_in_chunk;
+      num_rows_by_chunk.push_back(num_rows_in_chunk);
+    }
   }
 
   Table data;
@@ -161,6 +181,8 @@ void DataFromSQL::setData(const std::string& sql, const std::string &filename,
   }
 
   data_ = std::move(data);
+  number_of_rows_by_chunk_ = std::move(num_rows_by_chunk);
+  global_number_of_chunks_ = total_num_chunks;
   column_types_ = std::move(column_types);
   column_bitfield_defs_ = std::move(column_bitfield_defs);
 }

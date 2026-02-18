@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
+- obs space: &atms_space
     name: ATMS
     simulated variables: [brightnessTemperature]
     channels: 1-22
@@ -17,7 +17,7 @@ observations:
     io pool:
       reader name: SinglePool
       work directory: testwork/obsspace_odc_atms_reader_pool
-  test data:
+  test data: &atms_test_data
     gnlocs: 68
     gnlocs outside time window: 32
     gnlocs rejected by qc: 0
@@ -37,6 +37,20 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 709.35601984373704
+
+      - name: "brightnessTemperature_4"
+        group: "ObsValue"
+        type: "float"
+        norm: 1994.1529123901557
     tolerance:
       - 1.0e-7
     variables for putget test: []
+
+- obs space:
+    <<: *atms_space
+    name: "ATMS (OSDF)"
+    distribution:
+      name: Identity
+    use data frame container: true
+  test data: *atms_test_data
+

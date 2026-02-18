@@ -174,7 +174,7 @@ IODA_DL eckit::LocalConfiguration constructFileBackendConfig(const std::string &
 /// \brief This is a simple factory style function that will instantiate a
 ///   different backend based on a given name an parameters.
 /// \ingroup ioda_cxx_engines_pub
-IODA_DL Group constructBackend(BackendNames name, BackendCreationParameters& params);
+IODA_DL Group constructBackend(BackendNames name, const BackendCreationParameters& params);
 
 /// \brief check to see if have read access to a file
 /// \param fileName path to file tested

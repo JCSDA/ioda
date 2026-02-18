@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef DISTRIBUTION_READERDEPENDENTDISTRIBUTION_H_
-#define DISTRIBUTION_READERDEPENDENTDISTRIBUTION_H_
+#ifndef DISTRIBUTION_IDENTITYDISTRIBUTION_H_
+#define DISTRIBUTION_IDENTITYDISTRIBUTION_H_
 
 #include "ioda/distribution/NonoverlappingDistribution.h"
 #include "ioda/distribution/DistributionParametersBase.h"
@@ -17,13 +17,13 @@ namespace ioda {
 
 /// The observation distribution produced by a parallel input file reader and depending on its
 /// implementation.
-class ReaderDependentDistribution: public NonoverlappingDistribution {
+class IdentityDistribution: public NonoverlappingDistribution {
  public:
     typedef EmptyDistributionParameters Parameters_;
 
-    ReaderDependentDistribution(const eckit::mpi::Comm & Comm,
+    IdentityDistribution(const eckit::mpi::Comm & Comm,
                const Parameters_ &);
-    ~ReaderDependentDistribution() override;
+    ~IdentityDistribution() override;
 
     /// \brief Always returns true.
     ///
@@ -36,4 +36,4 @@ class ReaderDependentDistribution: public NonoverlappingDistribution {
 
 }  // namespace ioda
 
-#endif  // DISTRIBUTION_READERDEPENDENTDISTRIBUTION_H_
+#endif  // DISTRIBUTION_IDENTITYDISTRIBUTION_H_

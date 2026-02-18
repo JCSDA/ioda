@@ -255,10 +255,6 @@ public:
   ///   if you need recursion.
   inline std::vector<std::string> operator()() const { return list(); }
 
-  /// \brief Gets unit from ODB layout_ given variable name in ioda format
-  /// Required as layout_ is  a private member of Has_Variable, but ODC.cpp needs access to units.
-  std::pair<bool, std::string> getUnitPassthrough(const std::string& iodaVariableName);
-
   /// \brief Create a Variable without setting its data.
   /// \param attrname is the name of the Variable.
   /// \param dimensions is a vector representing the size of the metadata.

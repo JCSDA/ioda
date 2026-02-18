@@ -11,6 +11,7 @@
 #include <string>
 
 #include "ioda/Engines/HH.h"
+#include "ioda/Engines/ObsGroupFacade.h"
 #include "ioda/Engines/ODC.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
@@ -49,7 +50,8 @@ int main(int argc, char** argv) {
 
     auto f = Engines::HH::createFile("testoutput/test-" + subtype_str + ".hdf",
                Engines::BackendCreateModes::Truncate_If_Exists);
-    auto og = Engines::ODC::openFile(odcparams, f);
+    Engines::ObsGroupFacade container(f);
+    Engines::ODC::openFile(odcparams, container);
   } catch (const std::exception& e) {
     ioda::unwind_exception_stack(e);
     return 1;

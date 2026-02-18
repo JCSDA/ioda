@@ -18,7 +18,7 @@
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/distribution/ReaderDependentDistribution.h"
+#include "ioda/distribution/IdentityDistribution.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 #include "ioda/reader/distribute/osdfDistributeUtils.hpp"
 #include "oops/mpi/mpi.h"
@@ -46,26 +46,49 @@ void distributeObs(const DistributionParametersBase & distParams,
     return;
   }
 
-  // Deal with the special case of when user requests the ReaderDependentDistribution.
-  if (distParams.name.value() == "ReaderDependentDistribution") {
+  // Deal with the special case of when user requests the IdentityDistribution.
+  if (distParams.name.value() == "Identity") {
     if (!obsGroupVarList.empty()) {
-      throw eckit::UserError("distributeObs: ReaderDependentDistribution requires empty "
-                          "obsGroupVarList", Here());
+      oops::Log::warning() <<
+        "WARNING: an ObsSpace configured to group locations into records is using the "
+        "Identity distribution, which keeps each location on the MPI process on which it has "
+        "been placed by the reader. This will produce incorrect results (with records split across "
+        "multiple MPI processes) unless the reader is configured to ensure locations belonging to "
+        "the same record are kept together. This can be done only for the ODB reader. If you are "
+        "using any other reader, switch to a different distribution (e.g. RoundRobin); if you're "
+        "using the ODB reader, make sure the 'record grouping columns' option in the query file is "
+        "set correctly (see "
+        "https://jointcenterforsatellitedataassimilation-jedi-docs.readthedocs-hosted.com/en/"
+        "latest/inside/jedi-components/ioda/file-formats.html#reading-odb-files-in-parallel "
+        "for more information)." << std::endl;
     }
     ospaceDist->setNumberLocations(inOutOsdf->numRows());
-    obsSourceStats.nrecs = obsSourceStats.nlocs;
-    std::size_t startRecNum = obsSourceStats.nrecs;
-    oops::mpi::exclusiveScan(commAll, startRecNum);
-    obsSourceStats.recNums.resize(obsSourceStats.locIndices.size());
-    std::iota(obsSourceStats.recNums.begin(), obsSourceStats.recNums.end(), startRecNum);
+
+    // Group locations stored on this MPI process into records. Assign a (local) record index to
+    // each location.
+    std::vector<std::size_t> recNums;
+    osdfAssignRecordNumbers(*inOutOsdf, obsGroupVarList, recNums);
+    // Records are numbered consecutively, so the number of records on this process is simply the
+    // highest record index plus one.
+    const std::size_t numRecords =
+      recNums.empty() ? 0 : (*std::max_element(recNums.begin(), recNums.end()) + 1);
+    // Make record indices on different MPI processes unique by offsetting them by the total number
+    // of records stored on MPI processes with lower ranks.
+    std::size_t recNumOffset = numRecords;
+    oops::mpi::exclusiveScan(commAll, recNumOffset);
+    std::transform(recNums.begin(), recNums.end(), recNums.begin(),
+                   [recNumOffset] (std::size_t recNum) { return recNum + recNumOffset; });
+
+    obsSourceStats.nrecs = numRecords;
+    obsSourceStats.recNums = std::move(recNums);
     return;
   }
 
   // standard distribution logic starts here
   std::unique_ptr<osdf::IFrame> globalOsdf = std::make_unique<osdf::FrameCols>();
-  // ReaderDependentDistribution is used to do initial allGatherv operations, regardless of the
+  // IdentityDistribution is used to do initial allGatherv operations, regardless of the
   // user-requested distribution type (Step 1.)
-  ReaderDependentDistribution tempDistribution(commAll, ReaderDependentDistribution::Parameters_());
+  IdentityDistribution tempDistribution(commAll, IdentityDistribution::Parameters_());
   tempDistribution.setNumberLocations(inOutOsdf->numRows());
 
   // allGather just the variables needed for record grouping and MPI distribution to the globalOsdf
