@@ -1,0 +1,50 @@
+---
+
+test cases:
+  - name: "7 rows and 5 columns"
+    osdf columns:
+    - name: "MetaData/intVariable"
+      type: "int"
+      values: [ 1, 2, 3, 4, 5, 6, 7 ]
+    - name: "MetaData/floatVariable"
+      type: "float"
+      values: [ 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5 ]
+    - name: "MetaData/stringVariable"
+      type: "string"
+      values: [ "one", "two", "three", "four", "five", "six", "seven" ]
+    - name: "MetaData/int64Variable"
+      type: "int64"
+      values: [ 10, 20, 30, 40, 50, 60, 70 ]
+    - name: "MetaData/charVariable"
+      type: "char"
+      values: [ "a", "b", "c", "d", "e", "f", "g" ]
+    expected values:
+      num rows: 7
+      num columns: 5
+
+  - name: "5 rows and 7 columns"
+    osdf columns:
+    - name: "MetaData/intVariable"
+      type: "int"
+      values: [ 1, 2, 3, 4, 5 ]
+    - name: "MetaData/floatVariable"
+      type: "float"
+      values: [ 1.5, 2.5, 3.5, 4.5, 5.5 ]
+    - name: "MetaData/stringVariable"
+      type: "string"
+      values: [ "one", "two", "three", "four", "five" ]
+    - name: "MetaData/int64Variable"
+      type: "int64"
+      values: [ 10, 20, 30, 40, 50 ]
+    - name: "MetaData/charVariable"
+      type: "char"
+      values: [ "a", "b", "c", "d", "e" ]
+    - name: "MetaData/anotherIntVariable"
+      type: "int"
+      values: [ 6, 7, 8, 9, 10 ]
+    - name: "MetaData/anotherFloatVariable"
+      type: "float"
+      values: [ 6.5, 7.5, 8.5, 9.5, 10.5 ]
+    expected values:
+      num rows: 5
+      num columns: 7

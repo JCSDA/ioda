@@ -30,9 +30,13 @@ const std::string osdf::Datum<T>::getValueStr() const {
 template const std::string osdf::Datum<int>::getValueStr() const;
 template const std::string osdf::Datum<std::int64_t>::getValueStr() const;
 template const std::string osdf::Datum<float>::getValueStr() const;
-template const std::string osdf::Datum<char>::getValueStr() const;
 
 template<>
 const std::string osdf::Datum<std::string>::getValueStr() const {
   return value_;
+}
+
+template<>
+const std::string osdf::Datum<char>::getValueStr() const {
+  return std::string(1, value_);
 }

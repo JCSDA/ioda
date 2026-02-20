@@ -30,9 +30,13 @@ const std::string osdf::Data<T>::getValueStr(const std::int64_t rowIndex) const 
 template const std::string osdf::Data<int>::getValueStr(const std::int64_t) const;
 template const std::string osdf::Data<std::int64_t>::getValueStr(const std::int64_t) const;
 template const std::string osdf::Data<float>::getValueStr(const std::int64_t) const;
-template const std::string osdf::Data<char>::getValueStr(const std::int64_t) const;
 
 template<>
 const std::string osdf::Data<std::string>::getValueStr(const std::int64_t rowIndex) const {
   return values_.at(static_cast<std::size_t>(rowIndex));
+}
+
+template<>
+const std::string osdf::Data<char>::getValueStr(const std::int64_t rowIndex) const {
+  return std::string(1, values_.at(static_cast<std::size_t>(rowIndex)));
 }

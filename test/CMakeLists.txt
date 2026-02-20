@@ -246,6 +246,7 @@ list( APPEND ioda_test_input
 
   testinput/containers/iodatest_obs_data_frame.yaml
   testinput/containers/iodatest_osdf_dummy_config.yaml
+  testinput/containers/iodatest_osdf_num_rows_cols.yaml
 
   testinput/distribution/iodatest_distribution.yaml
   testinput/distribution/iodatest_distribution_masterandreplica_mpi_2.yaml
@@ -365,6 +366,12 @@ ecbuild_add_test( TARGET  test_ioda_osdf_get_column_metadata
 ecbuild_add_test( TARGET  test_ioda_osdf_append
                   SOURCES mains/containers/TestOsdfAppend.cc
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  test_ioda_osdf_num_rows_cols
+                  SOURCES mains/containers/TestOsdfNumRowsCols.cc
+                  ARGS    "testinput/containers/iodatest_osdf_num_rows_cols.yaml"
                   LIBS  ioda_test
                   )
 
