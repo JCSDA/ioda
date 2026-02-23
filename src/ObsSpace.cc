@@ -11,8 +11,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <fstream>
-#include <iomanip>
 #include <map>
 #include <memory>
 #include <set>
@@ -20,7 +18,10 @@
 #include <utility>
 #include <vector>
 
+#include "containers/ColumnMetadata.h"
+#include "containers/FrameUtils.h"
 #include "containers/IFrame.h"
+#include "core/IodaUtils.h"
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -30,15 +31,11 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
-#include "oops/util/Random.h"
-#include "oops/util/stringFunctions.h"
 #include "oops/util/Timer.h"
 
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/Constants.h"
-#include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameMetadata.h"
-#include "ioda/containers/FrameRows.h"
 #include "ioda/Copying.h"
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/DistributionFactory.h"
@@ -857,6 +854,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
                             timeWindow_, dist_, tempOsdf, obsSourceStats, osdfMetadata_);
 
+            prepareSourceOsdfDerivedVariables(tempOsdf);
             appendOsdf(tempOsdf, obsSourceStats);
           } else {
             // Load data into a temporary ObsGroup object and append that to the obs_group_
@@ -884,6 +882,44 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
         oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
                         << "backend constructed ObsSpace - skipping the append action"
                         << std::endl;
+    }
+}
+
+void ObsSpace::prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFrame> &srcOsdf) {
+    osdf::ColumnMetadata targetColumnMetadata = osdf_->getData().getColumnMetadata();
+    osdf::ColumnMetadata srcColumnMetadata = srcOsdf->getData().getColumnMetadata();
+
+    // Only act on srcOsdf if it has fewer variables than osdf_
+    // Remaining cases handled by append directly
+    if (targetColumnMetadata.getSizeCols() <= srcColumnMetadata.getSizeCols()) {
+        return;
+    }
+
+    // Find variables which are not in both Osdfs
+    std::vector<std::string> srcColumnNames = srcColumnMetadata.columnNames();
+    vectorDifference unsharedElements
+      = findElementsNotInBothVectors(srcColumnNames, targetColumnMetadata.columnNames());
+
+    if (!unsharedElements.onlyInFirstVector.empty()) {
+      std::string errMsg
+        = "ERROR: The following variables are present in the srcOsdf but not in the targetOsdf: ";
+      for (const std::string &variable : unsharedElements.onlyInFirstVector) {
+        errMsg += (variable + ", ");
+      }
+      throw eckit::BadParameter(errMsg, Here());
+    }
+
+    // Add columns to srcOsdf corresponding to variables in targetOsdf not found in srcOsdf
+    const std::size_t numRows = srcOsdf->numRows();
+
+    for (std::string column : unsharedElements.onlyInSecondVector) {
+      osdf::FrameUtils::callWithSupportedType(osdf_->getColumnType(column),
+                                              [&](auto typeDiscriminator) {
+                                                using T = decltype(typeDiscriminator);
+                                                const std::vector<T> missingValues(
+                                                  numRows, util::missingValue<T>());
+                                                srcOsdf->appendNewColumn(column, missingValues);
+                                                });
     }
 }
 
@@ -1087,8 +1123,8 @@ void ObsSpace::appendOsdf(const std::unique_ptr<osdf::IFrame> &appendOsdf,
                           ObsSourceStats &ObsSourceStats) {
     osdf_->append(appendOsdf);
     updateSourceStatsRecordNumbers(ObsSourceStats);
-    // (LN) Unlike in the obsGroup case, the osdf append does not currently allow for appending
-    // OSDFs with different metadata, so the number of channels does not need updating.
+    // (LN) Unlike in the obsGroup case, the osdf append does not allow for appending
+    // to an OSDF with fewer columns, so the number of channels does not need updating.
     // If implemented, use osdfMetadata_.getChanNums().size() > 0
 }
 

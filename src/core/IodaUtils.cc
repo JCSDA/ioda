@@ -6,9 +6,9 @@
  */
 
 #include <algorithm>
-#include <iomanip>
 #include <set>
 #include <unordered_set>
+#include <vector>
 
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
@@ -20,6 +20,29 @@
 #include "oops/util/missingValues.h"
 
 namespace ioda {
+
+// -----------------------------------------------------------------------------
+vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& firstVector,
+                                              const std::vector<std::string>& secondVector) {
+  std::unordered_set<std::string> firstVectorAsSet(firstVector.begin(), firstVector.end());
+  std::unordered_set<std::string> secondVectorAsSet(secondVector.begin(), secondVector.end());
+
+  vectorDifference outputVectors;
+  outputVectors.onlyInFirstVector.reserve(firstVector.size());
+  outputVectors.onlyInSecondVector.reserve(secondVector.size());
+
+  for (const std::string& item : firstVectorAsSet) {
+    if (!secondVectorAsSet.count(item)) {
+      outputVectors.onlyInFirstVector.emplace_back(item);
+    }
+  }
+  for (const std::string& item : secondVectorAsSet) {
+    if (!firstVectorAsSet.count(item)) {
+      outputVectors.onlyInSecondVector.emplace_back(item);
+    }
+  }
+  return outputVectors;
+}
 
 // -----------------------------------------------------------------------------
 std::vector<std::string> splitString(const std::string & str, char delim) {

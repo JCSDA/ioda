@@ -27,7 +27,6 @@
 #include "oops/test/TestEnvironment.h"
 
 #include "ioda/distribution/Accumulator.h"
-#include "ioda/Exception.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 

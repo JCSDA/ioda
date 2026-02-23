@@ -184,6 +184,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_fill_value.yaml
   testinput/iodatest_obsspace_inclusive_lower_bound.yaml
   testinput/iodatest_obsspace_osdf.yaml
+  testinput/iodatest_obsspace_osdf_prepare_derived.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_osdf.yaml
   testinput/iodatest_obsvector_grouped.yaml
@@ -1303,6 +1304,14 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_osdf
 ecbuild_add_test( TARGET test_ioda_osdf_create_iframe
                   SOURCES mains/containers/TestOsdfCreateIFrame.cc
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
+
+# this test checks that columns containing missing data are correctly created by the
+# prepareSourceOsdfDerivedVariables function when attempting to append an osdf with fewer columns
+ecbuild_add_test( TARGET test_ioda_osdf_prepare_derived_variables
+                  SOURCES mains/TestIodaObsSpacePrepareDerivedVariables.cc
+                  ARGS    "testinput/iodatest_obsspace_osdf_prepare_derived.yaml"
                   LIBS  ioda_test
                   )
 

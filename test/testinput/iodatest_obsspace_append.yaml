@@ -241,13 +241,13 @@ observations:
           rec19: [ 19 ]
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
-#- obs space:
-#    <<: *append_no_obserror
-#    name: Append no ObsError variables (OSDF)
-#    use data frame container: true
-#    obsdataout:
-#      engine:
-#        type: H5File
-#        obsfile: "testoutput/obsspace_append_no_obserror_osdf_out.nc4"
-#  test data: *append_no_obserror_test_data
+- obs space:
+    <<: *append_no_obserror
+    name: Append no ObsError variables (OSDF)
+    use data frame container: true
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_append_no_obserror_osdf_out.nc4"
+  test data: *append_no_obserror_test_data
 

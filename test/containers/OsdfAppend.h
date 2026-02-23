@@ -16,12 +16,11 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include "ioda/containers/FrameCols.h"
-#include "ioda/containers/FrameRows.h"
+#include "ioda/containers/CreateIFrame.h"
+#include "ioda/containers/IFrame.h"
 #include "ioda/test/containers/OsdfTestUtils.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
-#include "oops/util/Logger.h"
 
 namespace ioda {
 namespace test {
@@ -71,23 +70,15 @@ void testOsdfAppend(std::unique_ptr<osdf::IFrame>& frame1,
 void testOsdfAppendEmpty(std::unique_ptr<osdf::IFrame>& frame1) {
   std::int64_t frame1Size = frame1->numRows();
 
-  std::unique_ptr<osdf::IFrame> emptyFrame;
-  emptyFrame = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> emptyFrame = osdf::createIFrame("FrameRows");
 
-  bool didAppendWork = true;
-  try {
-    frame1->append(emptyFrame);
-  } catch (eckit::BadParameter) {
-    didAppendWork = false;
-  }
-  EXPECT_EQUAL(didAppendWork, false);
+  EXPECT_THROWS_AS(frame1->append(emptyFrame), eckit::BadParameter);
   EXPECT_EQUAL(frame1->numRows(), frame1Size);  // Check no additional rows added
 }
 
 void testOsdfAppendPasses() {
   // Set up frameCols1
-  std::unique_ptr<osdf::IFrame> frameCols1;
-  frameCols1 = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> frameCols1 = osdf::createIFrame("FrameCols");
   std::vector<float> lats1          = {-65.0, -66.6};
   std::vector<std::string> statIds1 = {"00001", "00001"};
   std::vector<std::int64_t> times1  = {1710460225, 1710460225};
@@ -96,8 +87,7 @@ void testOsdfAppendPasses() {
   frameCols1->appendNewColumn("time", times1);
 
   // Set up frameCols2
-  std::unique_ptr<osdf::IFrame> frameCols2;
-  frameCols2 = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> frameCols2 = osdf::createIFrame("FrameCols");
   std::vector<float> lats2          = {-67.2, -68.6, -64.8};
   std::vector<std::string> statIds2 = {"00002", "00001", "00001"};
   std::vector<std::int64_t> times2  = {1710460225, 1710460225, 1710460225};
@@ -106,8 +96,7 @@ void testOsdfAppendPasses() {
   frameCols2->appendNewColumn("time", times2);
 
   // Set up frameCols3
-  std::unique_ptr<osdf::IFrame> frameCols3;
-  frameCols3 = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> frameCols3 = osdf::createIFrame("FrameCols");
   std::vector<float> lats3 = {};
   std::vector<std::string> statIds3 = {};
   std::vector<std::int64_t> times3 = {};
@@ -116,15 +105,13 @@ void testOsdfAppendPasses() {
   frameCols3->appendNewColumn("time", times3);
 
   // Set up frameRows1
-  std::unique_ptr<osdf::IFrame> frameRows1;
-  frameRows1 = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> frameRows1 = osdf::createIFrame("FrameRows");
   frameRows1->appendNewColumn("lat", lats1);
   frameRows1->appendNewColumn("StatId", statIds1);
   frameRows1->appendNewColumn("time", times1);
 
   // Set up frameRows2
-  std::unique_ptr<osdf::IFrame> frameRows2;
-  frameRows2 = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> frameRows2 = osdf::createIFrame("FrameRows");
   frameRows2->appendNewColumn("lat", lats2);
   frameRows2->appendNewColumn("StatId", statIds2);
   frameRows2->appendNewColumn("time", times2);
@@ -141,12 +128,10 @@ void testOsdfAppendPasses() {
 }
 
 void testOsdfAppendFails() {
-  std::unique_ptr<osdf::IFrame> emptyFrameCols;
-  emptyFrameCols = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> emptyFrameCols = osdf::createIFrame("FrameCols");
 
   // Set up frameCols1
-  std::unique_ptr<osdf::IFrame> frameCols1;
-  frameCols1 = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> frameCols1 = osdf::createIFrame("FrameCols");
   std::vector<float> lats1          = {-65.0, -66.6};
   std::vector<std::string> statIds1 = {"00001", "00001"};
   std::vector<std::int64_t> times1  = {1710460225, 1710460225};
@@ -155,15 +140,13 @@ void testOsdfAppendFails() {
   frameCols1->appendNewColumn("time", times1);
 
   // Set up frameRows1
-  std::unique_ptr<osdf::IFrame> frameRows1;
-  frameRows1 = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> frameRows1 = osdf::createIFrame("FrameRows");
   frameRows1->appendNewColumn("lat", lats1);
   frameRows1->appendNewColumn("StatId", statIds1);
   frameRows1->appendNewColumn("time", times1);
 
   // Set up frameCols2
-  std::unique_ptr<osdf::IFrame> frameCols2;
-  frameCols2 = std::make_unique<osdf::FrameCols>();
+  std::unique_ptr<osdf::IFrame> frameCols2 = osdf::createIFrame("FrameCols");
   std::vector<float> lats2          = {-67.2, -68.6, -64.8};
   std::vector<std::string> statIds2 = {"00002", "00001", "00001"};
   std::vector<std::int64_t> times2  = {1710460225, 1710460225, 1710460225};
@@ -172,14 +155,7 @@ void testOsdfAppendFails() {
   frameCols2->appendNewColumn("time", times2);
 
   // Append to empty frame without metadata fails
-  bool didAppendWork = true;
-  try {
-    emptyFrameCols->append(frameCols1);
-  }
-  catch(eckit::BadParameter) {
-    didAppendWork = false;
-  }
-  EXPECT_EQUAL(didAppendWork, false);
+  EXPECT_THROWS_AS(emptyFrameCols->append(frameCols1), eckit::BadParameter);
   EXPECT_EQUAL(emptyFrameCols->numRows(), 0);
 
   // Appending an empty frame without metadata to current frame fails
@@ -188,13 +164,7 @@ void testOsdfAppendFails() {
 
   // Append to frame with different metadata (names) fails
   std::int64_t frameCols2Size = frameCols2->numRows();
-  didAppendWork               = true;
-  try {
-    frameCols2->append(frameCols1);
-  } catch (eckit::BadParameter) {
-    didAppendWork = false;
-  }
-  EXPECT_EQUAL(didAppendWork, false);
+  EXPECT_THROWS_AS(frameCols2->append(frameCols1), eckit::BadParameter);
   EXPECT_EQUAL(frameCols2Size, frameCols2->numRows());
 }
 

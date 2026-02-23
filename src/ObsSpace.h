@@ -485,6 +485,13 @@ namespace ioda {
         /// \param appendDir directory holding the file containing the new obs data
         void updateObsSpace(const eckit::Configuration &);
 
+        /// \brief Prepare sourceOsdf for append if osdf_ has derived variables
+        /// \details If the osdf_ has more columns than appendOsdf, this function creates columns of
+        /// missing data with those names and adds them to appendOsdf
+        /// Will throw an exception if appendOsdf has more columns than osdf_
+        /// \param srcOsdf Osdf containing variables to be compared with osdf_
+        void prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFrame> &srcOsdf);
+
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call
@@ -497,7 +504,7 @@ namespace ioda {
         /// \param threshold limit being tested by the compare action
         /// \param checkValues vector of QC values that are being tested with the compare action
         void reduce(const ioda::CompareAction compareAction, const int threshold,
-                    const std::vector<int> & checkValues);
+                    const std::vector<int> &checkValues);
 
         /// \brief Reduce obs space given a vector of bool showing which values to keep.
         /// \details This function will use its input argument to remove unwanted

@@ -33,7 +33,20 @@ namespace osdf {
 }
 
 namespace ioda {
-  class ObsSpaceParameters;
+class ObsSpaceParameters;
+
+  struct vectorDifference {
+    std::vector<std::string> onlyInFirstVector;
+    std::vector<std::string> onlyInSecondVector;
+  };
+
+  /// \brief return elements which are in one vector that are not in another
+  /// \param firstVector one vector to compare
+  /// \param secondVector another vector to compare with the first
+  /// Outputs a struct containing two vectors of strings, listing the elements
+  /// /// in one of the vectors which is not found in the other
+  vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& firstVector,
+                                              const std::vector<std::string>& secondVector);
 
   /// \brief split a string on a given delimiter
   /// \param str string to split
