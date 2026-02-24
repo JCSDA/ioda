@@ -8,6 +8,7 @@
 #include "ioda/reader/distribute/distributeObs.hpp"
 
 #include <numeric>
+#include <unordered_set>
 
 #include "eckit/mpi/Comm.h"
 #include "ioda/containers/FrameCols.h"
@@ -96,11 +97,9 @@ void distributeObs(const DistributionParametersBase & distParams,
   // Global lat/lon are always needed in order to call applyMpiDistribution
   const std::string latColName = "MetaData/latitude";
   const std::string lonColName = "MetaData/longitude";
-  std::vector<std::string> computeColumns = {latColName, lonColName};
+  std::unordered_set<std::string> computeColumns = {latColName, lonColName};
   for (const auto & colName : obsGroupVarList) {
-    if (std::find(computeColumns.begin(), computeColumns.end(), colName) == computeColumns.end()) {
-      computeColumns.push_back("MetaData/" + colName);
-    }
+    computeColumns.insert("MetaData/" + colName);
   }
 
   // allGather the computation required columns, removing them from inOutOsdf as they are processed
