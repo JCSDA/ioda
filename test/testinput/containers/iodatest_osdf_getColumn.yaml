@@ -1,0 +1,28 @@
+---
+test column data:
+  - name: "intColumn"
+    type: "int"
+    values: &intValues [ 0, 1, 2, 3, 4, "missing" ]
+  - name: "int64Column"
+    type: "int64"
+    values: &int64Values
+      - 9000000000000000000
+      - "missing"
+      - 9000000000000000002
+      - 9000000000000000003
+      - 9000000000000000004
+      - 9000000000000000005
+  - name: "floatColumn"
+    type: "float"
+    values: &floatValues [ 1.5, 2.5, 3.5, "missing", 5.5, 6.5 ]
+  - name: "stringColumn"
+    type: "string"
+    values: &stringValues [ "May", "the", "force", "be", "with", "you" ]
+  - name: "charColumn"
+    type: "char"
+    values: &charValues [ "a", "missing", "c", "d", "e", "f" ]
+expected column 0: *intValues
+expected column 1: *int64Values
+expected column 2: *floatValues
+expected column 3: *stringValues
+expected column 4: *charValues
