@@ -177,6 +177,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_put_db_channels_check.yaml
   testinput/iodatest_obsspace_reduce.yaml
   testinput/iodatest_obsspace_reduce_mpi.yaml
+  testinput/iodatest_obsspace_redistribute.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
   testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
@@ -1559,6 +1560,13 @@ ecbuild_add_test( TARGET  test_ioda_obsspace_reduce_mpi_3
                   ARGS    "testinput/iodatest_obsspace_reduce_mpi.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS test_ioda_obsspace_reduce)
+
+# Redistribution test
+ecbuild_add_test( TARGET  test_ioda_obsspace_redistribute
+                  MPI 2
+                  SOURCES mains/TestObsSpaceRedistribute.cc
+                  ARGS    "testinput/iodatest_obsspace_redistribute.yaml"
+                  LIBS  ioda_test)
 
 ###################################################################
 ################ End of reduce function tests #####################

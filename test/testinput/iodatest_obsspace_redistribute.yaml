@@ -1,0 +1,59 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+- obs space:
+    name: "RoundRobin->Halo"
+    use data frame container: true
+    simulated variables: ['airTemperature']
+    distribution:
+      name: RoundRobin
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  redistribution:
+    name: Halo
+    center: [0.0, 45.0]
+    radius: 7000000.0
+    halo size: 0
+- obs space:
+    name: "RoundRobin->Inefficient"
+    use data frame container: true
+    simulated variables: ['airTemperature']
+    distribution:
+      name: RoundRobin
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  redistribution:
+    name: InefficientDistribution
+- obs space:
+    name: "Not-OSDF"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: RoundRobin
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  redistribution:
+    name: InefficientDistribution
+  expectException: true
+- obs space:
+    name: "Inefficient->RoundRobin"
+    use data frame container: true
+    simulated variables: ['airTemperature']
+    distribution:
+      name: InefficientDistribution
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  redistribution:
+    name: RoundRobin
+  expectException: true
+    

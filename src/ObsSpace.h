@@ -485,6 +485,10 @@ namespace ioda {
         /// \param appendDir directory holding the file containing the new obs data
         void updateObsSpace(const eckit::Configuration &);
 
+        /// \brief Redistribute the obs across MPI tasks according to the redistribution
+        /// specification in the YAML configuration. Only works for OSDF-based ObsSpaces.
+        void redistribute(const eckit::Configuration &);
+
         /// \brief Prepare sourceOsdf for append if osdf_ has derived variables
         /// \details If the osdf_ has more columns than appendOsdf, this function creates columns of
         /// missing data with those names and adds them to appendOsdf

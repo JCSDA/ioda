@@ -48,6 +48,7 @@
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/ioPool/WriterPoolFactory.h"
+#include "ioda/reader/distribute/distributeObs.hpp"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/reader/ObsReader.hpp"
 #include "ioda/Variables/Variable.h"
@@ -804,6 +805,42 @@ std::vector<std::size_t> ObsSpace::recidx_all_recnums() const {
     recnum++;
   }
   return RecNums;
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
+  if (!use_dataframe_) {
+    std::string errMsg = std::string("ObsSpace::redistribute:") +
+      std::string(" Redistribute is only supported for the dataframe backend.");
+    throw eckit::NotImplemented(errMsg, Here());
+  }
+  if (!(dist_->isNonoverlapping())) {
+    std::string errMsg = std::string("ObsSpace::redistribute: Distribution '") + dist_->name() +
+                         std::string("' is not supported.\n") +
+                         std::string("   Starting distribution must be non-overlapping.");
+    throw eckit::NotImplemented(errMsg, Here());
+  }
+  // Throw an exception if there are any associated data structures, such as ObsVectors,
+  // since these will need to be redistributed as well and that is not currently supported.
+  if (obs_space_associated_.size() > 0) {
+    std::string errMsg = std::string("ObsSpace can only be redistributed when there are no ") +
+        std::string("existing ObsVectors or ObsDataVectors attached to it.");
+    throw eckit::UnexpectedState(errMsg, Here());
+  }
+
+  std::unique_ptr<DistributionParametersBase> distParams =
+    DistributionFactory::createParameters(redistributeConfig.getString("name"));
+  distParams->deserialize(redistributeConfig);
+  ioda::reader::distributeObs(*distParams, this->comm(), this->obs_group_vars(),
+                              obs_src_stats_, dist_, osdf_);
+  // Reset the size of locations
+  dim_info_.set_dim_size(ObsDimensionId::Location, obs_src_stats_.nlocs);
+  // Recompute patch obs data (for overlapping distributions)
+  dist_->computePatchLocs();
+  // Assign Location variable with the source index numbers that were kept
+  assignLocationValues();
+  // Construct the recidx_ map
+  buildRecIdx();
 }
 
 // -----------------------------------------------------------------------------
