@@ -226,13 +226,22 @@ void ObsVector::invert() {
   }
 }
 // -----------------------------------------------------------------------------
-void ObsVector::random() {
+void ObsVector::random(const std::string& distType, const double relvar) {
   const size_t globalnobs = obsdb_.sourceNumLocs() * nvars_;
   std::vector<double> perts(globalnobs);
 
+  if (distType != "Normal" && distType != "InverseGamma") {
+    throw eckit::BadParameter("ObsVector::random: distType must be 'Normal' or 'InverseGamma'");
+  }
+
   if (obsdb_.comm().rank() == 0) {
-    util::NormalDistribution<double> x(globalnobs, 0.0, 1.0, this->getSeed());
-    perts = x.data();
+    if (distType == "InverseGamma") {
+      util::InverseGammaDistribution<double> x(globalnobs, 1.0, relvar, getSeed());
+      perts = x.data();
+    } else {  // distType == "Normal"
+      util::NormalDistribution<double> x(globalnobs, 0.0, 1.0, getSeed());
+      perts = x.data();
+    }
   }
 
   obsdb_.comm().broadcast(perts, 0);

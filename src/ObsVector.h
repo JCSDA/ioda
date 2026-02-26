@@ -72,7 +72,7 @@ class ObsVector : public ObsSpaceAssociated,
   void axpy_byrecord(const std::vector<double> & beta, const ObsVector & y);
 
   void invert();
-  void random();
+  void random(const std::string& distType = "Normal", const double relvar = 1.0);
 
   /// Global (across all MPI tasks) dot product of this with \p other
   double dot_product_with(const ObsVector & other) const;
