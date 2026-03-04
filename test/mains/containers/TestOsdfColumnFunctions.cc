@@ -5,11 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/test/containers/OsdfSetColumn.h"
+#include "ioda/test/containers/OsdfColumnFunctions.h"
 #include "oops/runs/Run.h"
 
 int main(int argc, char **argv) {
   oops::Run run(argc, argv);
-  ioda::test::OsdfSetColumn tests;
+  ioda::test::OsdfColumnFunctions tests;
   return run.execute(tests);
 }

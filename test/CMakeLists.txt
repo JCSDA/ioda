@@ -354,8 +354,8 @@ ecbuild_add_test( TARGET  test_ioda_osdf_getcolumn
                   LIBS  ioda_test
                   )
 
-ecbuild_add_test( TARGET  test_ioda_osdf_setcolumn
-                  SOURCES mains/containers/TestOsdfSetColumn.cc
+ecbuild_add_test( TARGET  test_ioda_osdf_columnfunctions
+                  SOURCES mains/containers/TestOsdfColumnFunctions.cc
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
