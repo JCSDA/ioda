@@ -13,7 +13,9 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/Distribution.h"
+#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/DistributionParametersBase.h"
+#include "ioda/distribution/IdentityDistribution.h"
 #include "ioda/ObsDataIoParameters.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
 #include "ioda/reader/distribute/distributeObs.hpp"
@@ -80,8 +82,21 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
   dataInParamsSingleFile.deserialize(dataInParams[0]);
   const auto obsGroupVarList = dataInParamsSingleFile.obsGrouping.value().obsGroupVars.value();
 
-  distributeObs(distParams, commAll, obsGroupVarList, obsSourceStats, ospaceDist,
-                destOsdf);
+  if (ospaceDist) {
+    oops::Log::info() << "WARNING: the reader::obsRead function received a non-null pointer " <<
+      "in its 'ospaceDist' parameter. 'ospaceDist' is an output-only parameter, so the incoming " <<
+      "value will be ignored and overwritten." << std::endl;
+  }
+  // Temporarily create an IdentityDistribution to represent the current distribution.
+  // 'ospaceDist' will get updated to the requested distribution (defined in distParams) by the call
+  // to 'distributeObs' below.
+  //
+  // Note there is an assumption here that the data is currently distributed
+  // in a non-overlapping way across the ranks, because IdentityDistribution
+  // is a subclass of NonOverlappingDistribution.
+  ospaceDist = DistributionFactory::create(commAll, IdentityDistribution::Parameters_());
+  ospaceDist->setNumberLocations(destOsdf->numRows());
+  distributeObs(distParams, commAll, obsGroupVarList, obsSourceStats, ospaceDist, destOsdf);
   oops::Log::trace() << "reader::obsRead end" << std::endl;
 }
 

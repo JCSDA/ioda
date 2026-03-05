@@ -20,6 +20,7 @@
 #include "ioda/containers/FrameRows.h"
 #include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionFactory.h"
+#include "ioda/distribution/IdentityDistribution.h"
 #include "ioda/reader/distribute/distributeObs.hpp"
 #include "ioda/test/containers/OsdfTestUtils.h"
 
@@ -52,11 +53,6 @@ void testCalculateDistribution() {
   populateFrame(configInputFrameData, inoutOsdf, inputColumnNames, inputColumnTypes);
 
   // Create the other distributeObs function inputs
-  // Distribution
-  ioda::EmptyDistributionParameters distParams;
-  distParams.deserialize(configInputData.getSubConfiguration("distribution"));
-  std::shared_ptr<Distribution> distribution;
-
   // obsGroupVarList
   const std::vector<std::string> obsGroupVarList =
       configInputData.getStringVector("grouping variables");
@@ -68,13 +64,34 @@ void testCalculateDistribution() {
   ioda::ObsSourceStats obsSourceStats;
   obsSourceStats.sourceNlocs = configInputData.getUnsigned("number of locations");
 
-  // Call the function being tested
-  ioda::reader::distributeObs(distParams, oops::mpi::world(),
+  // Distribution Parameters
+  auto distParamsConfig = configInputData.getSubConfiguration("distribution");
+  std::unique_ptr<DistributionParametersBase> distParams =
+        DistributionFactory::createParameters(distParamsConfig.getString("name"));
+  distParams->deserialize(distParamsConfig);
+
+  std::shared_ptr<Distribution> inOutDist;  // gets created as nullptr
+
+  // Call the distributeObs function, passing a null inOutDist, and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
                              obsGroupVarList,
                              obsSourceStats,
-                             distribution,
+                             inOutDist,
+                             inoutOsdf),
+                   eckit::Exception);
+
+  // Now create inOutDist as IdentityDistribution and call the function again
+  inOutDist = DistributionFactory::create(oops::mpi::world(), IdentityDistribution::Parameters_());
+  inOutDist->setNumberLocations(inoutOsdf->numRows());
+
+  // Call the function correctly
+  ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                             obsGroupVarList,
+                             obsSourceStats,
+                             inOutDist,
                              inoutOsdf);
 
+  EXPECT(inOutDist->name() == distParams->name.value());
   // Create the reference osdf frame for this rank to compare results
   const eckit::LocalConfiguration configExpectedResults =
     topLevelConf.getSubConfiguration("expected results." + MyPath);

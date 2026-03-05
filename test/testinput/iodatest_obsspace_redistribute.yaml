@@ -55,5 +55,5 @@ observations:
         obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
   redistribution:
     name: RoundRobin
-  expectException: true
+  expectException: false
     

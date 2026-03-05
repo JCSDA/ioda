@@ -19,7 +19,6 @@
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionFactory.h"
-#include "ioda/distribution/IdentityDistribution.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 #include "ioda/reader/distribute/osdfDistributeUtils.hpp"
 #include "oops/mpi/mpi.h"
@@ -33,17 +32,19 @@ void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
                    ObsSourceStats & obsSourceStats,
-                   std::shared_ptr<Distribution> & ospaceDist,
+                   std::shared_ptr<Distribution> & inOutDist,
                    std::unique_ptr<osdf::IFrame> & inOutOsdf) {
   oops::Log::trace() << "reader::distributeObs start" << std::endl;
-  // ospaceDist is the user-requested distribution type (Step 4 of design, (now moved to top))
-  ospaceDist = DistributionFactory::create(commAll, distParams);
+  // distOut is the user-requested new distribution type (Step 4 of design, (now moved to top))
+  std::shared_ptr<Distribution> distOut = DistributionFactory::create(commAll, distParams);
 
   // Deal with the special case of zero input locations. Nothing to distribute.
   if (obsSourceStats.sourceNlocs == 0) {
     // Just need to set the output obsSourceStats
     obsSourceStats.nrecs = 0;
     obsSourceStats.recNums.resize(0);
+    inOutDist = distOut;
+    distOut.reset();
     return;
   }
 
@@ -63,7 +64,7 @@ void distributeObs(const DistributionParametersBase & distParams,
         "latest/inside/jedi-components/ioda/file-formats.html#reading-odb-files-in-parallel "
         "for more information)." << std::endl;
     }
-    ospaceDist->setNumberLocations(inOutOsdf->numRows());
+    distOut->setNumberLocations(inOutOsdf->numRows());
 
     // Group locations stored on this MPI process into records. Assign a (local) record index to
     // each location.
@@ -82,15 +83,16 @@ void distributeObs(const DistributionParametersBase & distParams,
 
     obsSourceStats.nrecs = numRecords;
     obsSourceStats.recNums = std::move(recNums);
+    inOutDist = distOut;
+    distOut.reset();
     return;
   }
 
   // standard distribution logic starts here
   std::unique_ptr<osdf::IFrame> globalOsdf = std::make_unique<osdf::FrameCols>();
-  // IdentityDistribution is used to do initial allGatherv operations, regardless of the
-  // user-requested distribution type (Step 1.)
-  IdentityDistribution tempDistribution(commAll, IdentityDistribution::Parameters_());
-  tempDistribution.setNumberLocations(inOutOsdf->numRows());
+
+  // Distribution passed in via inOutDist is used to do allGatherv operations. (Step 1.)
+  ASSERT_MSG(inOutDist, "distributeObs: distribution object passed in via inOutDist is nullptr.");
 
   // allGather just the variables needed for record grouping and MPI distribution to the globalOsdf
   // (Step 2.)
@@ -112,7 +114,7 @@ void distributeObs(const DistributionParametersBase & distParams,
         using T = decltype(typeDiscriminator);
         std::vector<T> values;
         inOutOsdf->getColumn(colName, values);
-        tempDistribution.allGatherv(values);
+        inOutDist->allGatherv(values);
         globalOsdf->appendNewColumn(colName, values);
         inOutOsdf->removeColumn(colName);
         });
@@ -138,7 +140,7 @@ void distributeObs(const DistributionParametersBase & distParams,
   std::vector<std::size_t> localLocIndices, localRecNums;
   std::size_t localNlocs, localNrecs;
 
-  ioda::IoPool::applyMpiDistribution(ospaceDist, false,
+  ioda::IoPool::applyMpiDistribution(distOut, false,
                                     lonValues, latValues,
                                     sourceLocIndices,
                                     sourceRecNums,
@@ -169,13 +171,17 @@ void distributeObs(const DistributionParametersBase & distParams,
         using T = decltype(typeDiscriminator);
         std::vector<T> values;
         inOutOsdf->getColumn(colName, values);
-        tempDistribution.allGatherv(values);
+        inOutDist->allGatherv(values);
         globalOsdf->appendNewColumn(colName, values);
         inOutOsdf->removeColumn(colName);
         osdfSelectRankData(globalOsdf, rankOsdf, colName, localLocIndices);
         globalOsdf->removeColumn(colName);
       });
   }
+
+  // After redistributing, we don't need the original distribution anymore.
+  inOutDist = distOut;
+  distOut.reset();
 
   // Update the inOutOsdf to be the rank-specific osdf (Step 9.)
   inOutOsdf = std::move(rankOsdf);

@@ -814,12 +814,6 @@ void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
       std::string(" Redistribute is only supported for the dataframe backend.");
     throw eckit::NotImplemented(errMsg, Here());
   }
-  if (!(dist_->isNonoverlapping())) {
-    std::string errMsg = std::string("ObsSpace::redistribute: Distribution '") + dist_->name() +
-                         std::string("' is not supported.\n") +
-                         std::string("   Starting distribution must be non-overlapping.");
-    throw eckit::NotImplemented(errMsg, Here());
-  }
   // Throw an exception if there are any associated data structures, such as ObsVectors,
   // since these will need to be redistributed as well and that is not currently supported.
   if (obs_space_associated_.size() > 0) {
@@ -886,7 +880,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             // Create temporary osdf to append to
             std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(osdf_->frameType());
 
-            // Read file into temp osdf using the same metadata, distribution, etc  as osdf_
+            // Read file into temp osdf using the same metadata, etc  as osdf_
             reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
                             timeWindow_, dist_, tempOsdf, obsSourceStats, osdfMetadata_);
