@@ -97,6 +97,8 @@ distribution/NonoverlappingDistribution.h
 distribution/NonoverlappingDistributionAccumulator.h
 distribution/RoundRobin.cc
 distribution/RoundRobin.h
+distribution/SelectedRanks.cc
+distribution/SelectedRanks.h
 
 ioPool/IoPoolBase.cpp
 ioPool/IoPoolBase.h

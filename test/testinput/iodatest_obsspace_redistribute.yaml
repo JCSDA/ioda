@@ -56,4 +56,16 @@ observations:
   redistribution:
     name: RoundRobin
   expectException: false
-    
+- obs space:
+    name: "RoundRobin->SelectedRanks"
+    use data frame container: true
+    simulated variables: ['airTemperature']
+    distribution:
+      name: RoundRobin
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_reduce_1D.nc4"
+  redistribution:
+    name: SelectedRanks
+    ranks: [ 1 ]

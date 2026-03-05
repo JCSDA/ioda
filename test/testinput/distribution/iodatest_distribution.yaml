@@ -468,3 +468,84 @@ distribution types:
         index: [ 0 ]
         recnums: [ 0 ]
         patchIndex: [ 0 ]
+
+  - distribution: "Selected Ranks 8"
+    specs:
+      gnlocs: 8
+      allgatherv: [ 0, 2, 4, 6, 1, 3, 5, 7 ]
+      rank0:
+        config: &selectedranks02
+          distribution:
+            name: "SelectedRanks"
+            ranks: [ 0, 2 ]
+        nlocs: 4
+        nrecs: 4
+        nPatchLocs: 4
+        index: [ 0, 2, 4, 6 ]
+        recnums: [ 0, 2, 4, 6 ]
+        patchIndex: [ 0, 2, 4, 6 ]
+      rank1:
+        config: *selectedranks02
+        nlocs: 0
+        nrecs: 0
+        nPatchLocs: 0
+        index: [ ]
+        recnums: [ ]
+        patchIndex: [ ]
+      rank2:
+        config: *selectedranks02
+        nlocs: 4
+        nrecs: 4
+        nPatchLocs: 4
+        index: [ 1, 3, 5, 7 ]
+        recnums: [ 1, 3, 5, 7 ]
+        patchIndex: [ 1, 3, 5, 7 ]
+      rank3:
+        config: *selectedranks02
+        nlocs: 0
+        nrecs: 0
+        nPatchLocs: 0
+        index: [ ]
+        recnums: [ ]
+        patchIndex: [ ]
+
+  - distribution: "Selected Ranks Grouping 8"
+    specs:
+      gnlocs: 8
+      obsgrouping: [ 0, 1, 2, 0, 1, 2, 0, 1 ]
+      allgatherv: [ 0, 3, 6, 1, 4, 7, 2, 5 ]
+      rank0:
+        config: &selectedranks013
+          distribution:
+            name: "SelectedRanks"
+            ranks: [ 0, 1, 3 ]
+        nlocs: 3
+        nrecs: 1
+        nPatchLocs: 3
+        index: [ 0, 3, 6 ]
+        recnums: [ 0, 0, 0 ]
+        patchIndex: [ 0, 3, 6 ]
+      rank1:
+        config: *selectedranks013
+        nlocs: 3
+        nrecs: 1
+        nPatchLocs: 3
+        index: [ 1, 4, 7 ]
+        recnums: [ 1, 1, 1 ]
+        patchIndex: [ 1, 4, 7 ]
+      rank2:
+        config: *selectedranks013
+        nlocs: 0
+        nrecs: 0
+        nPatchLocs: 0
+        index: [ ]
+        recnums: [ ]
+        patchIndex: [ ]
+      rank3:
+        config: *selectedranks013
+        nlocs: 2
+        nrecs: 1
+        nPatchLocs: 2
+        index: [ 2, 5 ]
+        recnums: [ 2, 2 ]
+        patchIndex: [ 2, 5 ]
