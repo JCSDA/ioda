@@ -3,7 +3,7 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
-cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 project(
   metoffice-jedi-ci
   VERSION 1.0.0
@@ -25,7 +25,7 @@ endif()
 
 set(
   include_names
-  "$ENV{REPO}" "orca-jedi" "ops-um-jedi" "jjtests" "lfric-jedi")
+  "$ENV{REPO}" "opsinputs" "orca-jedi" "ops-um-jedi" "jjtests" "lfric-jedi")
 if(DEFINED ENV{REPO_TEST_DATA})
   list(APPEND include_names "$ENV{REPO_TEST_DATA}")
 endif()
