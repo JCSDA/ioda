@@ -23,7 +23,8 @@ namespace test {
 void testGetColumnMetadata() {
   const std::int32_t numMetadatum = 3;
 
-  std::array<std::string, numMetadatum> names = {"name1", "name2", "name3"};
+  std::array<std::string, numMetadatum> names = {"name", "longname", "longername"};
+  std::array<std::string, numMetadatum> units = {"K", "m", "ms-2"};
   std::array<std::int8_t, numMetadatum> types
     = {osdf::consts::eString, osdf::consts::eInt, osdf::consts::eInt};
   std::array<std::int8_t, numMetadatum> permissions
@@ -32,7 +33,8 @@ void testGetColumnMetadata() {
   osdf::ColumnMetadata newColumnMetadata;
 
   for (int32_t index = 0; index < numMetadatum; ++index) {
-    osdf::ColumnMetadatum newColumnMetadatum(names[index], types[index], permissions[index]);
+    osdf::ColumnMetadatum newColumnMetadatum(
+      names[index], units[index], types[index], permissions[index]);
     newColumnMetadata.add(newColumnMetadatum);
   }
 
@@ -43,12 +45,31 @@ void testGetColumnMetadata() {
 
   for (int32_t index = 0; index < numMetadatum; ++index) {
     EXPECT_EQUAL(newColumnMetadata.getName(index), names[index]);
+    EXPECT_EQUAL(newColumnMetadata.getUnit(index), units[index]);
     EXPECT_EQUAL(newColumnMetadata.getType(index), types[index]);
     EXPECT_EQUAL(newColumnMetadata.getPermission(index), permissions[index]);
     EXPECT_EQUAL(newColumnMetadata.getWidth(index),
                  static_cast<std::int16_t>(newColumnMetadata.getName(index).size()));
     EXPECT_EQUAL(newColumnMetadata.getIndex(names[index]), index);
   }
+
+  // Updating to smaller width should fail
+  newColumnMetadata.updateColumnWidth(0, 0);
+  EXPECT_EQUAL(newColumnMetadata.getWidth(0),
+               static_cast<std::int16_t>(newColumnMetadata.getName(0).size()));
+
+  // Updating to bigger width should succeed
+  newColumnMetadata.updateColumnWidth(0,
+    static_cast<std::int16_t>(newColumnMetadata.getName(0).size())+2);
+  EXPECT_EQUAL(newColumnMetadata.getWidth(0),
+               static_cast<std::int16_t>(newColumnMetadata.getName(0).size())+2);
+
+  // Should be able to overwrite column unit
+  newColumnMetadata.updateColumnUnit(0, "Celsius");
+  EXPECT_EQUAL(newColumnMetadata.getUnit(0), "Celsius");
+
+  // Setting unit of readOnly column should fail
+  EXPECT_THROWS_AS(newColumnMetadata.updateColumnUnit(2, "m"), eckit::BadValue);
 }
 
 // -----------------------------------------------------------------------------

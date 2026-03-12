@@ -11,19 +11,46 @@
 
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameUtils.h"
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
+#include "oops/util/missingValues.h"
 
 osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::int8_t type,
-                                       const std::int8_t permission):
-  name_(name), width_(static_cast<std::int16_t>(name.size())), type_(validateType(type)),
-  permission_(validatePermission(permission)) {}
+                                       const std::int8_t permission)
+    : name_(name),
+      unit_(util::missingValue<std::string>()),
+      width_(static_cast<std::int16_t>(name.size())),
+      type_(validateType(type)),
+      permission_(validatePermission(permission)) {}
 
-osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::int8_t type):
-  name_(name), width_(static_cast<std::int16_t>(name.size())), type_(validateType(type)),
-  permission_(consts::eReadWrite) {}
+osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::string& unit,
+                                       const std::int8_t type, const std::int8_t permission)
+    : name_(name),
+      unit_(unit),
+      width_(static_cast<std::int16_t>(name.size())),
+      type_(validateType(type)),
+      permission_(validatePermission(permission)) {}
+
+osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::int8_t type)
+    : name_(name),
+      unit_(util::missingValue<std::string>()),
+      width_(static_cast<std::int16_t>(name.size())),
+      type_(validateType(type)),
+      permission_(consts::eReadWrite) {}
+
+osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const std::string& unit,
+                                       const std::int8_t type)
+    : name_(name),
+      unit_(unit),
+      width_(static_cast<std::int16_t>(name.size())),
+      type_(validateType(type)),
+      permission_(consts::eReadWrite) {}
 
 const std::string& osdf::ColumnMetadatum::getName() const {
   return name_;
+}
+
+const std::string& osdf::ColumnMetadatum::getUnit() const {
+  return unit_;
 }
 
 const std::int16_t osdf::ColumnMetadatum::getWidth() const {
@@ -42,6 +69,15 @@ void osdf::ColumnMetadatum::setWidth(const std::int16_t width) {
   width_ = width;
 }
 
+void osdf::ColumnMetadatum::setUnit(const std::string& unit) {
+  if (permission_ == consts::eReadWrite) {
+    unit_ = unit;
+  } else {
+    throw eckit::BadValue(
+      "Unable to set unit for column " + name_ + " with readOnly permissions.", Here());
+  }
+}
+
 std::int8_t osdf::ColumnMetadatum::validateType(const std::int8_t type) {
   return osdf::FrameUtils::callWithSupportedType(
     type,
@@ -54,7 +90,7 @@ std::int8_t osdf::ColumnMetadatum::validatePermission(const std::int8_t permissi
   switch (permission) {
     case consts::eReadOnly: break;
     case consts::eReadWrite: break;
-    default: throw ioda::Exception("ERROR: Permission set not recognised.", ioda_Here());
+    default: throw eckit::BadParameter("ERROR: Permission set not recognised.", Here());
   }
   return permission;
 }

@@ -265,21 +265,10 @@ void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
   }
 
   const osdf::ColumnMetadata& srcColumnMetadata = srcOsdf->getData().getColumnMetadata();
-  const bool canWriteTo = data_.canWriteAllData();
-  if (canWriteTo == false) {
-    const std::string errMsg = std::string(
-      "Error: Unable to append to an OSDF container containing columns with ReadOnly "
-      "permissions.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
+  data_.validateCanWriteAllData();
 
   // Check if the srcOSDF is compatible with the current OSDF
-  const bool validColumnMetadata = data_.compareColumnMetadata(srcColumnMetadata);
-  if (validColumnMetadata == false) {
-    const std::string errMsg
-      = std::string("Error: Unable to append two OSDF containers with different column metadata.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
+  data_.validateColumnMetadata(srcColumnMetadata);
 
   // Append to the current OSDF
   std::vector<osdf::DataRow> dataRowsToAppend;

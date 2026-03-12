@@ -115,18 +115,18 @@ const std::int64_t osdf::FrameColsData::getSizeRows() const {
 
 const std::int64_t osdf::FrameColsData::getMaxId() const { return columnMetadata_.getMaxId(); }
 
-const bool osdf::FrameColsData::compareColumnMetadata(
+void osdf::FrameColsData::validateColumnMetadata(
   const osdf::ColumnMetadata& srcColumnMetadata) const {
-  return columnMetadata_.compareColumnMetadata(srcColumnMetadata);
+  return columnMetadata_.validateColumnMetadata(srcColumnMetadata);
 }
 
-const bool osdf::FrameColsData::compareColumnMetadataPermissions(
+void osdf::FrameColsData::validateColumnMetadataPermissions(
   const osdf::ColumnMetadata& srcColumnMetadata) const {
-  return columnMetadata_.compareColumnMetadataPermissions(srcColumnMetadata);
+  return columnMetadata_.validateColumnMetadataPermissions(srcColumnMetadata);
 }
 
-const bool osdf::FrameColsData::canWriteAllData() const {
-  return columnMetadata_.canWriteAllData();
+void osdf::FrameColsData::validateCanWriteAllData() const {
+  return columnMetadata_.validateCanWriteAllData();
 }
 
 const std::int32_t osdf::FrameColsData::getIndex(const std::string& name) const {

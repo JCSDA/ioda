@@ -136,17 +136,23 @@ void osdf::ColumnMetadata::updateColumnWidth(const std::int32_t index,
   }
 }
 
+void osdf::ColumnMetadata::updateColumnUnit(const std::int32_t index,
+                                            const std::string& valueUnit) {
+  columnMetadata_.at(static_cast<std::size_t>(index)).setUnit(valueUnit);
+}
+
 void osdf::ColumnMetadata::remove(const std::int32_t index) {
   columnMetadata_.erase(std::next(columnMetadata_.begin(), index));
 }
 
-/// \brief Function to check whether ColumnMetadata of two OSDFs are compatible. The ColumnMetadata
-/// are considered compatible if they contain the same names and datatypes,
-/// in which case the function returns true. We do not compare
-/// permissions, as it is only necessary for the calling ColumnMetadata object
-/// to have write permissions in order to append, for example. We also do not
-/// compare widths, since the width is updated during the appending process.
-const bool osdf::ColumnMetadata::compareColumnMetadata(
+/// \brief Function to check whether ColumnMetadata of two OSDFs are compatible.
+/// ColumnMetadata are considered compatible if they contain the same names and datatypes.
+/// If the ColumnMetadata are not compatible this function throws an exception describing
+/// where the discrepancy occurs (name, unit, type).
+/// Permissions are compared in a separate function as there are scenarios (e.g. appending)
+/// where the above quantities must match, but permissions may not.
+/// We do not compare widths, since this depends on the column contents.
+void osdf::ColumnMetadata::validateColumnMetadata(
   const osdf::ColumnMetadata& srcColumnMetadata) const {
   const std::int32_t numParams = this->getSizeCols();
   if (srcColumnMetadata.getSizeCols() != numParams) {
@@ -160,38 +166,45 @@ const bool osdf::ColumnMetadata::compareColumnMetadata(
 
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
     const std::string& targetColumnName = this->getName(columnIndex);
-    const std::int8_t targetColumnType = this->getType(columnIndex);
+    const std::int8_t targetColumnType  = this->getType(columnIndex);
+    const std::string& targetColumnUnit = this->getUnit(columnIndex);
 
     if (srcColumnMetadata.getName(columnIndex) != targetColumnName) {
-      oops::Log::debug() << "Column named \"" << targetColumnName << "\" found at index "
-                         << columnIndex << " in targetOSDF not found at same index in srcOSDF."
-                         << std::endl;
-      return false;
+      const std::string errMsg
+        = std::string("Column named ") + targetColumnName + std::string(" found at index ")
+          + std::to_string(columnIndex)
+          + std::string(" in targetOSDF not found at same index in srcOSDF.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+    if (srcColumnMetadata.getUnit(columnIndex) != targetColumnUnit) {
+      const std::string errMsg
+        = std::string("Column named ") + targetColumnName
+          + std::string(
+            " does not have same units in srcColumnMetadata as in current ColumnMetadata.");
+      throw eckit::BadParameter(errMsg, Here());
     }
     if (srcColumnMetadata.getType(columnIndex) != targetColumnType) {
-      oops::Log::debug()
-        << "Column named \"" << targetColumnName
-        << "\" does not have same type in srcColumnMetadata as in current ColumnMetadata."
-        << std::endl;
-      return false;
+      const std::string errMsg
+        = std::string("Column named ") + targetColumnName
+          + std::string(
+            " does not have same type in srcColumnMetadata as in current ColumnMetadata.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   }
-  return true;
 }
 
 /// \brief Function to check whether the ReadWrite Permissions of two OSDFs match.
-/// The function returns true if the columns at each index have matching
-/// permissions and false otherwise.
-const bool osdf::ColumnMetadata::compareColumnMetadataPermissions(
+/// The function throws an exception if the permissions do not match and falls through otherwise.
+void osdf::ColumnMetadata::validateColumnMetadataPermissions(
   const osdf::ColumnMetadata& srcColumnMetadata) const {
   // Check if comparison valid operation
   const std::int32_t numParams = this->getSizeCols();
   if (srcColumnMetadata.getSizeCols() != numParams) {
     const std::string errMsg
-      = std::string("ERROR: Number of columns in the srcColumnMetadata ("
+      = std::string("ERROR: Number of columns in the srcColumnMetadata (")
                     + std::to_string(srcColumnMetadata.getSizeCols())
                     + std::string(") does not match current ColumnMetadata (")
-                    + std::to_string(numParams) + std::string("). Unable to compare."));
+                    + std::to_string(numParams) + std::string("). Unable to compare.");
     throw eckit::BadParameter(errMsg, Here());
   }
 
@@ -199,17 +212,16 @@ const bool osdf::ColumnMetadata::compareColumnMetadataPermissions(
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
     const std::int8_t targetColumnPermission = this->getPermission(columnIndex);
     if (srcColumnMetadata.getPermission(columnIndex) != targetColumnPermission) {
-      oops::Log::debug() << "Column at index " << std::to_string(columnIndex)
-                         << " does not have same permissions in both the current "
-                            "ColumnMetadata and the srcColumnMetadata."
-                         << std::endl;
-      return false;
+      std::string errMsg = std::string("Column at index ") + std::to_string(columnIndex)
+                           + std::string(
+                             " does not have same permissions in both the current ColumnMetadata "
+                             "and the srcColumnMetadata.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   }
-  return true;
 }
 
-const bool osdf::ColumnMetadata::canWriteAllData() const {
+void osdf::ColumnMetadata::validateCanWriteAllData() const {
   const std::int32_t numParams = getSizeCols();
 
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
@@ -217,12 +229,11 @@ const bool osdf::ColumnMetadata::canWriteAllData() const {
     const std::string& targetColumnName = getName(columnIndex);
 
     if (permission != consts::eReadWrite) {
-      oops::Log::debug() << "Column named \"" << targetColumnName
-                         << "\" is set to read-only." << std::endl;
-      return false;
+      std::string errMsg
+        = std::string("Column named ") + targetColumnName + std::string(" is set to read-only.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   }
-  return true;
 }
 
 const std::string& osdf::ColumnMetadata::getName(const std::int32_t index) const {
@@ -232,6 +243,15 @@ const std::string& osdf::ColumnMetadata::getName(const std::int32_t index) const
     throw eckit::OutOfRange(errMsg, Here());
   }
   return columnMetadata_.at(static_cast<std::size_t>(index)).getName();
+}
+
+const std::string& osdf::ColumnMetadata::getUnit(const std::int32_t index) const {
+  if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
+    const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index)
+                               + std::string(" is out of bounds.");
+    throw eckit::OutOfRange(errMsg, Here());
+  }
+  return columnMetadata_.at(static_cast<std::size_t>(index)).getUnit();
 }
 
 const std::int8_t osdf::ColumnMetadata::getType(const std::int32_t index) const {

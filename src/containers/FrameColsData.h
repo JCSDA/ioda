@@ -91,10 +91,10 @@ class FrameColsData : public IFrameData, public IColsData {
   const std::int32_t getSizeCols() const override;
   const std::int64_t getSizeRows() const override;
   const std::int64_t getMaxId() const override;
-  const bool compareColumnMetadata(const osdf::ColumnMetadata& srcColumnMetadata) const;
-  const bool compareColumnMetadataPermissions(
+  void validateColumnMetadata(const osdf::ColumnMetadata& srcColumnMetadata) const;
+  void validateColumnMetadataPermissions(
     const osdf::ColumnMetadata& srcColumnMetadata) const;
-  const bool canWriteAllData() const;
+  void validateCanWriteAllData() const;
 
   /// \brief Searches for and returns the index of a column using its name.
   /// Throws an exception if a column of that name is not found.

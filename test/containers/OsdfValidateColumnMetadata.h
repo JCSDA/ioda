@@ -23,9 +23,9 @@ namespace ioda {
 namespace test {
 
 void testColumnMetadataValidateWrite() {
-  // can write to all columns of blank frame
+  // can write to all columns of blank frame (will throw exception if not)
   osdf::ColumnMetadata columnMetadata;
-  EXPECT_EQUAL(columnMetadata.canWriteAllData(), true);
+  columnMetadata.validateCanWriteAllData();
 
   // can write to all columns of frame with default initialised metadatum
   osdf::ColumnMetadatum writeMetadatum("write_data", osdf::consts::eInt,
@@ -34,12 +34,12 @@ void testColumnMetadataValidateWrite() {
                                               osdf::consts::eReadWrite);
   columnMetadata.add(writeMetadatum);
   columnMetadata.add(anotherWriteMetadatum);
-  EXPECT_EQUAL(columnMetadata.canWriteAllData(), true);
+  columnMetadata.validateCanWriteAllData();
 
   // can not write to all columns of frame with one permission set to eReadOnly
   osdf::ColumnMetadatum readOnlyMetadatum("data", osdf::consts::eInt, osdf::consts::eReadOnly);
   columnMetadata.add(readOnlyMetadatum);
-  EXPECT_EQUAL(columnMetadata.canWriteAllData(), false);
+  EXPECT_THROWS_AS(columnMetadata.validateCanWriteAllData(), eckit::BadParameter);
 
   // can not write to all columns of frame with all permissions set to eReadOnly
   osdf::ColumnMetadata readOnlyColumnMetadata;
@@ -47,7 +47,7 @@ void testColumnMetadataValidateWrite() {
                                                  osdf::consts::eReadOnly);
   readOnlyColumnMetadata.add(readOnlyMetadatum);
   readOnlyColumnMetadata.add(anotherReadOnlyMetadatum);
-  EXPECT_EQUAL(readOnlyColumnMetadata.canWriteAllData(), false);
+  EXPECT_THROWS_AS(readOnlyColumnMetadata.validateCanWriteAllData(), eckit::BadParameter);
 }
 
 void testColumnMetadataComparePermissions() {
@@ -69,26 +69,18 @@ void testColumnMetadataComparePermissions() {
   readOnlyColumnMetadataTwo.add(writeDataTwo);
   readOnlyColumnMetadataTwo.add(readDataOne);
 
+  // The ctest failing looks like these throwing an exception
+  allWriteColumnMetadata.validateColumnMetadataPermissions(allWriteColumnMetadata);
+  readOnlyColumnMetadataOne.validateColumnMetadataPermissions(readOnlyColumnMetadataTwo);
 
-  bool compareEqualMetadata
-    = allWriteColumnMetadata.compareColumnMetadataPermissions(allWriteColumnMetadata);
-  EXPECT_EQUAL(compareEqualMetadata, true);
+  // Compare metadata with different permissions
+  EXPECT_THROWS_AS(
+    allWriteColumnMetadata.validateColumnMetadataPermissions(readOnlyColumnMetadataOne),
+    eckit::BadParameter);
 
-  bool compareUnequalMetadataSamePermissions
-    = readOnlyColumnMetadataOne.compareColumnMetadataPermissions(readOnlyColumnMetadataTwo);
-  EXPECT_EQUAL(compareUnequalMetadataSamePermissions, true);
-
-  bool compareUnequalMetadata
-    = allWriteColumnMetadata.compareColumnMetadataPermissions(readOnlyColumnMetadataOne);
-  EXPECT_EQUAL(compareUnequalMetadata, false);
-
-  bool compareDifferentSizeMetadata = true;
-  try {
-    blankColumnMetadata.compareColumnMetadataPermissions(allWriteColumnMetadata);
-  } catch (eckit::BadParameter) {
-    compareDifferentSizeMetadata = false;
-  }
-  EXPECT_EQUAL(compareDifferentSizeMetadata, false);
+  // Compare metadata with different numbers of columns
+  EXPECT_THROWS_AS(blankColumnMetadata.validateColumnMetadataPermissions(allWriteColumnMetadata),
+                   eckit::BadParameter);
 }
 
 void testColumnMetadataCompare() {
@@ -101,34 +93,40 @@ void testColumnMetadataCompare() {
   osdf::ColumnMetadata namesOneTwoMetadata;
   namesOneTwoMetadata.add(nameOneMetadatum);
   namesOneTwoMetadata.add(nameTwoMetadatum);
+  EXPECT_THROWS_AS(namesOneTwoMetadata.validateColumnMetadata(blankMetadata), eckit::BadParameter);
 
-  bool isBlankEqualOneTwo = true;
-  try {
-    namesOneTwoMetadata.compareColumnMetadata(blankMetadata);
-  } catch (eckit::BadParameter) {
-    isBlankEqualOneTwo = false;
-  }
-  EXPECT_EQUAL(isBlankEqualOneTwo, false);
-
-  // metadata equal
-  std::int8_t isEqualItself = namesOneTwoMetadata.compareColumnMetadata(namesOneTwoMetadata);
-  EXPECT_EQUAL(isEqualItself, true);
+  // metadata equal (ctest fails if this throws an exception)
+  namesOneTwoMetadata.validateColumnMetadata(namesOneTwoMetadata);
 
   // metadata with different names in second slot
   osdf::ColumnMetadata namesOneThreeMetadata;
   namesOneThreeMetadata.add(nameOneMetadatum);
   namesOneThreeMetadata.add(nameThreeMetadatum);
-  std::int8_t isOneTwoEqualOneThree
-    = namesOneTwoMetadata.compareColumnMetadata(namesOneThreeMetadata);
-  EXPECT_EQUAL(isOneTwoEqualOneThree, false);
+  EXPECT_THROWS_AS(namesOneTwoMetadata.validateColumnMetadata(namesOneThreeMetadata),
+                   eckit::BadParameter);
 
   // metadata with different types in first slot
   osdf::ColumnMetadatum typeStringMetadatum("name_1", osdf::consts::eString);
   osdf::ColumnMetadata typeStringMetadata;
   typeStringMetadata.add(typeStringMetadatum);
   typeStringMetadata.add(nameTwoMetadatum);
-  std::int8_t isIntEqualString = typeStringMetadata.compareColumnMetadata(namesOneTwoMetadata);
-  EXPECT_EQUAL(isIntEqualString, false);
+  EXPECT_THROWS_AS(typeStringMetadata.validateColumnMetadata(namesOneTwoMetadata),
+                   eckit::BadParameter);
+
+  // metadata with different units in second slot
+  // (the case where units match is covered above, default is MISSING)
+  osdf::ColumnMetadatum unitKelvinMetadatum("name_2", "K", osdf::consts::eString);
+  osdf::ColumnMetadatum unitCelsiusMetadatum("name_2", "Celsius", osdf::consts::eString);
+
+  osdf::ColumnMetadata unitKelvinMetadata;
+  unitKelvinMetadata.add(nameOneMetadatum);
+  unitKelvinMetadata.add(unitKelvinMetadatum);
+  osdf::ColumnMetadata unitCelsiusMetadata;
+  unitCelsiusMetadata.add(nameOneMetadatum);
+  unitCelsiusMetadata.add(unitCelsiusMetadatum);
+
+  EXPECT_THROWS_AS(unitKelvinMetadata.validateColumnMetadata(unitCelsiusMetadata),
+                   eckit::BadParameter);
 }
 
 

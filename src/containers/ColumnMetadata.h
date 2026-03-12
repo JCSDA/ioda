@@ -34,12 +34,14 @@ class ColumnMetadata {
   void resetMaxId();
   void updateMaxId(const std::int64_t);
   void updateColumnWidth(const std::int32_t, const std::int16_t);
+  void updateColumnUnit(const std::int32_t, const std::string&);
   void remove(const std::int32_t);
 
-  const bool compareColumnMetadata(const ColumnMetadata& srcColumnMetadata) const;
-  const bool compareColumnMetadataPermissions(const ColumnMetadata& srcColumnMetadata) const;
-  const bool canWriteAllData() const;
+  void validateColumnMetadata(const ColumnMetadata& srcColumnMetadata) const;
+  void validateColumnMetadataPermissions(const ColumnMetadata& srcColumnMetadata) const;
+  void validateCanWriteAllData() const;
   const std::string& getName(const std::int32_t) const;
+  const std::string& getUnit(const std::int32_t) const;
   const std::int8_t getType(const std::int32_t) const;
   const std::int16_t getWidth(const std::int32_t index) const;
   const std::int8_t getPermission(const std::int32_t) const;

@@ -22,6 +22,8 @@ std::string serializeColumnMetadata(
     tokens += ":" + std::to_string(columnMetadatum.getType());
     tokens += ":" + std::to_string(columnMetadatum.getPermission());
     tokens += ":" + std::to_string(columnMetadatum.getWidth());
+    tokens += ":" + columnMetadatum.getUnit();
+    tokens += ":";
   }
   return tokens;
 }
@@ -46,7 +48,7 @@ std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
   std::vector<ColumnMetadatum> columnMetadata;
   for (int i = 1; i <= nCols; ++i) {
     std::vector<std::string> tokenParts = ioda::splitString(tokens[i], ':');
-    if (tokenParts.size() != 4) {
+    if (tokenParts.size() != 5) {
       const std::string errMsg = std::string("ERROR: Column metadata string has invalid ") +
             std::string("column information: ") + tokens[i];
       throw eckit::BadValue(errMsg, Here());
@@ -56,8 +58,9 @@ std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
     const std::string name = tokenParts[0];
     const std::int8_t type = static_cast<std::int8_t>(std::stoi(tokenParts[1]));
     const std::int8_t permission = static_cast<std::int8_t>(std::stoi(tokenParts[2]));
-    const std::int16_t width = static_cast<std::int16_t>(std::stoi(tokenParts[3]));
-    ColumnMetadatum columnMetadatum(name, type, permission);
+    const std::int16_t width     = static_cast<std::int16_t>(std::stoi(tokenParts[3]));
+    const std::string unit = tokenParts[4];
+    ColumnMetadatum columnMetadatum(name, unit, type, permission);
     columnMetadatum.setWidth(width);
     columnMetadata.push_back(columnMetadatum);
   }
