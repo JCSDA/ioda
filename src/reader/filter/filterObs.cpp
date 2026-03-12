@@ -14,6 +14,7 @@
 
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/core/IodaUtils.h"
 #include "ioda/core/ObsSourceStats.h"
 
 #include "oops/util/Logger.h"
@@ -96,7 +97,8 @@ void filterObs(const util::TimeWindow & timeWindow,
         if (filterMask[i]) {
             if ((dateTimeVals[i] == int64MissingVal) ||
                 (latVals[i] == floatMissingVal) ||
-                (lonVals[i] == floatMissingVal)) {
+                (lonVals[i] == floatMissingVal) ||
+                (!checkLatLonIsValid(latVals[i], lonVals[i]))) {
                 filterMask[i] = false;
                 ++locsRejectQc;
             }
