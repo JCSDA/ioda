@@ -189,6 +189,10 @@ std::int8_t osdf::FrameRows::getColumnType(const std::string& name) const {
   return data_.getType(data_.getIndex(name));
 }
 
+std::string osdf::FrameRows::getColumnUnits(const std::string& name) const {
+  return data_.getUnits(data_.getIndex(name));
+}
+
 void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t order) {
   if (data_.columnExists(columnName) != true) {
     const std::string errMsg = std::string("ERROR: Column named ")

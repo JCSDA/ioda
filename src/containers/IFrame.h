@@ -94,6 +94,10 @@ class IFrame {
   /// \param The column name.
   virtual std::int8_t getColumnType(const std::string&) const = 0;
 
+  /// \brief Returns units for specified column.
+  /// \param The column name.
+  virtual std::string getColumnUnits(const std::string&) const = 0;
+
   /// \brief As the name suggests.
   /// \param The target column name.
   virtual void removeColumn(const std::string&) = 0;

@@ -103,6 +103,7 @@ class FrameRowsData : public IFrameData  {
   const std::int32_t getIndex(const std::string&) const;
 
   const std::string& getName(const std::int32_t) const override;
+  const std::string& getUnits(const std::int32_t) const override;
   const std::int8_t getType(const std::int32_t) const override;
   const std::int8_t getPermission(const std::int32_t) const override;
 

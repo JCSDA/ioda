@@ -27,6 +27,7 @@
 
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 namespace test {
@@ -38,13 +39,14 @@ namespace test {
 // setColumn(),
 // hasColumn(),
 // getColumnType(),
+// getColumnUnits(),
 // and columnNames()
 // functions, for all the supported column types.
 
 template<typename T>
 void testColumnType(const std::string& columnName, const std::vector<T>& origValues,
                     const std::vector<T>& newValues, std::unique_ptr<osdf::IFrame>& testFrame,
-                    const std::int8_t expectedTypeEnum) {
+                    const std::int8_t expectedTypeEnum, const std::string & expectedUnits) {
   EXPECT(!testFrame->hasColumn(columnName));
   testFrame->appendNewColumn(columnName, origValues);
   EXPECT(testFrame->hasColumn(columnName));
@@ -55,6 +57,7 @@ void testColumnType(const std::string& columnName, const std::vector<T>& origVal
   testFrame->setColumn(columnName, newValues);
   testFrame->getColumn(columnName, testValues);
   EXPECT(testValues == newValues);
+  EXPECT(testFrame->getColumnUnits(columnName) == expectedUnits);
 }
 
 void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
@@ -67,17 +70,22 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
 
   std::vector<std::string> expectedColumnNames;  // for testing columnNames() function
 
+  // For now let the units be set using the defaut which is the JEDI missing string value.
+  const std::string defaultUnits(util::missingValue<std::string>());
+
   // String column type
   const std::string stringColumnName = "test string column";
   testColumnType<std::string>(stringColumnName, {"string1", "string2", "string3"},
-                            {"string4", "string5", "string2"}, testFrame, osdf::consts::eString);
+                            {"string4", "string5", "string2"}, testFrame, osdf::consts::eString,
+                            defaultUnits);
   expectedColumnNames.push_back(stringColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // int column type
   const std::string intColumnName = "test int column";
   const std::vector<int> newIntValues{4, 5, 2};
-  testColumnType<int>(intColumnName, {1, 2, 3}, newIntValues, testFrame, osdf::consts::eInt);
+  testColumnType<int>(intColumnName, {1, 2, 3}, newIntValues, testFrame, osdf::consts::eInt,
+                      defaultUnits);
   expectedColumnNames.push_back(intColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
@@ -88,21 +96,21 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
   const std::vector<std::int64_t> newInt64Values{9000000000000000003, 9000000000000000004,
                                            9000000000000000005};
   testColumnType<std::int64_t>(int64ColumnName, origInt64Values, newInt64Values, testFrame,
-    osdf::consts::eInt64);
+    osdf::consts::eInt64, defaultUnits);
   expectedColumnNames.push_back(int64ColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // float column type
   const std::string floatColumnName = "test float column";
   testColumnType<float>(floatColumnName, {1.1f, 2.2f, 3.3f}, {4.4f, 5.5f, 2.2f}, testFrame,
-    osdf::consts::eFloat);
+    osdf::consts::eFloat, defaultUnits);
   expectedColumnNames.push_back(floatColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // char column type
   const std::string charColumnName = "test char column";
   testColumnType<char>(charColumnName, {'a', 'b', 'c'}, {'d', 'e', 'b'}, testFrame,
-    osdf::consts::eChar);
+    osdf::consts::eChar, defaultUnits);
   expectedColumnNames.push_back(charColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 

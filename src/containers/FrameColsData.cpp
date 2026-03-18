@@ -137,6 +137,10 @@ const std::string& osdf::FrameColsData::getName(const std::int32_t index) const 
   return columnMetadata_.getName(index);
 }
 
+const std::string& osdf::FrameColsData::getUnits(const std::int32_t index) const {
+  return columnMetadata_.getUnit(index);
+}
+
 const std::int8_t osdf::FrameColsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }

@@ -157,6 +157,10 @@ std::int8_t osdf::FrameCols::getColumnType(const std::string& name) const {
   return data_.getType(data_.getIndex(name));
 }
 
+std::string osdf::FrameCols::getColumnUnits(const std::string& name) const {
+  return data_.getUnits(data_.getIndex(name));
+}
+
 void osdf::FrameCols::removeRow(const std::int64_t index) {
   if (index < 0 || index >= data_.getSizeRows()) {
     const std::string errMsg = std::string("Error: Row index ") + std::to_string(index)

@@ -93,6 +93,10 @@ const std::string& osdf::FrameRowsData::getName(const std::int32_t index) const 
   return columnMetadata_.getName(index);
 }
 
+const std::string& osdf::FrameRowsData::getUnits(const std::int32_t index) const {
+  return columnMetadata_.getUnit(index);
+}
+
 const std::int8_t osdf::FrameRowsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }

@@ -35,6 +35,7 @@ class IFrameData {
   IFrameData& operator=(const IFrameData&) = delete;
 
   virtual const std::string& getName(const std::int32_t) const = 0;
+  virtual const std::string& getUnits(const std::int32_t) const = 0;
   virtual const std::int8_t getType(const std::int32_t) const = 0;
   virtual const std::int8_t getPermission(const std::int32_t) const = 0;
 
