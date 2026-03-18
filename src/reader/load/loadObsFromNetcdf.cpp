@@ -23,7 +23,6 @@
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsDataIoParameters.h"
-#include "ioda/ioPool/IoPoolParameters.h"
 
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
@@ -35,18 +34,6 @@ namespace reader {
 //--------------------------------------------------------------------------------
 // Function declarations for "private" functions
 //--------------------------------------------------------------------------------
-
-/// \brief check an object for validity
-/// \details This function will throw a std::runtime_error exception if the object
-/// is invalid.
-/// \param ncObj netCDF object to check
-/// \param msg message to print if the object is invalid
-template <typename NcObjType>
-static void checkNcObj(const NcObjType & ncObj, const std::string & msg) {
-  if (ncObj.isNull()) {
-    throw std::runtime_error(msg);
-  }
-}
 
 /// \brief check if a netCDF variable is a dimension
 /// \param group netCDF group

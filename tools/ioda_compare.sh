@@ -11,17 +11,33 @@
 
 set -eu
 
+# Allow syntax for $3 to be "test_out_file:test_ref_file"
+# so that you don't have to have an exact match between
+# these two files. This allows one test reference file
+# to be used to check output files from multiple tests
+# that are supposed to produce identical files.
 file_type=$1
 cmd=$2
-file_name=$3
+IFS=":" read -r -a test_files <<< "$3"
 tol=${4:-"0.0"}
 verbose=${5:-${VERBOSE:-"N"}}
 expect_error=${6:-"N"}
 
 [[ $verbose =~ [yYtT] ]] && set -x
 
+# Parse what we received in the $3 argument
+# If there is not a ":test_ref_file" section,
+# then use the file_name as the test_ref_file.
+file_name="${test_files[0]}"
+if (( ${#test_files[@]} > 1 ))
+then
+  test_ref_file="${test_files[1]}"
+else
+  test_ref_file="${file_name}"
+fi
+
 rc="-1"
-testRefDir="Data/testinput_tier_1/test_reference"
+testRefFile="Data/testinput_tier_1/test_reference/${test_ref_file}"
 case $file_type in
   hdf5)
     set +e
@@ -34,7 +50,7 @@ case $file_type in
             exit ${rc}
         fi
     fi
-    h5diff -v testoutput/$file_name $testRefDir/$file_name
+    h5diff -v testoutput/$file_name $testRefFile
     rc=${?}
     if [[ $rc != 0 ]]; then
       h5dump testoutput/$file_name
@@ -43,12 +59,12 @@ case $file_type in
     ;;
   netcdf)
     $cmd && \
-    nccmp testoutput/$file_name $testRefDir/$file_name -d -m -g -f -S -T ${tol}
+    nccmp testoutput/$file_name $testRefFile -d -m -g -f -S -T ${tol}
     rc=${?}
     ;;
    odb)
     $cmd && \
-    odc compare testoutput/$file_name $testRefDir/$file_name
+    odc compare testoutput/$file_name $testRefFile
     rc=${?}
     ;;
    fileExists)

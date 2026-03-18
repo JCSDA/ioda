@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef CORE_IODAUTILS_H_
-#define CORE_IODAUTILS_H_
+#pragma once
 
 #include <fstream>
 #include <map>
@@ -16,8 +15,8 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
-#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
@@ -52,6 +51,10 @@ class ObsSpaceParameters;
   /// \param str string to split
   /// \param delim delimiter to split on
   std::vector<std::string> splitString(const std::string & str, char delim);
+
+  /// \brief remove the numerical suffix (if any) from a given string
+  /// \param str string of which to remove any numerical suffix
+  std::string removeStringNumericSuffix(const std::string & str);
 
   /// \brief remove channel number suffixes from osdf column names
   /// \param srcOsdf osdf container
@@ -205,6 +208,16 @@ class ObsSpaceParameters;
     }
   }
 
-}  // namespace ioda
+  // -----------------------------------------------------------------------------
+  /// \brief check a netcdf object for validity
+  /// \details This function will throw an exception if the object is invalid.
+  /// \param ncObj netCDF object to check
+  /// \param msg message to print if the object is invalid
+  template <typename NcObjType>
+  static void checkNcObj(const NcObjType & ncObj, const std::string & msg) {
+    if (ncObj.isNull()) {
+      throw eckit::BadValue(msg, Here());
+    }
+  }
 
-#endif  // CORE_IODAUTILS_H_
+}  // namespace ioda

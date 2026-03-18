@@ -148,6 +148,10 @@ reader/OsdfFrameFacade.hpp
 
 writer/obsWriteEmptyFile.cpp
 writer/obsWriteEmptyFile.hpp
+writer/save/saveObs.cpp
+writer/save/saveObs.hpp
+writer/save/saveObsToNetcdf.cpp
+writer/save/saveObsToNetcdf.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

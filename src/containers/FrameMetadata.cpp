@@ -14,6 +14,7 @@ namespace osdf {
 FrameMetadata::FrameMetadata()
                   : chanNums_({}),
                     varsWithChans_({}),
+                    varDimNames_({}),
                     numVars_(0),
                     dateTimeEpoch_("None") {
 }
@@ -51,6 +52,17 @@ const std::unordered_set<std::string> & FrameMetadata::getVarsWithChans() const 
   return varsWithChans_;
 }
 
+const std::vector<std::string> & FrameMetadata::getVarDimNames(const std::string & varName) const {
+  const auto it = varDimNames_.find(varName);
+  if (it != varDimNames_.end()) {
+    return it->second;
+  } else {
+    throw eckit::BadValue(
+      "FrameMetadata::getVarDimNames: No dimension names found for variable: "
+       + varName);
+  }
+}
+
 int FrameMetadata::getNumVars() const {
   return numVars_;
 }
@@ -67,6 +79,12 @@ void FrameMetadata::incrNumVars() {
 //----------------------------------------------------------------------
 void FrameMetadata::addVarToVarsWithChans(const std::string & varName) {
   varsWithChans_.insert(varName);
+}
+
+//----------------------------------------------------------------------
+void FrameMetadata::addVarDimNames(const std::string & varName,
+                                   const std::vector<std::string> & varDimNames) {
+  varDimNames_[varName] = varDimNames;
 }
 
 //----------------------------------------------------------------------

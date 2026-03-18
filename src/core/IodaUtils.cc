@@ -57,6 +57,19 @@ std::vector<std::string> splitString(const std::string & str, char delim) {
 }
 
 // -----------------------------------------------------------------------------
+std::string removeStringNumericSuffix(const std::string & str) {
+  const std::size_t pos = str.rfind('_');
+  if ((pos != std::string::npos) && (pos + 1 < str.size())) {
+    const bool allDigits = std::all_of(str.begin() + pos + 1, str.end(),
+      [](const unsigned char c) { return std::isdigit(c); });
+    if (allDigits) {
+      return str.substr(0, pos);
+    }
+  }
+    return str;
+}
+
+// -----------------------------------------------------------------------------
 std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & srcOsdf,
                                                 const osdf::FrameMetadata & frameMetadata) {
   // Get the full list of column names(with numeric suffixes, ie "_<number>")
@@ -65,17 +78,7 @@ std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & sr
   // Create a copy of list of column names without the numeric suffixes
   std::vector<std::string> colNamesWithoutNumericSuffixes(colNames.size());
   std::transform(colNames.begin(), colNames.end(), colNamesWithoutNumericSuffixes.begin(),
-    [](const std::string & s) {
-      const std::size_t pos = s.rfind('_');
-      if ((pos != std::string::npos) && (pos + 1 < s.size())) {
-        const bool allDigits = std::all_of(s.begin() + pos + 1, s.end(),
-          [](const unsigned char c) { return std::isdigit(c); });
-        if (allDigits) {
-          return s.substr(0, pos);
-        }
-      }
-      return s;
-    });
+                 ioda::removeStringNumericSuffix);
 
   // If a name without a numeric suffix is in the list of vars with channels,
   // keep that name, otherwise use the name with the numeric suffix.

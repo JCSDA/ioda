@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace osdf {
@@ -27,7 +28,7 @@ class FrameMetadata {
   /// each variable. This vector is empty when channels are not being used.
   void setChanNums(const std::vector<int> & chanNums);
 
-  /// \brief set the "variables using channels" vector
+  /// \brief set the "variables using channels" set
   /// \param varsWithChans list of variables using channels
   void setVarsWithChans(const std::unordered_set<std::string> & varsWithChans);
 
@@ -55,6 +56,9 @@ class FrameMetadata {
   /// \brief return the "variables using channels" set
   const std::unordered_set<std::string> & getVarsWithChans() const;
 
+  /// \brief return the dimensionality of a variable
+  const std::vector<std::string> & getVarDimNames(const std::string & varName) const;
+
   /// \brief return the number of variables
   int getNumVars() const;
 
@@ -71,6 +75,11 @@ class FrameMetadata {
   /// \param varName new variable name to add to the list
   void addVarToVarsWithChans(const std::string & varName);
 
+  /// \brief add variable dimensionality to the variable dimensionality map
+  /// \param varName new variable name to add to the list
+  /// \param varDimNames list of dimension names in proper order
+  void addVarDimNames(const std::string & varName, const std::vector<std::string> & varDimNames);
+
   /// \brief returns true if var is in the variables with channels list
   /// \param varName new variable name to add to the list
   bool varHasChannels(const std::string & varName) const;
@@ -81,6 +90,9 @@ class FrameMetadata {
 
   /// \brief frame variables with channels
   std::unordered_set<std::string> varsWithChans_;
+
+  // \brief dimension names for vars with channels
+  std::unordered_map<std::string, std::vector<std::string>> varDimNames_;
 
   /// \brief number of frame variables
   int numVars_;

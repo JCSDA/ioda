@@ -1222,6 +1222,31 @@ void ObsSpace::recordCheckParameterInfo() {
     // TODO(srh) In the future, we will want to allow other
     // input file types (e.g. ODB, BUFR).
     use_dataframe_ = obs_params_.top_level_.useDataFrame.value();
+
+    // todo(SRH): Currently, when using the OSDF base writer, there is support for only:
+    //   1. HDF5 output file
+    //   2. multiple output files (one file per io pool task)
+    // We need eventually support single file output and ODB output files.
+    //
+    // Make sure when using OSDF, that the output file type is HDF5, and throw an exception.
+    // We want to catch this error as early as possible so we don't waste time
+    // running the DA job only to have it fail at the end when trying to write the output.
+    //
+    // For now, we are treating the configuration of setting "multiple output files" to false
+    // as a warning and the writer will print a warning message and forge ahead with
+    // writing multiple files. So we are okay letting the "multiple output files"
+    // setting pass through.
+    if (use_dataframe_) {
+      if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+        const ObsDataOutParameters obsDataOutParams =
+                                   *(obs_params_.top_level_.obsDataOut.value());
+        if (obsDataOutParams.engine.value().engineParameters.value().type.value() != "H5File") {
+            throw eckit::UserError(
+                "When using the OSDF obs container, the output file type must be H5File",
+                Here());
+        }
+      }
+    }
 }
 
 // -----------------------------------------------------------------------------

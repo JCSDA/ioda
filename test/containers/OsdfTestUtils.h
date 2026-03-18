@@ -11,6 +11,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -18,7 +19,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/testing/Test.h"
+
+#include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
+
 #include "oops/util/missingValues.h"
 
 namespace ioda {
@@ -38,6 +42,28 @@ std::vector<varType> replaceMissingValues(const std::vector<std::string> & strin
     }
   }
   return varVals;
+}
+
+// -----------------------------------------------------------------------------
+void populateFrameMetadata(const eckit::LocalConfiguration & frameMetadataConfig,
+                           osdf::FrameMetadata & osdfMetadata) {
+  oops::Log::debug() << "Frame metadata configuration: " << frameMetadataConfig << std::endl;
+  std::vector<std::string> varsWithChans =
+    frameMetadataConfig.getStringVector("variables with channels");
+  std::unordered_set<std::string> varsWithChansSet(
+    varsWithChans.begin(), varsWithChans.end());
+  osdfMetadata.setVarsWithChans(varsWithChansSet);
+  osdfMetadata.setChanNums(frameMetadataConfig.getIntVector("channel numbers"));
+  osdfMetadata.setDateTimeEpoch(frameMetadataConfig.getString("datetime epoch"));
+  osdfMetadata.setNumVars(frameMetadataConfig.getInt("number of variables"));
+  const std::vector<eckit::LocalConfiguration> varDimNamesConfig =
+    frameMetadataConfig.getSubConfigurations("variable dim names");
+  for (const auto & varDimNameConfig : varDimNamesConfig) {
+    const std::string varName = varDimNameConfig.getString("name");
+    const std::vector<std::string> dimNames =
+      varDimNameConfig.getStringVector("dim names");
+    osdfMetadata.addVarDimNames(varName, dimNames);
+  }
 }
 
 // -----------------------------------------------------------------------------
