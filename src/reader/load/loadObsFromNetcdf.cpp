@@ -674,30 +674,43 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
 
   // Check the parameters
   const std::string engineType = dataInParams.engine.value().engineParameters.value().type.value();
-  const std::string fileName = dataInParams.engine.value().engineParameters.value().getFileName();
   if (engineType != "H5File") {
     const std::string errMsg = "ioda::reader::loadOsdfFromNetcdf: Unsupported engine type: "
                                + engineType + " Must use H5File engine type with this function.";
     throw eckit::BadParameter(errMsg, Here());
   }
+  const bool readMultipleFiles = (myMpiSize == 1) ? false : dataInParams.readMultipleFiles.value();
+  const std::string fileName = Engines::uniquifyFileName(
+                             dataInParams.engine.value().engineParameters.value().getFileName(),
+                             readMultipleFiles,
+                             myMpiRank,
+                             -1);  // timeRankNum not relevant
 
-  // Get the number of locations from the input file, then divide up the locations in
-  // contiguous blocks for each MPI rank to load.
   oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
                     << fileName << std::endl;
   netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
   checkNcObj(inFile, "ioda::reader::loadOsdfFromNetcdf: Failed to open file: " + fileName);
 
-  std::vector<int> starts(myMpiSize, 0);
-  std::vector<int> counts(myMpiSize, 0);
-  int emptyFile = 0;   // 0 - file is not empty, 1 - file is empty
-  if (myMpiRank == 0) {
+  // Determine numLocations and emptyFile flag.
+  int emptyFile = 0;  // 0 --> non-empty file, 1 --> empty file
+  std::size_t numLocations = 0;
+  if (readMultipleFiles || (myMpiRank == 0)) {
     netCDF::NcDim dim = inFile.getDim("Location");
     checkNcObj(dim, "ioda::reader::loadOsdfFromNetcdf: Failed to get dimension: Location");
-    const std::size_t numLocations = dim.getSize();
-    if (numLocations == 0) {
-      emptyFile = 1;
-    } else {
+    numLocations = dim.getSize();
+    emptyFile = (numLocations == 0) ? 1 : 0;
+  }
+
+  // Determine start and count values to pass to the loadObsBlockFromNetcdf function
+  int start;
+  int count;
+  if (readMultipleFiles) {  // reading split files, so each IO pool rank reads its whole file
+    start = 0;
+    count = numLocations;
+  } else {  // rank 0 figures out which chunks of the full file that each IO pool rank will read
+    std::vector<int> starts(myMpiSize, 0);
+    std::vector<int> counts(myMpiSize, 0);
+    if (myMpiRank == 0 && !emptyFile) {
       // Divide the locations evenly among the MPI ranks. Do an integer divide (nlocs / mpi size)
       // to get the base size for all ranks. Then spread out any remainder among the first n ranks.
       // Express this distribution in start and count values which are appropriate for calling
@@ -715,13 +728,15 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
           starts[i] = seed;
       }
     }
+    ioPoolComm.broadcast(emptyFile, 0);
+    if (!emptyFile) {
+      ioPoolComm.scatter(starts, start, 0);
+      ioPoolComm.scatter(counts, count, 0);
+    }
   }
-  ioPoolComm.broadcast(emptyFile, 0);
-  if (emptyFile == 0) {
-    int start;
-    int count;
-    ioPoolComm.scatter(starts, start, 0);
-    ioPoolComm.scatter(counts, count, 0);
+
+  // Split file or not, each IO pool rank now reads its assigned data into an OSDF container.
+  if (!emptyFile) {
     const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF, osdfMetadata);
     if (rc != 0) {
       const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "

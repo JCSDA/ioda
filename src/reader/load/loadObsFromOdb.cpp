@@ -26,6 +26,12 @@ void loadOsdfFromOdb(const ObsDataInParameters & dataInParams,
   const auto &readerParams = dynamic_cast<const Engines::ReadOdbFileParameters&>(
     dataInParams.engine.value().engineParameters.value());
 
+  if (dataInParams.readMultipleFiles.value()) {
+    const std::string errMsg =
+        "ioda::reader::loadOsdfFromOdb: Reading multiple files is not supported with ODB engine.";
+    throw eckit::NotImplemented(errMsg, Here());
+  }
+
   Engines::ODC::ODC_Parameters odcparams;
   odcparams.filename    = readerParams.fileName;
   odcparams.mappingFile = readerParams.mappingFileName;

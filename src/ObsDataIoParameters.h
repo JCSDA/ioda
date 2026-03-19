@@ -83,6 +83,9 @@ class ObsDataInParameters : public oops::Parameters {
     /// option controlling the creation of the backend
     oops::RequiredParameter<Engines::ReaderParametersWrapper> engine{"engine", this};
 
+    /// option whether there is one file to read, or multiple files (one file per io pool task)
+    oops::Parameter<bool> readMultipleFiles{"read multiple files", false, this};
+
     /// true if underlying engine is a file backend
     bool isFileBackend() const {
       return this->engine.value().engineParameters.value().isFileBackend();
