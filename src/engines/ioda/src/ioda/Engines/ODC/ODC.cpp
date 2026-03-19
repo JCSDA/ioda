@@ -488,10 +488,20 @@ std::optional<std::vector<int>> maybeGetSourceLocationIndices(const RowsByLocati
         numGlobalLocationsBeforeChunkSortedByChunkIndex[chunkIndex * numRanks + rank] =
           numLocationsInChunkSortedByRank[rank * numChunksPerRank + chunkIndex];
     // ... and then perform an exclusing scan (a prefix sum).
+#if defined(NVHPC) || defined(AOCC)
+    size_t seed = 0;
+    for (size_t i = 0; i < numGlobalLocationsBeforeChunkSortedByChunkIndex.size(); ++i){
+      size_t tmp = numGlobalLocationsBeforeChunkSortedByChunkIndex[i];
+      numGlobalLocationsBeforeChunkSortedByChunkIndex[i] = seed;
+      seed += tmp;
+    }
+#else
     std::exclusive_scan(numGlobalLocationsBeforeChunkSortedByChunkIndex.begin(),
                         numGlobalLocationsBeforeChunkSortedByChunkIndex.end(),
                         numGlobalLocationsBeforeChunkSortedByChunkIndex.begin(),
                         0);
+#endif
+    std::cerr << "numLocationsInChunkSortedByRank = " << numLocationsInChunkSortedByRank << std::endl;
     // Reorder the resulting array again first by rank and then by the chunk index so that it
     // can be scattered to the individual ranks.
     for (size_t rank = 0; rank < numRanks; ++rank)
