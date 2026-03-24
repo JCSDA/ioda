@@ -351,6 +351,15 @@ bool checkFileExists(const std::string & filePathToCheck) {
   }
   return fileExists;
 }
-
+// -----------------------------------------------------------------------------
+bool checkLatLonIsValid(float lat, float lon) {
+  if (lat < -90.0 || lat > 90.0) {
+    return false;
+  }
+  if (lon < -360.0 || lon > 360.0) {
+    return false;
+  }
+  return true;
+}
 // -----------------------------------------------------------------------------
 }  // namespace ioda

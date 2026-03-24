@@ -409,7 +409,8 @@ void initSourceIndices(const ioda::Group & srcGroup, const bool emptyFile,
                 if (keepThisLocation) {
                     // Keep count of how many obs fall inside the time window
                     srcNlocsInsideTimeWindow++;
-                    if ((lonValues[i] == lonFillValue) || (latValues[i] == latFillValue)) {
+                    if ((lonValues[i] == lonFillValue) || (latValues[i] == latFillValue) ||
+                        (!checkLatLonIsValid(latValues[i], lonValues[i]))) {
                         // Keep count of how many obs get rejected by QC checks
                         srcNlocsRejectQc++;
                         keepThisLocation = false;

@@ -128,6 +128,13 @@ namespace ioda {
   /// \param filePathToCheck
   bool checkFileExists(const std::string & filePathToCheck);
 
+  /// @brief check if lat and lon values are valid (lat between -90 and 90,
+  /// lon between -360 and 360)
+  /// @param lat Latitude value
+  /// @param lon Longitude value
+  /// @return true if the lat and lon values are valid, false otherwise
+  bool checkLatLonIsValid(float lat, float lon);
+
   // -----------------------------------------------------------------------------
   /*!
    * \details This method will perform numeric data type conversions. This method is aware
