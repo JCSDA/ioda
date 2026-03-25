@@ -7,11 +7,11 @@ include(Targets)
 
 if(ecbuild_FOUND)
 
-    ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_concatstringvectors
+    ecbuild_add_test ( TARGET     ioda-engines_sfuncs_concatstringvectors
                        SOURCES    test-concatstringvecs.cpp
                        LIBS       ioda_engines )
 
-    ecbuild_add_test ( TARGET     test_ioda-engines_sfuncs_convertv1pathtov2path
+    ecbuild_add_test ( TARGET     ioda-engines_sfuncs_convertv1pathtov2path
                        SOURCES    test-convertv1pathtov2path.cpp
                        LIBS       ioda_engines )
 

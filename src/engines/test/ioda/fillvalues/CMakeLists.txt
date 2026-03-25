@@ -5,14 +5,14 @@
 
 include(Targets)
 
-add_executable(ioda-test-fillvalues ioda-test-fillvalues.cpp)
-addapp(ioda-test-fillvalues)
-target_link_libraries(ioda-test-fillvalues PUBLIC ioda_engines)
+add_executable(ioda_fillvalues ioda-test-fillvalues.cpp)
+addapp(ioda_fillvalues)
+target_link_libraries(ioda_fillvalues PUBLIC ioda_engines)
 
 if(BUILD_TESTING)
-    add_test(NAME test_ioda-fillvalues-default COMMAND ioda-test-fillvalues)
-    add_test(NAME test_ioda-fillvalues-h5file COMMAND ioda-test-fillvalues --ioda-engine-options HDF5-file "fills.hdf5" create truncate)
-    add_test(NAME test_ioda-fillvalues-h5mem COMMAND ioda-test-fillvalues --ioda-engine-options HDF5-mem "fills-mem.hdf5" 10 false)
-    add_test(NAME test_ioda-fillvalues-ObsStore COMMAND ioda-test-fillvalues --ioda-engine-options obs-store)
+    add_test(NAME ioda_fillvalues-default COMMAND ioda_fillvalues)
+    add_test(NAME ioda_fillvalues-h5file COMMAND ioda_fillvalues --ioda-engine-options HDF5-file "fills.hdf5" create truncate)
+    add_test(NAME ioda_fillvalues-h5mem COMMAND ioda_fillvalues --ioda-engine-options HDF5-mem "fills-mem.hdf5" 10 false)
+    add_test(NAME ioda_fillvalues-ObsStore COMMAND ioda_fillvalues --ioda-engine-options obs-store)
 endif()
 

@@ -6,13 +6,13 @@
 include(Targets)
 
 if(BUILD_TESTING)
-	add_test(NAME ioda-python COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/funcs.py)
-	set_tests_properties(ioda-python PROPERTIES
+	add_test(NAME ioda_python COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/funcs.py)
+	set_tests_properties(ioda_python PROPERTIES
 		ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:_ioda_python>/../../:$ENV{PYTHONPATH};LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
 		)
 
-	add_test(NAME ioda-obsspace-python COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_ioda_obsspace.py)
-	set_tests_properties(ioda-obsspace-python PROPERTIES
+	add_test(NAME ioda_obsspace_python COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_ioda_obsspace.py)
+	set_tests_properties(ioda_obsspace_python PROPERTIES
 			ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:_ioda_python>/../../:$ENV{PYTHONPATH};LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
 			)
 endif()

@@ -10,5 +10,5 @@ addapp(ioda_engines_oldfiles)
 target_link_libraries(ioda_engines_oldfiles PUBLIC ioda_engines)
 
 if(BUILD_TESTING)
-    add_test(NAME test_ioda_engines_oldfiles COMMAND ioda_engines_oldfiles)
+    add_test(NAME ioda_engines_oldfiles COMMAND ioda_engines_oldfiles)
 endif()

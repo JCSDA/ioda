@@ -28,10 +28,10 @@ endmacro()
 macro(AddExample_CXX ExName SourceFile )
     AddExample_Base( ${ExName} ${SourceFile} )
 
-	add_test(NAME test_${ExName}-default COMMAND ${ExName})
-	add_test(NAME test_${ExName}-h5file COMMAND ${ExName} --ioda-engine-options HDF5-file "${ExName}-h5file.hdf5" create truncate)
-	add_test(NAME test_${ExName}-h5mem COMMAND ${ExName} --ioda-engine-options HDF5-mem "${ExName}-h5mem.hdf5" 10 false)
-	add_test(NAME test_${ExName}-obsstore COMMAND ${ExName} --ioda-engine-options obs-store)
+	add_test(NAME ${ExName}-default COMMAND ${ExName})
+	add_test(NAME ${ExName}-h5file COMMAND ${ExName} --ioda-engine-options HDF5-file "${ExName}-h5file.hdf5" create truncate)
+	add_test(NAME ${ExName}-h5mem COMMAND ${ExName} --ioda-engine-options HDF5-mem "${ExName}-h5mem.hdf5" 10 false)
+	add_test(NAME ${ExName}-obsstore COMMAND ${ExName} --ioda-engine-options obs-store)
 endmacro()
 
 macro(AddExample_C ExName SourceFile )
@@ -39,36 +39,36 @@ macro(AddExample_C ExName SourceFile )
 	# MSVC has a really bad and old C compiler. Instead use the C++ compiler.
 	# For other compilers, force C11, which is the CMake max version.
 	set_source_files_properties(${SourceFile} PROPERTIES LANGUAGE CXX)
-	add_test(NAME test_${ExName} COMMAND ${ExName})
+	add_test(NAME ${ExName} COMMAND ${ExName})
 endmacro()
 
 macro(AddExample_F ExName SourceFile )
 	AddExample_Base( ${ExName} ${SourceFile} )
 	target_link_libraries(${ExName} PUBLIC ioda_engines ioda_fortran stdc++)
-	add_test(NAME test_${ExName} COMMAND ${ExName})	
+	add_test(NAME ${ExName} COMMAND ${ExName})	
 endmacro()
 
 macro(AddExample_Py testname cmd args need_test_data_prep)
-	add_test(NAME test_${testname}
+	add_test(NAME ${testname}
 		COMMAND ${Python3_EXECUTABLE}
 			${CMAKE_CURRENT_SOURCE_DIR}/${cmd} ${args}
 		)
 	set(IODA_PYTHONPATH "$<TARGET_FILE_DIR:_ioda_python>/../../:$ENV{PYTHONPATH}")
-	set_tests_properties(test_${testname}
+	set_tests_properties(${testname}
 		PROPERTIES
 		ENVIRONMENT "PYTHONPATH=${IODA_PYTHONPATH}"
 		)
         if (${need_test_data_prep})
-          set_tests_properties(test_${testname}
+          set_tests_properties(${testname}
                     PROPERTIES
-                    DEPENDS test_ioda-engines_examples_prep_data
+                    DEPENDS ioda-engines_examples_prep_data
                     )
         endif()
 endmacro()
 
 # For now a single sample ioda output file is being used so this simple test
 # will suffice.
-add_test(NAME test_ioda-engines_examples_prep_data
+add_test(NAME ioda-engines_examples_prep_data
          COMMAND ncgen
                  -k 3
                  -o sample_hofx_output_amsua_n19.nc4

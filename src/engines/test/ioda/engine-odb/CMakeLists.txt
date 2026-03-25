@@ -11,7 +11,7 @@ target_link_libraries(ioda-engines_odb-parallel-io PUBLIC ioda_engines)
 target_include_directories(ioda-engines_odb-parallel-io PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../ioda/include/ioda)
 
 if(BUILD_TESTING)
-  ecbuild_add_test( TARGET  test_ioda-engines_odb-parallel-io
+  ecbuild_add_test( TARGET  ioda-engines_odb-parallel-io
                     MPI     3
                     COMMAND ioda-engines_odb-parallel-io
                     ARGS    ${CMAKE_CURRENT_SOURCE_DIR}/odb_parallel_io.yml)

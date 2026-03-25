@@ -11,7 +11,7 @@ macro(AddExample ExName SourceFile Group)
 	set_target_properties( ${ExName} PROPERTIES FOLDER "Examples/${Group}")
 	target_link_libraries(${ExName} PUBLIC ioda_engines)
 
-    add_test(NAME test_${ExName} COMMAND ${ExName})
+    add_test(NAME ${ExName} COMMAND ${ExName})
 endmacro()
 
 AddExample(ioda-engines_units units.cpp "ioda/Advanced/Math")

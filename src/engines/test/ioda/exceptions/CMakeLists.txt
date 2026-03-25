@@ -10,5 +10,5 @@ addapp(ioda-engines_exception)
 target_link_libraries(ioda-engines_exception PUBLIC ioda_engines)
 
 if(BUILD_TESTING)
-    add_test(NAME test_ioda-engines_exception COMMAND ioda-engines_exception)
+    add_test(NAME ioda-engines_exception COMMAND ioda-engines_exception)
 endif()
