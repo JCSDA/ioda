@@ -62,7 +62,7 @@ obs types:
         nlocs:  0
         nvars:  64
 
-- name: "Radiosondes-SplitInput"
+- name: "Radiosondes-SplitInput: 2 files"
   obsdatain:
     engine:
       type: H5File
@@ -113,6 +113,64 @@ obs types:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  444
+        nvars:  64
+      rank3:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
+        nvars:  64
+
+- name: "Radiosondes-SplitInput: 4 Files"
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+    read multiple files: true
+  io pool:
+    max pool size: 4
+  test data:
+    channel numbers: []
+    variables with channels: []
+    number of variables: 5
+    date time epoch: "2018-04-14T21:00:00Z"
+    sample column names:
+    - "sourceLocationIndices"
+    - "MetaData/dateTime"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "ObsValue/airTemperature"
+    mpi size1:
+      rank0:
+        pool comm size: 1
+        pool comm rank: 0
+        nlocs:  974
+        nvars:  64
+    mpi size2:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  530  # nlocs differ from the non-split case; the split files are not exactly even
+        nvars:  64
+      rank1:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  444
+        nvars:  64
+    mpi size4:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  530
+        nvars:  64
+      rank1:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  444
+        nvars:  64
+      rank2:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
         nvars:  64
       rank3:
         pool comm size: 2

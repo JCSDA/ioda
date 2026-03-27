@@ -1,0 +1,25 @@
+---
+test cases:
+  - name: "No channel variables"
+    frame metadata:
+      channel numbers: []
+      variables with channels: []
+      variable dim names: []
+      datetime epoch: "2026-01-01T00:00:00Z"
+      number of variables: 1
+    bytes serialized: 45
+
+  - name: "Variables with channels"
+    frame metadata:
+      channel numbers: [1, 3, 6]
+      variables with channels: 
+      - "ObsValue/brightnessTemperature"
+      - "MetaData/chanCentralFrequency"
+      variable dim names:
+      - name: "ObsValue/brightnessTemperature"
+        dim names: ["Location", "Channel"]
+      - name: "MetaData/chanCentralFrequency"
+        dim names: ["Channel"]
+      datetime epoch: "2026-01-01T00:00:00Z"
+      number of variables: 1
+    bytes serialized: 245

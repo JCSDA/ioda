@@ -23,6 +23,7 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
 
+#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace ioda {

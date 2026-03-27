@@ -9,6 +9,7 @@
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/io/Buffer.h"
 
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
@@ -80,9 +81,14 @@ void loadObs(const ObsDataInParameters & dataInParams,
       loadOsdfFromNetcdf(dataInParams, obsIoPool->commPool(), destOsdf, osdfMetadata);
     }
 
-    // The netcdf/hdf5 file reader generates column metadata on all ranks in the io pool, even
-    // if the file is empty or some ranks are not assigned any locations.
-    thisRankHasMetadata = obsIoPool->inIoPool();
+    // The netcdf/hdf5 file reader will generate column metadata for all ranks
+    // in the pool when using a single input file. However, when reading a set
+    // of input files (one per rank in the io pool) it is possible for one or
+    // more of those files to have zero locations and currently an empty file
+    // will result in an OSDF without column metadata. To cover this case,
+    // check if the destOsdf has any columns: if numCols > 0, then it has
+    // metadata, if 0 then it does not have metadata.
+    thisRankHasMetadata = (destOsdf->numCols() > 0);
   } else {
     ASSERT(inputFileType == "ODB");
     // Reading an ODB file.
@@ -143,80 +149,41 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisRankHasM
   if (mySize > 1) {
     if (myRank == rootRank) {
       const std::string serializedColMetadata = destOsdf->serializeColumnMetadata();
-      const int metadataSize = serializedColMetadata.size();
+      const std::size_t colMetadataSize = serializedColMetadata.size();
+
+      eckit::Buffer frameMetadataBufr(osdfMetadata.bufrSize());
+      const std::size_t frameMetadataSize = osdfMetadata.serialize(frameMetadataBufr);
       for (std::size_t i = 0; i < mainComm.size(); ++i) {
         if (rankHasMetadata[i] == 0) {
           // Send the osdf column metadata to ranks that do not have them
-          mainComm.send(metadataSize, i, 0);
-          mainComm.send(serializedColMetadata.data(), metadataSize, i, 1);
+          mainComm.send(colMetadataSize, i, 0);
+          mainComm.send(serializedColMetadata.data(), colMetadataSize, i, 1);
 
-          // Need to synchronize the osdfMetadata object:
-          //   chanNums
-          //   numVars
-          //   dateTimeEpoch
-          //   varsWithChans
-
-          // chanNums
-          int sendInt = osdfMetadata.getChanNums().size();
-          mainComm.send(sendInt, i, 2);
-          mainComm.send(osdfMetadata.getChanNums().data(), sendInt, i , 3);
-
-          // numVars
-          sendInt = osdfMetadata.getNumVars();
-          mainComm.send(sendInt, i, 4);
-
-          // dateTimeEpoch
-          oops::mpi::sendString(mainComm, osdfMetadata.getDateTimeEpoch(), i);
-
-          // varsWithChans
-          sendInt = osdfMetadata.getVarsWithChans().size();
-          mainComm.send(sendInt, i, 5);
-          for (const auto & varName : osdfMetadata.getVarsWithChans()) {
-            oops::mpi::sendString(mainComm, varName, i);
-          }
+          mainComm.send(frameMetadataSize, i, 2);
+          mainComm.send(
+            static_cast<const char*>(frameMetadataBufr.data()), frameMetadataSize, i, 3);
         }
       }
     } else {
       // Remaining ranks, some of which need -- and will receive -- the metadata.
       if (!thisRankHasMetadata) {
         // Receive the column metadata and update the destOsdf container
-        int metadataSize;
-        mainComm.receive(metadataSize, rootRank, 0);
-        std::vector<char> serializedColMetadata(metadataSize);
-        mainComm.receive(serializedColMetadata.data(), metadataSize, rootRank, 1);
+        std::size_t colMetadataSize;
+        mainComm.receive(colMetadataSize, rootRank, 0);
+        std::vector<char> serializedColMetadata(colMetadataSize);
+        mainComm.receive(serializedColMetadata.data(), colMetadataSize, rootRank, 1);
         // Now deserialize the metadata into the destOsdf container
         destOsdf->deserializeColumnMetadata(std::string(serializedColMetadata.data(),
                                                         serializedColMetadata.size()));
 
-        // Need to read and store the osdfMetada data members:
-        //   chanNums
-        //   numVars
-        //   dateTimeEpoch
-        //   varsWithChans
+        // Receive the frame metadata and update the osdfMetadata object
+        std::size_t frameMetadataSize;
+        mainComm.receive(frameMetadataSize, rootRank, 2);
+        eckit::Buffer frameMetadataBuffer(frameMetadataSize);
+        mainComm.receive(
+          static_cast<char *>(frameMetadataBuffer.data()), frameMetadataSize, rootRank, 3);
 
-        // chanNums
-        int recvInt;
-        mainComm.receive(recvInt, rootRank, 2);
-        std::vector<int> chanNums(recvInt);
-        mainComm.receive(chanNums.data(), recvInt, rootRank, 3);
-        osdfMetadata.setChanNums(chanNums);
-
-        // numVars
-        mainComm.receive(recvInt, rootRank, 4);
-        osdfMetadata.setNumVars(recvInt);
-
-        // dateTimeEpoch
-        std::string recvString;
-        oops::mpi::receiveString(mainComm, recvString, rootRank);
-        osdfMetadata.setDateTimeEpoch(recvString);
-
-        // varsWithChans
-        mainComm.receive(recvInt, rootRank, 5);
-        for (int i = 0; i < recvInt; ++i) {
-          std::string varName;
-          oops::mpi::receiveString(mainComm, varName, rootRank);
-          osdfMetadata.addVarToVarsWithChans(varName);
-        }
+        osdfMetadata.deserialize(frameMetadataBuffer);
       }
     }
     mainComm.barrier();

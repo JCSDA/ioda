@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "eckit/io/Buffer.h"
+
 namespace osdf {
 class FrameMetadata {
  public:
@@ -83,6 +85,21 @@ class FrameMetadata {
   /// \brief returns true if var is in the variables with channels list
   /// \param varName new variable name to add to the list
   bool varHasChannels(const std::string & varName) const;
+
+  /// \brief serialize for MPI data transfer
+  /// \param bufr eckit buffer that will contain the serialized data
+  /// \return total number of bytes that were serialized
+  std::size_t serialize(eckit::Buffer & bufr) const;
+
+  /// \brief deserialize for MPI data transfer
+  /// \param bufr eckit buffer the contains the serialized data
+  void deserialize(eckit::Buffer & bufr);
+
+  /// \brief helper function to properly size the eckit buffer
+  std::size_t bufrSize() const;
+
+  /// \brief overload == operator
+  bool operator==(const FrameMetadata & refFrameMetadata) const;
 
  private:
   /// \brief frame channel numbers

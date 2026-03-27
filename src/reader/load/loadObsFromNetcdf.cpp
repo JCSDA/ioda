@@ -522,6 +522,7 @@ void transferVarDataToOSDF(const std::string & varName,
             dataChannel);
         }
         osdfMetadata.addVarToVarsWithChans(varName);
+        osdfMetadata.addVarDimNames(varName, varDimNames);
       } else {
         const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
             std::string("1D Variable (Channel) size != numChannels: ") + varName;
@@ -545,6 +546,7 @@ void transferVarDataToOSDF(const std::string & varName,
             dataChannel);
         }
         osdfMetadata.addVarToVarsWithChans(varName);
+        osdfMetadata.addVarDimNames(varName, varDimNames);
       } else {
         const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
           std::string("2D Variable (Location, Channel) size != (numLocs * numChans): ") +
