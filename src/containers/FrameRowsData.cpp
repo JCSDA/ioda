@@ -132,7 +132,10 @@ const std::vector<osdf::DataRow>& osdf::FrameRowsData::getDataRows() const {
 std::vector<osdf::DataRow>& osdf::FrameRowsData::getDataRows() { return dataRows_; }
 
 void osdf::FrameRowsData::getDataRows(std::vector<osdf::DataRow>& dataRowsContainer) const {
-  if (dataRowsContainer.empty() && (dataRowsContainer.capacity() == getSizeRows())) {
+  bool isDataRowsContainerCorrectSize
+    = (static_cast<int64_t>(dataRowsContainer.capacity()) == getSizeRows());
+
+  if (dataRowsContainer.empty() && isDataRowsContainerCorrectSize) {
     dataRowsContainer = dataRows_;
   } else {
     const std::string errMsg = std::string(

@@ -51,7 +51,7 @@ void testRemoveRows(std::string frameType) {
     EXPECT_THROWS_AS(testFrame->removeRow(originalNumRows), eckit::OutOfRange);
     testFrame->removeRow(rowToRemove);
     compareFrames(testFrame, originalColumnNames, originalColumnTypes,
-                  expectedFrame1, expected1ColumnNames, expected1ColumnTypes, tolerance);
+                  expectedFrame1, expected1ColumnNames, expected1ColumnTypes, tolerance, true);
 
     // Test removing a multiple rows with removeRows
     std::vector<eckit::LocalConfiguration> expectedConfig2 =
@@ -67,7 +67,7 @@ void testRemoveRows(std::string frameType) {
     }
     testFrame->removeRows(keepRows);
     compareFrames(testFrame, originalColumnNames, originalColumnTypes,
-                  expectedFrame2, expected2ColumnNames, expected2ColumnTypes, tolerance);
+                  expectedFrame2, expected2ColumnNames, expected2ColumnTypes, tolerance, 1);
   }
 }
 

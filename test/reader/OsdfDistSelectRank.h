@@ -75,7 +75,7 @@ void testSelectRankIFrame(std::unique_ptr<osdf::IFrame> & globalOsdf,
     oops::Log::debug() << "  " << name << std::endl;
   }
   compareFrames(testOsdf, testColumnNames, refColumnTypes, refOsdf, refColumnNames,
-                refColumnTypes, tolerance);
+                refColumnTypes, tolerance, false);
 }
 
 void testSelectRankFrameRows() {

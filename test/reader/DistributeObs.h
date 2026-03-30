@@ -104,7 +104,7 @@ void testCalculateDistribution() {
 
   // Compare the output osdf frame to the reference osdf frame
   compareFrames(inoutOsdf, inputColumnNames, inputColumnTypes, refOutOsdf, refColumnNames,
-                refColumnTypes, tolerance);
+                refColumnTypes, tolerance, false);
 
   std::vector<std::size_t> expectedLocalLocIndices, expectedLocalRecNums;
   std::size_t expectedLocalNlocs, expectedLocalNrecs;

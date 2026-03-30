@@ -25,38 +25,40 @@ namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
-void testFrames() {
+void testFrames(std::string frameType) {
   const std::vector<std::string> frameTypes{ "FrameCols", "FrameRows" };
   const std::vector<eckit::LocalConfiguration> & testCasesConfig =
     ::test::TestEnvironment::config().getSubConfigurations("test cases");
 
-  for (const std::string & frameType : frameTypes) {
-    for (std::size_t i = 0; i < testCasesConfig.size(); ++i) {
-      const eckit::LocalConfiguration & testCaseConfig = testCasesConfig[i];
-      std::string testCaseName = testCaseConfig.getString("name");
-      oops::Log::info() << "Testing: " << frameType << ": " << testCaseName << std::endl;
+  for (std::size_t i = 0; i < testCasesConfig.size(); ++i) {
+    const eckit::LocalConfiguration & testCaseConfig = testCasesConfig[i];
+    std::string testCaseName = testCaseConfig.getString("name");
+    oops::Log::info() << "Testing: " << frameType << ": " << testCaseName << std::endl;
 
-      // Grab the osdf config which contains the column names, types, and values
-      // to be used in the test.
-      const std::vector<eckit::LocalConfiguration> & osdfConfig =
-        testCaseConfig.getSubConfigurations("osdf columns");
+    // Grab the osdf config which contains the column names, types, and values
+    // to be used in the test.
+    const std::vector<eckit::LocalConfiguration> & osdfConfig =
+      testCaseConfig.getSubConfigurations("osdf columns");
 
-      // Create frame from test config, and test against expected sizes.
-      std::unique_ptr<osdf::IFrame> testFrame = osdf::createIFrame(frameType);
-      std::vector<std::string> testColumnNames;
-      std::vector<std::string> testColumnTypes;
-      populateFrame(osdfConfig, testFrame, testColumnNames, testColumnTypes);
+    // Create frame from test config, and test against expected sizes.
+    std::unique_ptr<osdf::IFrame> testFrame = osdf::createIFrame(frameType);
+    std::vector<std::string> testColumnNames;
+    std::vector<std::string> testColumnTypes;
+    populateFrame(osdfConfig, testFrame, testColumnNames, testColumnTypes);
 
-      // Check against expected values
-      const eckit::LocalConfiguration & expectedValuesConfig =
-        testCaseConfig.getSubConfiguration("expected values");
-      std::size_t expectedNumRows = expectedValuesConfig.getUnsigned("num rows");
-      std::size_t expectedNumCols = expectedValuesConfig.getUnsigned("num columns");
-      EXPECT(testFrame->numRows() == expectedNumRows);
-      EXPECT(testFrame->numCols() == expectedNumCols);
-    }
+    // Check against expected values
+    const eckit::LocalConfiguration & expectedValuesConfig =
+      testCaseConfig.getSubConfiguration("expected values");
+    std::size_t expectedNumRows = expectedValuesConfig.getUnsigned("num rows");
+    std::size_t expectedNumCols = expectedValuesConfig.getUnsigned("num columns");
+    EXPECT(testFrame->numRows() == expectedNumRows);
+    EXPECT(testFrame->numCols() == expectedNumCols);
   }
 }
+
+void testFrameColsNumRowsCols() { testFrames("FrameCols"); }
+
+void testFrameRowsNumRowsCols() { testFrames("FrameRows"); }
 
 // -----------------------------------------------------------------------------
 class OsdfNumRowsCols : public oops::Test {
@@ -70,7 +72,10 @@ class OsdfNumRowsCols : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/OsdfNumRowsCols/testFrames") { testFrames(); });
+    ts.emplace_back(
+      CASE("ioda/OsdfNumRowsCols/testFrameColsNumRowsCols") { testFrameColsNumRowsCols(); });
+    ts.emplace_back(
+      CASE("ioda/OsdfNumRowsCols/testFrameColsNumRowsCols") { testFrameRowsNumRowsCols(); });
   }
 
   void clear() const override {}

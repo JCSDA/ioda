@@ -81,7 +81,7 @@ void testDistAllgatherv() {
 
   // Check the results
   compareFrames(gatheredOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames,
-    refColumnTypes, tolerance);
+    refColumnTypes, tolerance, false);
 }
 
 // -----------------------------------------------------------------------------

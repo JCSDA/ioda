@@ -96,7 +96,7 @@ void testFrameRows() {
   reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata);
   oops::Log::info() << "testFrameRows: after filtering" << std::endl;
   compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames, refColumnTypes,
-    tolerance);
+    tolerance, false);
 
   // Check the relavent obsSourceStats contents
   const eckit::LocalConfiguration configObsSourceStats =
@@ -145,7 +145,7 @@ void testFrameCols() {
   reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata);
   oops::Log::info() << "testFrameCols: after filtering" << std::endl;
   compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames, refColumnTypes,
-    tolerance);
+    tolerance, false);
 
   // Check the relavent obsSourceStats contents
   const eckit::LocalConfiguration configObsSourceStats =

@@ -247,7 +247,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_script_args.py
 
   testinput/containers/iodatest_obs_data_frame.yaml
+  testinput/containers/iodatest_osdf_append.yaml
   testinput/containers/iodatest_osdf_dummy_config.yaml
+  testinput/containers/iodatest_osdf_basic_frames.yaml
   testinput/containers/iodatest_osdf_getColumn.yaml
   testinput/containers/iodatest_osdf_num_rows_cols.yaml
   testinput/containers/iodatest_osdf_remove_rows.yaml
@@ -366,7 +368,7 @@ ecbuild_add_test( TARGET  ioda_osdf_columnfunctions
 
 ecbuild_add_test( TARGET  ioda_osdf_get_data_rows
                   SOURCES mains/containers/TestOsdfGetDataRows.cc
-                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  ARGS    "testinput/containers/iodatest_osdf_basic_frames.yaml"
                   LIBS  ioda_test
                   )
 
@@ -384,7 +386,7 @@ ecbuild_add_test( TARGET  ioda_osdf_get_column_metadata
 
 ecbuild_add_test( TARGET  ioda_osdf_append
                   SOURCES mains/containers/TestOsdfAppend.cc
-                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  ARGS    "testinput/containers/iodatest_osdf_append.yaml"
                   LIBS  ioda_test
                   )
 
@@ -392,6 +394,12 @@ ecbuild_add_test( TARGET  ioda_osdf_num_rows_cols
                   SOURCES mains/containers/TestOsdfNumRowsCols.cc
                   ARGS    "testinput/containers/iodatest_osdf_num_rows_cols.yaml"
                   LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_osdf_cross_constructors
+                  SOURCES mains/containers/TestOsdfCrossConstructors.cc
+                  ARGS    "testinput/containers/iodatest_osdf_basic_frames.yaml"
+                  LIBS    ioda_test
                   )
 
 ecbuild_add_test( TARGET  ioda_osdf_remove_rows

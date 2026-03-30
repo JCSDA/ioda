@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -22,104 +23,94 @@
 namespace ioda {
 namespace test {
 
-std::int8_t testCompareTwoDataRows(osdf::DataRow testRow, osdf::DataRow compareRow) {
-  const std::int32_t testSize    = testRow.getSize();
-  const std::int32_t compareSize = compareRow.getSize();
+template <typename frameType>
+void testIFrameGetDataRows(frameType& testFrame,
+                           const std::vector<eckit::LocalConfiguration>& osdfConfig,
+                           std::vector<osdf::DataRow>& referenceData) {
+  // Load data into frame
+  const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
+  std::vector<std::string> columnNames;
+  std::vector<std::string> columnTypes;
+  populateFrame(osdfConfig, testFrame, columnNames, columnTypes);
 
-  if (testSize != compareSize) {
-    return false;
+  // Call getDataRows
+  std::vector<osdf::DataRow> testRows;
+  testRows.reserve(testFrame.getData().getSizeRows());
+  testFrame.getData().getDataRows(testRows);
+
+  // Check number of entries correct
+  std::size_t numRows = referenceData.size();
+  EXPECT(numRows == testRows.size());
+
+  // Test getDataRows fails if passed non-empty vector
+  if (!testRows.empty()) {
+    EXPECT_THROWS_AS(testFrame.getData().getDataRows(testRows), eckit::BadParameter);
   }
 
-  for (std::int32_t index = 0; index < testSize; ++index) {
-    std::string testString    = testRow.getColumn(index)->getValueStr();
-    std::string compareString = compareRow.getColumn(index)->getValueStr();
-    if (testString != compareString) {
-      return false;
+  for (std::size_t index = 0; index < numRows; ++index) {
+    // Passing tests (compare to input data)
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index], testRows[index], 1, tolerance), 1);
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index], testFrame.getData().getDataRow(index),
+                                        1, tolerance), 1);
+
+    // Throwing as incorrect index
+    std::size_t nextIndex = (index+1)%numRows;
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index],
+                                        testRows[nextIndex], 1, tolerance), 0);
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index],
+                                        testFrame.getData().getDataRow(nextIndex), 1, tolerance),
+      0);
+
+    // Throwing as incorrect contents
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index],
+                                        testRows[nextIndex], 0, tolerance), 0);
+    EXPECT_EQUAL(testCompareTwoDataRows(referenceData[index],
+                                        testFrame.getData().getDataRow(nextIndex),
+                                        0, tolerance), 0);
+  }
+}
+
+void testGetDataRows() {
+  const std::vector<eckit::LocalConfiguration>& testCasesConfig
+    = ::test::TestEnvironment::config().getSubConfigurations("test frame data");
+
+  for (std::size_t index = 0; index < testCasesConfig.size(); ++index) {
+    const eckit::LocalConfiguration& testCaseConfig = testCasesConfig[index];
+    std::string testCaseName                        = testCaseConfig.getString("name");
+
+    oops::Log::info() << "Running test: " << testCaseName << std::endl;
+    const std::vector<eckit::LocalConfiguration>& osdfConfig
+      = testCaseConfig.getSubConfigurations("osdf columns");
+
+    // Store input data directly into DataRows for comparison
+    const std::size_t numRows = osdfConfig[0].getStringVector("values").size();
+    std::vector<osdf::DataRow> compareDataRows;
+    compareDataRows.reserve(numRows);
+
+    for (std::size_t index = 0; index < numRows; ++index) {
+      osdf::DataRow tempDataRow(index);
+      for (std::size_t i = 0; i < osdfConfig.size(); ++i) {
+        std::string type                    = osdfConfig[i].getString("type");
+        std::vector<std::string> stringVals = osdfConfig[i].getStringVector("values");
+        std::string errMsg
+          = std::string("Unrecognized data type: ") + type
+            + std::string("\nMust use one of: 'int', 'int64', 'float', 'string', or 'char'");
+
+        callWithSupportedTypeString(type, errMsg, [&](auto typeDiscriminator) {
+          using T                       = decltype(typeDiscriminator);
+          std::vector<T> expectedValues = replaceMissingValues<T>(stringVals);
+          tempDataRow.insert(std::make_shared<osdf::Datum<T>>(expectedValues[index]));
+        });
+      }
+      compareDataRows.emplace_back(tempDataRow);
     }
+
+    // Create and test FrameRows and FrameCols
+    osdf::FrameCols testFrameCols;
+    testIFrameGetDataRows(testFrameCols, osdfConfig, compareDataRows);
+    osdf::FrameRows testFrameRows;
+    testIFrameGetDataRows(testFrameRows, osdfConfig, compareDataRows);
   }
-  return true;
-}
-
-// Compares getDataRow function from FrameCols to that from FrameRows
-void testGetDataRow(osdf::FrameCols& testFrame, std::int32_t testRowIndex,
-                    std::int32_t compareRowIndex, std::int8_t isExpectRowsEqual) {
-  osdf::DataRow testRow = testFrame.getData().getDataRow(testRowIndex);
-  osdf::FrameRows compareFrameRows(testFrame);
-  osdf::DataRow compareRow = testFrame.getData().getDataRow(compareRowIndex);
-
-  oops::Log::info() << "FrameCol index " + std::to_string(testRowIndex) + ", FrameRow index "
-                         + std::to_string(compareRowIndex) + ", Expect equal "
-                         + std::to_string(isExpectRowsEqual)
-                    << std::endl;
-  EXPECT_EQUAL(testCompareTwoDataRows(testRow, compareRow), isExpectRowsEqual);
-}
-
-// Compares getDataRows function from frameCols to getDataRow function from same frameCols
-void testGetDataRowsFrameCol(osdf::FrameCols& testFrame, std::int32_t testRowIndex,
-                     std::int32_t compareRowIndex, std::int8_t isExpectRowsEqual) {
-  std::vector<osdf::DataRow> testRows;
-  testRows.reserve(testFrame.getData().getSizeRows());
-  testFrame.getData().getDataRows(testRows);
-
-  osdf::DataRow testRow = testRows[testRowIndex];
-  osdf::DataRow compareRow = testFrame.getData().getDataRow(compareRowIndex);
-
-  oops::Log::info() << "getDataRows index " + std::to_string(testRowIndex) + ", getDataRow index "
-                         + std::to_string(compareRowIndex) + ", Expect equal "
-                         + std::to_string(isExpectRowsEqual)
-                    << std::endl;
-  EXPECT_EQUAL(testCompareTwoDataRows(testRow, compareRow), isExpectRowsEqual);
-}
-
-// Compares getDataRows function from frameRows to getDataRow function from same frameRows
-void testGetDataRowsFrameRow(osdf::FrameRows& testFrame, std::int32_t testRowIndex,
-                     std::int32_t compareRowIndex, std::int8_t isExpectRowsEqual) {
-  std::vector<osdf::DataRow> testRows;
-  testRows.reserve(testFrame.getData().getSizeRows());
-  testFrame.getData().getDataRows(testRows);
-
-  osdf::DataRow testRow    = testRows[testRowIndex];
-  osdf::DataRow compareRow = testFrame.getData().getDataRow(compareRowIndex);
-
-  oops::Log::info() << "getDataRows index " + std::to_string(testRowIndex) + ", getDataRow index "
-                         + std::to_string(compareRowIndex) + ", Expect equal "
-                         + std::to_string(isExpectRowsEqual)
-                    << std::endl;
-  EXPECT_EQUAL(testCompareTwoDataRows(testRow, compareRow), isExpectRowsEqual);
-}
-
-void testGetDataRow_DoTest() {
-  std::vector<float> lats          = {-65.0, -66.6};
-  std::vector<std::string> statIds = {"00001", "00001"};
-  std::vector<std::int64_t> times  = {1710460225, 1710460225};
-
-  osdf::FrameCols testFrameCols;
-  testFrameCols.appendNewColumn("lat", lats);
-  testFrameCols.appendNewColumn("StatId", statIds);
-  testFrameCols.appendNewColumn("time", times);
-
-  testGetDataRow(testFrameCols, 0, 0, 1);
-  testGetDataRow(testFrameCols, 0, 1, 0);
-}
-
-void testGetDataRows_DoTest() {
-  std::vector<float> lats          = {-65.0, -66.6};
-  std::vector<std::string> statIds = {"00001", "00001"};
-  std::vector<std::int64_t> times  = {1710460225, 1710460225};
-
-  // Test frameCols
-  osdf::FrameCols frameCols1;
-  frameCols1.appendNewColumn("lat", lats);
-  frameCols1.appendNewColumn("StatId", statIds);
-  frameCols1.appendNewColumn("time", times);
-  testGetDataRowsFrameCol(frameCols1, 0, 0, 1);
-
-  // Test frameRows
-  osdf::FrameRows frameRows1;
-  frameRows1.appendNewColumn("lat", lats);
-  frameRows1.appendNewColumn("StatId", statIds);
-  frameRows1.appendNewColumn("time", times);
-  testGetDataRowsFrameRow(frameRows1, 0, 0, 1);
 }
 
 // -----------------------------------------------------------------------------
@@ -134,8 +125,7 @@ class OsdfGetDataRows : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/ReaderFilter/testGetDataRow") { testGetDataRow_DoTest(); });
-    ts.emplace_back(CASE("ioda/ReaderFilter/testGetDataRowsIFrame") { testGetDataRows_DoTest(); });
+    ts.emplace_back(CASE("ioda/ObsDataFrame/testGetDataRows") { testGetDataRows(); });
   }
 
   void clear() const override {}

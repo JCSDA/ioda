@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
@@ -25,147 +26,98 @@
 namespace ioda {
 namespace test {
 
-std::int8_t testCompareTwoDataRows(osdf::DataRow testRow, osdf::DataRow compareRow) {
-  const std::int32_t testSize = testRow.getSize();
-  const std::int32_t compareSize = compareRow.getSize();
-
-  if (testSize != compareSize) {
-    return false;
-  }
-
-  for (std::int32_t index = 0; index < testSize; ++index) {
-    std::string testString    = testRow.getColumn(index)->getValueStr();
-    std::string compareString = compareRow.getColumn(index)->getValueStr();
-    if (testString != compareString) {
-      return false;
-    }
-  }
-  return true;
-}
-
-void testOsdfAppend(std::unique_ptr<osdf::IFrame>& frame1,
-                    const std::unique_ptr<osdf::IFrame>& frame2) {
+void testOsdfAppendPasses(std::unique_ptr<osdf::IFrame>& frame0,
+                          const std::unique_ptr<osdf::IFrame>& frame1) {
+  const double tolerance   = ::test::TestEnvironment::config().getDouble("tolerance");
+  std::int64_t frame0Size = frame0->numRows();
   std::int64_t frame1Size = frame1->numRows();
-  std::int64_t frame2Size = frame2->numRows();
-  std::int64_t frame1MaxId = frame1->getData().getMaxId();
+  std::int64_t frame0MaxId = frame0->getData().getMaxId();
 
-  frame1->append(frame2);
-  EXPECT_EQUAL(frame1->numRows(), frame1Size + frame2Size);  // check size
-  EXPECT_EQUAL(frame1->getData().getMaxId(), frame1MaxId + frame2Size);
+  frame0->append(frame1);
+  EXPECT_EQUAL(frame0->numRows(), frame0Size + frame1Size);  // check size
+  EXPECT_EQUAL(frame0->getData().getMaxId(), frame0MaxId + frame1Size);
+
+  std::vector<osdf::DataRow> dataRows0;
+  dataRows0.reserve(frame0->getData().getSizeRows());
+  frame0->getData().getDataRows(dataRows0);
 
   std::vector<osdf::DataRow> dataRows1;
   dataRows1.reserve(frame1->getData().getSizeRows());
   frame1->getData().getDataRows(dataRows1);
 
-  std::vector<osdf::DataRow> dataRows2;
-  dataRows2.reserve(frame2->getData().getSizeRows());
-  frame2->getData().getDataRows(dataRows2);
-
-  for (std::int64_t index = 0; index < frame2Size; ++index) {
-    EXPECT_EQUAL(testCompareTwoDataRows(dataRows1.at(frame1Size + index),
-                                        dataRows2.at(index)), 1);  // check entries match
+  for (std::int64_t index = 0; index < frame1Size; ++index) {
+    // Check that row contents match (do not check Ids as these are different)
+    EXPECT_EQUAL(testCompareTwoDataRows(dataRows0.at(frame0Size + index),
+                                        dataRows1.at(index), 0, tolerance), 1);
   }
 }
 
-void testOsdfAppendEmpty(std::unique_ptr<osdf::IFrame>& frame1) {
-  std::int64_t frame1Size = frame1->numRows();
-
-  std::unique_ptr<osdf::IFrame> emptyFrame = osdf::createIFrame("FrameRows");
-
-  EXPECT_THROWS_AS(frame1->append(emptyFrame), eckit::BadParameter);
-  EXPECT_EQUAL(frame1->numRows(), frame1Size);  // Check no additional rows added
+void testOsdfAppendFails(std::unique_ptr<osdf::IFrame>& frame0,
+                         const std::unique_ptr<osdf::IFrame>& frame1) {
+  std::int64_t frame0Size = frame0->numRows();
+  EXPECT_THROWS_AS(frame0->append(frame1), eckit::BadParameter);
+  EXPECT_EQUAL(frame0->numRows(), frame0Size);
 }
 
-void testOsdfAppendPasses() {
-  // Set up frameCols1
-  std::unique_ptr<osdf::IFrame> frameCols1 = osdf::createIFrame("FrameCols");
-  std::vector<float> lats1          = {-65.0, -66.6};
-  std::vector<std::string> statIds1 = {"00001", "00001"};
-  std::vector<std::int64_t> times1  = {1710460225, 1710460225};
-  frameCols1->appendNewColumn("lat", lats1);
-  frameCols1->appendNewColumn("StatId", statIds1);
-  frameCols1->appendNewColumn("time", times1);
-
-  // Set up frameCols2
-  std::unique_ptr<osdf::IFrame> frameCols2 = osdf::createIFrame("FrameCols");
-  std::vector<float> lats2          = {-67.2, -68.6, -64.8};
-  std::vector<std::string> statIds2 = {"00002", "00001", "00001"};
-  std::vector<std::int64_t> times2  = {1710460225, 1710460225, 1710460225};
-  frameCols2->appendNewColumn("lat", lats2);
-  frameCols2->appendNewColumn("StatId", statIds2);
-  frameCols2->appendNewColumn("time", times2);
-
-  // Set up frameCols3
-  std::unique_ptr<osdf::IFrame> frameCols3 = osdf::createIFrame("FrameCols");
-  std::vector<float> lats3 = {};
-  std::vector<std::string> statIds3 = {};
-  std::vector<std::int64_t> times3 = {};
-  frameCols3->appendNewColumn("lat", lats3);
-  frameCols3->appendNewColumn("StatId", statIds3);
-  frameCols3->appendNewColumn("time", times3);
-
-  // Set up frameRows1
-  std::unique_ptr<osdf::IFrame> frameRows1 = osdf::createIFrame("FrameRows");
-  frameRows1->appendNewColumn("lat", lats1);
-  frameRows1->appendNewColumn("StatId", statIds1);
-  frameRows1->appendNewColumn("time", times1);
-
-  // Set up frameRows2
-  std::unique_ptr<osdf::IFrame> frameRows2 = osdf::createIFrame("FrameRows");
-  frameRows2->appendNewColumn("lat", lats2);
-  frameRows2->appendNewColumn("StatId", statIds2);
-  frameRows2->appendNewColumn("time", times2);
-
-  // Make calls to testOsdfAppend...
-  testOsdfAppend(frameCols1, frameCols2);
-  testOsdfAppend(frameCols1, frameRows2);
-  testOsdfAppend(frameRows1, frameRows2);
-  testOsdfAppend(frameRows1, frameCols2);
-
-  // Test when one of the frames is empty, with metadata
-  testOsdfAppend(frameCols3, frameCols1);
-  testOsdfAppend(frameCols1, frameCols3);
+void testOsdfAppend(std::unique_ptr<osdf::IFrame>& frame0,
+                    const std::unique_ptr<osdf::IFrame>& frame1, bool expectedResult) {
+  if (expectedResult) {
+    testOsdfAppendPasses(frame0, frame1);
+  } else {
+    testOsdfAppendFails(frame0, frame1);
+  }
 }
 
-void testOsdfAppendFails() {
-  std::unique_ptr<osdf::IFrame> emptyFrameCols = osdf::createIFrame("FrameCols");
+void testOsdfAppendFrames() {
+  /// construct frames to test
+  const std::vector<eckit::LocalConfiguration> testFramesConfig
+    = ::test::TestEnvironment::config().getSubConfigurations("test frames");
 
-  // Set up frameCols1
-  std::unique_ptr<osdf::IFrame> frameCols1 = osdf::createIFrame("FrameCols");
-  std::vector<float> lats1          = {-65.0, -66.6};
-  std::vector<std::string> statIds1 = {"00001", "00001"};
-  std::vector<std::int64_t> times1  = {1710460225, 1710460225};
-  frameCols1->appendNewColumn("lat", lats1);
-  frameCols1->appendNewColumn("StatId", statIds1);
-  frameCols1->appendNewColumn("time", times1);
+  std::vector<std::unique_ptr<osdf::IFrame>> testFrames;
+  std::vector<std::string> testFramesNames;
+  oops::Log::error() << "Creating test IFrames" << std::endl;
 
-  // Set up frameRows1
-  std::unique_ptr<osdf::IFrame> frameRows1 = osdf::createIFrame("FrameRows");
-  frameRows1->appendNewColumn("lat", lats1);
-  frameRows1->appendNewColumn("StatId", statIds1);
-  frameRows1->appendNewColumn("time", times1);
+  // construct empty IFrames for testing
+  testFrames.emplace_back(osdf::createIFrame("FrameRows"));
+  testFramesNames.emplace_back("EmptyFrameRows");
+  testFrames.emplace_back(osdf::createIFrame("FrameCols"));
+  testFramesNames.emplace_back("EmptyFramesCols");
 
-  // Set up frameCols2
-  std::unique_ptr<osdf::IFrame> frameCols2 = osdf::createIFrame("FrameCols");
-  std::vector<float> lats2          = {-67.2, -68.6, -64.8};
-  std::vector<std::string> statIds2 = {"00002", "00001", "00001"};
-  std::vector<std::int64_t> times2  = {1710460225, 1710460225, 1710460225};
-  frameCols2->appendNewColumn("latitude", lats2);
-  frameCols2->appendNewColumn("StatId", statIds2);
-  frameCols2->appendNewColumn("time", times2);
+  for (std::size_t i = 0; i < testFramesConfig.size(); ++i) {
+    const eckit::LocalConfiguration& testFrameConfig = testFramesConfig[i];
+    testFramesNames.emplace_back(testFrameConfig.getString("name"));
 
-  // Append to empty frame without metadata fails
-  EXPECT_THROWS_AS(emptyFrameCols->append(frameCols1), eckit::BadParameter);
-  EXPECT_EQUAL(emptyFrameCols->numRows(), 0);
+    const std::vector<eckit::LocalConfiguration>& osdfColumnsConfig
+      = testFrameConfig.getSubConfigurations("osdf columns");
 
-  // Appending an empty frame without metadata to current frame fails
-  testOsdfAppendEmpty(frameCols1);
-  testOsdfAppendEmpty(frameRows1);
+    std::unique_ptr<osdf::IFrame> testFrame = osdf::createIFrame(testFrameConfig.getString("type"));
+    std::vector<std::string> testColumnNames;
+    std::vector<std::string> testColumnTypes;
+    populateFrame(osdfColumnsConfig, testFrame, testColumnNames, testColumnTypes);
 
-  // Append to frame with different metadata (names) fails
-  std::int64_t frameCols2Size = frameCols2->numRows();
-  EXPECT_THROWS_AS(frameCols2->append(frameCols1), eckit::BadParameter);
-  EXPECT_EQUAL(frameCols2Size, frameCols2->numRows());
+    testFrames.emplace_back(std::move(testFrame));
+  }
+
+  oops::Log::error() << "Test IFrames created" << std::endl;
+
+  // run test cases
+  // - config contains index of frames to append in testFrames vector and expected result boolean
+  const std::vector<eckit::LocalConfiguration> testCasesConfig
+    = ::test::TestEnvironment::config().getSubConfigurations("test appends");
+
+  for (std::size_t i = 0; i < testCasesConfig.size(); ++i) {
+    const eckit::LocalConfiguration& testCaseConfig = testCasesConfig[i];
+    std::size_t testFrame0Index = testCaseConfig.getUnsigned("frame 0");
+    std::size_t testFrame1Index = testCaseConfig.getUnsigned("frame 1");
+    bool testExpectation = testCaseConfig.getBool("expect");
+
+    oops::Log::error() << "Appending frames: " << testFramesNames[testFrame0Index] << " and "
+                       << testFramesNames[testFrame1Index]
+                       << " with expected outcome: " << (testExpectation ? "true" : "false")
+                       << std::endl;
+
+    testOsdfAppend(testFrames[testFrame0Index], testFrames[testFrame1Index], testExpectation);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -180,8 +132,7 @@ class OsdfAppend : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("ioda/OsdfAppend/testOsdfAppend") { testOsdfAppendPasses(); });
-    ts.emplace_back(CASE("ioda/OsdfAppend/testOsdfAppendFails") { testOsdfAppendFails(); });
+    ts.emplace_back(CASE("ioda/OsdfAppend/testOsdfAppend") { testOsdfAppendFrames(); });
   }
 
   void clear() const override {}
