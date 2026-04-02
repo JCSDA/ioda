@@ -224,9 +224,12 @@ list( APPEND ioda_test_input
   testinput/iodatest_filter_obs_multi_file_twfilt_rtfiltwindow.yaml
   testinput/iodatest_filter_obs_sondes.yaml
   testinput/iodatest_filter_obs_amsua.yaml
+  testinput/iodatest_random_obsvector_io_osdf.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
-  testinput/iodatest_time_io_osdf.yaml
+  testinput/iodatest_time_io_osdf_mpi1.yaml
+  testinput/iodatest_time_io_osdf_mpi2.yaml
+  testinput/iodatest_time_io_osdf_mpi4.yaml
   testinput/iodatest_time_io_reader_pool.yaml
   testinput/iodatest_time_io_reader_pool_odc.yaml
   testinput/iodatest_time_io_reader_pool_ext_file_prep.yaml
@@ -2109,8 +2112,16 @@ ecbuild_add_test( TARGET  ioda_clean_time_io_files
                           "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
                           "testoutput/sondes_obs_2018041500_m_time.nc4"
                           "testoutput/gnssro_obs_2021080606_s_time.nc4"
-                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf.nc4"
-                          "testoutput/sondes_obs_2018041500_m_time_osdf.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi1.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2_0000.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2_0001.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0000.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0001.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0002.nc4"
+                          "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0003.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_osdf_mpi1.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2_0000.nc4"
+                          "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2_0001.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_reader_pool.nc4"
                           "testoutput/gnssro_obs_2021080606_s_time_reader_pool.nc4"
@@ -2155,30 +2166,135 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_gnssro
                           gnssro_obs_2021080606_s_time.nc4
                   TEST_DEPENDS ioda_time_io)
 
-# this test creates new output files
-ecbuild_add_test( TARGET  ioda_time_io_osdf
+# these tests create new output files
+ecbuild_add_test( TARGET  ioda_time_io_osdf_mpi1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
-                  ARGS    "testinput/iodatest_time_io_osdf.yaml"
+                  ARGS    "testinput/iodatest_time_io_osdf_mpi1.yaml"
+                  TEST_DEPENDS ioda_clean_time_io_files )
+
+ecbuild_add_test( TARGET  ioda_time_io_osdf_mpi2
+                  MPI 2
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_osdf_mpi2.yaml"
+                  TEST_DEPENDS ioda_clean_time_io_files )
+
+ecbuild_add_test( TARGET  ioda_time_io_osdf_mpi4
+                  MPI 4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS    "testinput/iodatest_time_io_osdf_mpi4.yaml"
                   TEST_DEPENDS ioda_clean_time_io_files )
 
 # the following tests compare the output files
-ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf
+# Note: the max pool size for the sondes case is set to 2, so you
+# get the same two output files for the MPI 2 and MPI 4 cases of
+# the sondes test.
+ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi1
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking time io sondes (osdf)"
-                          sondes_obs_2018041500_m_time_osdf.nc4
-                  TEST_DEPENDS ioda_time_io_osdf)
+                          sondes_obs_2018041500_m_time_osdf_mpi1.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi1)
 
-ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf
+ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi2_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes mpi2_0000 (osdf)"
+                          sondes_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi2_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes mpi2_0001 (osdf)"
+                          sondes_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi4_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes mpi4_0000 (osdf)"
+                          sondes_obs_2018041500_m_time_osdf_mpi4_0000.nc4:sondes_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi4_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io sondes mpi4_0001 (osdf)"
+                          sondes_obs_2018041500_m_time_osdf_mpi4_0001.nc4:sondes_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi1
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking time io AMSU-A NOAA19 (osdf)"
-                          amsua_n19_obs_2018041500_m_time_osdf.nc4
-                  TEST_DEPENDS ioda_time_io_osdf)
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi1.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi1)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi2_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi2_0000 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi2_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi2_0001 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi4_0000 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi4_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi4_0001 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi4_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0002
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi4_0002 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi4_0002.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0003
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io amsua_n19 mpi4_0003 (osdf)"
+                          amsua_n19_obs_2018041500_m_time_osdf_mpi4_0003.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
 
 # this test creates new output files
 ecbuild_add_test( TARGET  ioda_time_io_reader_pool
@@ -2373,6 +2489,31 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_windborne_reader_pool_ext_file_prep_m
                           "echo Checking time io (reader pool ext file prep) Windborne"
                           windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4
                   TEST_DEPENDS ioda_time_io_reader_pool_ext_file_prep_mpi7)
+
+#####################################################################
+# Test the random_ObsVectorIO.x app
+#####################################################################
+
+# this test removes the output files from prior testing
+ecbuild_add_test( TARGET  ioda_clean_random_obsvector_io_osdf_files
+                  COMMAND rm
+                  ARGS    "-f"
+                          "testoutput/amsua_n19_obs_2018041500_m_rand_ovec_io_osdf.nc4")
+
+# this test creates new output files
+ecbuild_add_test( TARGET  ioda_random_obsvector_io_osdf
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/random_ObsVectorIO.x
+                  ARGS    "testinput/iodatest_random_obsvector_io_osdf.yaml"
+                  TEST_DEPENDS ioda_clean_random_obsvector_io_osdf_files )
+
+ecbuild_add_test( TARGET  ioda_random_obsvector_io_osdf_cmp_amsua_n19
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking random obsvector io AMSU-A NOAA19"
+                          amsua_n19_obs_2018041500_m_rand_ovec_io_osdf.nc4
+                  TEST_DEPENDS ioda_random_obsvector_io_osdf )
 
 #####################################################################
 # Test the ioda-buildInputFileSet.x app

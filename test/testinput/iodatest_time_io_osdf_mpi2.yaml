@@ -18,7 +18,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf.nc4"
+        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2.nc4"
 
 - obs space:
     name: "Radiosonde"
@@ -33,4 +33,6 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf.nc4"
+        obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2.nc4"
+    io pool:
+      max pool size: 2

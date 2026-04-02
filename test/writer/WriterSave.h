@@ -26,6 +26,7 @@
 #include "ioda/containers/IFrame.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ObsDataIoParameters.h"
+#include "ioda/obsIoPool/ObsIoPool.hpp"
 #include "ioda/test/containers/OsdfTestUtils.h"
 #include "ioda/writer/save/saveObs.hpp"
 
@@ -73,11 +74,6 @@ void testFrames() {
       ioda::ObsDataOutParameters dataOutParams;
       dataOutParams.deserialize(obsDataOutConfig);
 
-      const eckit::LocalConfiguration ioPoolConfig =
-        testConfig.getSubConfiguration("io pool");
-      ioda::IoPool::IoPoolParameters ioPoolParams;
-      ioPoolParams.deserialize(ioPoolConfig);
-
       // Create the source OSDF container
       std::unique_ptr<osdf::IFrame> testOsdf = osdf::createIFrame(frameType);
 
@@ -96,7 +92,13 @@ void testFrames() {
       populateFrameMetadata(testDataConfig.getSubConfiguration("frame metadata"), testOsdfMetadata);
 
       // Call the function to save the OSDF container to a netCDF file
-      ioda::writer::saveObs(dataOutParams, ioPoolParams, commAll,
+      const eckit::LocalConfiguration ioPoolConfig =
+        testConfig.getSubConfiguration("io pool");
+      ioda::IoPool::IoPoolParameters ioPoolParams;
+      ioPoolParams.deserialize(ioPoolConfig);
+      std::unique_ptr<ObsIoPool::ObsIoPool> obsIoPool =
+        std::make_unique<ObsIoPool::ObsIoPool>(ioPoolParams, commAll);
+      ioda::writer::saveObs(dataOutParams, obsIoPool, commAll,
                             testOsdf, testOsdfMetadata);
     }
   }

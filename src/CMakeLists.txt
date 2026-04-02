@@ -146,8 +146,10 @@ reader/ObsReader.hpp
 reader/OsdfFrameFacade.cpp
 reader/OsdfFrameFacade.hpp
 
-writer/obsWriteEmptyFile.cpp
-writer/obsWriteEmptyFile.hpp
+writer/ObsWriter.cpp
+writer/ObsWriter.hpp
+writer/collect/collectObs.cpp
+writer/collect/collectObs.hpp
 writer/save/saveObs.cpp
 writer/save/saveObs.hpp
 writer/save/saveObsToNetcdf.cpp

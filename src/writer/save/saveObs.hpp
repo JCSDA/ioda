@@ -20,8 +20,8 @@ namespace eckit {
 }
 namespace ioda {
     class ObsDataOutParameters;
-    namespace IoPool {
-        class IoPoolParameters;
+    namespace ObsIoPool {
+        class ObsIoPool;
     }
 }
 
@@ -30,12 +30,12 @@ namespace writer {
 
 /// \brief save source OSDF(s) to file(s) across all ranks in the io pool
 /// \param dataOutParams obs space data out (obsdataout) parameters
-/// \param ioPoolParams io pool parameters
+/// \param obsIoPool io pool object
 /// \param commAll MPI communicator for all ranks
 /// \param srcOsdf source OSDF to be saved
 /// \param osdfMetadata frame metadata for srcOsdf
 void saveObs(const ObsDataOutParameters & dataOutParams,
-             const IoPool::IoPoolParameters & ioPoolParams,
+             const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
              const eckit::mpi::Comm & commAll,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata);

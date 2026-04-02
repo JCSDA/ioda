@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 
 #include "ColumnMetadatum.h"
 #include "eckit/exception/Exceptions.h"
@@ -19,11 +20,8 @@
 osdf::ColumnMetadata::ColumnMetadata(): maxId_(-1) {}
 
 const std::int8_t osdf::ColumnMetadata::exists(const std::string& name) const {
-  auto it = std::find_if(columnMetadata_.begin(), columnMetadata_.end(),
-                         [&] (ColumnMetadatum const& col) {
-    return col.getName() == name;
-  });
-  if (it != end(columnMetadata_)) {
+  auto it = columnLookup_.find(name);
+  if (it != columnLookup_.end()) {
     return true;
   } else {
     return false;
@@ -37,6 +35,7 @@ const std::int32_t osdf::ColumnMetadata::add(const ColumnMetadatum col) {
     throw eckit::BadParameter(errMsg, Here());
   }
   const std::int32_t index = static_cast<std::int32_t>(columnMetadata_.size());
+  columnLookup_.insert({col.getName(), index});
   columnMetadata_.push_back(col);
   return index;
 }
@@ -110,6 +109,7 @@ void osdf::ColumnMetadata::deserialize(const std::string & columnMetadataTokens)
     const std::int16_t width = static_cast<std::int16_t>(std::stoi(tokenParts[3]));
     ColumnMetadatum columnMetadatum(name, type, permission);
     columnMetadatum.setWidth(width);
+    columnLookup_.insert({name, nCols - 1});
     columnMetadata_.push_back(columnMetadatum);
   }
 }
@@ -142,7 +142,26 @@ void osdf::ColumnMetadata::updateColumnUnit(const std::int32_t index,
 }
 
 void osdf::ColumnMetadata::remove(const std::int32_t index) {
-  columnMetadata_.erase(std::next(columnMetadata_.begin(), index));
+  // In the case where index is not at the end of columnMetada_, the
+  // indices past index will decrease by 1, and these indices need
+  // to be updated in columnLookup_. Remove the name corresponding
+  // to index first in columnLookup_, then remove the entry corresponding
+  // to index in columnMetada_.
+  auto it = std::next(columnMetadata_.begin(), index);
+  columnLookup_.erase(it->getName());
+  auto itNext = columnMetadata_.erase(it);
+
+  // Update the index values in columnLookup_ for the remaining columns
+  // names in columnMetadata_. At this point:
+  //   1. itNext points to the next element in columnMetadata_ and if we
+  //      just erased the last element in columnMetadata_ itNext will be equal
+  //      to columnMetadata_.end().
+  //   2. index holds the next available value for columnLookup_
+  std::int32_t newIndex = index;
+  for (; itNext != columnMetadata_.end(); ++itNext) {
+    columnLookup_.at(itNext->getName()) = newIndex;
+    ++newIndex;
+  }
 }
 
 /// \brief Function to check whether ColumnMetadata of two OSDFs are compatible.
@@ -282,16 +301,7 @@ const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) 
 }
 
 const std::int32_t osdf::ColumnMetadata::getIndex(const std::string& name) const {
-  const auto it = std::find_if(std::begin(columnMetadata_), std::end(columnMetadata_),
-                  [&](ColumnMetadatum const& col) {
-    return col.getName() == name;
-  });
-  if (it == columnMetadata_.end()) {
-    const std::string errMsg = std::string("ERROR: Cannot find column named \"") + name +
-          std::string("\" in ColumnMetadata.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
-  return static_cast<std::int32_t>(std::distance(std::begin(columnMetadata_), it));
+  return columnLookup_.at(name);
 }
 
 const std::int32_t osdf::ColumnMetadata::getSizeCols() const {
@@ -310,4 +320,7 @@ void osdf::ColumnMetadata::print(const Functions& funcs, const std::int32_t rowS
   oops::Log::info() << std::endl;
 }
 
-void osdf::ColumnMetadata::clear() { columnMetadata_.clear(); }
+void osdf::ColumnMetadata::clear() {
+  columnLookup_.clear();
+  columnMetadata_.clear();
+}

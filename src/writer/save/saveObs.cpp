@@ -13,7 +13,6 @@
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/ObsDataIoParameters.h"
-#include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
 #include "ioda/writer/save/saveObsToNetcdf.hpp"
 
@@ -33,7 +32,7 @@ namespace writer {
 
 //--------------------------------------------------------------------------------
 void saveObs(const ObsDataOutParameters & dataOutParams,
-             const IoPool::IoPoolParameters & ioPoolParams,
+             const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
              const eckit::mpi::Comm & commAll,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata) {
@@ -43,9 +42,6 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
   const std::string fileType =
     dataOutParams.engine.value().engineParameters.value().type.value();
 
-  // Form the io pool.
-  std::unique_ptr<ObsIoPool::ObsIoPool> obsIoPool =
-    std::make_unique<ObsIoPool::ObsIoPool>(ioPoolParams, commAll);
   if (fileType == "H5File") {
     // Collectively save the OSDF to NetCDF across the io pool ranks.
     // It is assumed that all of the obs have been collected onto the

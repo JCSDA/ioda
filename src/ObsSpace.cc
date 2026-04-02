@@ -53,7 +53,7 @@
 #include "ioda/reader/ObsReader.hpp"
 #include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
-#include "ioda/writer/obsWriteEmptyFile.hpp"
+#include "ioda/writer/ObsWriter.hpp"
 
 namespace ioda {
 namespace {
@@ -253,21 +253,10 @@ void ObsSpace::save() {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
       if (create_empty_output_file_ || obs_src_stats_.gNlocs > 0) {
         if (use_dataframe_) {
-          // todo(SRH): we don't have a writer yet that directly transfers data
-          // from an OSDF to the output file, so for now write out an "empty"
-          // output file. This is being done to keep skylab experiments happy -
-          // they need to have an output file that is readable by a netCDF API,
-          // and it is okay for these to be empty.
-          oops::Log::info() << obsname() << " : the OSDF writer is not implemented yet, "
-                                         << "writing an empty ioda output file for now."
-                                         << std::endl;
-
-          // todo(SRH): For now, have rank 0 create the output file, this will change
-          // later on when an OSDF, io pool based writer is implemented.
-          if (this->comm().rank() == 0) {
-            writer::obsWriteEmptyFile(*(obs_params_.top_level_.obsDataOut.value()),
-                                      dim_info_.get_dim_name(ObsDimensionId::Location));
-          }
+          writer::obsWrite(*(obs_params_.top_level_.obsDataOut.value()),
+                           obs_params_.top_level_.ioPool,
+                           obs_params_.comm(), dist_, osdf_,
+                           obs_src_stats_, osdfMetadata_);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);

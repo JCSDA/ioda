@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "ioda/containers/ColumnMetadatum.h"
@@ -55,6 +56,7 @@ class ColumnMetadata {
  private:
   std::int64_t maxId_;
   std::vector<ColumnMetadatum> columnMetadata_;
+  std::unordered_map<std::string, int32_t> columnLookup_;
 };
 }  // namespace osdf
 

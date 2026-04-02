@@ -7,6 +7,11 @@ ecbuild_add_executable( TARGET  time_IodaIO.x
                         SOURCES timeIodaIO.cc
                         LIBS    ioda )
 
+
+ecbuild_add_executable( TARGET  random_ObsVectorIO.x
+                        SOURCES randomObsVectorIO.cc
+                        LIBS    ioda )
+
 ecbuild_add_executable( TARGET  ioda-buildInputFileSet.x
                         SOURCES buildInputFileSet.cc
                         LIBS    ioda )
