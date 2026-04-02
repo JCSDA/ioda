@@ -103,6 +103,7 @@ void osdfSelectRankData(const std::unique_ptr<osdf::IFrame> &  srcGlobalFrame,
     ASSERT(srcGlobalFrame->hasColumn(columnName));
     ASSERT(!destRankFrame->hasColumn(columnName));  // This function is intended to add a new column
     auto columnType = srcGlobalFrame->getColumnType(columnName);
+    auto columnUnit = srcGlobalFrame->getColumnUnits(columnName);
     osdf::FrameUtils::callWithSupportedType(
         columnType,
         [&](auto typeDiscriminator) {
@@ -114,7 +115,7 @@ void osdfSelectRankData(const std::unique_ptr<osdf::IFrame> &  srcGlobalFrame,
             for (auto globalIndex : localLocIndices) {
                 destValues.push_back(srcValues[globalIndex]);
             }
-            destRankFrame->appendNewColumn(columnName, destValues);
+            destRankFrame->appendNewColumn(columnName, destValues, columnUnit);
         });
 }
 

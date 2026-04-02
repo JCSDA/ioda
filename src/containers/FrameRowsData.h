@@ -21,6 +21,7 @@
 #include "ioda/containers/Functions.h"
 #include "ioda/containers/FunctionsRows.h"
 #include "ioda/containers/IFrameData.h"
+#include "oops/util/missingValues.h"
 
 namespace osdf {
 
@@ -71,8 +72,10 @@ class FrameRowsData : public IFrameData  {
   /// column is given read-write uncless specified with the fourth, optional parameter.
   /// \param The column name.
   /// \param An enum value representing the column data type, \see Constants::eDataTypes.
+  /// \param An optional parameter specifying column units (if units not provided, set as missing)
   /// \param An optional parameter specifying the column read-write capability.
   void appendNewColumn(const std::string&, const std::int8_t,
+                       const std::string& = util::missingValue<std::string>(),
                        const std::int8_t = consts::eReadWrite);
 
   /// \brief Removes a column from the data frame.

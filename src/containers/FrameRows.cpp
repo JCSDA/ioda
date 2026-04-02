@@ -32,6 +32,7 @@ osdf::FrameRows::FrameRows(const FrameCols& frameCols) :
   for (const ColumnMetadatum& columnMetadatum : columnMetadata.get()) {
     std::string columnName = columnMetadatum.getName();
     std::int32_t columnIndex = columnMetadata.getIndex(columnName);
+    std::string columnUnit = columnMetadatum.getUnit();
     const std::size_t colIdx = static_cast<std::size_t>(columnIndex);
     const std::shared_ptr<DataBase>& data = frameCols.getData().getDataCols().at(colIdx);
     const std::int8_t type = data->getType();
@@ -40,7 +41,7 @@ osdf::FrameRows::FrameRows(const FrameCols& frameCols) :
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
         const std::vector<T>& values = funcs_.getDataValues<T>(data);
-        appendNewColumn<T>(columnName, values, type);
+        appendNewColumn<T>(columnName, values, type, columnUnit);
       });
   }
 }
@@ -60,28 +61,30 @@ void osdf::FrameRows::configColumns(const std::initializer_list<ColumnMetadatum>
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<int>& values) {
-  appendNewColumn(name, values, consts::eInt);
+                                      const std::vector<int>& values, const std::string& unit) {
+  appendNewColumn(name, values, consts::eInt, unit);
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<std::int64_t>& values) {
-  appendNewColumn(name, values, consts::eInt64);
+                                      const std::vector<std::int64_t>& values,
+                                      const std::string& unit) {
+  appendNewColumn(name, values, consts::eInt64, unit);
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<float>& values) {
-  appendNewColumn(name, values, consts::eFloat);
+                                      const std::vector<float>& values, const std::string& unit) {
+  appendNewColumn(name, values, consts::eFloat, unit);
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<char>& values) {
-  appendNewColumn(name, values, consts::eChar);
+                                      const std::vector<char>& values, const std::string& unit) {
+  appendNewColumn(name, values, consts::eChar, unit);
 }
 
 void osdf::FrameRows::appendNewColumn(const std::string& name,
-                                      const std::vector<std::string>& values) {
-  appendNewColumn(name, values, consts::eString);
+                                      const std::vector<std::string>& values,
+                                      const std::string& unit) {
+  appendNewColumn(name, values, consts::eString, unit);
 }
 
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<int>& values) const {
@@ -405,7 +408,7 @@ std::vector<osdf::DataRow*> osdf::FrameRows::getViewDataRows() {
 
 template <typename T>
 void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector<T>& values,
-                                      const std::int8_t type) {
+                                      const std::int8_t type, const std::string& unit) {
   if (data_.columnExists(name) != false) {
     const std::string errMsg
       = std::string("ERROR: A column named ") + name + std::string(" already exists.");
@@ -424,7 +427,7 @@ void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector
   }
 
   const std::int32_t columnIndex = data_.getSizeCols();
-  data_.appendNewColumn(name, type);
+  data_.appendNewColumn(name, type, unit);
   std::int64_t rowIndex = 0;
   for (const T& value : values) {
     DataRow& dataRow = data_.getDataRow(rowIndex);

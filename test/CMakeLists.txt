@@ -366,6 +366,12 @@ ecbuild_add_test( TARGET  ioda_osdf_columnfunctions
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_osdf_appendnewcolumn_units_specified
+                  SOURCES mains/containers/TestOsdfAppendColumnWithUnits.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
 ecbuild_add_test( TARGET  ioda_osdf_get_data_rows
                   SOURCES mains/containers/TestOsdfGetDataRows.cc
                   ARGS    "testinput/containers/iodatest_osdf_basic_frames.yaml"

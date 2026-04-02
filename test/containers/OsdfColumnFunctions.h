@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2026 UCAR
+ * (C) Crown copyright 2026, Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -46,18 +47,22 @@ namespace test {
 template<typename T>
 void testColumnType(const std::string& columnName, const std::vector<T>& origValues,
                     const std::vector<T>& newValues, std::unique_ptr<osdf::IFrame>& testFrame,
-                    const std::int8_t expectedTypeEnum, const std::string & expectedUnits) {
+                    const std::int8_t expectedTypeEnum) {
   EXPECT(!testFrame->hasColumn(columnName));
+
+  // append without specifying units
   testFrame->appendNewColumn(columnName, origValues);
   EXPECT(testFrame->hasColumn(columnName));
   EXPECT(testFrame->getColumnType(columnName) == expectedTypeEnum);
+  EXPECT(testFrame->getColumnUnits(columnName) == util::missingValue<std::string>());
+
   std::vector<T> testValues;
   testFrame->getColumn(columnName, testValues);
   EXPECT(testValues == origValues);
+
   testFrame->setColumn(columnName, newValues);
   testFrame->getColumn(columnName, testValues);
   EXPECT(testValues == newValues);
-  EXPECT(testFrame->getColumnUnits(columnName) == expectedUnits);
 }
 
 void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
@@ -70,22 +75,17 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
 
   std::vector<std::string> expectedColumnNames;  // for testing columnNames() function
 
-  // For now let the units be set using the defaut which is the JEDI missing string value.
-  const std::string defaultUnits(util::missingValue<std::string>());
-
   // String column type
   const std::string stringColumnName = "test string column";
   testColumnType<std::string>(stringColumnName, {"string1", "string2", "string3"},
-                            {"string4", "string5", "string2"}, testFrame, osdf::consts::eString,
-                            defaultUnits);
+                            {"string4", "string5", "string2"}, testFrame, osdf::consts::eString);
   expectedColumnNames.push_back(stringColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // int column type
   const std::string intColumnName = "test int column";
   const std::vector<int> newIntValues{4, 5, 2};
-  testColumnType<int>(intColumnName, {1, 2, 3}, newIntValues, testFrame, osdf::consts::eInt,
-                      defaultUnits);
+  testColumnType<int>(intColumnName, {1, 2, 3}, newIntValues, testFrame, osdf::consts::eInt);
   expectedColumnNames.push_back(intColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
@@ -96,21 +96,21 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
   const std::vector<std::int64_t> newInt64Values{9000000000000000003, 9000000000000000004,
                                            9000000000000000005};
   testColumnType<std::int64_t>(int64ColumnName, origInt64Values, newInt64Values, testFrame,
-    osdf::consts::eInt64, defaultUnits);
+    osdf::consts::eInt64);
   expectedColumnNames.push_back(int64ColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // float column type
   const std::string floatColumnName = "test float column";
   testColumnType<float>(floatColumnName, {1.1f, 2.2f, 3.3f}, {4.4f, 5.5f, 2.2f}, testFrame,
-    osdf::consts::eFloat, defaultUnits);
+    osdf::consts::eFloat);
   expectedColumnNames.push_back(floatColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // char column type
   const std::string charColumnName = "test char column";
   testColumnType<char>(charColumnName, {'a', 'b', 'c'}, {'d', 'e', 'b'}, testFrame,
-    osdf::consts::eChar, defaultUnits);
+    osdf::consts::eChar);
   expectedColumnNames.push_back(charColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
@@ -123,12 +123,10 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
   EXPECT_THROWS_AS(testFrame->setColumn(intColumnName, wrongSizeIntValues),
                     eckit::BadParameter);
   // Read-only column
-  // TODO(vahl): Finish test of read-only column functionality once it is more fully implemented.
-  // Currently there is no way to create a read-only column using the IFrame interface.
-  // testFrame->appendNewColumn("test read-only column", origIntValues);,
-  //   osdf::consts::eReadOnly);
-  // EXPECT_THROWS_AS(testFrame->setColumn("test read-only column", newIntValues),
-  //                   eckit::BadParameter);
+  testFrame->configColumns(
+    {{"test read-only column", osdf::consts::eInt, osdf::consts::eReadOnly}});
+  EXPECT_THROWS_AS(testFrame->setColumn("test read-only column", newIntValues),
+                   eckit::BadParameter);
 }
 
 void testFrameColsColumnFunctions() {

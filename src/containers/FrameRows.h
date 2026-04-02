@@ -25,6 +25,7 @@
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/ViewRows.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace osdf {
 class FrameCols;
@@ -60,11 +61,16 @@ class FrameRows : public IFrame {
   void configColumns(const std::vector<ColumnMetadatum>) override;
   void configColumns(const std::initializer_list<ColumnMetadatum>) override;
 
-  void appendNewColumn(const std::string&, const std::vector<int>&) override;
-  void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) override;
-  void appendNewColumn(const std::string&, const std::vector<float>&) override;
-  void appendNewColumn(const std::string&, const std::vector<char>&) override;
-  void appendNewColumn(const std::string&, const std::vector<std::string>&) override;
+  void appendNewColumn(const std::string&, const std::vector<int>&,
+                       const std::string& = util::missingValue<std::string>()) override;
+  void appendNewColumn(const std::string&, const std::vector<std::int64_t>&,
+                       const std::string& = util::missingValue<std::string>()) override;
+  void appendNewColumn(const std::string&, const std::vector<float>&,
+                       const std::string& = util::missingValue<std::string>()) override;
+  void appendNewColumn(const std::string&, const std::vector<char>&,
+                       const std::string& = util::missingValue<std::string>()) override;
+  void appendNewColumn(const std::string&, const std::vector<std::string>&,
+                       const std::string& = util::missingValue<std::string>()) override;
 
   void getColumn(const std::string&, std::vector<int>&) const override;
   void getColumn(const std::string&, std::vector<std::int64_t>&) const override;
@@ -203,8 +209,9 @@ class FrameRows : public IFrame {
   }
 
   /// \brief Templated function called from the overridden interface functions.
-  template<typename T> void appendNewColumn(const std::string&, const std::vector<T>&,
-                                            const std::int8_t);
+  template <typename T>
+  void appendNewColumn(const std::string&, const std::vector<T>&, const std::int8_t,
+                       const std::string& = util::missingValue<std::string>());
   /// \brief Templated function called from the overridden interface functions.
   template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
   /// \brief Templated function called from the overridden interface functions.

@@ -8,15 +8,18 @@ test column data:
     rank0:
     - name: "MetaData/dateTime"
       type: "int64"
+      unit: "int64Unit"
       values: [ 20, 50 ]
     - name: "MetaData/latitude"
       type: "float"
       values: [ 3.5, 6.5 ]
     - name: "MetaData/longitude"
       type: "float"
+      unit: "floatUnit"
       values: [ 13.5, 16.5 ]
     - name: "MetaData/stationIdentification"
       type: "string"
+      unit: "stringUnit"
       values: [ "sta102", "sta104" ]
     - name: "ObsValue/myObsInst"
       type: "float"
@@ -24,15 +27,18 @@ test column data:
     rank1:
     - name: "MetaData/dateTime"
       type: "int64"
+      unit: "int64Unit"
       values: [ 80, 90 ]
     - name: "MetaData/latitude"
       type: "float"
       values: [  8.5, 9.5 ]
     - name: "MetaData/longitude"
       type: "float"
+      unit: "floatUnit"
       values: [ 18.5, 19.5 ]
     - name: "MetaData/stationIdentification"
       type: "string"
+      unit: "stringUnit"
       values: [ "missing", "sta107" ]
     - name: "ObsValue/myObsInst"
       type: "float"
@@ -40,15 +46,18 @@ test column data:
 expected gathered data:
   - name: "MetaData/dateTime"
     type: "int64"
+    unit: "int64Unit"
     values: [ 20, 50, 80, 90 ]
   - name: "MetaData/latitude"
     type: "float"
     values: [ 3.5, 6.5, 8.5, 9.5 ]
   - name: "MetaData/longitude"
     type: "float"
+    unit: "floatUnit"
     values: [ 13.5, 16.5, 18.5, 19.5 ]
   - name: "MetaData/stationIdentification"
     type: "string"
+    unit: "stringUnit"
     values: [ "sta102", "sta104", "MISSING*", "sta107" ]
   - name: "ObsValue/myObsInst"
     type: "float"

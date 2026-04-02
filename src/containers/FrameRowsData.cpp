@@ -40,9 +40,9 @@ void osdf::FrameRowsData::appendNewRow(const DataRow& newRow) {
 }
 
 void osdf::FrameRowsData::appendNewColumn(const std::string& name, const std::int8_t type,
-                                          const std::int8_t permission) {
+                                          const std::string& unit, const std::int8_t permission) {
   // Note that `add` throws an exception if columnMetadata with name already exists
-  columnMetadata_.add(ColumnMetadatum(name, type, permission));
+  columnMetadata_.add(ColumnMetadatum(name, unit, type, permission));
 }
 
 void osdf::FrameRowsData::removeColumn(const std::int32_t index) {

@@ -73,9 +73,10 @@ void osdf::FrameColsData::appendNewRow(const DataRow& newRow) {
 
 void osdf::FrameColsData::appendNewColumn(const std::shared_ptr<DataBase>& data,
                                           const std::string& name, const std::int8_t type,
+                                          const std::string& unit,
                                           const std::int8_t permission) {
   // Note that `add` throws an exception if columnMetadata with name already exists
-  columnMetadata_.add(ColumnMetadatum(name, type, permission));
+  columnMetadata_.add(ColumnMetadatum(name, unit, type, permission));
   dataColumns_.push_back(data);
 }
 

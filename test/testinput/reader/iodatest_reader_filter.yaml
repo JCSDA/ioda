@@ -15,15 +15,18 @@ test column data:
     values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
   - name: "MetaData/dateTime"
     type: "int64"
+    unit: "int64Unit"
     values: [ -1, 0, 20, 30, 40, 50, missing, 80, 90, 91 ]
   - name: "MetaData/latitude"
     type: "float"
     values: [ 1.5, 2.5, 3.5, missing, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5 ]
   - name: "MetaData/longitude"
     type: "float"
+    unit: "floatUnit"
     values: [ 11.5, 12.5, 13.5, 14.5, missing, 16.5, 17.5, 18.5, 19.5, 110.5 ]
   - name: "MetaData/stationIdentification"
     type: "string"
+    unit: "stringUnit"
     values: [ "sta100", "sta101", "sta102", "sta103", "sta104",
               "sta104", "sta105", "missing", "sta107", "sta108" ]
   - name: "ObsValue/myObsInst"
@@ -36,15 +39,18 @@ expected filtered data:
     values: [ 2, 5, 7, 8 ]
   - name: "MetaData/dateTime"
     type: "int64"
+    unit: "int64Unit"
     values: [ 20, 50, 80, 90 ]
   - name: "MetaData/latitude"
     type: "float"
     values: [ 3.5, 6.5, 8.5, 9.5 ]
   - name: "MetaData/longitude"
     type: "float"
+    unit: "floatUnit"
     values: [ 13.5, 16.5, 18.5, 19.5 ]
   - name: "MetaData/stationIdentification"
     type: "string"
+    unit: "stringUnit"
     values: [ "sta102", "sta104", "MISSING*", "sta107" ]
   - name: "ObsValue/myObsInst"
     type: "float"

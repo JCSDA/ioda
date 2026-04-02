@@ -12,7 +12,6 @@
 
 #include "eckit/mpi/Comm.h"
 #include "ioda/containers/FrameCols.h"
-#include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
@@ -113,9 +112,10 @@ void distributeObs(const DistributionParametersBase & distParams,
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
         std::vector<T> values;
+        std::string unit = inOutOsdf->getColumnUnits(colName);
         inOutOsdf->getColumn(colName, values);
         inOutDist->allGatherv(values);
-        globalOsdf->appendNewColumn(colName, values);
+        globalOsdf->appendNewColumn(colName, values, unit);
         inOutOsdf->removeColumn(colName);
         });
   }
@@ -170,9 +170,10 @@ void distributeObs(const DistributionParametersBase & distParams,
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
         std::vector<T> values;
+        std::string unit = inOutOsdf->getColumnUnits(colName);
         inOutOsdf->getColumn(colName, values);
         inOutDist->allGatherv(values);
-        globalOsdf->appendNewColumn(colName, values);
+        globalOsdf->appendNewColumn(colName, values, unit);
         inOutOsdf->removeColumn(colName);
         osdfSelectRankData(globalOsdf, rankOsdf, colName, localLocIndices);
         globalOsdf->removeColumn(colName);

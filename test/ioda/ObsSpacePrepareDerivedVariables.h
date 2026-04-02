@@ -82,7 +82,7 @@ void testPrepareDerivedVariables() {
     std::vector<float> testLat = {0.0};
 
     /// Test srcOsdf containing exactly one column (not in osdf_)
-    srcOsdf->appendNewColumn("fish", testLat);
+    srcOsdf->appendNewColumn("fish", testLat, "fishUnit");
     EXPECT_THROWS_AS(odb.prepareSourceOsdfDerivedVariables(srcOsdf), eckit::BadParameter);
 
     /// Test srcOsdf containing exactly one column (in osdf_)
@@ -120,7 +120,7 @@ void testPrepareDerivedVariables() {
     }
 
     /// Test srcOsdf with more columns than osdf_ (should do nothing to srcOsdf)
-    srcOsdf->appendNewColumn("fish", testLat);
+    srcOsdf->appendNewColumn("fish", testLat, "fishUnit");
     srcColumns = srcOsdf->columnNames();
     odb.prepareSourceOsdfDerivedVariables(srcOsdf);
 

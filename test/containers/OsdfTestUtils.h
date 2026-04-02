@@ -13,6 +13,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include "ioda/Exception.h"
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -167,7 +168,12 @@ void populateFrame(const std::vector<eckit::LocalConfiguration> & config,
                                   using T = decltype(typeDiscriminator);
                                   std::vector<T> expectedValues
                                     = replaceMissingValues<T>(stringVals);
-                                  osdf->appendNewColumn(name, expectedValues);
+                                  try {
+                                    std::string unit = config[i].getString("unit");
+                                    osdf->appendNewColumn(name, expectedValues, unit);
+                                  } catch(eckit::Exception&) {
+                                    osdf->appendNewColumn(name, expectedValues);
+                                  }
                                 });
   }
 }
@@ -183,6 +189,9 @@ void compareColumnExact(const std::string & testColumnName,
       std::vector<varType> refValues;
       refOsdf->getColumn(refColumnName, refValues);
       EXPECT(testValues.size() == refValues.size());
+      std::string testColumnUnits = testOsdf->getColumnUnits(testColumnName);
+      std::string refColumnUnits  = refOsdf->getColumnUnits(refColumnName);
+      EXPECT(testColumnUnits == refColumnUnits);
       for (std::size_t j = 0; j < testValues.size(); ++j) {
         EXPECT(testValues[j] == refValues[j]);
       }
@@ -215,6 +224,9 @@ void compareFrames(const std::unique_ptr<osdf::IFrame> &testOsdf,
     callWithSupportedTypeString(testColumnTypes[i], errMsg, [&](auto typeDiscriminator) {
       using T = decltype(typeDiscriminator);
       if (testColumnTypes[i] == "float") {
+        std::string testColumnUnits = testOsdf->getColumnUnits(testColumnNames[i]);
+        std::string refColumnUnits  = refOsdf->getColumnUnits(refColumnNames[i]);
+        EXPECT(testColumnUnits == refColumnUnits);
         std::vector<float> testValues;
         testOsdf->getColumn(testColumnNames[i], testValues);
         std::vector<float> refValues;
@@ -256,7 +268,12 @@ void populateFrame(const std::vector<eckit::LocalConfiguration> &config,
     callWithSupportedTypeString(type, errMsg, [&](auto typeDiscriminator) {
       using T = decltype(typeDiscriminator);
       std::vector<T> expectedValues = replaceMissingValues<T>(stringVals);
-      osdf.appendNewColumn(name, expectedValues);
+      try {
+        std::string unit = config[i].getString("unit");
+        osdf.appendNewColumn(name, expectedValues, unit);
+      } catch (eckit::Exception&) {
+        osdf.appendNewColumn(name, expectedValues);
+      }
     });
   }
 }
@@ -276,10 +293,13 @@ void compareColumnExact(const std::string &testColumnName, const std::string &re
 }
 
 template <typename frameType>
-void compareFrames(const frameType &testOsdf, const std::vector<std::string> &testColumnNames,
-                   const std::vector<std::string> &testColumnTypes, const frameType &refOsdf,
+void compareFrames(const frameType &testOsdf,
+                   const std::vector<std::string> &testColumnNames,
+                   const std::vector<std::string> &testColumnTypes,
+                   const frameType &refOsdf,
                    const std::vector<std::string> &refColumnNames,
-                   const std::vector<std::string> &refColumnTypes, const double tolerance,
+                   const std::vector<std::string> &refColumnTypes,
+                   const double tolerance,
                    bool compareFrameTypes) {
   // Check that the frames have the same underlying type (Row or Col)
   if (compareFrameTypes) {
@@ -301,6 +321,9 @@ void compareFrames(const frameType &testOsdf, const std::vector<std::string> &te
     callWithSupportedTypeString(testColumnTypes[i], errMsg, [&](auto typeDiscriminator) {
       using T = decltype(typeDiscriminator);
       if (testColumnTypes[i] == "float") {
+        std::string testColumnUnits = testOsdf.getColumnUnits(testColumnNames[i]);
+        std::string refColumnUnits  = refOsdf.getColumnUnits(refColumnNames[i]);
+        EXPECT(testColumnUnits == refColumnUnits);
         std::vector<float> testValues;
         testOsdf.getColumn(testColumnNames[i], testValues);
         std::vector<float> refValues;

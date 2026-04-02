@@ -34,9 +34,10 @@ namespace ioda {
 namespace test {
 
 void testEmptyColumn(std::unique_ptr<osdf::IFrame> & testFrame) {
-    testFrame->appendNewColumn("EmptyColumnInt", std::vector<int>{});
+    testFrame->appendNewColumn("EmptyColumnInt", std::vector<int>{}, "intUnits");
     EXPECT_EQUAL(testFrame->columnNames().back(), "EmptyColumnInt");
     EXPECT_EQUAL(testFrame->getColumnType("EmptyColumnInt"), osdf::consts::eDataTypes::eInt);
+    EXPECT_EQUAL(testFrame->getColumnUnits("EmptyColumnInt"), "intUnits");
     EXPECT_EQUAL(testFrame->numRows(), 0);
     EXPECT_EQUAL(testFrame->numCols(), 1);
     testFrame->appendNewColumn("EmptyColumnString", std::vector<std::string>{});
@@ -44,6 +45,8 @@ void testEmptyColumn(std::unique_ptr<osdf::IFrame> & testFrame) {
     EXPECT_EQUAL(testFrame->numRows(), 0);
     EXPECT_EQUAL(testFrame->getColumnType("EmptyColumnString"), osdf::consts::eDataTypes::eString);
     EXPECT_EQUAL(testFrame->getColumnType("EmptyColumnInt"), osdf::consts::eInt);
+    EXPECT_EQUAL(testFrame->getColumnUnits("EmptyColumnString"), "MISSING*");
+    EXPECT_EQUAL(testFrame->getColumnUnits("EmptyColumnInt"), "intUnits");
     EXPECT_EQUAL(testFrame->numCols(), 2);
 }
 

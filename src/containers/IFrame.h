@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "IFrameData.h"
+#include "oops/util/missingValues.h"
 
 namespace osdf {
 class ColumnMetadatum;
@@ -50,11 +51,16 @@ class IFrame {
   /// \brief The following functions are used to add a new column of data to the container.
   /// \param The target column name.
   /// \param A reference to a vector containing the data to populate the new column.
-  virtual void appendNewColumn(const std::string&, const std::vector<int>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::int64_t>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<float>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<char>&) = 0;
-  virtual void appendNewColumn(const std::string&, const std::vector<std::string>&) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<int>&,
+                               const std::string& = util::missingValue<std::string>()) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<std::int64_t>&,
+                               const std::string& = util::missingValue<std::string>()) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<float>&,
+                               const std::string& = util::missingValue<std::string>()) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<char>&,
+                               const std::string& = util::missingValue<std::string>()) = 0;
+  virtual void appendNewColumn(const std::string&, const std::vector<std::string>&,
+                               const std::string& = util::missingValue<std::string>()) = 0;
 
   /// \brief The following functions are used to copy data from a column. The derived classes use
   /// templated functions to achieve this functionality and so this function is required to take the

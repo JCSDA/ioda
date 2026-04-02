@@ -5,18 +5,21 @@ test frame data:
     osdf columns:
       - name: "Metadata/floatVariable"
         type: "float"
+        unit: "floatUnit"
         values: [-65.0, "missing", -66.6]
       - name: "Metadata/stringVariable"
         type: "string"
         values: ["00001", "00002", "00001"]
       - name: "Metadata/int64Variable"
         type: "int64"
+        unit: "int64Unit"
         values: [1710460225, 1710460225, "missing"]
       - name: "Metadata/intVariable"
         type: "int"
         values: ["missing", 1,2]
       - name: "Metadata/charVariable"
         type: "char"
+        unit: "charUnit"
         values: ["missing", "a", "b"]
 
   - name: "Metadata Only IFrame"
@@ -26,12 +29,14 @@ test frame data:
         values: []
       - name: "Metadata/stringVariable"
         type: "string"
+        unit: "stringUnit"
         values: []
       - name: "Metadata/int64Variable"
         type: "int64"
         values: []
       - name: "Metadata/intVariable"
         type: "int"
+        unit: "intUnit"
         values: []
       - name: "Metadata/charVariable"
         type: "char"

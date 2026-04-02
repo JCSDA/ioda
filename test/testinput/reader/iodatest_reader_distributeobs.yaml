@@ -11,12 +11,14 @@ function inputs:
       rank0:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 1.5, 2.5, 3.5, 4.5 ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 11.5, 12.5, 13.5, 14.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta100", "sta101", "sta102", "sta103" ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -24,12 +26,14 @@ function inputs:
       rank1:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 5.5, 6.5, 7.5, 8.5, 9.5, 10.5 ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 15.5, 16.5, 17.5, 18.5, 19.5, 110.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta104", "sta104", "sta100", "sta103", "sta107", "sta108" ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -37,12 +41,14 @@ function inputs:
       rank2:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -50,12 +56,14 @@ function inputs:
       rank3:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -67,12 +75,14 @@ expected results:
       expected local data:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 1.5, 5.5, 6.5, 7.5 ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 11.5, 15.5, 16.5, 17.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta100", "sta104", "sta104", "sta100" ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -85,12 +95,14 @@ expected results:
       expected local data:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 2.5, 9.5]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 12.5, 19.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta101", "sta107" ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -103,12 +115,14 @@ expected results:
       expected local data:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 3.5, 10.5 ]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 13.5, 110.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta102", "sta108" ]
       - name: "ObsValue/myObsInst"
         type: "float"
@@ -121,12 +135,14 @@ expected results:
       expected local data:
       - name: "MetaData/latitude"
         type: "float"
+        unit: "floatUnit"
         values: [ 4.5, 8.5]
       - name: "MetaData/longitude"
         type: "float"
         values: [ 14.5, 18.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
+        unit: "stringUnit"
         values: [ "sta103", "sta103" ]
       - name: "ObsValue/myObsInst"
         type: "float"

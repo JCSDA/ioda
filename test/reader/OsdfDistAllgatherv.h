@@ -68,7 +68,7 @@ void testDistAllgatherv() {
         std::vector<T> values;
         rankOsdf->getColumn(colName, values);
         dist.allGatherv(values);
-        gatheredOsdf->appendNewColumn(colName, values);
+        gatheredOsdf->appendNewColumn(colName, values, rankOsdf->getColumnUnits(colName));
         });
   }
   // Read in the expected results after gathering

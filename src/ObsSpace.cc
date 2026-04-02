@@ -946,11 +946,12 @@ void ObsSpace::prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFr
     for (std::string column : unsharedElements.onlyInSecondVector) {
       osdf::FrameUtils::callWithSupportedType(osdf_->getColumnType(column),
                                               [&](auto typeDiscriminator) {
-                                                using T = decltype(typeDiscriminator);
-                                                const std::vector<T> missingValues(
-                                                  numRows, util::missingValue<T>());
-                                                srcOsdf->appendNewColumn(column, missingValues);
-                                                });
+                                            using T = decltype(typeDiscriminator);
+                                            const std::vector<T> missingValues(
+                                              numRows, util::missingValue<T>());
+                                            std::string unit = osdf_->getColumnUnits(column);
+                                            srcOsdf->appendNewColumn(column, missingValues, unit);
+                                            });
     }
 }
 
