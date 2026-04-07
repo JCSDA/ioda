@@ -6,6 +6,7 @@
  */
 
 #include "ioda/containers/FrameCols.h"
+#include <algorithm>
 #include <string>
 
 #include "ColumnMetadata.h"
@@ -277,6 +278,21 @@ void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
   // Check if the srcOSDF is compatible with the current OSDF
   data_.validateColumnMetadata(srcColumnMetadata);
 
+  // Prepare sourceLocationIndices
+  // Only assert for targetOsdf as src must have same cols.
+  std::vector<int> targetOsdfLocIndices;
+  ASSERT_MSG(hasColumn("sourceLocationIndices"),
+             "Column sourceLocationIndices not found in targetOsdf.");
+  getColumn("sourceLocationIndices", targetOsdfLocIndices);
+
+  // Get greatest targetOsdfLocIndices value or maxId value if rows removed
+  std::size_t targetNumRows = numRows();
+  std::int64_t maxIndex = -1;
+  if (targetNumRows) {
+    maxIndex = targetOsdfLocIndices.back();
+  }
+  maxIndex = (maxIndex < data_.getMaxId()) ? data_.getMaxId() + 1 : maxIndex + 1;
+
   // Append to the current OSDF
   std::vector<osdf::DataRow> dataRowsToAppend;
   dataRowsToAppend.reserve(srcOsdf->getData().getSizeRows());
@@ -289,6 +305,15 @@ void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
     }
     data_.appendNewRow(newDataRow);
   }
+
+  // Correct sourceLocationIndices
+  std::vector<int> locationIndices;
+  getColumn("sourceLocationIndices", locationIndices);
+  for (std::size_t index = targetNumRows; index < numRows(); ++index) {
+    locationIndices[index] += maxIndex;
+  }
+  setColumn("sourceLocationIndices", locationIndices);
+
   notify();
 }
 

@@ -8,6 +8,7 @@
 #include "ioda/containers/ColumnMetadata.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -301,7 +302,13 @@ const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) 
 }
 
 const std::int32_t osdf::ColumnMetadata::getIndex(const std::string& name) const {
-  return columnLookup_.at(name);
+  try {
+    return columnLookup_.at(name);
+  } catch (std::out_of_range) {
+    const std::string errMsg = std::string("ERROR: Column of name ")
+      + name + std::string(" not found. Unable to get index.");
+    throw eckit::OutOfRange(errMsg, Here());
+  }
 }
 
 const std::int32_t osdf::ColumnMetadata::getSizeCols() const {
