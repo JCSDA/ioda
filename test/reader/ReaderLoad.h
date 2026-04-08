@@ -64,6 +64,13 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
     EXPECT(testOsdf->hasColumn(colName));
   }
 
+  // Check units of these sample columns
+  const std::vector<std::string> sampleColUnits = testConfig.getStringVector("sample column units");
+  EXPECT_EQUAL(sampleColNames.size(), sampleColUnits.size());
+  for (size_t index = 0; index < sampleColNames.size(); ++index) {
+    EXPECT_EQUAL(testOsdf->getColumnUnits(sampleColNames[index]), sampleColUnits[index]);
+  }
+
   // Check frame type
   EXPECT_EQUAL(testOsdf->frameType(), expectedFrameType);
 

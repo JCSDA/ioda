@@ -143,20 +143,22 @@ static int64_t getNcVarDefaultFillValue(const int64_t & fillValue);
 static float getNcVarDefaultFillValue(const float & fillValue);
 static std::string getNcVarDefaultFillValue(const std::string & fillValue);
 
-/// \brief get the epoch string from the given netcdf variable
+/// \brief get the units string from the given netcdf variable
 /// \param ncVar netcdf variable
-std::string getNcVarDtEpochString(const netCDF::NcVar & var);
+std::string getNcVarUnits(const netCDF::NcVar & var);
 
 /// \brief  transfer variable data to the destination OSDF container
 /// \tparam VarType
 /// \param varName hierarchical name of variable
+/// \param varUnit unit of the variable
 /// \param varData variable data
 /// \param chanNums channel numbers
 /// \param varDimNames variable dimension names
 /// \param destOSDF destination OSDF container
 /// \param osdfMetadata frame metadata for dest OSDF
 template <typename VarType>
-static void transferVarDataToOSDF(const std::string & varName,
+static void transferVarDataToOSDF(const std::string& varName,
+                                  const std::string& varUnit,
                                   const std::vector<VarType> & varData,
                                   const std::size_t numlocs,
                                   const std::vector<int> & chanNums,
@@ -436,18 +438,27 @@ float getNcVarDefaultFillValue(const float & fillValue) {
 std::string getNcVarDefaultFillValue(const std::string & fillValue) {
   return NC_FILL_STRING;
 }
+//--------------------------------------------------------------------------------
+
 
 //--------------------------------------------------------------------------------
-std::string getNcVarDtEpochString(const netCDF::NcVar & var) {
-  // Assume that var is a date time variable with an attribute name "units" which
-  // is a string with the epoch sped. Here's an example of the units value:
+std::string getNcVarUnits(const netCDF::NcVar & var) {
+  // Assume that var is a variable with an attribute name "units".
+  // Here's an example of the units value:
   //    "seconds since 1970-01-01T00:00:00Z"
-  // We want the ISO-8601 date time after the "seconds since", so we need to strip
-  // that part off.
-  netCDF::NcVarAtt epochAttr = var.getAtt("units");
-  checkNcObj(epochAttr,
-    "ioda::reader::getNcVarDtEpochString: Failed to open attribute 'units' on variable: "
-     + var.getName());
+  netCDF::NcVarAtt unitsAttr;
+
+  try {
+    unitsAttr = var.getAtt("units");
+  } catch (netCDF::exceptions::NcException&) {
+    oops::Log::warning() << "Variable: " << var.getName()
+                         << " does not have attribute units. Populating with missing units."
+                         << std::endl;
+    return util::missingValue<std::string>();
+  }
+  checkNcObj(
+    unitsAttr,
+    "ioda::reader::getNcVarUnits: Failed to open attribute 'units' on variable: " + var.getName());
 
   // We need to detect which string type (fixed length vs variable length) we have
   // in the "units" attribute before attempting to read it because the underlying
@@ -457,34 +468,40 @@ std::string getNcVarDtEpochString(const netCDF::NcVar & var) {
   //     Fixed length string -> use the std::string version of getValues which
   //                            calls the underlying function: nc_get_attr_text
   //
-  // The epochAttr.getType().getName() function calls will return "string" for
+  // The unitsAttr.getType().getName() function calls will return "string" for
   // a variable length string, and return "char" for a fixed length string.
-  const std::string epochTypeName = epochAttr.getType().getName();
+  const std::string unitsTypeName = unitsAttr.getType().getName();
   std::string unitsString;
-  if (epochTypeName == "string") {
+  if (unitsTypeName == "string") {
     // variable length string
     char * tempString;
-    epochAttr.getValues(&tempString);
+    unitsAttr.getValues(&tempString);
     unitsString = std::string(tempString);
-  } else if (epochTypeName == "char") {
+  } else if (unitsTypeName == "char") {
     // fixed length string
-    epochAttr.getValues(unitsString);
+    unitsAttr.getValues(unitsString);
   } else {
     // unrecognized type name for string type
-    const std::string errMsg = std::string("ioda::reader::getNcVarDtEpochString: Unrecognized ") +
-      std::string("string type name for the 'units' attribute: ") + epochTypeName;
+    const std::string errMsg = std::string("ioda::reader::getNcVarUnits: Unrecognized ") +
+      std::string("string type name for the 'units' attribute: ") + unitsTypeName;
     throw std::runtime_error(errMsg);
   }
 
-  // Strip off the leading "seconds since" part of the units value.
-  const std::string unitsPrefix("seconds since ");
-  const std::size_t strPos = unitsString.find(unitsPrefix);
-  return unitsString.substr(strPos + unitsPrefix.length());
+  // For now, strip off the leading "seconds since" part of the units value.
+  // (TODO(ln) - remove in next PR)
+  if (var.getName() == "dateTime") {
+    const std::string unitsPrefix("seconds since ");
+    const std::size_t strPos = unitsString.find(unitsPrefix);
+    unitsString              = unitsString.substr(strPos + unitsPrefix.length());
+  }
+
+  return unitsString;
 }
 
 //--------------------------------------------------------------------------------
 template <typename VarType>
-void transferVarDataToOSDF(const std::string & varName,
+void transferVarDataToOSDF(const std::string& varName,
+                           const std::string& varUnit,
                            const std::vector<VarType> & varData,
                            const std::size_t numLocs,
                            const std::vector<int> & chanNums,
@@ -501,7 +518,7 @@ void transferVarDataToOSDF(const std::string & varName,
       // 1D variable dimensioned by Location
       if (varData.size() == numLocs) {
         // Ready to append to the OSDF container
-        destOSDF->appendNewColumn(varName, varData);
+        destOSDF->appendNewColumn(varName, varData, varUnit);
       } else {
         const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
             std::string("1D Variable (Location) size != numLocs: ") + varName;
@@ -519,7 +536,7 @@ void transferVarDataToOSDF(const std::string & varName,
           std::vector<VarType> dataChannel(numLocs, varData[ichan]);
           destOSDF->appendNewColumn(
             varName + std::string("_") + std::to_string(chanNums[ichan]),
-            dataChannel);
+            dataChannel, varUnit);
         }
         osdfMetadata.addVarToVarsWithChans(varName);
         osdfMetadata.addVarDimNames(varName, varDimNames);
@@ -543,7 +560,7 @@ void transferVarDataToOSDF(const std::string & varName,
           }
           destOSDF->appendNewColumn(
             varName + std::string("_") + std::to_string(chanNums[ichan]),
-            dataChannel);
+            dataChannel, varUnit);
         }
         osdfMetadata.addVarToVarsWithChans(varName);
         osdfMetadata.addVarDimNames(varName, varDimNames);
@@ -611,34 +628,36 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
 
     // Record the date time epoch value for downstream operations
     if (varName == "MetaData/dateTime") {
-      osdfMetadata.setDateTimeEpoch(getNcVarDtEpochString(var));
+      osdfMetadata.setDateTimeEpoch(getNcVarUnits(var));
     }
 
     std::vector<std::string> varDimNames;
     if (keepNetcdfVarForOSDF(varName, var, varDimNames)) {
       // Get the variable type for transferring its data to the OSDF
       const netCDF::NcType varType = var.getType();
+      std::string varUnit = getNcVarUnits(var);
+
       if (varType.getName() == "int") {
         std::vector<int> varData = getNcVarData<int>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int>(var, varData);
         transferVarDataToOSDF<int>(
-          varName, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "int64") {
         std::vector<int64_t> varData = getNcVarData<int64_t>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int64_t>(var, varData);
         transferVarDataToOSDF<int64_t>(
-          varName, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "float") {
         std::vector<float> varData = getNcVarData<float>(startLoc, locCount, var);
         replaceFillValuesWithMissing<float>(var, varData);
         transferVarDataToOSDF<float>(
-          varName, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "string") {
         std::vector<std::string> varData =
                                  getNcVarData<std::string>(startLoc, locCount, var);
         replaceFillValuesWithMissing<std::string>(var, varData);
         transferVarDataToOSDF<std::string>(
-          varName, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else {
         oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
                           << varName << " is not int, int64, float or string. Skipping."

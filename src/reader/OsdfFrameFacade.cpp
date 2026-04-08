@@ -453,10 +453,11 @@ void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
                       valuesView.col(columnIndex).data() + numLocations);
 
       const std::string fullName = iodaName + '_' + std::to_string(channelIndex);
-      if (createNewColumns)
+      if (createNewColumns) {
         frame_.appendNewColumn(fullName, column);
-      else
+      } else {
         frame_.setColumn(fullName, column);
+      }
     }
   } else {
     std::vector<T> editedValues;

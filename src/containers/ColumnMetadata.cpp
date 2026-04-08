@@ -82,8 +82,10 @@ void osdf::ColumnMetadata::deserialize(const std::string & columnMetadataTokens)
   }
 
   // Do some basic checks on the input string and extract the tokens
-  const std::vector<std::string> tokens = ioda::splitString(columnMetadataTokens, ' ');
-  const std::vector<std::string> firstTokenParts = ioda::splitString(tokens[0], ':');
+  const std::vector<std::string> tokens
+    = ioda::splitString(columnMetadataTokens, consts::columnSeparatorChar);
+  const std::vector<std::string> firstTokenParts
+    = ioda::splitString(tokens[0], consts::metadatumSeparatorChar);
   if (firstTokenParts.size() != 2 || firstTokenParts[0] != "columns") {
     const std::string errMsg = std::string("ERROR: Column metadata string is not valid.");
     throw eckit::BadValue(errMsg, Here());
@@ -96,7 +98,8 @@ void osdf::ColumnMetadata::deserialize(const std::string & columnMetadataTokens)
   }
 
   for (int i = 1; i <= nCols; ++i) {
-    std::vector<std::string> tokenParts = ioda::splitString(tokens[i], ':');
+    std::vector<std::string> tokenParts
+      = ioda::splitString(tokens[i], consts::metadatumSeparatorChar);
     if (tokenParts.size() != 4) {
       const std::string errMsg = std::string("ERROR: Column metadata string has invalid ") +
             std::string("column information: ") + tokens[i];
@@ -304,7 +307,7 @@ const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) 
 const std::int32_t osdf::ColumnMetadata::getIndex(const std::string& name) const {
   try {
     return columnLookup_.at(name);
-  } catch (std::out_of_range) {
+  } catch (std::out_of_range&) {
     const std::string errMsg = std::string("ERROR: Column of name ")
       + name + std::string(" not found. Unable to get index.");
     throw eckit::OutOfRange(errMsg, Here());

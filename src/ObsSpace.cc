@@ -662,55 +662,61 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 // -----------------------------------------------------------------------------
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<int> & vdata,
-                     const std::vector<std::string> & dimList) {
+                     const std::vector<std::string> & dimList,
+                     const std::string& unit) {
     util::Timer timer(classname(), "put_db(int)");
     if (!this->empty()) {
-      saveVar(group, name, vdata, dimList);
+      saveVar(group, name, vdata, dimList, unit);
     }
 }
 
-void ObsSpace::put_db(const std::string & group, const std::string & name,
-                     const std::vector<int64_t> & vdata,
-                     const std::vector<std::string> & dimList) {
+void ObsSpace::put_db(const std::string& group, const std::string& name,
+                      const std::vector<int64_t>& vdata,
+                      const std::vector<std::string>& dimList,
+                      const std::string& unit) {
     util::Timer timer(classname(), "put_db(int64)");
     if (!this->empty()) {
-      saveVar(group, name, vdata, dimList);
+      saveVar(group, name, vdata, dimList, unit);
     }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<float> & vdata,
-                     const std::vector<std::string> & dimList) {
+                     const std::vector<std::string> & dimList,
+                     const std::string& unit) {
     util::Timer timer(classname(), "put_db(float)");
     if (!this->empty()) {
-      saveVar(group, name, vdata, dimList);
+      saveVar(group, name, vdata, dimList, unit);
     }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                      const std::vector<double> & vdata,
-                     const std::vector<std::string> & dimList) {
+                     const std::vector<std::string> & dimList,
+                     const std::string& unit) {
     util::Timer timer(classname(), "put_db(double)");
     if (!this->empty()) {
       // convert to float, then save to the database
       std::vector<float> floatData;
       ConvertVarType<double, float>(vdata, floatData);
-      saveVar(group, name, floatData, dimList);
+      saveVar(group, name, floatData, dimList, unit);
     }
 }
 
-void ObsSpace::put_db(const std::string & group, const std::string & name,
-                     const std::vector<std::string> & vdata,
-                     const std::vector<std::string> & dimList) {
+void ObsSpace::put_db(const std::string& group, const std::string& name,
+                      const std::vector<std::string>& vdata,
+                      const std::vector<std::string>& dimList,
+                      const std::string& unit) {
     util::Timer timer(classname(), "put_db(string)");
     if (!this->empty()) {
-      saveVar(group, name, vdata, dimList);
+      saveVar(group, name, vdata, dimList, unit);
     }
 }
 
-void ObsSpace::put_db(const std::string & group, const std::string & name,
-                     const std::vector<util::DateTime> & vdata,
-                     const std::vector<std::string> & dimList) {
+void ObsSpace::put_db(const std::string& group, const std::string& name,
+                      const std::vector<util::DateTime>& vdata,
+                      const std::vector<std::string>& dimList,
+                      const std::string& unit) {
     util::Timer timer(classname(), "put_db(DateTime)");
     if (!this->empty()) {
       // Make sure the variable exists before calling saveVar. Doing it this way instead
@@ -719,7 +725,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
       // parameter for the units if creating a new variable.
       std::vector<int64_t> timeOffsets;
       if (use_dataframe_) {
-          const util::DateTime epochDtime(osdfMetadata_.getDateTimeEpoch());
+        const util::DateTime epochDtime(osdfMetadata_.getDateTimeEpoch());
           timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
       } else {
           Variable dtVar;
@@ -729,13 +735,14 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
           const util::DateTime epochDtime = getEpochAsDtime(dtVar);
           timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
       }
-      saveVar(group, name, timeOffsets, dimList);
+      saveVar(group, name, timeOffsets, dimList, unit);
     }
 }
 
 void ObsSpace::put_db(const std::string & group, const std::string & name,
                       const std::vector<bool> & vdata,
-                      const std::vector<std::string> & dimList) {
+                      const std::vector<std::string> & dimList,
+                      const std::string& unit) {
     util::Timer timer(classname(), "put_db(bool)");
     if (!this->empty()) {
       // Boolean variables are currently stored internally as arrays of bytes (with each byte
@@ -743,7 +750,7 @@ void ObsSpace::put_db(const std::string & group, const std::string & name,
       // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore backend,
       // to reduce memory consumption and speed up the get_db and put_db functions.
       std::vector<char> boolsAsBytes(vdata.begin(), vdata.end());
-      saveVar(group, name, boolsAsBytes, dimList);
+      saveVar(group, name, boolsAsBytes, dimList, unit);
     }
 }
 
@@ -1490,10 +1497,11 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
 
 // -----------------------------------------------------------------------------
 
-template<typename VarType>
-void ObsSpace::saveVar(const std::string & group, std::string name,
-                      const std::vector<VarType> & varValues,
-                      const std::vector<std::string> & dimList) {
+template <typename VarType>
+void ObsSpace::saveVar(const std::string& group, std::string name,
+                       const std::vector<VarType>& varValues,
+                       const std::vector<std::string>& dimList,
+                       const std::string& unit) {
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
 
@@ -1529,7 +1537,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
                 for (auto & chanNum : osdfMetadata_.getChanNums()) {
                     const std::string varName = fullName + std::string("_") +
                                                 std::to_string(chanNum);
-                    osdf_->appendNewColumn(varName, missingValues);
+                    osdf_->appendNewColumn(varName, missingValues, unit);
                 }
 
                 // Add the new variable to the "vars with channels" list
@@ -1537,7 +1545,7 @@ void ObsSpace::saveVar(const std::string & group, std::string name,
             } else {
                 // Use name as is and create a single column
                 const std::string fullName = fullVarName(group, name);
-                osdf_->appendNewColumn(fullName, missingValues);
+                osdf_->appendNewColumn(fullName, missingValues, unit);
             }
 
             // If we just created a new variable inside the ObsValue group,

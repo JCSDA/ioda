@@ -48,6 +48,7 @@
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Fill.h"
 #include "ioda/Variables/VarUtils.h"
+#include "oops/util/missingValues.h"
 
 // Forward declarations
 namespace eckit {
@@ -420,27 +421,35 @@ namespace ioda {
         /// \param name  Name of container variable
         /// \param vdata Vector where container data is being transferred from
         /// \param dimList Vector of dimension names (for creating variable if needed)
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<int> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<int64_t> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<float> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
+        /// \param unit Units of the variable to place
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<int> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string &unit = util::missingValue<std::string>());
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<int64_t> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string &unit = util::missingValue<std::string>());
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<float> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string& unit = util::missingValue<std::string>());
         void put_db(const std::string & group, const std::string & name,
                     const std::vector<double> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<std::string> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<util::DateTime> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
-        void put_db(const std::string & group, const std::string & name,
-                    const std::vector<bool> & vdata,
-                    const std::vector<std::string> & dimList = { "Location" });
+                    const std::vector<std::string> & dimList = { "Location" },
+                    const std::string& unit = util::missingValue<std::string>());
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<std::string> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string &unit = util::missingValue<std::string>());
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<util::DateTime> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string& unit = util::missingValue<std::string>());
+        void put_db(const std::string &group, const std::string &name,
+                    const std::vector<bool> &vdata,
+                    const std::vector<std::string> &dimList = {"Location"},
+                    const std::string& unit = util::missingValue<std::string>());
 
         /// @}
         /// @name Record index and sorting functions
@@ -754,11 +763,12 @@ namespace ioda {
                      const std::vector<int> & chanSelect,
                      std::vector<VarType> & varValues, bool skipDerived = false) const;
 
-        /// \brief save a variable to the obs_group_ object
-        /// \param group Name of Group in obs_group_
+        /// \brief save a variable to the obs_group_ or osdf_ object
+        /// \param group Name of Group in obs_group_ or osdf_
         /// \param name Name of Variable in group.
         /// \param varValues values to be saved
         /// \param dimList Vector of dimension names (for creating variable if needed)
+        /// \param unit Unit of the variable to be saved
         ///
         /// If the group `group` does not contain a variable with the specified name, but this name
         /// has the form <string>_<integer> and `obs_group_` contains an `Channel` dimension, this
@@ -768,7 +778,8 @@ namespace ioda {
         template<typename VarType>
         void saveVar(const std::string & group, std::string name,
                      const std::vector<VarType> & varValues,
-                     const std::vector<std::string> & dimList);
+                     const std::vector<std::string> & dimList,
+                     const std::string& unit);
 
         /// \brief Create selections of slices of the variable \p variable along dimension
         /// \p ChannelDimIndex corresponding to channels \p channels.

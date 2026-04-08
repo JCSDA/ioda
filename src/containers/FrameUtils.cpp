@@ -6,24 +6,32 @@
  */
 
 #include "ioda/containers/FrameUtils.h"
+#include <string>
 
 #include "ioda/core/IodaUtils.h"
 #include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
 
 namespace osdf {
 namespace FrameUtils {
 
+using consts::columnSeparatorChar;
+using consts::columnSeparatorString;
+using consts::metadatumSeparatorString;
+using consts::metadatumSeparatorChar;
+
 //----------------------------------------------------------------------------
 std::string serializeColumnMetadata(
                 const std::vector<ColumnMetadatum> & columnMetadata) {
-  std::string tokens = "columns:" + std::to_string(columnMetadata.size());
+  std::string tokens = "columns" + metadatumSeparatorString
+                       + std::to_string(columnMetadata.size());
   for (const ColumnMetadatum& columnMetadatum : columnMetadata) {
-    tokens += " " + columnMetadatum.getName();
-    tokens += ":" + std::to_string(columnMetadatum.getType());
-    tokens += ":" + std::to_string(columnMetadatum.getPermission());
-    tokens += ":" + std::to_string(columnMetadatum.getWidth());
-    tokens += ":" + columnMetadatum.getUnit();
-    tokens += ":";
+    tokens += columnSeparatorString + columnMetadatum.getName();
+    tokens += metadatumSeparatorString + std::to_string(columnMetadatum.getType());
+    tokens += metadatumSeparatorString + std::to_string(columnMetadatum.getPermission());
+    tokens += metadatumSeparatorString + std::to_string(columnMetadatum.getWidth());
+    tokens += metadatumSeparatorString + columnMetadatum.getUnit();
+    tokens += metadatumSeparatorString;
   }
   return tokens;
 }
@@ -32,8 +40,10 @@ std::string serializeColumnMetadata(
 std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
                                  const std::string & columnMetadataTokens) {
   // Do some basic checks on the input string and extract the tokens
-  const std::vector<std::string> tokens = ioda::splitString(columnMetadataTokens, ' ');
-  const std::vector<std::string> firstTokenParts = ioda::splitString(tokens[0], ':');
+  const std::vector<std::string> tokens
+    = ioda::splitString(columnMetadataTokens, columnSeparatorChar);
+  const std::vector<std::string> firstTokenParts
+    = ioda::splitString(tokens[0], metadatumSeparatorChar);
   if (firstTokenParts.size() != 2 || firstTokenParts[0] != "columns") {
     const std::string errMsg = std::string("ERROR: Column metadata string is not valid.");
     throw eckit::BadValue(errMsg, Here());
@@ -47,7 +57,7 @@ std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
 
   std::vector<ColumnMetadatum> columnMetadata;
   for (int i = 1; i <= nCols; ++i) {
-    std::vector<std::string> tokenParts = ioda::splitString(tokens[i], ':');
+    std::vector<std::string> tokenParts = ioda::splitString(tokens[i], metadatumSeparatorChar);
     if (tokenParts.size() != 5) {
       const std::string errMsg = std::string("ERROR: Column metadata string has invalid ") +
             std::string("column information: ") + tokens[i];

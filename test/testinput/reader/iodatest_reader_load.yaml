@@ -23,6 +23,12 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    sample column units:
+    - "MISSING*"
+    - "2018-04-14T21:00:00Z"
+    - "degrees_north"
+    - "degrees_east"
+    - "K"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -81,6 +87,12 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    sample column units:
+    - "MISSING*"
+    - "2018-04-14T21:00:00Z"
+    - "degrees_north"
+    - "degrees_east"
+    - "K"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -139,6 +151,12 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    sample column units:
+    - "MISSING*"
+    - "2018-04-14T21:00:00Z"
+    - "degrees_north"
+    - "degrees_east"
+    - "K"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -205,6 +223,14 @@ obs types:
     - "ObsValue/brightnessTemperature_1"
     - "ObsValue/brightnessTemperature_7"
     - "ObsValue/brightnessTemperature_15"
+    sample column units:
+    - "MISSING*"
+    - "1970-01-01T00:00:00Z"
+    - "degrees_north"
+    - "degrees_east"
+    - "K"
+    - "K"
+    - "K"
     mpi size1:
       rank0:
         pool comm size: 1
