@@ -1512,8 +1512,13 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         const std::size_t numChans = this->nchans();
 
         // The variable has channels if the dimList has "Channel"
-        // as the second dimension.
+        // Note: for variables dimensioned by channel only, dimList[0] == "Channel"
         bool varHasChans = false;
+        if (dimList.size() == 1) {
+            if (dimList[0] == "Channel") {
+                varHasChans = true;
+            }
+        }
         if (dimList.size() > 1) {
             if (dimList[1] == "Channel") {
                 varHasChans = true;
@@ -1542,6 +1547,7 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
 
                 // Add the new variable to the "vars with channels" list
                 osdfMetadata_.addVarToVarsWithChans(fullName);
+                osdfMetadata_.addVarDimNames(fullName, dimList);
             } else {
                 // Use name as is and create a single column
                 const std::string fullName = fullVarName(group, name);

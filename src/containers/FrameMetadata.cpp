@@ -61,7 +61,7 @@ const std::vector<std::string> & FrameMetadata::getVarDimNames(const std::string
   } else {
     throw eckit::BadValue(
       "FrameMetadata::getVarDimNames: No dimension names found for variable: "
-       + varName);
+       + varName, Here());
   }
 }
 
@@ -87,6 +87,11 @@ void FrameMetadata::addVarToVarsWithChans(const std::string & varName) {
 void FrameMetadata::addVarDimNames(const std::string & varName,
                                    const std::vector<std::string> & varDimNames) {
   varDimNames_[varName] = varDimNames;
+}
+
+//----------------------------------------------------------------------
+std::size_t FrameMetadata::removeVarDimNames(const std::string &varName) {
+  return varDimNames_.erase(varName);
 }
 
 //----------------------------------------------------------------------

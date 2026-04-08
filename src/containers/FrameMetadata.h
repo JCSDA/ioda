@@ -32,7 +32,7 @@ class FrameMetadata {
 
   /// \brief set the "variables using channels" set
   /// \param varsWithChans list of variables using channels
-  void setVarsWithChans(const std::unordered_set<std::string> & varsWithChans);
+  void setVarsWithChans(const std::unordered_set<std::string> &varsWithChans);
 
   /// \brief set the number of variables
   /// \param numVars number of variables according to the details below
@@ -59,7 +59,7 @@ class FrameMetadata {
   const std::unordered_set<std::string> & getVarsWithChans() const;
 
   /// \brief return the dimensionality of a variable
-  const std::vector<std::string> & getVarDimNames(const std::string & varName) const;
+  const std::vector<std::string> &getVarDimNames(const std::string &varName) const;
 
   /// \brief return the number of variables
   int getNumVars() const;
@@ -80,11 +80,15 @@ class FrameMetadata {
   /// \brief add variable dimensionality to the variable dimensionality map
   /// \param varName new variable name to add to the list
   /// \param varDimNames list of dimension names in proper order
-  void addVarDimNames(const std::string & varName, const std::vector<std::string> & varDimNames);
+  void addVarDimNames(const std::string &varName, const std::vector<std::string> &varDimNames);
 
   /// \brief returns true if var is in the variables with channels list
   /// \param varName new variable name to add to the list
-  bool varHasChannels(const std::string & varName) const;
+  bool varHasChannels(const std::string &varName) const;
+
+  /// \brief remove variable dimensionality from variable dimensionality map
+  /// \param varName variable name to remove from the list
+  std::size_t removeVarDimNames(const std::string &varName);
 
   /// \brief serialize for MPI data transfer
   /// \param bufr eckit buffer that will contain the serialized data

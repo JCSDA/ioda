@@ -357,6 +357,12 @@ ecbuild_add_test( TARGET  ioda_osdf_empty_column
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_metadata_vardimnames
+                  SOURCES mains/containers/TestOsdfMetadataVarDimNames.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
 ecbuild_add_test( TARGET  ioda_osdf_getcolumn
                   SOURCES mains/containers/TestOsdfGetColumn.cc
                   ARGS    "testinput/containers/iodatest_osdf_getColumn.yaml"

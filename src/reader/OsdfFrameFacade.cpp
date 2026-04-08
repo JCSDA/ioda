@@ -116,6 +116,7 @@ void OsdfFrameFacade::removeVariable(const std::string &name) {
     std::unordered_set<std::string> varsWithChans = metadata_.getVarsWithChans();
     varsWithChans.erase(iodaName);
     metadata_.setVarsWithChans(varsWithChans);
+    metadata_.removeVarDimNames(iodaName);
   } else {
     frame_.removeColumn(iodaName);
   }
@@ -318,8 +319,10 @@ void OsdfFrameFacade::addTypedVariable(const std::string &name, const std::vecto
   const std::string iodaName = iodaVariableName(name);
   setTypedIodaVariableValues(iodaName, values, hasChannelAxis, layout,
                              missingValue, true /* createNewColumn? */);
-  if (hasChannelAxis)
+  if (hasChannelAxis) {
     metadata_.addVarToVarsWithChans(iodaName);
+    metadata_.addVarDimNames(iodaName, {"Location", "Channel"});
+  }
 
   // Count variable (in numVars) if it is in the ObsValue group
   if (iodaName.find("ObsValue/") != std::string::npos) {
