@@ -148,9 +148,9 @@ void osdf::ColumnMetadata::updateColumnUnit(const std::int32_t index,
 void osdf::ColumnMetadata::remove(const std::int32_t index) {
   // In the case where index is not at the end of columnMetada_, the
   // indices past index will decrease by 1, and these indices need
-  // to be updated in columnLookup_. Remove the name corresponding
-  // to index first in columnLookup_, then remove the entry corresponding
-  // to index in columnMetada_.
+  // to be updated in columnLookup_.
+  // Remove the name corresponding to index first in columnLookup_,
+  // then remove the entry corresponding to index in columnMetada_.
   auto it = std::next(columnMetadata_.begin(), index);
   columnLookup_.erase(it->getName());
   auto itNext = columnMetadata_.erase(it);
