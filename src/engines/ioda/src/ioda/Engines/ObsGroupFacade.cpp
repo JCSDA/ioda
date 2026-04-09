@@ -16,6 +16,8 @@
 #include "ioda/Engines/ContainerFacade.h"
 #include "ioda/ObsGroup.h"
 
+#include "oops/util/Logger.h"
+
 namespace ioda {
 namespace Engines {
 
@@ -59,6 +61,10 @@ void ObsGroupFacade::initialize(size_t numLocations,
 
   isInitialized_ = true;
 }
+
+void ObsGroupFacade::addDateTimeVariableToOptions(std::string dateTimeVariableName) {
+  oops::Log::warning() << "Using ObsGroup - dateTimeVariableName not stored." << std::endl;
+};
 
 int ObsGroupFacade::numberOfChannels() const {
   return numChannels_;

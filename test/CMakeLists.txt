@@ -227,6 +227,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_random_obsvector_io_osdf.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
+  testinput/iodatest_time_io_osdf_odc_to_nc4.yaml
   testinput/iodatest_time_io_osdf_mpi1.yaml
   testinput/iodatest_time_io_osdf_mpi2.yaml
   testinput/iodatest_time_io_osdf_mpi4.yaml
@@ -2488,6 +2489,40 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_gnssro_reader_pool
                   TEST_DEPENDS ioda_time_io_reader_pool)
 
 if (odc_FOUND)
+  ecbuild_add_test( TARGET ioda_clean_time_io_files_osdf_odc_to_nc4
+                    COMMAND rm
+                    ARGS    "-f"
+                            "testoutput/atms_time_osdf_odc_to_nc4.nc4"
+                            "testoutput/aircraft_time_osdf_odc_to_nc4.nc4"
+                            )
+  
+  # this test reads in an odb file and writes to an nc4 file 
+  # (to check datetime units from odb are correct)
+  ecbuild_add_test( TARGET  ioda_time_io_osdf_odc_to_nc4
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS    "testinput/iodatest_time_io_osdf_odc_to_nc4.yaml"
+                    TEST_DEPENDS ioda_clean_time_io_files_osdf_odc_to_nc4 )
+                
+  # the following tests compare the output files
+  ecbuild_add_test( TARGET  ioda_time_io_cmp_aircraft_osdf_odc_to_nc4
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            netcdf
+                            "echo Checking time io aircraft Osdf odc to nc4"
+                            aircraft_time_osdf_odc_to_nc4.nc4
+                    TEST_DEPENDS ioda_time_io_osdf_odc_to_nc4)
+
+  ecbuild_add_test( TARGET  ioda_time_io_cmp_atms_osdf_odc_to_nc4
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            netcdf
+                            "echo Checking time io ATMS Osdf odc to nc4"
+                            atms_time_osdf_odc_to_nc4.nc4
+                    TEST_DEPENDS ioda_time_io_osdf_odc_to_nc4)
+
+
   # this test removes the output files from prior testing
   ecbuild_add_test( TARGET  ioda_clean_time_io_files_odc
                     COMMAND rm

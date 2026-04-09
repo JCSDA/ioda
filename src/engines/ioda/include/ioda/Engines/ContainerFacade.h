@@ -45,6 +45,8 @@ enum class MemoryLayout {
 struct ContainerOptions {
   /// \brief The epoch to use for DateTime variables.
   std::string epoch = "seconds since 1970-01-01T00:00:00Z";
+  /// \brief List of variables of dateTime type, used to add epoch to units.
+  std::vector<std::string> dateTimeVariables = {};
 };
 
 /// \brief A common interface to a wrapped container such as a ioda::ObsGroup or an osdf::IFrame.
@@ -74,6 +76,12 @@ class ContainerFacade {
                           const std::optional<std::vector<int>> &channelIndices,
                           std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
                           const ContainerOptions &options) = 0;
+
+  /// \brief Add a variable to the list of dateTime variables stored in options, for use in adding units.
+  ///
+  /// \param dateTimeVariableName
+  ///   Variable of dateTime type to be added to options.datetimevariables
+  virtual void addDateTimeVariableToOptions(std::string dateTimeVariableName) = 0;
 
   /// \brief The number of channels specified during container initialization, or 1 if explicit
   /// channel indices were specified.

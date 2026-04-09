@@ -25,10 +25,11 @@ public:
   /// \param group A Group that should be used to generate the wrapped ObsGroup.
   explicit ObsGroupFacade(Group group);
 
-  void initialize(size_t numLocations,
-                  const std::optional<std::vector<int>> &channelIndices,
+  void initialize(size_t numLocations, const std::optional<std::vector<int>> &channelIndices,
                   std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
-                  const ContainerOptions &options) override ;
+                  const ContainerOptions &options) override;
+
+  void addDateTimeVariableToOptions(std::string dateTimeVariableName) override;
 
   int numberOfChannels() const override;
 

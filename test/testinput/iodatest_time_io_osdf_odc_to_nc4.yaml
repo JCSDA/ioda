@@ -1,0 +1,37 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "ATMS"
+    use data frame container: true
+    simulated variables: ['brightnessTemperature']
+    channels: 1-22
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/atms.odb"
+        mapping file: ../share/test/testinput/odb_default_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_atms.yaml
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/atms_time_osdf_odc_to_nc4.nc4"
+
+- obs space:
+    name: "Aircraft"
+    use data frame container: true
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/aircraft.odb"
+        mapping file: ../share/test/testinput/odb_aircraft_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/aircraft_time_osdf_odc_to_nc4.nc4"
+

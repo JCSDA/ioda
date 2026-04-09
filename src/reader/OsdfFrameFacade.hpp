@@ -44,10 +44,11 @@ class OsdfFrameFacade : public Engines::ContainerFacade {
   ///   Frame metadata (to be kept in sync with the frame's contents).
   OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata);
 
-  void initialize(size_t numLocations,
-                  const std::optional<std::vector<int>> &channelIndices,
+  void initialize(size_t numLocations, const std::optional<std::vector<int>> &channelIndices,
                   std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
                   const ContainerOptions &options) override;
+
+  void addDateTimeVariableToOptions(std::string dateTimeVariableName) override;
 
   int numberOfChannels() const override;
 

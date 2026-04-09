@@ -319,7 +319,8 @@ std::vector<VariableCreator> makeVariableCreators(const detail::ODBLayoutParamet
 void appendDateTimeTransforms(const ODC_Parameters &odcParameters,
                               const OdbVariableCreationParameters &varCreationParameters,
                               const std::vector<OdbVariableParameters> &variableParameters,
-                              std::vector<std::unique_ptr<ObsGroupTransformBase>> &transforms) {
+                              std::vector<std::unique_ptr<ObsGroupTransformBase>> &transforms,
+                              ContainerFacade &container) {
   bool hasDate = false, hasTime = false, hasReceiptDate = false, hasReceiptTime = false;
   for (const OdbVariableParameters &varParams : variableParameters) {
     if (varParams.name.value() == "date")
@@ -343,6 +344,7 @@ void appendDateTimeTransforms(const ODC_Parameters &odcParameters,
     transformParameters.validateAndDeserialize(config);
     transforms.push_back(ObsGroupTransformFactory::create(transformParameters.params, odcParameters,
                                                           varCreationParameters));
+    container.addDateTimeVariableToOptions("MetaData/dateTime");
   }
 
   // MetaData/receiptdateTime
@@ -358,6 +360,7 @@ void appendDateTimeTransforms(const ODC_Parameters &odcParameters,
     transformParameters.validateAndDeserialize(config);
     transforms.push_back(ObsGroupTransformFactory::create(transformParameters.params, odcParameters,
                                                           varCreationParameters));
+    container.addDateTimeVariableToOptions("MetaData/receiptdateTime");
   }
 
   // MetaData/initialDateTime
@@ -372,6 +375,7 @@ void appendDateTimeTransforms(const ODC_Parameters &odcParameters,
     transformParameters.validateAndDeserialize(config);
     transforms.push_back(ObsGroupTransformFactory::create(transformParameters.params, odcParameters,
                                                           varCreationParameters));
+    container.addDateTimeVariableToOptions("MetaData/initialDateTime");
   }
 }
 
@@ -395,9 +399,10 @@ void appendUserDefinedTransforms(const ODC_Parameters &odcParameters,
                                  const OdbVariableCreationParameters &varCreationParameters,
                                  std::vector<std::unique_ptr<ObsGroupTransformBase>> &transforms) {
   for (const ObsGroupTransformParameters &transformParameters :
-       varCreationParameters.transforms.value())
+       varCreationParameters.transforms.value()) {
     transforms.push_back(ObsGroupTransformFactory::create(transformParameters.params, odcParameters,
                                                           varCreationParameters));
+  }
 }
 
 /// \brief Creates and returns a vector of objects applying extra transforms to an ObsGroup read
@@ -405,11 +410,12 @@ void appendUserDefinedTransforms(const ODC_Parameters &odcParameters,
 std::vector<std::unique_ptr<ObsGroupTransformBase>> makeTransforms(
   const ODC_Parameters &odcParameters, const OdbVariableCreationParameters &varCreationParameters,
   const std::vector<OdbVariableParameters> &variableParameters,
-  const std::map<std::string, std::vector<std::string>> &complementaryVariables) {
+  const std::map<std::string, std::vector<std::string>> &complementaryVariables,
+  ContainerFacade& container) {
   std::vector<std::unique_ptr<ObsGroupTransformBase>> transforms;
 
   // Date/time transforms are always applied as long as the required columns are in the query.
-  appendDateTimeTransforms(odcParameters, varCreationParameters, variableParameters, transforms);
+  appendDateTimeTransforms(odcParameters, varCreationParameters, variableParameters, transforms, container);
 
   appendComplementaryVariableTransforms(odcParameters, varCreationParameters,
                                         complementaryVariables, transforms);
@@ -1541,7 +1547,7 @@ void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,
 
   std::vector<std::unique_ptr<ObsGroupTransformBase>> transforms
     = makeTransforms(odcparams, queryParameters.variableCreation, queryParameters.variables,
-                     complementarityInfo.complementaryVariables());
+                     complementarityInfo.complementaryVariables(), container);
   for (const std::unique_ptr<ObsGroupTransformBase> &transform : transforms)
     transform->transform(container);
 

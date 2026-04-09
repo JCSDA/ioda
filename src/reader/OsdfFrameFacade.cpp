@@ -25,6 +25,7 @@
 #include "ioda/Layout.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/Logger.h"
 
 namespace ioda {
 
@@ -66,6 +67,15 @@ void OsdfFrameFacade::initialize(size_t /*numLocations*/,
   }
   metadata_.setDateTimeEpoch(stripSecondsSincePrefix(options.epoch));
   isInitialized_ = true;
+}
+
+void OsdfFrameFacade::addDateTimeVariableToOptions(std::string dateTimeVariableName) {
+  auto iter = std::find(options_.dateTimeVariables.begin(), options_.dateTimeVariables.end(),
+                        dateTimeVariableName);
+  // Add to list of dateTimeVariables if not already present.
+  if (iter == options_.dateTimeVariables.end()) {
+    options_.dateTimeVariables.emplace_back(dateTimeVariableName);
+  }
 }
 
 int OsdfFrameFacade::numberOfChannels() const {
@@ -472,10 +482,18 @@ void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
                         *missingValue, util::missingValue<T>());
       column = &editedValues;
     }
-    if (createNewColumns)
-      frame_.appendNewColumn(iodaName, *column);
-    else
+    if (createNewColumns) {
+      // If variable is in list of known datetimes, add epoch as units
+      auto iter = std::find(options_.dateTimeVariables.begin(),
+                            options_.dateTimeVariables.end(), iodaName);
+      if (iter == options_.dateTimeVariables.end()) {
+        frame_.appendNewColumn(iodaName, *column);
+      } else {
+        frame_.appendNewColumn(iodaName, *column, options_.epoch);
+      }
+    } else {
       frame_.setColumn(iodaName, *column);
+    }
   }
 
   missingValueByIodaName_[iodaName] = missingValue;
