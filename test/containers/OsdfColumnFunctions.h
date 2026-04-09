@@ -8,10 +8,13 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
+#include "OsdfCreateIFrame.h"
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -40,6 +43,7 @@ namespace test {
 // setColumn(),
 // hasColumn(),
 // getColumnType(),
+// removeColumn(),
 // getColumnUnits(),
 // and columnNames()
 // functions, for all the supported column types.
@@ -65,20 +69,60 @@ void testColumnType(const std::string& columnName, const std::vector<T>& origVal
   EXPECT(testValues == newValues);
 }
 
+void testRemoveColumn(std::unique_ptr<osdf::IFrame>& referenceFrame,
+                             std::vector<std::string>& expectedColumnNames,
+                             std::vector<std::string> stringData, std::vector<int> intData,
+                             std::vector<int64_t> int64Data, std::vector<float> floatData,
+                             std::vector<char> charData, bool removeByNameNotIndex) {
+  // Need to rebuild each time so that we know we can correctly remove all indices/types
+  // Test removing column name/index which is not present:
+  if (removeByNameNotIndex) {
+    EXPECT_THROWS_AS(referenceFrame->removeColumn("fishColumn"), eckit::OutOfRange);
+  } else {
+    EXPECT_THROWS_AS(referenceFrame->removeColumn(referenceFrame->numCols()), eckit::OutOfRange);
+  }
+
+  for (std::size_t index = expectedColumnNames.size()-1; index >-1; --index) {
+    std::unique_ptr<osdf::IFrame> testFrame = osdf::createIFrame(referenceFrame->frameType());
+    testFrame->appendNewColumn(expectedColumnNames[0], stringData);
+    testFrame->appendNewColumn(expectedColumnNames[1], intData);
+    testFrame->appendNewColumn(expectedColumnNames[2], int64Data);
+    testFrame->appendNewColumn(expectedColumnNames[3], floatData);
+    testFrame->appendNewColumn(expectedColumnNames[4], charData);
+
+    std::vector<std::string> modifiableColumnNames = expectedColumnNames;
+    modifiableColumnNames.erase(modifiableColumnNames.begin() + index);
+    modifiableColumnNames.shrink_to_fit();
+
+    if (removeByNameNotIndex) {
+      testFrame->removeColumn(expectedColumnNames[index]);
+    } else {
+      testFrame->removeColumn(index);
+    }
+
+    // Check column name removed as expected
+    EXPECT(testFrame->columnNames() == modifiableColumnNames);
+    EXPECT_THROWS_AS(testFrame->getColumnType(expectedColumnNames[index]), eckit::BadParameter);
+
+    // Check that other columns are unchanged (based on type and size)
+    // As all columns in testFrame are different types, this ensures correct data removed
+    for (std::string name : modifiableColumnNames) {
+      EXPECT(testFrame->getColumnType(name) == referenceFrame->getColumnType(name));
+    }
+    EXPECT(testFrame->numCols() == referenceFrame->numCols() - 1);
+    EXPECT(testFrame->numRows() == referenceFrame->numRows());
+  }
+}
+
+
 void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
-  const std::vector<char> origCharValues{'a', 'b', 'c'};
-  const std::vector<char> newCharValues{'d', 'e', 'b'};
-
-  std::vector<std::int64_t> testInt64Values;
-  std::vector<float> testFloatValues;
-  std::vector<char> testCharValues;
-
   std::vector<std::string> expectedColumnNames;  // for testing columnNames() function
 
   // String column type
   const std::string stringColumnName = "test string column";
+  const std::vector<std::string> newStringValues = {"string4", "string5", "string2"};
   testColumnType<std::string>(stringColumnName, {"string1", "string2", "string3"},
-                            {"string4", "string5", "string2"}, testFrame, osdf::consts::eString);
+                              newStringValues, testFrame, osdf::consts::eString);
   expectedColumnNames.push_back(stringColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
@@ -102,19 +146,29 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
 
   // float column type
   const std::string floatColumnName = "test float column";
-  testColumnType<float>(floatColumnName, {1.1f, 2.2f, 3.3f}, {4.4f, 5.5f, 2.2f}, testFrame,
+  const std::vector<float> newFloatValues {4.4f, 5.5f, 2.2f};
+  testColumnType<float>(floatColumnName, {1.1f, 2.2f, 3.3f}, newFloatValues, testFrame,
     osdf::consts::eFloat);
   expectedColumnNames.push_back(floatColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
   // char column type
   const std::string charColumnName = "test char column";
-  testColumnType<char>(charColumnName, {'a', 'b', 'c'}, {'d', 'e', 'b'}, testFrame,
+  const std::vector<char> newCharValues {'d', 'e', 'b'};
+  testColumnType<char>(charColumnName, {'a', 'b', 'c'}, newCharValues, testFrame,
     osdf::consts::eChar);
   expectedColumnNames.push_back(charColumnName);
   EXPECT(testFrame->columnNames() == expectedColumnNames);
 
-  // Test expected setColumnerror conditions
+  // Test removing columns from dataframe by index
+  testRemoveColumn(testFrame, expectedColumnNames, newStringValues, newIntValues, newInt64Values,
+                   newFloatValues, newCharValues, false);
+
+  // Test removing columns from dataframe by name
+  testRemoveColumn(testFrame, expectedColumnNames, newStringValues, newIntValues, newInt64Values,
+                   newFloatValues, newCharValues, true);
+
+  // Test expected setColumn error conditions
   // Wrong type
   EXPECT_THROWS_AS(testFrame->setColumn(stringColumnName, newIntValues),
                     eckit::BadParameter);
@@ -122,6 +176,7 @@ void testOsdfColumnFunctions(std::unique_ptr<osdf::IFrame> & testFrame) {
   const std::vector<int> wrongSizeIntValues{4, 5};
   EXPECT_THROWS_AS(testFrame->setColumn(intColumnName, wrongSizeIntValues),
                     eckit::BadParameter);
+
   // Read-only column
   testFrame->configColumns(
     {{"test read-only column", osdf::consts::eInt, osdf::consts::eReadOnly}});
