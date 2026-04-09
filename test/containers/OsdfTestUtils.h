@@ -20,6 +20,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/testing/Test.h"
+
+#include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameUtils.h"
@@ -48,6 +52,44 @@ std::vector<varType> replaceMissingValues(const std::vector<std::string> & strin
 }
 
 // -----------------------------------------------------------------------------
+void populateColumnMetadata(const std::vector<eckit::LocalConfiguration> & configVec,
+                            osdf::ColumnMetadata & colMetadata) {
+  // The input configuration vector contains elements with the following specs:
+  //    name: column name
+  //    type: column data type
+  //    units: column data units
+  // Transfer each configuration element to a ColumnMetadatum object and push
+  // these onto a vector of ColumnMetadatum which can then be used to
+  // construct and return the resulting ColumnMetadata ojbect.
+  std::vector<osdf::ColumnMetadatum> colMetadatumVec;
+  for (std::size_t i = 0; i < configVec.size(); ++i) {
+    const std::string colName = configVec[i].getString("name");
+    const std::string colTypeStr = configVec[i].getString("type");
+    const std::string colUnits = configVec[i].getString("units");
+
+    // Convert type to osdf enum type
+    osdf::consts::eDataTypes colType;
+    if (colTypeStr == "int") {
+      colType = osdf::consts::eDataTypes::eInt;
+    } else if (colTypeStr == "int64") {
+      colType = osdf::consts::eDataTypes::eInt64;
+    } else if (colTypeStr == "float") {
+      colType = osdf::consts::eDataTypes::eFloat;
+    } else if (colTypeStr == "string") {
+      colType = osdf::consts::eDataTypes::eString;
+    } else if (colTypeStr == "char") {
+      colType = osdf::consts::eDataTypes::eChar;
+    } else {
+      throw eckit::BadParameter(
+        "Unrecognized type value in configuration: " + colTypeStr, Here());
+    }
+
+    // Add a new column metadatum to the output vector
+    colMetadatumVec.emplace_back(colName, colUnits, colType);
+  }
+  colMetadata.add(colMetadatumVec);
+}
+
 bool testCompareTwoDataRows(osdf::DataRow testRow, osdf::DataRow compareRow,
                             const bool compareIds, const double tolerance ) {
   const std::int32_t testSize    = testRow.getSize();

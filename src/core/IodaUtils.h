@@ -52,6 +52,11 @@ class ObsSpaceParameters;
   /// \param delim delimiter to split on
   std::vector<std::string> splitString(const std::string & str, char delim);
 
+  /// \brief join a vector of strings into a single string using a given separator
+  /// \param strVec string to split
+  /// \param sep delimiter to split on
+  std::string joinString(const std::vector<std::string> & strVec, std::string sep);
+
   /// \brief remove the numerical suffix (if any) from a given string
   /// \param str string of which to remove any numerical suffix
   std::string removeStringNumericSuffix(const std::string & str);

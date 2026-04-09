@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <set>
+#include <sstream>
 #include <unordered_set>
 #include <vector>
 
@@ -54,6 +55,18 @@ std::vector<std::string> splitString(const std::string & str, char delim) {
     tokens.push_back(item);
   }
   return tokens;
+}
+
+// -----------------------------------------------------------------------------
+std::string joinString(const std::vector<std::string> & strVec, std::string sep) {
+  std::ostringstream ss;
+  for (std::size_t i = 0; i < strVec.size(); ++i) {
+    if (i > 0) {
+      ss << sep;
+    }
+    ss << strVec[i];
+  }
+  return ss.str();
 }
 
 // -----------------------------------------------------------------------------

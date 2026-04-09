@@ -1,0 +1,64 @@
+---
+
+test cases:
+  - name: "5 columns"
+    osdf columns:
+    - name: "MetaData/intVariable"
+      type: "int"
+      units: "intUnits"
+    - name: "MetaData/floatVariable"
+      type: "float"
+      units: "floatUnits"
+    - name: "MetaData/stringVariable"
+      type: "string"
+      units: "stringUnits"
+    - name: "MetaData/int64Variable"
+      type: "int64"
+      units: "int64Units"
+    - name: "MetaData/charVariable"
+      type: "char"
+      units: "charUnits"
+    expected values:
+      serialized column metadata:
+        tokens:
+        - "columns@5"
+        - "MetaData/intVariable@0@1@20@intUnits@"
+        - "MetaData/floatVariable@2@1@22@floatUnits@"
+        - "MetaData/stringVariable@4@1@23@stringUnits@"
+        - "MetaData/int64Variable@1@1@22@int64Units@"
+        - "MetaData/charVariable@3@1@21@charUnits@"
+
+  - name: "7 columns"
+    osdf columns:
+    - name: "MetaData/intVariable"
+      type: "int"
+      units: "intUnits"
+    - name: "MetaData/floatVariable"
+      type: "float"
+      units: "floatUnits"
+    - name: "MetaData/stringVariable"
+      type: "string"
+      units: "stringUnits"
+    - name: "MetaData/int64Variable"
+      type: "int64"
+      units: "int64Units"
+    - name: "MetaData/charVariable"
+      type: "char"
+      units: "charUnits"
+    - name: "MetaData/anotherIntVariable"
+      type: "int"
+      units: "intUnits"
+    - name: "MetaData/anotherFloatVariable"
+      type: "float"
+      units: "floatUnits"
+    expected values:
+      serialized column metadata:
+        tokens:
+        - "columns@7"
+        - "MetaData/intVariable@0@1@20@intUnits@"
+        - "MetaData/floatVariable@2@1@22@floatUnits@"
+        - "MetaData/stringVariable@4@1@23@stringUnits@"
+        - "MetaData/int64Variable@1@1@22@int64Units@"
+        - "MetaData/charVariable@3@1@21@charUnits@"
+        - "MetaData/anotherIntVariable@0@1@27@intUnits@"
+        - "MetaData/anotherFloatVariable@2@1@29@floatUnits@"

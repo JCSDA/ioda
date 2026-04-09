@@ -62,62 +62,6 @@ std::vector<std::string> osdf::ColumnMetadata::columnNames() const {
   return names;
 }
 
-std::string osdf::ColumnMetadata::serialize() const {
-  std::string output = "columns:" + std::to_string(columnMetadata_.size());
-  for (const ColumnMetadatum& columnMetadatum : columnMetadata_) {
-    output += " " + columnMetadatum.getName();
-    output += ":" + std::to_string(columnMetadatum.getType());
-    output += ":" + std::to_string(columnMetadatum.getPermission());
-    output += ":" + std::to_string(columnMetadatum.getWidth());
-  }
-  return output;
-}
-
-void osdf::ColumnMetadata::deserialize(const std::string & columnMetadataTokens) {
-  // Don't allow deserialization into non-empty ColumnMetadata
-  if (columnMetadata_.size() != 0) {
-    const std::string errMsg =
-      std::string("ERROR: Column metadata can only be deserialized into an empty container.");
-    throw eckit::BadValue(errMsg, Here());
-  }
-
-  // Do some basic checks on the input string and extract the tokens
-  const std::vector<std::string> tokens
-    = ioda::splitString(columnMetadataTokens, consts::columnSeparatorChar);
-  const std::vector<std::string> firstTokenParts
-    = ioda::splitString(tokens[0], consts::metadatumSeparatorChar);
-  if (firstTokenParts.size() != 2 || firstTokenParts[0] != "columns") {
-    const std::string errMsg = std::string("ERROR: Column metadata string is not valid.");
-    throw eckit::BadValue(errMsg, Here());
-  }
-  const int nCols = std::stoi(firstTokenParts[1]);
-  if (nCols != static_cast<int>(tokens.size()) - 1) {
-    const std::string errMsg = std::string("ERROR: Column metadata string has inconsistent ") +
-          std::string("number of columns.");
-    throw eckit::BadValue(errMsg, Here());
-  }
-
-  for (int i = 1; i <= nCols; ++i) {
-    std::vector<std::string> tokenParts
-      = ioda::splitString(tokens[i], consts::metadatumSeparatorChar);
-    if (tokenParts.size() != 4) {
-      const std::string errMsg = std::string("ERROR: Column metadata string has invalid ") +
-            std::string("column information: ") + tokens[i];
-      throw eckit::BadValue(errMsg, Here());
-    }
-
-    // Extract the column information and create the ColumnMetadatum
-    const std::string name = tokenParts[0];
-    const std::int8_t type = static_cast<std::int8_t>(std::stoi(tokenParts[1]));
-    const std::int8_t permission = static_cast<std::int8_t>(std::stoi(tokenParts[2]));
-    const std::int16_t width = static_cast<std::int16_t>(std::stoi(tokenParts[3]));
-    ColumnMetadatum columnMetadatum(name, type, permission);
-    columnMetadatum.setWidth(width);
-    columnLookup_.insert({name, nCols - 1});
-    columnMetadata_.push_back(columnMetadatum);
-  }
-}
-
 const osdf::ColumnMetadatum& osdf::ColumnMetadata::get(const std::int32_t columnIndex) const {
   return columnMetadata_.at(static_cast<std::size_t>(columnIndex));
 }
