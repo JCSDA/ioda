@@ -55,10 +55,12 @@ osdf::FrameCols::~FrameCols() {
 
 void osdf::FrameCols::configColumns(const std::vector<ColumnMetadatum> cols) {
   data_.configColumns(cols);
+  notify();
 }
 
 void osdf::FrameCols::configColumns(const std::initializer_list<ColumnMetadatum> initList) {
   data_.configColumns(initList);
+  notify();
 }
 
 void osdf::FrameCols::appendNewColumn(const std::string& name,

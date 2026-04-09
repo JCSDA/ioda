@@ -8,12 +8,17 @@
 #include "ioda/containers/FrameRowsData.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
-#include "ColumnMetadata.h"
-#include "DataRow.h"
 #include "eckit/exception/Exceptions.h"
+#include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Constants.h"
+#include "ioda/containers/DataRow.h"
+#include "ioda/containers/DatumBase.h"
+#include "ioda/containers/FrameUtils.h"
+#include "oops/util/missingValues.h"
+#include "oops/util/Logger.h"
 
 osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs) :
     IFrameData(), funcs_(funcs) {}
@@ -24,8 +29,27 @@ osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs, const ColumnMetad
         columnMetadata_(columnMetadata), dataRows_(dataRows) {}
 
 void osdf::FrameRowsData::configColumns(const std::vector<ColumnMetadatum> cols) {
+  if (this->getSizeRows() == 0 && this->getColumnMetadata().getSizeCols() == 0) {
+    this->initialise(0);
+  }
+
   // Note that add throws an exception if column(s) of a given name already exists.
+  std::int32_t numCols = getSizeCols();
   columnMetadata_.add(std::move(cols));
+
+  // Fill new columns with missing data if FrameRowsData already contains data rows.
+  for (const ColumnMetadatum& column : cols) {
+    for (osdf::DataRow& row : dataRows_) {
+      osdf::FrameUtils::callWithSupportedType(column.getType(), [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        const std::shared_ptr<DatumBase> datum = funcs_.createDatum(util::missingValue<T>());
+        row.insert(datum);
+        const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
+        this->updateColumnWidth(numCols, datumSize);
+      });
+    }
+    numCols+=1;
+  }
 }
 
 void osdf::FrameRowsData::configColumns(const std::initializer_list<ColumnMetadatum> initList) {

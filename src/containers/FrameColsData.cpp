@@ -18,6 +18,7 @@
 #include "ioda/containers/Data.h"
 #include "ioda/containers/FrameUtils.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs,
     const ColumnMetadata& columnMetadata, const std::vector<std::int64_t>& ids,
@@ -32,19 +33,25 @@ osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs) :
     IFrameData(), IColsData(), funcs_(funcs) {}
 
 void osdf::FrameColsData::configColumns(const std::vector<ColumnMetadatum> columns) {
+  if (this->getSizeRows() == 0 && this->getColumnMetadata().getSizeCols() == 0) {
+    this->initialise(0);
+  }
+
+  // Note that `add` throws an exception if a column of the given name(s) already exists.
+  columnMetadata_.add(std::move(columns));
+
+  // Fill columns with missing data if FrameColsData already contains columns of length > 0
   for (const ColumnMetadatum& column : columns) {
     std::shared_ptr<DataBase> data;
     osdf::FrameUtils::callWithSupportedType(
       column.getType(),
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
-        std::vector<T> values;
+        std::vector<T> values(this->getSizeRows(), util::missingValue<T>());
         data = funcs_.createData<T>(values);
       });
     dataColumns_.push_back(data);
   }
-  // Note that `add` throws an exception if a column of the given name(s) already exists.
-  columnMetadata_.add(std::move(columns));
 }
 
 void osdf::FrameColsData::configColumns(const std::initializer_list<ColumnMetadatum> initList) {

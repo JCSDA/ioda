@@ -1522,6 +1522,13 @@ ecbuild_add_test( TARGET ioda_osdf_prepare_derived_variables
                   LIBS  ioda_test
                   )
 
+# this test checks the ability to add column metadatum to an IFrame using the configColumns function
+ecbuild_add_test( TARGET test_ioda_osdf_config_columns
+                  SOURCES mains/containers/TestOsdfConfigColumns.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
 ###################################################################
 ##### The following tests check the ObsSpace::append function. ####
 ###################################################################
