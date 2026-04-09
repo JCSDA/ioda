@@ -164,7 +164,11 @@ void distributeObs(const DistributionParametersBase & distParams,
 
   // One column at a time, allGatherv the remaining columns from inOutOsdf to globalOsdf,
   // then select the rows for this rank into rankOsdf (Step 8.)
-  for (const auto & colName : inOutOsdf->columnNames()) {
+  // It will run faster to remove columns from inOutOsdf if we walk backwards through
+  // the column list due to the way removeColumn() is implemented.
+  const std::vector<std::string> inOutColNames = inOutOsdf->columnNames();
+  for (auto it = inOutColNames.rbegin(); it != inOutColNames.rend(); ++it) {
+    const std::string & colName = *it;
     osdf::FrameUtils::callWithSupportedType(
       inOutOsdf->getColumnType(colName),
       [&](auto typeDiscriminator) {

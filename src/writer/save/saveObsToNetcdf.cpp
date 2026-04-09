@@ -150,13 +150,17 @@ static void setNcVarAttributes(netCDF::NcVar & var, const VarCreationParameters 
 
 /// \brief helper function for calling the appropriate netcdf putVar function
 /// \param var netcdf variable object
+/// \param starts hyperslab start indices for each dimension
+/// \param counts hyperslab count indices for each dimension
 /// \param varData vector of data values to write to the variable
 // Note: we want to treat the varData parameter as a const, be we cannot
 // do that because we need to copy the string data pointers from the
 // std::string specialization. See the comments in the definition of this
 // function below.
 template <typename VarType>
-void setNcVarData(netCDF::NcVar & var, std::vector<VarType> & varData);
+void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
+                  const std::vector<std::size_t> & counts,
+                  std::vector<VarType> & varData);
 
 /// \brief set values in a netcdf variable
 /// \param var netcdf dimension variable object
@@ -448,12 +452,16 @@ netCDF::NcVar createHierNcVar(netCDF::NcGroup & topGroup,
 
 //---------------------------------------------------------------------
 template <typename VarType>
-void setNcVarData(netCDF::NcVar & var, std::vector<VarType> & varData) {
-  var.putVar(varData.data());
+void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
+                  const std::vector<std::size_t> & counts,
+                  std::vector<VarType> & varData) {
+  var.putVar(starts, counts, varData.data());
 }
 
 template <>
-void setNcVarData(netCDF::NcVar & var, std::vector<std::string> & varData) {
+void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
+                  const std::vector<std::size_t> & counts,
+                  std::vector<std::string> & varData) {
   // The vector of strings contains a series of string objects in contiguous
   // memory. Each one of the string objects contains a char * pointing to the
   // string value in the heap. We need to pass to the putVar function
@@ -470,7 +478,7 @@ void setNcVarData(netCDF::NcVar & var, std::vector<std::string> & varData) {
   // describe how to extract a block of data from the values array.
   // In this case we want all the values so we use a start value
   // of 0, and a count equal to the size of the varData vector.
-  var.putVar({0}, {varData.size()}, values);
+  var.putVar(starts, counts, values);
 }
 
 //--------------------------------------------------------------------------------
@@ -493,6 +501,9 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
   if (hasChannels) {
     // Use colWithChans for the desired column name. Code will attach all of the
     // channel suffixes to pull data from the srcOsdf.
+    // For now assume we are always writing the entire variable data in one putVar call,
+    // so the start value is always 0 and the count value is always the size of the varData vector.
+    // We can generalize this in the future when we want to write the variable data in chunks.
     const std::vector<int> & chanNums = osdfMetadata.getChanNums();
     const std::size_t numChans = chanNums.size();
     const std::size_t numLocs = srcOsdf->numRows();
@@ -512,7 +523,7 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
             srcOsdf->getColumn(colWithChans + "_" + std::to_string(chanNums[ichan]), chanVals);
             varVals[ichan] = chanVals[0];
           }
-          setNcVarData<T>(var, varVals);
+          setNcVarData<T>(var, {0}, {numChans}, varVals);
           });
     } else {
       // dimension: [ Location, Channel ]
@@ -529,7 +540,7 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
               varVals[ival] = chanVals[iloc];
             }
           }
-          setNcVarData<T>(var, varVals);
+          setNcVarData<T>(var, {0, 0}, {numLocs, numChans}, varVals);
           });
     }
   } else {
@@ -542,7 +553,7 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
         using T = decltype(typeDiscriminator);
         std::vector<T> varVals(srcOsdf->numRows());
         srcOsdf->getColumn(assocColumn, varVals);
-        setNcVarData<T>(var, varVals);
+        setNcVarData<T>(var, {0}, {srcOsdf->numRows()}, varVals);
         });
   }
 }
