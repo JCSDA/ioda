@@ -390,6 +390,12 @@ ecbuild_add_test( TARGET  ioda_osdf_get_data_rows
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_osdf_appendnewrow
+                  SOURCES mains/containers/TestOsdfAppendNewRow.cc
+                  ARGS    "testinput/containers/iodatest_osdf_basic_frames.yaml"
+                  LIBS    ioda_test
+                  )
+
 ecbuild_add_test( TARGET  ioda_osdf_validate_column_metadata
                   SOURCES mains/containers/TestOsdfValidateColumnMetadata.cc
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"

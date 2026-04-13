@@ -44,3 +44,19 @@ test frame data:
 
 tolerance: 1.0e-6
 
+test row append:
+  - name: "Metadata/floatVariable"
+    type: "float"
+    values: [-25.6568]
+  - name: "Metadata/stringVariable"
+    type: "string"
+    values: ["00010"]
+  - name: "Metadata/int64Variable"
+    type: "int64"
+    values: [1710460270]
+  - name: "Metadata/intVariable"
+    type: "int"
+    values: [11]
+  - name: "Metadata/charVariable"
+    type: "char"
+    values: ['d']

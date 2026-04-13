@@ -150,7 +150,6 @@ class FrameRows : public IFrame {
         "ERROR: Cannot insert a new row without first setting column headings.");
       throw eckit::BadValue(errMsg, Here());
     }
-
     if (numParams != data_.getSizeCols()) {
       const std::string errMsg = std::string(
         "ERROR: Number of columns in new row are incompatible with this data frame.");

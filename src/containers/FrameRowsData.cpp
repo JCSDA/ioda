@@ -60,7 +60,7 @@ void osdf::FrameRowsData::configColumns(const std::initializer_list<ColumnMetada
 
 void osdf::FrameRowsData::appendNewRow(const DataRow& newRow) {
   columnMetadata_.updateMaxId(newRow.getId());
-  dataRows_.push_back(newRow);  // May need to update column widths based on new data
+  dataRows_.push_back(newRow);
 }
 
 void osdf::FrameRowsData::appendNewColumn(const std::string& name, const std::int8_t type,

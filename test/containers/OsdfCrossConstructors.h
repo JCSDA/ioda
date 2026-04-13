@@ -24,7 +24,7 @@ namespace test {
 void testOsdfCrossConstructorsEmpty() {
   const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
 
-  oops::Log::debug() << "Running test: Empty IFrame" << std::endl;
+  oops::Log::info() << "Running test: Empty IFrame" << std::endl;
   osdf::FrameRows refEmptyFrameRows;
   osdf::FrameCols refEmptyFrameCols;
 
@@ -44,7 +44,7 @@ void testOsdfCrossConstructors() {
     const eckit::LocalConfiguration& testCaseConfig = testCasesConfig[index];
     std::string testCaseName = testCaseConfig.getString("name");
 
-    oops::Log::debug() << "Running test: " << testCaseName << std::endl;
+    oops::Log::info() << "Running test: " << testCaseName << std::endl;
 
     const std::vector<eckit::LocalConfiguration>& osdfConfig
       = testCaseConfig.getSubConfigurations("osdf columns");
@@ -59,7 +59,7 @@ void testOsdfCrossConstructors() {
     osdf::FrameRows referenceFrameRows;
     std::vector<std::string> referenceColumnNamesFrameRows;
     std::vector<std::string> referenceColumnTypesFrameRows;
-    populateFrame<osdf::FrameRows>(osdfConfig, referenceFrameRows, referenceColumnNamesFrameRows,
+    populateFrame(osdfConfig, referenceFrameRows, referenceColumnNamesFrameRows,
                   referenceColumnTypesFrameRows);
 
     // Cross construct frameCols and frameRows

@@ -64,11 +64,14 @@ void osdf::FrameColsData::appendNewRow(const DataRow& newRow) {
   std::int64_t id = newRow.getId();
   columnMetadata_.updateMaxId(id);
   ids_.push_back(id);
+
   for (std::int32_t columnIndex = 0; columnIndex < newRow.getSize(); ++columnIndex) {
     const std::shared_ptr<DatumBase>& datum = newRow.getColumn(columnIndex);
-    std::shared_ptr<DataBase>& data = dataColumns_.at(static_cast<std::size_t>(columnIndex));
     const std::int16_t datumSize = static_cast<std::int16_t>(datum->getValueStr().size());
+    std::shared_ptr<DataBase>& data = dataColumns_.at(static_cast<std::size_t>(columnIndex));
+
     columnMetadata_.updateColumnWidth(columnIndex, datumSize);
+
     osdf::FrameUtils::callWithSupportedType(
       datum->getType(),
       [&](auto typeDiscriminator) {
