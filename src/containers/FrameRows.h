@@ -121,8 +121,9 @@ class FrameRows : public IFrame {
   FrameRows sliceRows(const std::string&, const std::int8_t, const std::string) const;
 
   /// \brief Additional to the interface, this function accepts a custom lambda comparator function.
-  void sortRows(const std::string&, const std::function<std::int8_t(
-                const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)>);
+  //  (Commented out for now as not currently used or fully tested.)
+  // void sortRows(const std::string&, const std::function<std::int8_t(
+  //               const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)>);
 
   /// \brief Additional to above, this function accepts a custom lambda comparator function.
   /// \param Lambda function taking a data row and returning an 8-bit signed int used as a boolean.

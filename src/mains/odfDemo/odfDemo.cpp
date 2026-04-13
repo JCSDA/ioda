@@ -99,16 +99,17 @@ std::int32_t main() {
   frameRows.sortRows("channel", osdf::consts::eDescending);
   frameRows.print();
 
-  oops::Log::info() << std::endl << "sort 2" << std::endl;
-  frameRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
-                                    std::shared_ptr<osdf::DatumBase> datumB){
-    std::shared_ptr<osdf::Datum<int>> datumAType =
-                                std::static_pointer_cast<osdf::Datum<int>>(datumA);
-    std::shared_ptr<osdf::Datum<int>> datumBType =
-                                std::static_pointer_cast<osdf::Datum<int>>(datumB);
-    return datumAType->getValue() < datumBType->getValue();
-  });
-  frameRows.print();
+  // Note: sortRows with custom lambda comparator function is currently commented out
+  // oops::Log::info() << std::endl << "sort 2" << std::endl;
+  // frameRows.sortRows("channel", [&](std::shared_ptr<osdf::DatumBase> datumA,
+  //                                   std::shared_ptr<osdf::DatumBase> datumB){
+  //   std::shared_ptr<osdf::Datum<int>> datumAType =
+  //                               std::static_pointer_cast<osdf::Datum<int>>(datumA);
+  //   std::shared_ptr<osdf::Datum<int>> datumBType =
+  //                               std::static_pointer_cast<osdf::Datum<int>>(datumB);
+  //   return datumAType->getValue() < datumBType->getValue();
+  // });
+  // frameRows.print();
 
   oops::Log::info() << std::endl << "test slice 1" << std::endl;
   frameRows.sliceRows("lat", osdf::consts::eLessThan, -70.f).print();

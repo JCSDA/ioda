@@ -208,14 +208,6 @@ void osdf::FrameCols::sortRows(const std::string& columnName, const std::int8_t 
     throw eckit::BadParameter(errMsg, Here());
   }
 
-  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-    const std::int8_t permission = data_.getPermission(colIndex);
-    if (permission == consts::eReadOnly) {
-      const std::string errMsg = std::string("ERROR: Column named ") + data_.getName(colIndex)
-                                 + std::string(" is set to read-only.");
-      throw eckit::BadParameter(errMsg, Here());
-    }
-  }
   // Build list of ordered indices.
   const std::int32_t index = data_.getIndex(columnName);
   const std::int64_t sizeRows = data_.getSizeRows();

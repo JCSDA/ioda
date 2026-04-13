@@ -259,6 +259,7 @@ list( APPEND ioda_test_input
   testinput/containers/iodatest_osdf_remove_rows.yaml
   testinput/containers/iodatest_osdf_ser_deser_column_metadata.yaml
   testinput/containers/iodatest_osdf_ser_deser_frame_metadata.yaml
+  testinput/containers/iodatest_osdf_sort_rows.yaml
 
   testinput/distribution/iodatest_distribution.yaml
   testinput/distribution/iodatest_distribution_masterandreplica_mpi_2.yaml
@@ -422,6 +423,12 @@ ecbuild_add_test( TARGET  ioda_osdf_cross_constructors
 ecbuild_add_test( TARGET  ioda_osdf_remove_rows
                   SOURCES mains/containers/TestOsdfRemoveRows.cc
                   ARGS    "testinput/containers/iodatest_osdf_remove_rows.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_osdf_sort_rows
+                  SOURCES mains/containers/TestOsdfSortRows.cc
+                  ARGS    "testinput/containers/iodatest_osdf_sort_rows.yaml"
                   LIBS  ioda_test
                   )
 

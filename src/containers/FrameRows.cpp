@@ -205,15 +205,6 @@ void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t 
     throw eckit::BadParameter(errMsg, Here());
   }
 
-  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-    const std::int8_t permission = data_.getPermission(colIndex);
-    if (permission == consts::eReadOnly) {
-      const std::string errMsg = std::string("ERROR: Column named ")
-        + data_.getName(colIndex) + std::string(" is set to read-only.");
-      throw eckit::BadParameter(errMsg, Here());
-    }
-  }
-
   const std::int32_t index = data_.getIndex(columnName);
   if (order == consts::eAscending) {
     reorderDataRows(index, [&](std::shared_ptr<DatumBase>& datumA,
@@ -225,6 +216,10 @@ void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t 
                                 std::shared_ptr<DatumBase>& datumB) {
       return funcs_.compareDatums(datumB, datumA);
     });
+  } else {
+    const std::string errMsg = std::string("ERROR: Invalid sort order: ")
+      + std::to_string(order) + std::string(". Must be either eAscending or eDescending.");
+    throw eckit::BadParameter(errMsg, Here());
   }
   notify();
 }
@@ -339,44 +334,40 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
   return sliceRows<std::string>(name, comparison, threshold);
 }
 
-void osdf::FrameRows::sortRows(const std::string& columnName, const std::function<std::int8_t(
-     const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)> func) {
-  if (data_.columnExists(columnName) != true) {
-    const std::string errMsg = std::string("ERROR: Column named ")
-      + columnName + std::string(" not found in current data frame.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
-  for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-    const std::int8_t permission = data_.getPermission(colIndex);
-    if (permission == consts::eReadOnly) {
-      const std::string errMsg = std::string("ERROR: Column named ") + data_.getName(colIndex)
-                                 + std::string(" is set to read-only.");
-      throw eckit::BadParameter(errMsg, Here());
-    }
-  }
+/// Commented out overload of sortRows below.
+/// It allows caller to pass a custom comparison function.
+/// Not currently used or fully tested. May be added back in future if needed.
+/// If so, will need to be added to FrameCols as well.
+// void osdf::FrameRows::sortRows(const std::string& columnName, const std::function<std::int8_t(
+//      const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)> func) {
+//   if (data_.columnExists(columnName) != true) {
+//     const std::string errMsg = std::string("ERROR: Column named ")
+//       + columnName + std::string(" not found in current data frame.");
+//     throw eckit::BadParameter(errMsg, Here());
+//   }
 
-  // Build list of ordered indices.
-  const std::int32_t index = data_.getIndex(columnName);
-  const std::int64_t sizeRows = data_.getSizeRows();
-  const std::size_t sizeRowsSz = static_cast<std::size_t>(sizeRows);
-  std::vector<std::int64_t> indices(sizeRowsSz, 0);
-  std::iota(std::begin(indices), std::end(indices), 0);   // Initial sequential list of indices.
-  std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
-                                                        const std::int64_t& j) {
-    std::shared_ptr<DatumBase>& datumA = data_.getDataRow(i).getColumn(index);
-    std::shared_ptr<DatumBase>& datumB = data_.getDataRow(j).getColumn(index);
-    return func(datumA, datumB);
-  });
-  // Swap data values for whole rows - casting makes it look more confusing than it is.
-  for (std::size_t i = 0; i < sizeRowsSz; ++i) {
-    while (indices.at(i) != indices.at(static_cast<std::size_t>(indices.at(i)))) {
-      const std::size_t iIdx = static_cast<std::size_t>(indices.at(i));
-      std::swap(data_.getDataRow(indices.at(i)), data_.getDataRow(indices.at(iIdx)));
-      std::swap(indices.at(i), indices.at(iIdx));
-    }
-  }
-  notify();
-}
+//   // Build list of ordered indices.
+//   const std::int32_t index = data_.getIndex(columnName);
+//   const std::int64_t sizeRows = data_.getSizeRows();
+//   const std::size_t sizeRowsSz = static_cast<std::size_t>(sizeRows);
+//   std::vector<std::int64_t> indices(sizeRowsSz, 0);
+//   std::iota(std::begin(indices), std::end(indices), 0);   // Initial sequential list of indices.
+//   std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
+//                                                         const std::int64_t& j) {
+//     std::shared_ptr<DatumBase>& datumA = data_.getDataRow(i).getColumn(index);
+//     std::shared_ptr<DatumBase>& datumB = data_.getDataRow(j).getColumn(index);
+//     return func(datumA, datumB);
+//   });
+//   // Swap data values for whole rows - casting makes it look more confusing than it is.
+//   for (std::size_t i = 0; i < sizeRowsSz; ++i) {
+//     while (indices.at(i) != indices.at(static_cast<std::size_t>(indices.at(i)))) {
+//       const std::size_t iIdx = static_cast<std::size_t>(indices.at(i));
+//       std::swap(data_.getDataRow(indices.at(i)), data_.getDataRow(indices.at(iIdx)));
+//       std::swap(indices.at(i), indices.at(iIdx));
+//     }
+//   }
+//   notify();
+// }
 
 osdf::FrameRows osdf::FrameRows::sliceRows(
                                  const std::function<const std::int8_t(const DataRow&)> func) {

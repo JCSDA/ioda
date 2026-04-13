@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
@@ -84,6 +86,10 @@ void osdf::FunctionsCols::sequenceIndices(std::vector<std::int64_t>& indices,
               const std::int64_t& j) {
       return values.at(static_cast<std::size_t>(j)) < values.at(static_cast<std::size_t>(i));
     });
+  } else {
+    const std::string errMsg = std::string("ERROR: Invalid sort order: ")
+      + std::to_string(order) + std::string(". Must be either eAscending or eDescending.");
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
