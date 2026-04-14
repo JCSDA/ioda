@@ -41,7 +41,8 @@ class IFrameData {
   virtual const std::int8_t getPermission(const std::int32_t) const = 0;
 
   virtual const ColumnMetadata& getColumnMetadata() const = 0;
-  virtual const std::int64_t getSizeRows() const          = 0;
+  virtual const std::int32_t getSizeCols() const  = 0;
+  virtual const std::int64_t getSizeRows() const  = 0;
   virtual void getDataRows(std::vector<DataRow>& dataRowsContainer) const = 0;
   virtual const std::int64_t getMaxId() const = 0;
 };

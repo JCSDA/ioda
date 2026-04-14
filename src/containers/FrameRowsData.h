@@ -91,7 +91,7 @@ class FrameRowsData : public IFrameData  {
   /// \param Updated width value.
   void updateColumnWidth(const std::int32_t, const std::int16_t);
 
-  const std::int32_t getSizeCols() const;
+  const std::int32_t getSizeCols() const override;
   const std::int64_t getSizeRows() const override;
   const std::int64_t getMaxId() const override;
   void validateColumnMetadata(const osdf::ColumnMetadata& srcColumnMetadata) const;

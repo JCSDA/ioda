@@ -16,7 +16,7 @@ test frame data:
         values: [1710460225, 1710460225, "missing"]
       - name: "Metadata/intVariable"
         type: "int"
-        values: ["missing", 1,2]
+        values: ["missing", 1, 2]
       - name: "Metadata/charVariable"
         type: "char"
         unit: "charUnit"

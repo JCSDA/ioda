@@ -432,6 +432,12 @@ ecbuild_add_test( TARGET  ioda_osdf_remove_rows
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_osdf_get_data
+                  SOURCES mains/containers/TestOsdfGetData.cc
+                  ARGS    "testinput/containers/iodatest_osdf_basic_frames.yaml"
+                  LIBS    ioda_test
+                  )
+                  
 ecbuild_add_test( TARGET  ioda_osdf_sort_rows
                   SOURCES mains/containers/TestOsdfSortRows.cc
                   ARGS    "testinput/containers/iodatest_osdf_sort_rows.yaml"
