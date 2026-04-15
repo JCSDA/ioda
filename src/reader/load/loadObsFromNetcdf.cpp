@@ -352,6 +352,18 @@ void getSelectNcVarData(const netCDF::NcVar & var,
   var.getVar(start, count, varData.data());
 }
 
+// Explicit specialization for char
+template <>
+void getSelectNcVarData<char>(const netCDF::NcVar & var,
+                             const std::vector<std::size_t> & start,
+                             const std::vector<std::size_t> & count,
+                             std::vector<char> & varData) {
+  // The char type is ambiguous about the signedness of the data, so this specialization
+  // is needed to assume a signed char type for the underlying data in order to call
+  // the correct netCDF API function (nc_get_vara_schar vs nc_get_vara_uchar).
+  var.getVar(start, count, reinterpret_cast<signed char *>(varData.data()));
+}
+
 // Explicit specialization for std::string
 template <>
 void getSelectNcVarData<std::string>(const netCDF::NcVar & var,
@@ -652,6 +664,11 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
         replaceFillValuesWithMissing<float>(var, varData);
         transferVarDataToOSDF<float>(
           varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+      } else if (varType.getName() == "byte") {
+        std::vector<char> varData = getNcVarData<char>(startLoc, locCount, var);
+        replaceFillValuesWithMissing<char>(var, varData);
+        transferVarDataToOSDF<char>(
+          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "string") {
         std::vector<std::string> varData =
                                  getNcVarData<std::string>(startLoc, locCount, var);
@@ -660,7 +677,7 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
           varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
       } else {
         oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
-                          << varName << " is not int, int64, float or string. Skipping."
+                          << varName << " is not int, int64, float, char or string. Skipping."
                           << std::endl;
       }
     }

@@ -86,13 +86,16 @@ void testPrepareDerivedVariables() {
     EXPECT_THROWS_AS(odb.prepareSourceOsdfDerivedVariables(srcOsdf), eckit::BadParameter);
 
     /// Test srcOsdf containing exactly one column (in osdf_)
+    // listColumnNames is used for the ObsSpace::listVariables function. True means
+    // to list osdf column names (false means to mimic the ObsGroup variable names)
+    const bool listColumnNames = true;
     srcOsdf->removeColumn("fish");
-    srcOsdf->appendNewColumn(odb.listVariables()[0], testLat);
+    srcOsdf->appendNewColumn(odb.listVariables(listColumnNames)[0], testLat);
     odb.prepareSourceOsdfDerivedVariables(srcOsdf);
 
     // check operation results in same columns as in osdf_
     std::vector<std::string> srcColumns = srcOsdf->columnNames();
-    std::vector<std::string> odbColumns = odb.listVariables();
+    std::vector<std::string> odbColumns = odb.listVariables(listColumnNames);
     EXPECT(unorderedVectorComparison(srcColumns, odbColumns));
 
     // check operation doesn't add rows
@@ -105,7 +108,7 @@ void testPrepareDerivedVariables() {
     srcOsdf->getData().getDataRows(srcOsdfDataRows);
     osdf::DataRow srcOsdfDataRow = srcOsdfDataRows[0];
 
-    for (std::string column : odb.listVariables()) {
+    for (std::string column : odb.listVariables(listColumnNames)) {
       osdf::FrameUtils::callWithSupportedType(
         srcOsdf->getColumnType(column), [&](auto typeDiscriminator) {
           using T = decltype(typeDiscriminator);

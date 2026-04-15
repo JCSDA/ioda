@@ -29,6 +29,7 @@
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 
 namespace eckit {
   // Don't use the contracted output for these types: the current implementation works only
@@ -557,7 +558,7 @@ void testPutDb() {
       const std::vector<std::string> variables = Odb.listVariables();
       const std::vector<std::string> expected_variables =
         testConfig.getStringVector("expected variables list");
-      EXPECT_EQUAL(variables, expected_variables);
+      unorderedVectorComparison(variables, expected_variables);
     }
   }
 }

@@ -11,11 +11,16 @@ observations:
       engine:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
     obsdataout: 
       engine:
         type: H5File
-        obsfile: testoutput/sondes_obs_2018041500_m_osdf.nc4
+        obsfile: testoutput/sondes_obs_2018041500_m_osdf_frame_cols.nc4
     use data frame container: true
+    data frame type: FrameCols
   test data:
     rms ref: 216.91619057593934
     tolerance: 1.0e-14
@@ -34,7 +39,12 @@ observations:
       engine:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
     use data frame container: true
+    data frame type: FrameCols
   test data:
     rms ref: 124.96816071306155
     tolerance: 1.0e-14
@@ -55,7 +65,12 @@ observations:
       engine:
         type: H5File
         obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
     use data frame container: true
+    data frame type: FrameCols
   test data:
     rms ref: 71.324181693818431
     tolerance: 1.0e-14

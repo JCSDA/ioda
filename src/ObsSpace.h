@@ -337,9 +337,6 @@ namespace ioda {
         ObsDtype dtype(const std::string & group, const std::string & name,
                        bool skipDerived = false) const;
 
-        std::string dtypeName(const std::string & group, const std::string & name,
-                              bool skipDerived = false) const;
-
         /// \brief return the collection of all variables to be processed
         /// (observed + derived variables)
         const oops::ObsVariables & obsvariables() const {return obsvars_;}
@@ -361,7 +358,18 @@ namespace ioda {
         std::vector<std::string> listGroups() const;
 
         /// \brief return a list of names of the variables contained in the ObsSpace.
-        std::vector<std::string> listVariables() const;
+        /// \details If using an ObsGroup-based ObsSpace, then this function will return the
+        /// list of all variables across all groups. If using an OSDF-based ObsSpace, then this
+        /// function will return the list of columns in the dataframe when osdfListColumns is
+        /// true, or the list of names that correspond to variable names that would be seen
+        /// in an ObsGroup container when osdfListColumns is false (default). The idea is when
+        /// comparing an ObsGroup-base ObsSpace with OSDF-based ObsSpace, leave the
+        /// osdfListColumns parameter as false, and when comparing two OSDF-based ObsSpaces,
+        /// set osdfListColumns to true.
+        /// \param osdfListColumns Switch between column names (true) or variable (false) names
+        /// when the ObsSpace is OSDF-based. Ignored when the ObsSpace is ObsGroup-based.
+        /// \return list of variable names
+        std::vector<std::string> listVariables(const bool osdfListColumns = false) const;
 
         /// @}
         /// @name IO functions
@@ -611,6 +619,11 @@ namespace ioda {
 
         /// \brief dataframe container meta data
         osdf::FrameMetadata osdfMetadata_;
+
+        /// \brief return appropriate OSDF variable name for use in other function calls
+        /// \param group Group name containting the variable
+        /// \param name Variable name
+        std::string osdfVarNameToUse(const std::string & group, const std::string & name) const;
 
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state

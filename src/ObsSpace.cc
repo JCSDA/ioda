@@ -399,29 +399,14 @@ bool ObsSpace::has(const std::string & group) const {
 // So we instead need look up the type of one of the channel variables (e.g.,
 // brightnessTemperature_1). This function returns the name of the variable to use
 // to look up the type.
-std::string ObsSpace::dtypeName(const std::string & group, const std::string & name,
-                                bool skipDerived) const {
-    std::string nameToUse;
-    if (use_dataframe_) {
-        if (strictHas(group, name, skipDerived)) {
-            nameToUse = name;
-        } else {
-            const std::vector<int> channels =
-                obs_params_.top_level_.simVars.value().channels();
-            if (channels.size() > 0) {
-                const std::string potentialName =
-                    name + std::string("_") + std::to_string(channels[0]);
-                if (strictHas(group, potentialName, skipDerived)) {
-                    nameToUse = potentialName;
-                } else {
-                    nameToUse = name;
-                }
-            }
-        }
-    } else {
-        nameToUse = name;
+std::string ObsSpace::osdfVarNameToUse(const std::string & group,
+                                       const std::string & name) const {
+    std::string nameToUse = name;
+    if (osdfMetadata_.varHasChannels(group + std::string("/") + name)) {
+        nameToUse =
+           name + std::string("_") + std::to_string(osdfMetadata_.getChanNums()[0]);
     }
-    return fullVarName(group, nameToUse);
+    return nameToUse;
 }
 
 // -----------------------------------------------------------------------------
@@ -437,25 +422,33 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
         VarType = ObsDtype::Empty;
     } else {
         if (use_dataframe_) {
-            switch (osdf_->getColumnType(dtypeName(group, name, skipDerived))) {
-                case osdf::consts::eDataTypes::eInt:
-                    VarType = ObsDtype::Integer;
-                    break;
-                case osdf::consts::eDataTypes::eInt64:
-                    VarType = ObsDtype::Integer_64;
-                    break;
-                case osdf::consts::eDataTypes::eFloat:
-                    VarType = ObsDtype::Float;
-                    break;
-                case osdf::consts::eDataTypes::eString:
-                    VarType = ObsDtype::String;
-                    break;
-                case osdf::consts::eDataTypes::eChar:
-                    VarType = ObsDtype::Bool;
-                    break;
-                default:
-                    VarType = ObsDtype::None;
-                    break;
+            const std::string groupToUse = this->groupToUse(group, name, skipDerived);
+            // Attach a channel suffix if name comes in without a channel suffix, but is
+            // the name of a variable with channels.
+            const std::string nameToUse = osdfVarNameToUse(groupToUse, name);
+            if (this->strictHas(groupToUse, nameToUse, skipDerived)) {
+                // If the variable exists, get its type from the backend. If the variable doesn't
+                // exist, leave the type as "None".
+                switch (osdf_->getColumnType(groupToUse + std::string("/") + nameToUse)) {
+                    case osdf::consts::eDataTypes::eInt:
+                        VarType = ObsDtype::Integer;
+                        break;
+                    case osdf::consts::eDataTypes::eInt64:
+                        VarType = ObsDtype::Integer_64;
+                        break;
+                    case osdf::consts::eDataTypes::eFloat:
+                        VarType = ObsDtype::Float;
+                        break;
+                    case osdf::consts::eDataTypes::eString:
+                        VarType = ObsDtype::String;
+                        break;
+                    case osdf::consts::eDataTypes::eChar:
+                        VarType = ObsDtype::Bool;
+                        break;
+                    default:
+                        VarType = ObsDtype::None;
+                        break;
+                }
             }
         } else {
             // For backward compatibility, recognize and handle appropriately variable names with
@@ -464,7 +457,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
             std::vector<int> chanSelectToUse;
             splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
 
-            std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
+            const std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
 
             // TODO(vahl): Remove inefficiency here that "has" call is unnecessary if derived group
             //             was returned by groupToUse above. It's already been verified to exist.
@@ -519,18 +512,17 @@ std::vector<std::string> ObsSpace::listGroups() const {
         // columnNames() returns all of the hierarchical variable names such
         // as a/b or c/d/e, etc. Need to strip off the final "/<name>" section of
         // of these and store the remaining (unique) names. Use a set to
-        // uniquify the list of groups.
+        // uniquify the list of groups. Don't include the top level group.
         std::vector<std::string> columnNames = osdf_->columnNames();
         std::set<std::string> groupNames;
         for (auto & colName : columnNames) {
             const std::size_t pos = colName.find_last_of("/");
-            std::string grpName;
+            // Skip over any column names that don't have a "/" in their name
+            // since these belong to the top level group, and we want to exclude
+            // the top level group from the list of groups.
             if (pos != std::string::npos) {
-                grpName = colName.substr(0, pos);
-            } else {
-                grpName = std::string("");
+                groupNames.insert(colName.substr(0, pos));
             }
-            groupNames.insert(grpName);
         }
         groupList.assign(groupNames.begin(), groupNames.end());
     } else {
@@ -540,10 +532,57 @@ std::vector<std::string> ObsSpace::listGroups() const {
 }
 
 // -----------------------------------------------------------------------------
-std::vector<std::string> ObsSpace::listVariables() const {
+std::vector<std::string> ObsSpace::listVariables(const bool osdfListColumns) const {
+    // For this function, return the full path to the variable.
+    // For the variable name itself, use the canonical form of the name
+    // (without the numerical suffix) when the variable has channels.
+    // Otherwise, use the original name.
     std::vector<std::string> varList;
     if (use_dataframe_) {
-        varList = osdf_->columnNames();
+        // The osdfListColumns parameter helps with comparing OSDF-based ObsSpace with
+        // either another OSDF-based ObsSpace or with an ObsGroup-based ObsSpace.
+        // The ObsGroup variables names will match up one-to-one with the OSDF column
+        // names except for the following two cases:
+        //   1. "Location" variable in the ObsGroup is "sourceLocationIndices" column in the OSDF
+        //   2. "Channel" variable in the ObsGroup has no corresponging column in the OSDF since
+        //      the channel information is kept in the osdfMetadata_ object instead of a column
+        //      in the OSDF.
+        //
+        // When osdfListColumns is true, we simply list all column names.
+        // When osdfListColumns is false, we want to make the list of variable names look like the
+        // ObsGroup variable names so we apply the following workarounds:
+        //   1. TODO(srh) Currently, the OSDF keeps location indices in "sourceLocationIndices"
+        //      which causes a mismatch with the ObsGroup case where these data are stored
+        //      in a variable names "Location". We want these lists to look alike between
+        //      the ObsGroup and OSDF so change "sourceLocationIndices" to "Location"
+        //      as a workaround. In the long term, we may want to make the name change
+        //      to "Location" in the OSDF container itself.
+        //   2. TODO(srh) The channel information for the OSDF is kept in the osdfMetadata_
+        //      object instead of a column in the OSDF. For now, we want the variable name
+        //      Channel to be listed when there are channels in use in the OSDF. We
+        //      will have to decide for the long term if this is good, or if another
+        //      design is needed.
+        const std::vector<std::string> columnNames = osdf_->columnNames();
+        std::set<std::string> variableNamesToList;
+        if (!osdfListColumns && osdfMetadata_.getChanNums().size() > 0) {
+            variableNamesToList.insert("Channel");
+        }
+        for (const auto & colName : columnNames) {
+            if (!osdfListColumns && colName == "sourceLocationIndices") {
+                variableNamesToList.insert("Location");
+                continue;
+            }
+            // Get the canonical name
+            std::string canonicalName;
+            std::vector<int> canonicalSuffixList;
+            genCanonicalNameAndSuffixList(colName, { }, canonicalName, canonicalSuffixList);
+            if (osdfMetadata_.varHasChannels(canonicalName)) {
+                variableNamesToList.insert(canonicalName);
+            } else {
+                variableNamesToList.insert(colName);
+            }
+        }
+        varList.assign(variableNamesToList.begin(), variableNamesToList.end());
     } else {
         varList = obs_group_->listObjects<ObjectType::Variable>(true);
     }
