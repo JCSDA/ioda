@@ -2,6 +2,8 @@
 list( APPEND ioda_src_files
 IodaTrait.h
 ObsDataVector.h
+ObsIterator.cc
+ObsIterator.h
 ObsSpace.cc
 ObsSpace.h
 ObsDataIoParameters.cc
@@ -209,6 +211,6 @@ if (IODA_BUILD_LANGUAGE_FORTRAN)
   install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
   target_include_directories(${PROJECT_NAME} INTERFACE
                                 $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
-                                $<INSTALL_INTERFACE:${MODULE_DIR}>) 
+                                $<INSTALL_INTERFACE:${MODULE_DIR}>)
 endif()
 

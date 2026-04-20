@@ -103,6 +103,7 @@ endif()
 list( APPEND ioda_test_input
   testinput/iodatest.yaml
   testinput/iodatest_fileformat.yaml
+  testinput/iodatest_obsiterator.yaml
   testinput/iodatest_container_facades.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_obsdatavector.yaml
@@ -872,6 +873,17 @@ ecbuild_add_test( TARGET  ioda_obs_io_pool_mpi_7
                   COMMAND ioda_obs_io_pool
                   ARGS    "testinput/obsIoPool/iodatest_obs_io_pool.yaml"
                   LIBS  ioda_test )
+
+#####################################################################
+# ObsIterator tests
+#####################################################################
+
+# Test ObsIterator (begin/end, operator++, dereference, nlocs)
+ecbuild_add_test( TARGET  ioda_obsiterator
+                  SOURCES mains/TestObsIterator.cc
+                  ARGS    "testinput/iodatest_obsiterator.yaml"
+                  LIBS  ioda_test
+                  )
 
 #####################################################################
 # ObsSpace tests

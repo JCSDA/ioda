@@ -11,6 +11,7 @@
 #include <string>
 
 #include "ioda/ObsDataVector.h"
+#include "ioda/ObsIterator.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
 
@@ -22,6 +23,7 @@ struct IodaTrait {
   typedef ioda::ObsSpace       ObsSpace;
   typedef ioda::ObsVector      ObsVector;
   template <typename DATATYPE> using ObsDataVector = ioda::ObsDataVector<DATATYPE>;
+  typedef ioda::ObsIterator    GeometryIterator;
 };
 
 }  // namespace ioda

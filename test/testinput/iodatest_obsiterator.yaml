@@ -1,0 +1,23 @@
+time window:
+  begin: 2000-01-01T00:00:00Z
+  end: 2000-01-01T06:00:00Z
+
+observations:
+- obs space:
+    name: simple obs
+    simulated variables: [windEastward]
+    obsdatain:
+      engine:
+        type: GenList
+        lons: [10.0, 20.0, 30.0, 40.0, 50.0]
+        lats: [5.0, 15.0, 25.0, 35.0, 45.0]
+        dateTimes: [3600, 3600, 3600, 3600, 3600]
+        epoch: "seconds since 2000-01-01T00:00:00Z"
+        obs errors: [1.0]
+  obs iterator test:
+    tolerance: 1.0e-5
+    reference nlocs: 5
+    lon1: 10.0
+    lat1: 5.0
+    lon2: 20.0
+    lat2: 15.0

@@ -45,6 +45,7 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
+#include "ioda/ObsIterator.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/Fill.h"
 #include "ioda/Variables/VarUtils.h"
@@ -556,6 +557,13 @@ namespace ioda {
 
         /// @}
 
+        /// \brief Return an iterator to the beginning of the obs space locations
+        ObsIterator begin() const {
+            return ObsIterator(*this, 0);}
+
+        /// \brief Return an iterator after the end of the obs space locations
+        ObsIterator end() const {
+            return ObsIterator(*this, nlocs());}
 
      private:
         // ----------------------------- private data members ---------------------------
