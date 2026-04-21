@@ -5,9 +5,8 @@ test cases:
       channel numbers: []
       variables with channels: []
       variable dim names: []
-      datetime epoch: "2026-01-01T00:00:00Z"
       number of variables: 1
-    bytes serialized: 45
+    bytes serialized: 20
 
   - name: "Variables with channels"
     frame metadata:
@@ -20,6 +19,5 @@ test cases:
         dim names: ["Location", "Channel"]
       - name: "MetaData/chanCentralFrequency"
         dim names: ["Channel"]
-      datetime epoch: "2026-01-01T00:00:00Z"
       number of variables: 1
-    bytes serialized: 245
+    bytes serialized: 220

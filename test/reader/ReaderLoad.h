@@ -78,7 +78,6 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   //   1) channel numbers
   //   2) vars with channels
   //   3) number of vars
-  //   4) date time epoch
 
   // Channel numbers
   const std::vector<int> expectedChannelNumbers =
@@ -98,11 +97,6 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   const int expectedNumVars = testConfig.getInt("number of variables");
   const int numVars = osdfMetadata.getNumVars();
   EXPECT_EQUAL(numVars, expectedNumVars);
-
-  // Date time epoch
-  const std::string expectedDateTimeEpoch = testConfig.getString("date time epoch");
-  const std::string dateTimeEpoch = osdfMetadata.getDateTimeEpoch();
-  EXPECT_EQUAL(dateTimeEpoch, expectedDateTimeEpoch);
 }
 
 // -----------------------------------------------------------------------------

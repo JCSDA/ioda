@@ -22,34 +22,13 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/Logger.h"
 
 namespace ioda {
-
-namespace {
-
-// Strip off the "seconds since " prefix from an epoch string. For now,
-// we are restricting the units to "seconds since " and will be expanding that
-// in the future to other time units (hours, days, minutes, etc).
-//
-// Adapted from the version in IodaUtils.cc.
-std::string stripSecondsSincePrefix(std::string epochString) {
-  const std::string prefix = "seconds since ";
-  std::size_t pos = epochString.find(prefix);
-  if (pos == std::string::npos) {
-    std::string errorMsg =
-      std::string("For now, only supporting 'seconds since' form of ") +
-      std::string("units for MetaData/dateTime variable");
-    throw eckit::NotImplemented(errorMsg.c_str(), Here());
-  }
-  epochString.replace(pos, pos + prefix.size(), "");
-  return epochString;
-}
-
-}  // namespace
 
 OsdfFrameFacade::OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata)
     : frame_(frame), metadata_(metadata)
@@ -65,7 +44,6 @@ void OsdfFrameFacade::initialize(size_t /*numLocations*/,
   if (channelIndices) {
     metadata_.setChanNums(*channelIndices);
   }
-  metadata_.setDateTimeEpoch(stripSecondsSincePrefix(options.epoch));
   isInitialized_ = true;
 }
 

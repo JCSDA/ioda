@@ -171,7 +171,6 @@ void populateFrameMetadata(const eckit::LocalConfiguration & frameMetadataConfig
     varsWithChans.begin(), varsWithChans.end());
   osdfMetadata.setVarsWithChans(varsWithChansSet);
   osdfMetadata.setChanNums(frameMetadataConfig.getIntVector("channel numbers"));
-  osdfMetadata.setDateTimeEpoch(frameMetadataConfig.getString("datetime epoch"));
   osdfMetadata.setNumVars(frameMetadataConfig.getInt("number of variables"));
   const std::vector<eckit::LocalConfiguration> varDimNamesConfig =
     frameMetadataConfig.getSubConfigurations("variable dim names");

@@ -14,7 +14,6 @@ obs types:
       channel numbers: []
       variables with channels: []
       variable dim names: []
-      datetime epoch: "2026-01-01T00:00:00Z"
       number of variables: 1
 
     mpi size1:
@@ -146,7 +145,6 @@ obs types:
         dim names: ["Location", "Channel"]
       - name: "MetaData/chanCentralFrequency"
         dim names: ["Channel"]
-      datetime epoch: "2026-01-01T00:00:00Z"
       number of variables: 1
 
     mpi size1:

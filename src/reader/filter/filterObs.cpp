@@ -80,7 +80,8 @@ void filterObs(const util::TimeWindow & timeWindow,
     // TimeWindow class).
     std::vector<int64_t> dateTimeVals;
     osdfCont->getColumn(dateTimeColName, dateTimeVals);
-    util::DateTime epochDt(osdfMetadata.getDateTimeEpoch());
+    const std::string epochString = osdfCont->getColumnUnits(dateTimeColName);
+    util::DateTime epochDt(ioda::stripSecondsSincePrefix(epochString));
     timeWindow.setEpoch(epochDt);
     std::vector<bool> filterMask = timeWindow.createTimeMask(dateTimeVals);
     const std::size_t locsOutsideTimewindow =

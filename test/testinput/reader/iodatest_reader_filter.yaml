@@ -15,7 +15,7 @@ test column data:
     values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
   - name: "MetaData/dateTime"
     type: "int64"
-    unit: "int64Unit"
+    unit: "seconds since 1970-01-01T00:00:00Z"
     values: [ -1, 0, 20, 30, 40, 50, missing, 80, 90, 91 ]
   - name: "MetaData/latitude"
     type: "float"
@@ -39,7 +39,7 @@ expected filtered data:
     values: [ 2, 5, 7, 8 ]
   - name: "MetaData/dateTime"
     type: "int64"
-    unit: "int64Unit"
+    unit: "seconds since 1970-01-01T00:00:00Z"
     values: [ 20, 50, 80, 90 ]
   - name: "MetaData/latitude"
     type: "float"

@@ -22,6 +22,8 @@
 
 namespace ioda {
 
+static constexpr char epochPrefix[] = "seconds since ";
+
 // -----------------------------------------------------------------------------
 vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& firstVector,
                                               const std::vector<std::string>& secondVector) {
@@ -236,34 +238,36 @@ bool varIsDimScale(const Group & group, const std::string & varName) {
 }
 
 //------------------------------------------------------------------------------------
-util::DateTime getEpochAsDtime(const Variable & dtVar) {
-  // get the units attribute and strip off the "seconds since " part. For now,
-  // we are restricting the units to "seconds since " and will be expanding that
-  // in the future to other time units (hours, days, minutes, etc).
-  std::string epochString = dtVar.atts.open("units").read<std::string>();
-  std::size_t pos = epochString.find("seconds since ");
-  if (pos == std::string::npos) {
+std::string stripSecondsSincePrefix(std::string epochString) {
+  // Check that the string starts with epochPrefix and if so, strip off that prefix.
+  const std::string prefix = epochPrefix;
+  if (epochString.compare(0, prefix.size(), prefix) != 0) {
     std::string errorMsg =
-        std::string("For now, only supporting 'seconds since' form of ") +
-        std::string("units for MetaData/dateTime variable");
-    Exception(errorMsg.c_str(), ioda_Here());
+      std::string("For now, only supporting 'seconds since' form of ") +
+      std::string("units for MetaData/dateTime variable");
+    throw eckit::NotImplemented(errorMsg, Here());
   }
-  epochString.replace(pos, pos+14, "");
+  epochString.replace(0, prefix.size(), "");
+  return epochString;
+}
 
-  return util::DateTime(epochString);
+//------------------------------------------------------------------------------------
+util::DateTime getEpochAsDtime(const Variable & dtVar) {
+  std::string epochString = dtVar.atts.open("units").read<std::string>();
+  return util::DateTime(stripSecondsSincePrefix(epochString));
 }
 
 //------------------------------------------------------------------------------------
 void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
                              const std::size_t globalNlocs,
-                             const util::DateTime & newEpoch, Variable & epochDtVar,
+                             const util::DateTime & defaultEpoch, Variable & epochDtVar,
                              Has_Variables & destVarContainer) {
   std::string fullVarName = ioda::fullVarName(groupName, varName);
   if (destVarContainer.exists(fullVarName)) {
     // Variable already exists, simply open it.
     epochDtVar = destVarContainer.open(fullVarName);
   } else {
-    // Variable does not exist, need to create it. Use the newEpoch for the units attribute.
+    // Variable does not exist, need to create it. Use the defaultEpoch for the units attribute.
     std::vector<Variable> dimVars(1, destVarContainer.open("Location"));
     VariableCreationParameters params = VariableCreationParameters::defaults<int64_t>();
     // Don't want compression in the memory image.
@@ -271,9 +275,24 @@ void openCreateEpochDtimeVar(const std::string & groupName, const std::string & 
     std::vector<ioda::Dimensions_t> chunkDims(1, VarUtils::getLocationChunkSize(globalNlocs));
     params.setChunks(chunkDims);
     epochDtVar = destVarContainer.createWithScales<int64_t>(fullVarName, dimVars, params);
-    std::string epochString = "seconds since " + newEpoch.toString();
+    std::string epochString = epochPrefix + defaultEpoch.toString();
     epochDtVar.atts.add("units", epochString);
   }
+}
+
+//------------------------------------------------------------------------------------
+std::int32_t openCreateEpochDtimeColumn(std::unique_ptr<osdf::IFrame> & osdf,
+                                        const std::string & columnName,
+                                        const util::DateTime & defaultEpoch) {
+  // If need to create a new column, use defaultUnits and fill the new column
+  // with missing values.
+  if (!osdf->hasColumn(columnName)) {
+    const std::vector<std::int64_t> emptyData(osdf->numRows(),
+                                              util::missingValue<std::int64_t>());
+    const std::string defaultUnits = epochPrefix + defaultEpoch.toString();
+    osdf->appendNewColumn(columnName, emptyData, defaultUnits);
+  }
+  return osdf->getData().getIndex(columnName);
 }
 
 //------------------------------------------------------------------------------------

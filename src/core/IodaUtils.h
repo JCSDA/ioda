@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
 #include <typeinfo>
 #include <utility>
@@ -94,6 +95,11 @@ class ObsSpaceParameters;
   /// \brief true if variable is a dimension scale
   bool varIsDimScale(const Group & group, const std::string & varName);
 
+  /// \brief strip "seconds since " prefix from epoch string
+  /// \param epochString format "seconds since <epoch time string>"
+  /// \return <epoch time string> which is in ISO 8601 format
+  std::string stripSecondsSincePrefix(std::string epochString);
+
   /// \brief transform variable's units epoch string to an epoch DateTime object
   /// \param dtVar input epoch style datetime variable
   util::DateTime getEpochAsDtime(const Variable & dtVar);
@@ -102,13 +108,27 @@ class ObsSpaceParameters;
   /// \param groupName name of group in which to open or create variable
   /// \param varName name of variable to open or create
   /// \param globalNlocs total number of locations across all MPI tasks
-  /// \param newEpoch DateTime object used for the epoch if creating a new variable
+  /// \param defaultEpoch DateTime object used for the epoch if creating a new variable
   /// \param epochDtVar requested datetime variable
   /// \param destVarContainer Has_Variables object in which to open/create the variable
   void openCreateEpochDtimeVar(const std::string & groupName, const std::string & varName,
                                const std::size_t globalNlocs,
-                               const util::DateTime & newEpoch, Variable & epochDtVar,
+                               const util::DateTime & defaultEpoch, Variable & epochDtVar,
                                Has_Variables & destVarContainer);
+
+  /// \brief open or create an epoch style datetime variable as a column in an OSDF dataframe
+  /// \details This function will open or create a column holding epoch style datetimes in
+  /// an OSDF dataframe. If the column already exists, it will be opened. If the column does not
+  /// exist, it will be created with the provided default epoch string as the units and filled
+  /// with missing values. The format for the defaultUnits parameter is
+  /// "seconds since <epoch time string>", where the epoch time string is in ISO 8601 format.
+  /// \param osdf osdf dataframe in which to open or create the column
+  /// \param columnName name of column in which to open or create
+  /// \param defaultEpoch DateTime object used for the epoch if creating a new column
+  /// \return index of the requested column
+  std::int32_t openCreateEpochDtimeColumn(std::unique_ptr<osdf::IFrame> & osdf,
+                                          const std::string & columnName,
+                                          const util::DateTime & defaultEpoch);
 
   /// \brief convert datetime strings to DateTime objects
   /// \param dtStrings datetime strings

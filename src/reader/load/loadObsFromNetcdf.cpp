@@ -498,15 +498,6 @@ std::string getNcVarUnits(const netCDF::NcVar & var) {
       std::string("string type name for the 'units' attribute: ") + unitsTypeName;
     throw std::runtime_error(errMsg);
   }
-
-  // For now, strip off the leading "seconds since" part of the units value.
-  // (TODO(ln) - remove in next PR)
-  if (var.getName() == "dateTime") {
-    const std::string unitsPrefix("seconds since ");
-    const std::size_t strPos = unitsString.find(unitsPrefix);
-    unitsString              = unitsString.substr(strPos + unitsPrefix.length());
-  }
-
   return unitsString;
 }
 
@@ -637,11 +628,6 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
     const std::vector<std::string> varNameParts = ioda::splitString(varName, '/');
     netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
     checkNcObj(var, "ioda::reader::loadObsBlockFromNetcdf: Failed to open variable: " + varName);
-
-    // Record the date time epoch value for downstream operations
-    if (varName == "MetaData/dateTime") {
-      osdfMetadata.setDateTimeEpoch(getNcVarUnits(var));
-    }
 
     std::vector<std::string> varDimNames;
     if (keepNetcdfVarForOSDF(varName, var, varDimNames)) {

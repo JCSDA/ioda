@@ -1572,7 +1572,7 @@ ecbuild_add_test( TARGET ioda_osdf_prepare_derived_variables
                   )
 
 # this test checks the ability to add column metadatum to an IFrame using the configColumns function
-ecbuild_add_test( TARGET test_ioda_osdf_config_columns
+ecbuild_add_test( TARGET ioda_osdf_config_columns
                   SOURCES mains/containers/TestOsdfConfigColumns.cc
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS    ioda_test
@@ -1637,7 +1637,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_1D_variables_osdf_cmp
                           netcdf
                           "echo Checking append, 1D variables"
                           obsspace_append_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_append )
+                  TEST_DEPENDS ioda_obsspace_append )
 
 ecbuild_add_test( TARGET  ioda_obsspace_append_2D_variables_osdf_cmp
                   TYPE    SCRIPT
@@ -1646,7 +1646,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_2D_variables_osdf_cmp
                           netcdf
                           "echo Checking append, 2D variables"
                           obsspace_append_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_append )
+                  TEST_DEPENDS ioda_obsspace_append )
 
 ecbuild_add_test( TARGET  ioda_obsspace_append_no_obserrors_variables_osdf_cmp
                   TYPE    SCRIPT
@@ -1655,7 +1655,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_no_obserrors_variables_osdf_cmp
                           netcdf
                           "echo Checking append, no ObsError group"
                           obsspace_append_no_obserror_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_append )
+                  TEST_DEPENDS ioda_obsspace_append )
 
 # the following tests check that append across multiple mpi tasks is working
 ecbuild_add_test( TARGET  ioda_obsspace_append_mpi_2
@@ -1830,7 +1830,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_equal_1D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce equal, 1D variables"
                           obsspace_reduce_equal_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_not_equal_1D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1839,7 +1839,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_not_equal_1D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce equal, 1D variables"
                           obsspace_reduce_not_equal_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_1D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1848,7 +1848,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_1D_variables_cmp_osd
                           netcdf
                           "echo Checking reduce greater than, 1D variables"
                           obsspace_reduce_greater_than_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_1D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1857,7 +1857,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_1D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce less than, 1D variables"
                           obsspace_reduce_less_than_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_or_equal_1D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1866,7 +1866,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_or_equal_1D_variable
                           netcdf
                           "echo Checking reduce greater than_or_equal, 1D variables"
                           obsspace_reduce_greater_than_or_equal_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_or_equal_1D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1875,7 +1875,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_or_equal_1D_variables_c
                           netcdf
                           "echo Checking reduce less than_or_equal, 1D variables"
                           obsspace_reduce_less_than_or_equal_1D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_equal_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1884,7 +1884,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_equal_2D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce equal, 2D variables"
                           obsspace_reduce_equal_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_not_equal_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1893,7 +1893,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_not_equal_2D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce equal, 2D variables"
                           obsspace_reduce_not_equal_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1902,7 +1902,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_2D_variables_cmp_osd
                           netcdf
                           "echo Checking reduce greater than, 2D variables"
                           obsspace_reduce_greater_than_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1911,7 +1911,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_2D_variables_cmp_osdf
                           netcdf
                           "echo Checking reduce less than, 2D variables"
                           obsspace_reduce_less_than_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_or_equal_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1920,7 +1920,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_greater_than_or_equal_2D_variable
                           netcdf
                           "echo Checking reduce greater than_or_equal, 2D variables"
                           obsspace_reduce_greater_than_or_equal_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_or_equal_2D_variables_cmp_osdf
                   TYPE    SCRIPT
@@ -1929,7 +1929,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_reduce_less_than_or_equal_2D_variables_c
                           netcdf
                           "echo Checking reduce less than_or_equal, 2D variables"
                           obsspace_reduce_less_than_or_equal_2D_osdf_out.nc4
-                  TEST_DEPENDS test_ioda_obsspace_reduce)
+                  TEST_DEPENDS ioda_obsspace_reduce)
 
 # The next two tests run with 2 and 3 MPI tasks repectively using the same input files
 # as ioda_obssspace_reduce and only checks the obs space data members (no output files).

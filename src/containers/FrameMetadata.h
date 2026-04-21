@@ -45,13 +45,6 @@ class FrameMetadata {
   /// one variable. This lines up with how the ObsSpace counts variables.
   void setNumVars(const int numVars);
 
-  /// \brief set the datetime epoch value
-  /// \param epochString epoch string value
-  /// \details This data member holds an ISO 8601 value (UTC) that
-  /// represents the epoch for the MetaData/dateTime variable values.
-  void setDateTimeEpoch(const std::string & epochString);
-
-
   /// \brief return the channel numbers vector
   const std::vector<int> & getChanNums() const;
 
@@ -63,9 +56,6 @@ class FrameMetadata {
 
   /// \brief return the number of variables
   int getNumVars() const;
-
-  /// \brief return the datetime epoch value
-  std::string getDateTimeEpoch() const;
 
   //----------------------------------------------------------------------
   // utilities
@@ -117,9 +107,6 @@ class FrameMetadata {
 
   /// \brief number of frame variables
   int numVars_;
-
-  /// \brief datetime epoch value
-  std::string dateTimeEpoch_;
 };
 }  // namespace osdf
 

@@ -672,7 +672,10 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
         util::DateTime epochDt;
         loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
         if (use_dataframe_) {
-            epochDt = util::DateTime(osdfMetadata_.getDateTimeEpoch());
+            const std::int32_t dateTimeIndex =
+                osdf_->getData().getIndex(fullVarName(group, name));
+            const std::string epochStr = osdf_->getData().getUnits(dateTimeIndex);
+            epochDt = util::DateTime(stripSecondsSincePrefix(epochStr));
         } else {
             Variable dtVar = obs_group_->vars.open(group + std::string("/") + name);
             epochDt = getEpochAsDtime(dtVar);
@@ -764,7 +767,10 @@ void ObsSpace::put_db(const std::string& group, const std::string& name,
       // parameter for the units if creating a new variable.
       std::vector<int64_t> timeOffsets;
       if (use_dataframe_) {
-        const util::DateTime epochDtime(osdfMetadata_.getDateTimeEpoch());
+          const std::int32_t dateTimeIndex = openCreateEpochDtimeColumn(osdf_,
+             fullVarName(group, name), obs_params_.top_level_.epochDateTime);
+          const std::string epochStr = osdf_->getData().getUnits(dateTimeIndex);
+          const util::DateTime epochDtime(stripSecondsSincePrefix(epochStr));
           timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
       } else {
           Variable dtVar;

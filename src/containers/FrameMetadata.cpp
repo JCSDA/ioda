@@ -17,8 +17,7 @@ FrameMetadata::FrameMetadata()
                   : chanNums_({}),
                     varsWithChans_({}),
                     varDimNames_({}),
-                    numVars_(0),
-                    dateTimeEpoch_("None") {
+                    numVars_(0) {
 }
 
 //----------------------------------------------------------------------
@@ -38,10 +37,6 @@ void FrameMetadata::setVarsWithChans(const std::unordered_set<std::string> & var
 
 void FrameMetadata::setNumVars(const int numVars) {
   numVars_ = numVars;
-}
-
-void FrameMetadata::setDateTimeEpoch(const std::string & epochString) {
-  dateTimeEpoch_ = epochString;
 }
 
 //----------------------------------------------------------------------
@@ -67,10 +62,6 @@ const std::vector<std::string> & FrameMetadata::getVarDimNames(const std::string
 
 int FrameMetadata::getNumVars() const {
   return numVars_;
-}
-
-std::string FrameMetadata::getDateTimeEpoch() const {
-  return dateTimeEpoch_;
 }
 
 //----------------------------------------------------------------------
@@ -107,18 +98,15 @@ std::size_t FrameMetadata::serialize(eckit::Buffer & bufr) const {
   // 1. numVars_ (int)
   //      integer
   //
-  // 2. dateTimeEpoch_ (string)
-  //      string
-  //
-  // 3. chanNums_ (vector<int>)
+  // 2. chanNums_ (vector<int>)
   //      size_t - size of vector
   //      vector entries (int)
   //
-  // 4. varsWithChans_ (unordered_set<string>)
+  // 3. varsWithChans_ (unordered_set<string>)
   //      size_t - size of set
   //      vector entries (string)
   //
-  // 5. varDimNames (unordered_map<strin, vector<string>>)
+  // 4. varDimNames (unordered_map<strin, vector<string>>)
   //      size_t - size of map
   //      key,value pair
   //        size_t - size of vector
@@ -128,9 +116,6 @@ std::size_t FrameMetadata::serialize(eckit::Buffer & bufr) const {
 
   // numVars_
   memStream << numVars_;
-
-  // dateTimeEpoch_
-  memStream << dateTimeEpoch_;
 
   // chanNums_
   memStream << chanNums_.size();
@@ -163,9 +148,6 @@ void FrameMetadata::deserialize(eckit::Buffer & bufr) {
 
   // numVars_
   memStream >> numVars_;
-
-  // dateTimeEpoch_
-  memStream >> dateTimeEpoch_;
 
   // chanNums_
   std::size_t numEntries;
@@ -214,9 +196,6 @@ std::size_t FrameMetadata::bufrSize() const {
   // numVars_
   std::size_t numBytes = sizeof(int);
 
-  // dateTimeEpoch_
-  numBytes += dateTimeEpoch_.size();
-
   // chanNums_
   numBytes += sizeof(std::size_t);  // size of vector
   numBytes += (chanNums_.size()) * sizeof(int);
@@ -243,7 +222,6 @@ std::size_t FrameMetadata::bufrSize() const {
 bool FrameMetadata::operator==(const FrameMetadata & refFrameMetadata) const {
   // checke each data member for equality.
   const bool match = (this->numVars_ == refFrameMetadata.numVars_) &&
-                     (this->dateTimeEpoch_ == refFrameMetadata.dateTimeEpoch_) &&
                      (this->chanNums_ == refFrameMetadata.chanNums_) &&
                      (this->varsWithChans_ == refFrameMetadata.varsWithChans_) &&
                      (this->varDimNames_ == refFrameMetadata.varDimNames_);

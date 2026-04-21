@@ -16,7 +16,6 @@ obs types:
     channel numbers: []
     variables with channels: []
     number of variables: 5
-    date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
     - "sourceLocationIndices"
     - "MetaData/dateTime"
@@ -25,7 +24,7 @@ obs types:
     - "ObsValue/airTemperature"
     sample column units:
     - "MISSING*"
-    - "2018-04-14T21:00:00Z"
+    - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
@@ -80,7 +79,6 @@ obs types:
     channel numbers: []
     variables with channels: []
     number of variables: 5
-    date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
     - "sourceLocationIndices"
     - "MetaData/dateTime"
@@ -89,7 +87,7 @@ obs types:
     - "ObsValue/airTemperature"
     sample column units:
     - "MISSING*"
-    - "2018-04-14T21:00:00Z"
+    - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
@@ -144,7 +142,6 @@ obs types:
     channel numbers: []
     variables with channels: []
     number of variables: 5
-    date time epoch: "2018-04-14T21:00:00Z"
     sample column names:
     - "sourceLocationIndices"
     - "MetaData/dateTime"
@@ -153,7 +150,7 @@ obs types:
     - "ObsValue/airTemperature"
     sample column units:
     - "MISSING*"
-    - "2018-04-14T21:00:00Z"
+    - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
@@ -214,7 +211,6 @@ obs types:
     - "ObsError/brightnessTemperature"
     - "PreQC/brightnessTemperature"
     number of variables: 1
-    date time epoch: "1970-01-01T00:00:00Z"
     sample column names:
     - "sourceLocationIndices"
     - "MetaData/dateTime"
@@ -225,7 +221,7 @@ obs types:
     - "ObsValue/brightnessTemperature_15"
     sample column units:
     - "MISSING*"
-    - "1970-01-01T00:00:00Z"
+    - "seconds since 1970-01-01T00:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
