@@ -14,6 +14,7 @@
 
 #include "ColumnMetadatum.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/serialisation/ResizableMemoryStream.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/core/IodaUtils.h"
 #include "oops/util/Logger.h"
@@ -277,4 +278,91 @@ void osdf::ColumnMetadata::print(const Functions& funcs, const std::int32_t rowS
 void osdf::ColumnMetadata::clear() {
   columnLookup_.clear();
   columnMetadata_.clear();
+}
+
+std::size_t osdf::ColumnMetadata::serialize(eckit::Buffer & bufr,
+                                            const ColumnMetadata & columnMetadata) {
+  // Serialize in the following format using the eckit::Buffer and
+  // eckit::ResizableMemoryStream utilities.
+  //
+  // 1. maxId_ (int64_t)
+  //      integer
+  //
+  // 2. columnMetadata_ (vector<ColumnMetadatum>)
+  //      size_t - size of vector
+  //      vector entries, each containing:
+  //        string  - name
+  //        string  - unit
+  //        int16_t - width
+  //        int8_t  - type
+  //        int8_t  - permission
+  //
+  eckit::ResizableMemoryStream memStream(bufr);
+
+  // maxId_
+  memStream << columnMetadata.maxId_;
+
+  // columnMetadata_
+  memStream << columnMetadata.columnMetadata_.size();
+  for (const ColumnMetadatum & col : columnMetadata.columnMetadata_) {
+    memStream << col.getName();
+    memStream << col.getUnit();
+    memStream << col.getWidth();
+    memStream << col.getType();
+    memStream << col.getPermission();
+  }
+
+  return memStream.position();
+}
+
+std::vector<osdf::ColumnMetadatum> osdf::ColumnMetadata::deserialize(eckit::Buffer & bufr) {
+  // Follow the layout described in the serialize function.
+  eckit::ResizableMemoryStream memStream(bufr);
+
+  // maxId_
+  std::int64_t maxId;
+  memStream >> maxId;
+
+  // columnMetadata_
+  std::size_t numCols;
+  memStream >> numCols;
+  std::vector<ColumnMetadatum> columnMetadata;
+  columnMetadata.reserve(numCols);
+  for (std::size_t i = 0; i < numCols; ++i) {
+    std::string name;
+    std::string unit;
+    std::int16_t width;
+    int type_c;
+    int permission_c;
+    memStream >> name;
+    memStream >> unit;
+    memStream >> width;
+    memStream >> type_c;
+    memStream >> permission_c;
+    const std::int8_t type = static_cast<std::int8_t>(type_c);
+    const std::int8_t permission = static_cast<std::int8_t>(permission_c);
+    ColumnMetadatum col(name, unit, type, permission);
+    col.setWidth(width);
+    columnMetadata.push_back(col);
+  }
+
+  return columnMetadata;
+}
+
+//----------------------------------------------------------------------
+std::size_t osdf::ColumnMetadata::bufrSize(const ColumnMetadata & columnMetadata) {
+  // maxId_
+  std::size_t numBytes = sizeof(std::int64_t);
+
+  // columnMetadata_
+  numBytes += sizeof(std::size_t);  // size of vector
+  for (const ColumnMetadatum & col : columnMetadata.columnMetadata_) {
+    numBytes += col.getName().size();
+    numBytes += col.getUnit().size();
+    numBytes += sizeof(std::int16_t);  // width_
+    numBytes += sizeof(std::int8_t);   // type_
+    numBytes += sizeof(std::int8_t);   // permission_
+  }
+
+  return numBytes;
 }

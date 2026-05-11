@@ -43,10 +43,6 @@ namespace consts {
   const std::string kSpace = " ";
   const std::string kBigSpace = "   ";
 
-  const std::string columnSeparatorString    = "&";
-  const std::string metadatumSeparatorString = "@";
-  const char columnSeparatorChar             = '&';
-  const char metadatumSeparatorChar          = '@';
 }  // namespace consts
 }  // namespace osdf
 

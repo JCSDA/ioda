@@ -19,15 +19,8 @@ test cases:
       type: "char"
       units: "charUnits"
     expected values:
-      serialized column metadata:
-        tokens:
-        - "columns@5"
-        - "MetaData/intVariable@0@1@20@intUnits@"
-        - "MetaData/floatVariable@2@1@22@floatUnits@"
-        - "MetaData/stringVariable@4@1@23@stringUnits@"
-        - "MetaData/int64Variable@1@1@22@int64Units@"
-        - "MetaData/charVariable@3@1@21@charUnits@"
-
+      buffer size: 192
+      bytes written: 291
   - name: "7 columns"
     osdf columns:
     - name: "MetaData/intVariable"
@@ -52,13 +45,5 @@ test cases:
       type: "float"
       units: "floatUnits"
     expected values:
-      serialized column metadata:
-        tokens:
-        - "columns@7"
-        - "MetaData/intVariable@0@1@20@intUnits@"
-        - "MetaData/floatVariable@2@1@22@floatUnits@"
-        - "MetaData/stringVariable@4@1@23@stringUnits@"
-        - "MetaData/int64Variable@1@1@22@int64Units@"
-        - "MetaData/charVariable@3@1@21@charUnits@"
-        - "MetaData/anotherIntVariable@0@1@27@intUnits@"
-        - "MetaData/anotherFloatVariable@2@1@29@floatUnits@"
+      buffer size: 274
+      bytes written: 415

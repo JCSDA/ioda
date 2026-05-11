@@ -35,7 +35,6 @@ containers/FrameRows.cpp
 containers/FrameRows.h
 containers/FrameRowsData.cpp
 containers/FrameRowsData.h
-containers/FrameUtils.cpp
 containers/FrameUtils.h
 containers/Functions.cpp
 containers/Functions.h

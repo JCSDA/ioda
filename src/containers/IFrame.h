@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "IFrameData.h"
+#include "eckit/serialisation/ResizableMemoryStream.h"
 #include "oops/util/missingValues.h"
 
 namespace osdf {
@@ -138,16 +139,16 @@ class IFrame {
   /// \brief Returns vector of strings containing the column names.
   virtual std::vector<std::string> columnNames() const = 0;
 
-  /// \brief Returns serialization of the column metadata.
-  /// \details A simple tokenized string is used for the serialization. The first
-  /// token contains columns:<number of columns>" and subsequent tokens contain
-  /// information about each column: "<name>:<type>:<permission>:<width>". The tokens
-  /// are space separated, and the items within each token are colon separated.
-  virtual std::string serializeColumnMetadata() const = 0;
+  /// \brief Get the buffer size of the serialized column metadata.
+  virtual std::size_t getColumnMetadataBufferSize() const = 0;
 
-  /// \brief Accepts a serialized column metadata string and uses it to configure the columns
-  /// in an empty OSDF container.
-  virtual void deserializeColumnMetadata(const std::string & columnMetadataTokens) = 0;
+  /// \brief Returns binary serialization of the column metadata.
+  virtual std::size_t serializeColumnMetadata(eckit::Buffer &) const = 0;
+
+  /// \brief Accepts a serialized buffer and returns a vector that can be used to configure the
+  /// columns of a container.
+  // virtual void deserializeColumnMetadata(const std::string & columnMetadataTokens) = 0;
+  virtual void deserializeColumnMetadata(eckit::Buffer & columnMetadataBuffer) = 0;
 
   /// \brief Outputs the contents to screen. Used primarily for debugging and development.
   virtual void print() const = 0;

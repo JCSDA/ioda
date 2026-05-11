@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "eckit/io/Buffer.h"
+
 #include "ioda/containers/ColumnMetadatum.h"
 #include "ioda/containers/Functions.h"
 
@@ -49,6 +51,10 @@ class ColumnMetadata {
 
   void print(const Functions&, const std::int32_t) const;
   void clear();
+
+  static std::size_t bufrSize(const ColumnMetadata &);
+  static std::size_t serialize(eckit::Buffer &, const ColumnMetadata &);
+  static std::vector<ColumnMetadatum> deserialize(eckit::Buffer &);
 
  private:
   std::int64_t maxId_;

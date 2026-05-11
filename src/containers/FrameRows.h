@@ -101,8 +101,9 @@ class FrameRows : public IFrame {
   std::size_t numCols() const override { return data_.getSizeCols(); }
   std::vector<std::string> columnNames() const override;
 
-  std::string serializeColumnMetadata() const override;
-  void deserializeColumnMetadata(const std::string& columnMetadataTokens) override;
+  std::size_t getColumnMetadataBufferSize() const override;
+  std::size_t serializeColumnMetadata(eckit::Buffer &) const override;
+  void deserializeColumnMetadata(eckit::Buffer & columnMetadataBuffer) override;
 
   void append(const std::unique_ptr<IFrame>& srcOsdf) override;
 

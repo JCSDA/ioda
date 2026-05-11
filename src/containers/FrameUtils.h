@@ -53,17 +53,5 @@ auto callWithSupportedType(const int8_t dtype, const Action &action) {
   }
 }
 
-/// \brief Serialize a vector of ColumnMetadatum objects into a string
-/// containing column tokens.
-/// \param columnMetadata vector of ColumnMetadatum objects to serialize
-std::string serializeColumnMetadata(
-                const std::vector<ColumnMetadatum> & columnMetadata);
-
-/// \brief Return a vector of ColumnMetadatum objects deserialized from a string
-/// containing column tokens.
-/// \param columnMetadataTokens string containing serialized column metadata
-std::vector<ColumnMetadatum> deserializeColumnMetadataTokens(
-                                 const std::string & columnMetadataTokens);
-
 }  // end namespace FrameUtils
 }  // end namespace osdf

@@ -20,7 +20,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameMetadata.h"
-#include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Layout.h"

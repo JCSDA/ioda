@@ -148,8 +148,8 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisRankHasM
   const int mySize = mainComm.size();
   if (mySize > 1) {
     if (myRank == rootRank) {
-      const std::string serializedColMetadata = destOsdf->serializeColumnMetadata();
-      const std::size_t colMetadataSize = serializedColMetadata.size();
+      eckit::Buffer columnMetadataBufr(destOsdf->getColumnMetadataBufferSize());
+      const std::size_t colMetadataSize = destOsdf->serializeColumnMetadata(columnMetadataBufr);
 
       eckit::Buffer frameMetadataBufr(osdfMetadata.bufrSize());
       const std::size_t frameMetadataSize = osdfMetadata.serialize(frameMetadataBufr);
@@ -157,7 +157,8 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisRankHasM
         if (rankHasMetadata[i] == 0) {
           // Send the osdf column metadata to ranks that do not have them
           mainComm.send(colMetadataSize, i, 0);
-          mainComm.send(serializedColMetadata.data(), colMetadataSize, i, 1);
+          mainComm.send(
+            static_cast<const char*>(columnMetadataBufr.data()), colMetadataSize, i, 1);
 
           mainComm.send(frameMetadataSize, i, 2);
           mainComm.send(
@@ -170,11 +171,11 @@ void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisRankHasM
         // Receive the column metadata and update the destOsdf container
         std::size_t colMetadataSize;
         mainComm.receive(colMetadataSize, rootRank, 0);
-        std::vector<char> serializedColMetadata(colMetadataSize);
-        mainComm.receive(serializedColMetadata.data(), colMetadataSize, rootRank, 1);
-        // Now deserialize the metadata into the destOsdf container
-        destOsdf->deserializeColumnMetadata(std::string(serializedColMetadata.data(),
-                                                        serializedColMetadata.size()));
+        eckit::Buffer columnMetadataBuffer(colMetadataSize);
+        mainComm.receive(
+          static_cast<char *>(columnMetadataBuffer.data()), colMetadataSize, rootRank, 1);
+
+        destOsdf->deserializeColumnMetadata(columnMetadataBuffer);
 
         // Receive the frame metadata and update the osdfMetadata object
         std::size_t frameMetadataSize;

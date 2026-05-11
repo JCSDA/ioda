@@ -17,6 +17,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/io/Buffer.h"
 #include "eckit/testing/Test.h"
 
 #include "ioda/containers/ColumnMetadata.h"
@@ -172,9 +173,11 @@ void testSerializeDeserializeColMetadata() {
   // Serialize the column metadata from one data frame, then
   // deserialize it into a new data frame. Check that the
   // column names and types are the same.
-  std::string serializedColMetadata = testOsdf->serializeColumnMetadata();
+  const std::size_t bufferSize = testOsdf->getColumnMetadataBufferSize();
+  eckit::Buffer columnMetadataBuffer(bufferSize);
+  testOsdf->serializeColumnMetadata(columnMetadataBuffer);
   std::unique_ptr<osdf::IFrame> testOsdf2 = std::make_unique<osdf::FrameRows>();
-  testOsdf2->deserializeColumnMetadata(serializedColMetadata);
+  testOsdf2->deserializeColumnMetadata(columnMetadataBuffer);
 
   // The number of rows in the new data frame should be zero
   EXPECT(testOsdf2->numRows() == 0);

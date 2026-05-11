@@ -240,20 +240,22 @@ std::vector<std::string> osdf::FrameCols::columnNames() const {
   return data_.getColumnMetadata().columnNames();
 }
 
-std::string osdf::FrameCols::serializeColumnMetadata() const {
-  return FrameUtils::serializeColumnMetadata(data_.getColumnMetadata().get());
+std::size_t osdf::FrameCols::getColumnMetadataBufferSize() const {
+  return ColumnMetadata::bufrSize(data_.getColumnMetadata());
 }
 
-void osdf::FrameCols::deserializeColumnMetadata(const std::string & columnMetadataTokens) {
+std::size_t osdf::FrameCols::serializeColumnMetadata(eckit::Buffer & columnMetadataBuffer) const {
+  return ColumnMetadata::serialize(columnMetadataBuffer, data_.getColumnMetadata());
+}
+
+void osdf::FrameCols::deserializeColumnMetadata(eckit::Buffer & columnMetadataBuffer) {
   // Don't allow deserialization into non-empty ColumnMetadata
   if (data_.getColumnMetadata().get().size() != 0) {
     const std::string errMsg =
       std::string("ERROR: Column metadata can only be deserialized into an empty container.");
     throw eckit::BadValue(errMsg, Here());
   }
-  const std::vector<ColumnMetadatum> columnMetadata =
-          FrameUtils::deserializeColumnMetadataTokens(columnMetadataTokens);
-  data_.configColumns(columnMetadata);
+  data_.configColumns(ColumnMetadata::deserialize(columnMetadataBuffer));
 }
 
 void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
