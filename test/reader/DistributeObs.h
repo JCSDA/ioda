@@ -47,10 +47,17 @@ void testCalculateDistribution() {
   // Create the input osdf frame to pass to distributeObs for this rank
   const std::vector<eckit::LocalConfiguration> configInputFrameData =
     configInputData.getSubConfigurations("column data." + MyPath);
-  std::unique_ptr<osdf::IFrame> inoutOsdf = std::make_unique<osdf::FrameRows>();
-  std::vector<std::string> inputColumnNames;
-  std::vector<std::string> inputColumnTypes;
-  populateFrame(configInputFrameData, inoutOsdf, inputColumnNames, inputColumnTypes);
+  std::unique_ptr<osdf::IFrame> inOsdf = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> rememberOsdf = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> outOsdf = std::make_unique<osdf::FrameRows>();
+  std::vector<std::string> inputColumnNames, rememberColumnNames;
+  std::vector<std::string> inputColumnTypes, rememberColumnTypes;
+  populateFrame(configInputFrameData, inOsdf, inputColumnNames, inputColumnTypes);
+  populateFrame(configInputFrameData, rememberOsdf, rememberColumnNames, rememberColumnTypes);
+
+  // Compare the two frames we just created to validate they're the same
+  compareFrames(inOsdf, inputColumnNames, inputColumnTypes, rememberOsdf, rememberColumnNames,
+                rememberColumnTypes, tolerance, false);
 
   // Create the other distributeObs function inputs
   // obsGroupVarList
@@ -61,8 +68,9 @@ void testCalculateDistribution() {
   osdf::FrameMetadata osdfMetadata;
 
   // ObsSourceStats
-  ioda::ObsSourceStats obsSourceStats;
-  obsSourceStats.sourceNlocs = configInputData.getUnsigned("number of locations");
+  ioda::ObsSourceStats inObsSourceStats, rememberObsSourceStats, outObsSourceStats;
+  inObsSourceStats.sourceNlocs = configInputData.getUnsigned("number of locations");
+  rememberObsSourceStats.sourceNlocs = configInputData.getUnsigned("number of locations");
 
   // Distribution Parameters
   auto distParamsConfig = configInputData.getSubConfiguration("distribution");
@@ -70,28 +78,92 @@ void testCalculateDistribution() {
         DistributionFactory::createParameters(distParamsConfig.getString("name"));
   distParams->deserialize(distParamsConfig);
 
-  std::shared_ptr<Distribution> inOutDist;  // gets created as nullptr
-
-  // Call the distributeObs function, passing a null inOutDist, and expect it to throw an exception
-  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
-                             obsGroupVarList,
-                             obsSourceStats,
-                             inOutDist,
-                             inoutOsdf),
+  std::shared_ptr<Distribution> inDist;  // gets created as nullptr
+  std::shared_ptr<Distribution> outDist;
+  IdentityDistribution::Parameters_ identityDistParams;  // name="RoundRobin"
+  eckit::LocalConfiguration identityDistConfig;
+  identityDistConfig.set("name", "Identity");
+  identityDistParams.deserialize(identityDistConfig);
+  // Pass the Identity distribution parameters and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(identityDistParams, oops::mpi::world(),
+                                               obsGroupVarList,
+                                               inObsSourceStats,
+                                               inDist,
+                                               inOsdf,
+                                               outObsSourceStats,
+                                               outDist,
+                                               outOsdf),
                    eckit::Exception);
 
-  // Now create inOutDist as IdentityDistribution and call the function again
-  inOutDist = DistributionFactory::create(oops::mpi::world(), IdentityDistribution::Parameters_());
-  inOutDist->setNumberLocations(inoutOsdf->numRows());
+  // Pass the same ObsSourceStats and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                                               obsGroupVarList,
+                                               inObsSourceStats,
+                                               inDist,
+                                               inOsdf,
+                                               inObsSourceStats,
+                                               outDist,
+                                               outOsdf),
+                   eckit::Exception);
 
-  // Call the function correctly
+  // Pass the same distribution pointer and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                                               obsGroupVarList,
+                                               inObsSourceStats,
+                                               inDist,
+                                               inOsdf,
+                                               outObsSourceStats,
+                                               inDist,
+                                               outOsdf),
+                   eckit::Exception);
+
+  // Pass the same OSDF container and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                                               obsGroupVarList,
+                                               inObsSourceStats,
+                                               inDist,
+                                               inOsdf,
+                                               outObsSourceStats,
+                                               outDist,
+                                               inOsdf),
+                   eckit::Exception);
+
+  // Call the distributeObs function, passing a null inDist, and expect it to throw an exception
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                                               obsGroupVarList,
+                                               inObsSourceStats,
+                                               inDist,
+                                               inOsdf,
+                                               outObsSourceStats,
+                                               outDist,
+                                               outOsdf),
+                   eckit::Exception);
+
+  // Now create inDist as IdentityDistribution and call the function again
+  inDist = std::make_unique<IdentityDistribution>(oops::mpi::world(),
+                                                  IdentityDistribution::Parameters_{});
+  inDist->setNumberLocations(inOsdf->numRows());
+
+  // Call the function correctly, using the overload that preserves the inputs
   ioda::reader::distributeObs(*distParams, oops::mpi::world(),
                              obsGroupVarList,
-                             obsSourceStats,
-                             inOutDist,
-                             inoutOsdf);
+                             inObsSourceStats,
+                             inDist,
+                             inOsdf,
+                             outObsSourceStats,
+                             outDist,
+                             outOsdf);
 
-  EXPECT(inOutDist->name() == distParams->name.value());
+  // Make sure the input distribution, osdf, and ObsSourceStats were not modified
+  EXPECT(inDist->name() == "Identity");
+  compareFrames(inOsdf, inputColumnNames, inputColumnTypes, rememberOsdf, rememberColumnNames,
+                rememberColumnTypes, tolerance, false);
+  EXPECT(inObsSourceStats.sourceNlocs == rememberObsSourceStats.sourceNlocs);
+  EXPECT(inObsSourceStats.nlocs == rememberObsSourceStats.nlocs);
+  EXPECT(inObsSourceStats.locIndices == rememberObsSourceStats.locIndices);
+  EXPECT(inObsSourceStats.nrecs == rememberObsSourceStats.nrecs);
+  EXPECT(inObsSourceStats.recNums == rememberObsSourceStats.recNums);
+
   // Create the reference osdf frame for this rank to compare results
   const eckit::LocalConfiguration configExpectedResults =
     topLevelConf.getSubConfiguration("expected results." + MyPath);
@@ -103,7 +175,7 @@ void testCalculateDistribution() {
   populateFrame(configRefFrameData, refOutOsdf, refColumnNames, refColumnTypes);
 
   // Compare the output osdf frame to the reference osdf frame
-  compareFrames(inoutOsdf, inputColumnNames, inputColumnTypes, refOutOsdf, refColumnNames,
+  compareFrames(outOsdf, inputColumnNames, inputColumnTypes, refOutOsdf, refColumnNames,
                 refColumnTypes, tolerance, false);
 
   std::vector<std::size_t> expectedLocalLocIndices, expectedLocalRecNums;
@@ -113,10 +185,29 @@ void testCalculateDistribution() {
   expectedLocalNlocs = configExpectedResults.getUnsigned("local num locations");
   expectedLocalNrecs = configExpectedResults.getUnsigned("local num records");
 
-  EXPECT(obsSourceStats.locIndices == expectedLocalLocIndices);
-  EXPECT(obsSourceStats.recNums == expectedLocalRecNums);
-  EXPECT(obsSourceStats.nlocs == expectedLocalNlocs);
-  EXPECT(obsSourceStats.nrecs == expectedLocalNrecs);
+  EXPECT(outObsSourceStats.sourceNlocs == rememberObsSourceStats.sourceNlocs);
+  EXPECT(outObsSourceStats.locIndices == expectedLocalLocIndices);
+  EXPECT(outObsSourceStats.recNums == expectedLocalRecNums);
+  EXPECT(outObsSourceStats.nlocs == expectedLocalNlocs);
+  EXPECT(outObsSourceStats.nrecs == expectedLocalNrecs);
+  EXPECT(outDist->name() == distParams->name.value());
+
+  // Now call the function using the overload that overwrites the inputs
+  ioda::reader::distributeObs(*distParams, oops::mpi::world(),
+                             obsGroupVarList,
+                             inObsSourceStats,
+                             inDist,
+                             inOsdf);
+
+  // Make sure the input distribution, osdf, and ObsSourceStats were modified
+  compareFrames(inOsdf, inputColumnNames, inputColumnTypes, refOutOsdf, refColumnNames,
+                refColumnTypes, tolerance, false);
+  EXPECT(inObsSourceStats.sourceNlocs == rememberObsSourceStats.sourceNlocs);
+  EXPECT(inObsSourceStats.nlocs == expectedLocalNlocs);
+  EXPECT(inObsSourceStats.locIndices == expectedLocalLocIndices);
+  EXPECT(inObsSourceStats.nrecs == expectedLocalNrecs);
+  EXPECT(inObsSourceStats.recNums == expectedLocalRecNums);
+  EXPECT(inDist->name() == distParams->name.value());
 }
 
 // -----------------------------------------------------------------------------
