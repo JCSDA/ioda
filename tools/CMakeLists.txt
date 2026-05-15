@@ -4,6 +4,7 @@ set(_programs
     ioda_pylint.sh
     check_ioda_nc.py
     ioda_compare.sh
+    ioda_compare_nc.py
     ioda_compare_odc_with_netcdf.py
     refactor-yaml.py
     retrieval_upgrader.py

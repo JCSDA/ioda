@@ -608,33 +608,47 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
   checkNcObj(outFile,
     "ioda::writer::saveOsdfToNetcdf: Failed to open/create file: " + outputFileName);
 
-  // Create dimensions. Dimensions always go in the top level.
-  // For now we are handling:
-  //  1. Location - values are in the sourceLocationIndices column
-  //                create the Location dimension with unlimited size
-  //  2. Channel - values are in the osdfMetadata.chanNums vector
-  const DimCreationList dimCreationList = makeDimCreationList(srcOsdf, osdfMetadata);
-  for (auto & dimCreationInfo : dimCreationList) {
-    createNcDim(outFile, dimCreationInfo.first, dimCreationInfo.second);
-  }
-  const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
-  for (auto & dimVarCreate : dimVarCreationList) {
-    netCDF::NcVar dimVar =
-      createHierNcVar(outFile, dimVarCreate.first, dimVarCreate.second);
-    setNcDimVar(dimVar, srcOsdf, osdfMetadata);
-  }
+  if (srcOsdf->numCols() > 0) {
+    // The osdf is not empty so we transfer the data to the output file.
+    //
+    // Create dimensions. Dimensions always go in the top level.
+    // For now we are handling:
+    //  1. Location - values are in the sourceLocationIndices column
+    //                create the Location dimension with unlimited size
+    //  2. Channel - values are in the osdfMetadata.chanNums vector
+    const DimCreationList dimCreationList = makeDimCreationList(srcOsdf, osdfMetadata);
+    for (auto & dimCreationInfo : dimCreationList) {
+      createNcDim(outFile, dimCreationInfo.first, dimCreationInfo.second);
+    }
+    const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+    for (auto & dimVarCreate : dimVarCreationList) {
+      netCDF::NcVar dimVar =
+        createHierNcVar(outFile, dimVarCreate.first, dimVarCreate.second);
+      setNcDimVar(dimVar, srcOsdf, osdfMetadata);
+    }
 
-  // Form a list of variable names with their associated dimension names.
-  // Loop through the list and create the variables in the output file.
-  // We are expecting three types of variables for now:
-  //  1. The variables that will be dimensioned by Location
-  //  2. The variables that will be dimensioned by Channel
-  //  3. The variables that will be dimensioned by Location and Channel
-  const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
-  for (auto & varCreate : varCreationList) {
-    netCDF::NcVar var =
-      createHierNcVar(outFile, varCreate.first, varCreate.second);
-    setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata);
+    // Form a list of variable names with their associated dimension names.
+    // Loop through the list and create the variables in the output file.
+    // We are expecting three types of variables for now:
+    //  1. The variables that will be dimensioned by Location
+    //  2. The variables that will be dimensioned by Channel
+    //  3. The variables that will be dimensioned by Location and Channel
+    const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+    for (auto & varCreate : varCreationList) {
+      netCDF::NcVar var =
+        createHierNcVar(outFile, varCreate.first, varCreate.second);
+      setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata);
+    }
+  } else {
+    // The osdf is empty, so we write an empty file that has only the Location
+    // dimension (with size 0) and only the Location variable. This is a special
+    // format that ioda recognizes which will create an empty ObsSpace when
+    // read in.
+    std::string locName("Location");
+    outFile.addDim(locName);
+
+    VarCreationParameters locVarCreateParams(locName, {locName}, netCDF::NcType::nc_INT64, "");
+    createHierNcVar(outFile, locName, locVarCreateParams);
   }
 
   outFile.close();

@@ -182,6 +182,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_redistribute.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
+  testinput/iodatest_obsspace_filter_to_zero_obs_osdf.yaml
   testinput/iodatest_obsspace_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml
   testinput/iodatest_obsspace_fill_value.yaml
@@ -246,6 +247,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml
   testinput/iodatest_time_io_empty_ospace.yaml
+  testinput/iodatest_time_io_empty_ospace_osdf.yaml
   testinput/iodatest_bufr_mhs.yaml
   testinput/iodatest_bufr_mhs_mapping.yaml
   testinput/iodatest_bufr_python_encoder.yaml
@@ -1026,17 +1028,67 @@ if (odc_FOUND)
                     )
 endif()
 
+ecbuild_add_test( TARGET  ioda_clean_obsspace_empty_obs_file
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testoutput/ospace.empty_obs_file.nc4"
+                    "testoutput/ospace.empty_obs_file_with_channels.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file_with_channels.nc4" )
+
+# this test produces ospace.empty_obs_file.nc4 and ospace.empty_obs_file_with_channels.nc4
+# which are compared to reference files in the next two tests
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file.yaml"
                   LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_empty_obs_file
                   )
 
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of empty obs space output file"
+                          ospace.empty_obs_file.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file )
+
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_with_channels_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of empty obs space output file"
+                          ospace.empty_obs_file_with_channels.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file )
+
+# this test produces ospace.empty_obs_file.nc4 and ospace.empty_obs_file_with_channels.nc4
+# which are compared to reference files in the next two tests
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
                   LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_empty_obs_file
                   )
+
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of empty obs space output file for OSDF"
+                          ospace_osdf.empty_obs_file.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_with_channels_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of empty obs space output file for OSDF"
+                          ospace_osdf.empty_obs_file_with_channels.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_osdf )
 
 # As many MPI processes as I/O pool members
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_mpi_2
@@ -1964,11 +2016,67 @@ ecbuild_add_test( TARGET  ioda_obsspace_zero_obs
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_clean_obsspace_filter_to_zero_obs
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testoutput/filter_to_zero_obs.amsua.nc4"
+                    "testoutput/filter_to_zero_obs.sondes.nc4"
+                    "testoutput/filter_to_zero_obs.amsua.osdf.nc4"
+                    "testoutput/filter_to_zero_obs.sondes.osdf.nc4")
+
+# this test produces filter_to_zero_obs.amsua.nc4 and filter_to_zero_obs.sondes.nc4
+# which are compared to reference files in the next two tests
 ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs.yaml"
                   LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_filter_to_zero_obs
                   )
+
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_sondes_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of filter to zero obs, sondes"
+                          filter_to_zero_obs.sondes.nc4
+                  TEST_DEPENDS ioda_obsspace_filter_to_zero_obs )
+
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_amsua_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of filter to zero obs, amsua"
+                          filter_to_zero_obs.amsua.nc4
+                  TEST_DEPENDS ioda_obsspace_filter_to_zero_obs )
+
+# this test produces filter_to_zero_obs.amsua.osdf.nc4 and filter_to_zero_obs.sondes.osdf.nc4
+# which are compared to reference files in the next two tests
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_filter_to_zero_obs
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_sondes_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of filter to zero obs, sondes, OSDF"
+                          filter_to_zero_obs.sondes.osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_filter_to_zero_obs_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_amsua_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf_py
+                          "echo Checking contents of filter to zero obs, amsua, OSDF"
+                          filter_to_zero_obs.amsua.osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_filter_to_zero_obs_osdf )
 
 ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool
                   COMMAND ioda_obsspace
@@ -2004,7 +2112,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_cmp
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          netcdf
+                          netcdf_py
                           "echo Checking io default fill values"
                           default_fill_values_out.nc4
                   TEST_DEPENDS ioda_obsspace_default_fill_values )
@@ -3136,7 +3244,10 @@ ecbuild_add_test( TARGET  ioda_clean_time_io_empty_ospace
                   ARGS    "-f"
                     "testoutput/empty_default_output.nc4"
                     "testoutput/empty_create_output.nc4"
-                    "testoutput/empty_skip_output.nc4" )
+                    "testoutput/empty_skip_output.nc4"
+                    "testoutput/empty_default_output_osdf.nc4"
+                    "testoutput/empty_create_output_osdf.nc4"
+                    "testoutput/empty_skip_output_osdf.nc4" )
 
 # the following test creates (or does not create) output files
 ecbuild_add_test( TARGET ioda_time_io_empty_ospace
@@ -3172,6 +3283,41 @@ ecbuild_add_test( TARGET  ioda_time_io_empty_ospace_skip_check
                           "echo Checking empty obs space handling (skip)"
                           empty_skip_output.nc4
                   TEST_DEPENDS ioda_time_io_empty_ospace )
+
+# OSDF: the following test creates (or does not create) output files
+ecbuild_add_test( TARGET ioda_time_io_empty_ospace_osdf
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_empty_ospace_osdf.yaml"
+                  TEST_DEPENDS ioda_clean_time_io_empty_ospace )
+
+# OSDF: the following tests check to see if a file was created or if a file was not created
+# according to the empty obs space handling specification
+ecbuild_add_test( TARGET  ioda_time_io_empty_ospace_osdf_default_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileExists
+                          "echo Checking empty obs space handling for OSDF (default)"
+                          empty_default_output_osdf.nc4
+                  TEST_DEPENDS ioda_time_io_empty_ospace_osdf )
+
+ecbuild_add_test( TARGET  ioda_time_io_empty_ospace_osdf_create_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileExists
+                          "echo Checking empty obs space handling for OSDF (create)"
+                          empty_create_output_osdf.nc4
+                  TEST_DEPENDS ioda_time_io_empty_ospace_osdf )
+
+ecbuild_add_test( TARGET  ioda_time_io_empty_ospace_osdf_skip_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          fileDoesNotExist
+                          "echo Checking empty obs space handling for OSDF (skip)"
+                          empty_skip_output_osdf.nc4
+                  TEST_DEPENDS ioda_time_io_empty_ospace_osdf )
 
 #####################################################################
 # Test the ioda-upgrade-v1-to-v2.x app

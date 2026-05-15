@@ -15,7 +15,9 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/filter_to_zero_obs.amsua.nc4"
+        obsfile: "testoutput/filter_to_zero_obs.amsua.osdf.nc4"
+      write multiple files: true
+    use data frame container: true
   test data:
     gnlocs: 0
     gnlocs outside time window: 100
@@ -58,7 +60,9 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/filter_to_zero_obs.sondes.nc4"
+        obsfile: "testoutput/filter_to_zero_obs.sondes.osdf.nc4"
+      write multiple files: true
+    use data frame container: true
   test data:
     gnlocs: 0
     gnlocs outside time window: 974

@@ -2,7 +2,9 @@
 
 # use h5diff, nccmp or odc to compare the output of 
 #
-# argument 1: what type of file to compare; hdf5, netcdf or odb
+# argument 1: what type of file to compare; hdf5, netcdf, netcdf_py or odb
+#   Note: netcdf_py is a python script to compare netcdf files that is a
+#   bit less pedantic that nccmp.
 # argument 2: the command to run the ioda converter
 # argument 3: the filename to test
 # argument 4: tolerence for comparing values
@@ -60,6 +62,11 @@ case $file_type in
   netcdf)
     $cmd && \
     nccmp testoutput/$file_name $testRefFile -d -m -g -f -S -T ${tol}
+    rc=${?}
+    ;;
+  netcdf_py)
+    $cmd && \
+    python "$(dirname "$0")/ioda_compare_nc.py" testoutput/$file_name $testRefFile -T ${tol}
     rc=${?}
     ;;
    odb)
