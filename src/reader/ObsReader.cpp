@@ -94,7 +94,9 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
   // Note there is an assumption here that the data is currently distributed
   // in a non-overlapping way across the ranks, because IdentityDistribution
   // is a subclass of NonOverlappingDistribution.
-  ospaceDist = DistributionFactory::create(commAll, IdentityDistribution::Parameters_());
+  std::unique_ptr<DistributionParametersBase> identityDistParams =
+    createBaseDistributionParams("Identity");
+  ospaceDist = DistributionFactory::create(commAll, *identityDistParams);
   ospaceDist->setNumberLocations(destOsdf->numRows());
   distributeObs(distParams, commAll, obsGroupVarList, obsSourceStats, ospaceDist, destOsdf);
   oops::Log::trace() << "reader::obsRead end" << std::endl;

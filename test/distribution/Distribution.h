@@ -216,6 +216,16 @@ void testDistributionConstructedManually() {
   const eckit::mpi::Comm & MpiComm = oops::mpi::world();
   const std::size_t MyRank = MpiComm.rank();
 
+  // Test createBaseDistributionParams function
+  std::unique_ptr<DistributionParametersBase> identityDistParams =
+    createBaseDistributionParams("Identity");
+  EXPECT(identityDistParams->name.value() == "Identity");
+  std::unique_ptr<ioda::Distribution> identityDist =
+    DistributionFactory::create(MpiComm, *identityDistParams);
+  EXPECT(identityDist->name() == "Identity");
+  identityDistParams.reset();
+  identityDist.reset();
+
   std::string TestDistType;
   std::string DistName;
   std::unique_ptr<ioda::Distribution> TestDist;

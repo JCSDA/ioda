@@ -80,12 +80,10 @@ void testCalculateDistribution() {
 
   std::shared_ptr<Distribution> inDist;  // gets created as nullptr
   std::shared_ptr<Distribution> outDist;
-  IdentityDistribution::Parameters_ identityDistParams;  // name="RoundRobin"
-  eckit::LocalConfiguration identityDistConfig;
-  identityDistConfig.set("name", "Identity");
-  identityDistParams.deserialize(identityDistConfig);
+  std::unique_ptr<DistributionParametersBase> identityDistParams =
+    createBaseDistributionParams("Identity");
   // Pass the Identity distribution parameters and expect it to throw an exception
-  EXPECT_THROWS_AS(ioda::reader::distributeObs(identityDistParams, oops::mpi::world(),
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*identityDistParams, oops::mpi::world(),
                                                obsGroupVarList,
                                                inObsSourceStats,
                                                inDist,
