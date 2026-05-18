@@ -113,6 +113,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_reader_pool.yaml
   testinput/iodatest_obsspace_append.yaml
   testinput/iodatest_obsspace_append_mpi.yaml
+  testinput/iodatest_obsspace_contda.yaml
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
@@ -1591,6 +1592,12 @@ ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels_check
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_obsspace_put_db_channels )
+
+ecbuild_add_test( TARGET  ioda_obsspace_contda
+                  SOURCES mains/TestIodaObsSpaceContDA.cc
+                  ARGS    "testinput/iodatest_obsspace_contda.yaml"
+                  LIBS  ioda_test
+                  )
 
 #########################################################################
 ##### The following tests check the ObsSpace using an OSDF container ####

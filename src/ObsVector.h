@@ -131,6 +131,7 @@ class ObsVector : public ObsSpaceAssociated,
 
   void reduce(const std::vector<bool> & keepLocs) override;
   void append() override;
+  void syncAppend() override;
 
   std::string info(const std::string &) const;
   std::string info(const std::string &, const ObsDataVector<int> &) const;

@@ -488,6 +488,10 @@ void ObsVector::append() {
   nlocs_ = newnlocs;
 }
 // -----------------------------------------------------------------------------
+void ObsVector::syncAppend() {
+  indexAppend_ = nlocs_;
+}
+// -----------------------------------------------------------------------------
 void ObsVector::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();

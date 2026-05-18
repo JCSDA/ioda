@@ -1,0 +1,55 @@
+---
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+- obs space: &contda_obs_space
+    name: "ContDA Shift Window"
+    simulated variables: ['airTemperature']
+    distribution:
+      name: "RoundRobin"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/test_append1/obsspace_append_1D.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_contda_out.nc4"
+  test data: &contda_test_data
+    after constructor:
+      gnlocs: 7
+    shift sequence:
+    # Shift 1: Keep original window (covers test_append1), append test_append2
+    # test_append1 has 7, test_append2 has 5. Total = 12.
+    - time window:
+        begin: "2018-01-01T00:00:00Z"
+        end: "2022-01-01T00:00:00Z"
+      obs append directory: "Data/testinput_tier_1/test_append2"
+      expected gnlocs: 12
+    # Shift 2: Keep window same, append test_append3
+    # Total = 12 + 8 = 20.
+    - time window:
+        begin: "2018-01-01T00:00:00Z"
+        end: "2022-01-01T00:00:00Z"
+      obs append directory: "Data/testinput_tier_1/test_append3"
+      expected gnlocs: 20
+    # Shift 3: Move window to Far Future to remove everything
+    - time window:
+        begin: "2030-01-01T00:00:00Z"
+        end: "2031-01-01T00:00:00Z"
+      obs append directory: "Data/testinput_tier_1/test_append1" # This file has 2018-2022 times
+      expected gnlocs: 0
+
+# Same flow as above, but using the OSDF (data frame) container to exercise
+# the use_dataframe_ = true code path.
+- obs space:
+    <<: *contda_obs_space
+    name: "ContDA Shift Window (OSDF)"
+    use data frame container: true
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_contda_osdf_out.nc4"
+  test data: *contda_test_data

@@ -880,12 +880,22 @@ void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
+  this->syncAppend();
   // For now, only allow append to run on non-overlapping distributions
   std::string appendDir = cdaConfig.getString("obs append directory");
   if (cdaConfig.has("time window")) {
     util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    bool windowShiftedForward = (newWindow.start() > timeWindow_.start());
     timeWindow_ = newWindow;
     obs_params_.updateWindow(cdaConfig);
+
+    // Remove observations that fall outside the new window
+    if (windowShiftedForward && this->nlocs() > 0 && this->has("MetaData", "dateTime")) {
+      std::vector<util::DateTime> times;
+      this->get_db("MetaData", "dateTime", times);
+      std::vector<bool> keepLocs = timeWindow_.createTimeMask(times);
+      this->reduce(keepLocs);
+    }
   }
   if (!(dist_->isNonoverlapping())) {
     std::string errMsg = std::string("ObsSpace::append: Distribution '") + dist_->name() +
@@ -1030,6 +1040,13 @@ void ObsSpace::reduce(const std::vector<bool> &keepLocs) {
   // Reduce all the associated data structures
   for (auto & data : obs_space_associated_) {
     data.get().reduce(keepLocs);
+  }
+}
+
+// -----------------------------------------------------------------------------
+void ObsSpace::syncAppend() {
+  for (auto &data : obs_space_associated_) {
+    data.get().syncAppend();
   }
 }
 

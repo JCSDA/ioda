@@ -124,6 +124,8 @@ namespace ioda {
       virtual ~ObsSpaceAssociated() = default;
       virtual void reduce(const std::vector<bool> & keepLocs) = 0;
       virtual void append() = 0;
+      /// \brief Sync internal append bookkeeping with the current nlocs (default no-op).
+      virtual void syncAppend() {}
     };
 
     /// \brief Observation data class for IODA
@@ -535,7 +537,15 @@ namespace ioda {
         /// This is being done to help downstream operations run faster, eg the DA solver.
         void reduce(const std::vector<bool> & keepLocs);
 
-        /// \brief Registers a data structure associated with the current ObsSpace.
+        /// \brief Synchronize the append index of all associated data structures.
+        /// \details Calls syncAppend() on every registered ObsSpaceAssociated (e.g. ObsVector,
+        /// ObsDataVector) so that their internal indexAppend_ is set to the current nlocs.
+        /// This is needed before a new append when a prior reduce() has shrunk the data: without
+        /// it, indexAppend_ still points at the start of the previous append, which would trigger
+        /// the ASSERT(nlocs_ == indexAppend_) in ObsVector::reduce on the next shift.
+        void syncAppend();
+
+        /// \brief Registers a data structure associated with the current ObsSpace
         /// \details The associated data structures change their state (e.g. reduce or append) when
         /// ObsSpace changes its state.
         void attach(ObsSpaceAssociated & data) {

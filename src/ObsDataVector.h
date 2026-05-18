@@ -97,6 +97,7 @@ class ObsDataVector: public ObsSpaceAssociated,
 
   void reduce(const std::vector<bool> & keepLocs) override;
   void append() override;
+  void syncAppend() override {indexAppend_ = nlocs_;}
   void zeroAppended();
 
  private:
@@ -338,6 +339,7 @@ void ObsDataVector<DATATYPE>::reduce(const std::vector<bool> & keepLocs) {
     row = std::move(masked_row);
   }
   nlocs_ = nlocs_new;
+  indexAppend_ = nlocs_;
 }
 // -----------------------------------------------------------------------------
 template <typename DATATYPE>
