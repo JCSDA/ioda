@@ -368,7 +368,7 @@ void ObsVector::save(const std::string & name) const {
       ivec = jv + (jj * nvars_);
       tmp[jj] = values_[ivec];
     }
-    obsdb_.put_db(name, obsvars_.variables()[jv], tmp);
+    obsdb_.put_db(name, obsvars_.variables()[jv], tmp, obsvars_.dimList());
   }
 }
 // -----------------------------------------------------------------------------

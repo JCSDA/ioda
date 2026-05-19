@@ -63,18 +63,23 @@ CASE("ioda/ObsSpace/testPutDb") {
       std::vector<float> testVec1(nlocs), testVec2(nlocs);
       std::iota(testVec1.begin(), testVec1.end(), testVec1Start);
       std::iota(testVec2.begin(), testVec2.end(), testVec2Start);
-      obsspace->put_db("DummyGroup", "multi_dimensional_var_2", testVec1);
-      obsspace->put_db("DummyGroup", "multi_dimensional_var_4", testVec2);
-      obsspace->put_db("MetaData", "single_dimensional_var_2", testVec1);
-      obsspace->put_db("DummyGroup", "single_dimensional_var", testVec1);
+      const std::vector<std::string> chanDimList =
+          hasChannels ? std::vector<std::string>{"Location", "Channel"}
+                      : std::vector<std::string>{"Location"};
+      obsspace->put_db("DummyGroup", "multi_dimensional_var_2", testVec1, chanDimList);
+      obsspace->put_db("DummyGroup", "multi_dimensional_var_4", testVec2, chanDimList);
+      obsspace->put_db("MetaData", "single_dimensional_var_2", testVec1, {"Location"});
+      obsspace->put_db("DummyGroup", "single_dimensional_var", testVec1, {"Location"});
       if (hasChannels) {
         EXPECT_EQUAL(nchans, expectedNchans);
 
         // Channel 1000000 does not exist
-        EXPECT_THROWS(obsspace->put_db("DummyGroup", "multi_dimensional_var_1000000", testVec1));
+        EXPECT_THROWS(obsspace->put_db("DummyGroup", "multi_dimensional_var_1000000", testVec1,
+                                       {"Location", "Channel"}));
         // The variable single_dimensional_var already exists, but is not associated with the
         // nchans dimension
-        EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1));
+        EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1,
+                                       {"Location", "Channel"}));
       }
 
       // Call the ObsSpace save function to force an output file to be written

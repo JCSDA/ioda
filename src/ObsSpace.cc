@@ -1653,6 +1653,7 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
             osdf_->setColumn(fullName, varValues);
         }
     } else {
+        // ObsGroup container
         const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
         if (group != "MetaData" && obs_group_->vars.exists(ChannelVarName)) {
             // If the variable does not already exist and its name ends with an underscore followed
@@ -1673,6 +1674,12 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
                 dimListToUse.begin();
             if (ChannelDimIndex == dimListToUse.size())
                 dimListToUse.push_back(ChannelVarName);
+        }
+        if (group == "MetaData") {
+            // For metadata variables, we want to make sure the dimensions are just
+            // the Location dimension since the metadata variables are ecpected to be
+            // only dimensioned by Location.
+            dimListToUse = { this->get_dim_name(ObsDimensionId::Location) };
         }
         Variable var = openCreateVar<VarType>(fullName, dimListToUse);
 
@@ -2190,7 +2197,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     std::vector <int> extendedObsSpace(numExtendedLocs, 0);
     std::fill(extendedObsSpace.begin() + numOriginalLocs, extendedObsSpace.end(), 1);
     // Save extendedObsSpace for use in filters.
-    put_db("MetaData", "extendedObsSpace", extendedObsSpace);
+    put_db("MetaData", "extendedObsSpace", extendedObsSpace, {"Location"});
 
     // Calculate the number of newly created locations on all processes (counting those
     // held on multiple processes only once).
@@ -2220,7 +2227,7 @@ void ObsSpace::createMissingObsErrors() {
     if (!has("ObsError", obsvars_[i])) {
       if (obserror.empty())
         obserror.assign(nlocs(), util::missingValue<float>());
-      put_db("DerivedObsError", obsvars_[i], obserror);
+      put_db("DerivedObsError", obsvars_[i], obserror, obsvars_.dimList());
     }
   }
 }
@@ -2242,7 +2249,7 @@ void ObsSpace::appendMissingObsErrors(const std::size_t appendNlocs) {
         obsError[indx] = util::missingValue<float>();
         ++indx;
       }
-      put_db("DerivedObsError", obsvars_[ivar], obsError);
+      put_db("DerivedObsError", obsvars_[ivar], obsError, obsvars_.dimList());
     }
   }
 }

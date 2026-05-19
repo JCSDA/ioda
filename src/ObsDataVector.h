@@ -293,7 +293,7 @@ void ObsDataVector<DATATYPE>::save(const std::string & name) const {
     for (std::size_t jj = 0; jj < tmp.size(); ++jj) {
       tmp.at(jj) = rows_.at(jv).at(jj);
     }
-    obsdb_.put_db(name, obsvars_.variables()[jv], tmp);
+    obsdb_.put_db(name, obsvars_.variables()[jv], tmp, obsvars_.dimList());
   }
 }
 // -----------------------------------------------------------------------------
