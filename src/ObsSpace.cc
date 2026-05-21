@@ -2425,13 +2425,41 @@ std::string ObsSpace::groupToUse(const std::string & group,
                                  bool skipDerived) const {
     std::string groupToUse = "Derived" + group;
     if (skipDerived) {
+        // In this case, we are not allowing the use of the "Derived" group,
+        // so the only option is to use the given group name.
         groupToUse = group;
     } else {
+        // In this case, we have the option to use the "Derived" group.
+        // Prefer to use the "Derived" group if the variable exists in that group,
+        // otherwise fall back to the given group name. The name parameter is coming
+        // in with the channel suffix stripped off so fullVarName is being set to
+        // "Derived" + group + "/" + name, which is the path to the the variable
+        // (without the channel suffix) in the "Derived" group.
+        std::string fullName = fullVarName(groupToUse, name);
         if (use_dataframe_) {
-            if (!osdf_->hasColumn(fullVarName(groupToUse, name)))
+            // OSDF container
+            //
+            // If we have a variable with channels, the column names will include
+            // channel suffixes, yet the fullName has the channel suffix stripped off.
+            // In this case, we need to check for the existence of a representative column
+            // with the channel suffix attached. We could check for the existence of
+            // all channels, but by design whenever a variable with channels is stored
+            // in the OSDF a column for each channel is created.
+            //
+            // If we have a variable without channels, we need to simply check
+            // for the existence of the column using fullName as is.
+            //
+            if (osdfMetadata_.varHasChannels(fullName)) {
+                fullName.append("_" + std::to_string(osdfMetadata_.getChanNums()[0]));
+            }
+            if (!osdf_->hasColumn(fullName)) {
                 groupToUse = group;
+            }
         } else {
-            if (!obs_group_->vars.exists(fullVarName(groupToUse, name)))
+            // ObsGroup container
+            // The ObsGroup exists function expects the channel suffix to be stripped off,
+            // so it can do the check we want as is.
+            if (!obs_group_->vars.exists(fullName))
                 groupToUse = group;
         }
     }
