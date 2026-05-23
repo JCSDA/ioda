@@ -242,7 +242,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::save() {
+void ObsSpace::save(bool preserveDistribution) {
     // Determine if we should continue on to write out a file. Conditions for
     // writing out a file are:
     //     1. The obsdataout parameter is specified in the YAML configuration
@@ -256,7 +256,8 @@ void ObsSpace::save() {
           writer::obsWrite(*(obs_params_.top_level_.obsDataOut.value()),
                            obs_params_.top_level_.ioPool,
                            obs_params_.comm(), dist_, osdf_,
-                           obs_src_stats_, osdfMetadata_);
+                           obs_src_stats_, osdfMetadata_,
+                           preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);

@@ -22,14 +22,19 @@
 
 namespace ioda {
 namespace writer {
-
+namespace {  // anonymous namespace, so this overload can only be called via the public overloads
 //---------------------------------------------------------------------
 void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
-                std::shared_ptr<Distribution> & ospaceDist,
-                ObsSourceStats & obsSourceStats,
-                std::unique_ptr<osdf::IFrame> & inOutOsdf) {
+                std::shared_ptr<Distribution> & inOspaceDist,
+                ObsSourceStats & inObsSourceStats,
+                std::unique_ptr<osdf::IFrame> & inOsdf,
+                std::shared_ptr<Distribution> & outOspaceDist,
+                ObsSourceStats & outObsSourceStats,
+                std::unique_ptr<osdf::IFrame> & outOsdf,
+                const bool preserveInputs) {
   oops::Log::trace() << "writer::collectObs start" << std::endl;
-  // Create a SelctedRanks distribution and use that to collect the obs on
+
+  // Create a SelectedRanks distribution and use that to collect the obs on
   // the io pool ranks using distributeObs.
   //
   // For the SelectedRanks distribution we need to create an eckit
@@ -63,14 +68,37 @@ void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
   SelectedRanksParameters selectedRanksParams;
   selectedRanksParams.validateAndDeserialize(selectedRanksConfig);
 
-  std::shared_ptr<Distribution> selectDist =
-    DistributionFactory::create(obsIoPool->commAll(), selectedRanksParams);
-  selectDist->setNumberLocations(inOutOsdf->numRows());
-
   // Apply the distribution
-  ioda::reader::distributeObs(selectedRanksParams, obsIoPool->commAll(), {},
-                              obsSourceStats, ospaceDist, inOutOsdf);
+  if (preserveInputs) {
+    ioda::reader::distributeObs(selectedRanksParams, obsIoPool->commAll(), {},
+                                inObsSourceStats, inOspaceDist, inOsdf,
+                                outObsSourceStats, outOspaceDist, outOsdf);
+  } else {
+    ioda::reader::distributeObs(selectedRanksParams, obsIoPool->commAll(), {},
+                                inObsSourceStats, inOspaceDist, inOsdf);
+  }
   oops::Log::trace() << "writer::collectObs end" << std::endl;
+}
+}  // anonymous namespace
+
+//---------------------------------------------------------------------
+void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
+                std::shared_ptr<Distribution> & ospaceDist,
+                ObsSourceStats & obsSourceStats,
+                std::unique_ptr<osdf::IFrame> & inOutOsdf) {
+  collectObs(obsIoPool, ospaceDist, obsSourceStats, inOutOsdf,
+             ospaceDist, obsSourceStats, inOutOsdf, false);
+}
+
+void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
+                std::shared_ptr<Distribution> & inOspaceDist,
+                ObsSourceStats & inObsSourceStats,
+                std::unique_ptr<osdf::IFrame> & inOsdf,
+                std::shared_ptr<Distribution> & outOspaceDist,
+                ObsSourceStats & outObsSourceStats,
+                std::unique_ptr<osdf::IFrame> & outOsdf) {
+  collectObs(obsIoPool, inOspaceDist, inObsSourceStats, inOsdf,
+             outOspaceDist, outObsSourceStats, outOsdf, true);
 }
 
 }  // namespace writer

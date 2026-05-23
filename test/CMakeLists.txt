@@ -303,6 +303,7 @@ list( APPEND ioda_test_input
   testinput/reader/iodatest_reader_distributeobs.yaml
 
   testinput/writer/iodatest_writer_saveobs.yaml
+  testinput/writer/iodatest_writer_obswrite.yaml
 )
 
 # Work directories for the new reader. Make one entry per test that is using
@@ -699,6 +700,26 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_frows_mpi_2_0001
                           "echo Checking writer saveobs amsua MPI 2, PE 1"
                           osdf_writer_saveobs_amsua_frows_mpi2_0001.nc4:osdf_writer_saveobs_amsua_mpi2_0001.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
+
+# ObsWriter tests — MPI=2 only; io pool max size=1 so all data moves to ioPool rank
+ecbuild_add_test( TARGET  ioda_writer_obswrite_clean_files_mpi_2
+                  COMMAND rm
+                  ARGS    "-f"
+                          "testoutput/osdf_writer_obswrite_sondes_fcols_pi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_sondes_frows_pi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_sondes_fcols_npi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_sondes_frows_npi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_amsua_fcols_pi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_amsua_frows_pi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_amsua_fcols_npi_mpi2_0000.nc4"
+                          "testoutput/osdf_writer_obswrite_amsua_frows_npi_mpi2_0000.nc4")
+
+ecbuild_add_test( TARGET  ioda_writer_obswrite_mpi_2
+                  MPI     2
+                  SOURCES mains/writer/TestObsWriter.cc
+                  ARGS    "testinput/writer/iodatest_writer_obswrite.yaml"
+                  LIBS    ioda_test
+                  TEST_DEPENDS ioda_writer_obswrite_clean_files_mpi_2)
 
 #####################################################################
 # Distribution tests

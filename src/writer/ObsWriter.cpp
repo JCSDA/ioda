@@ -33,7 +33,8 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
               ObsSourceStats & obsSourceStats,
-              osdf::FrameMetadata & osdfMetadata) {
+              osdf::FrameMetadata & osdfMetadata,
+              const bool preserveInputs) {
   oops::Log::trace() << "writer::obsWrite start" << std::endl;
   util::Timer timer("ioda::writer", "obsWrite");
 
@@ -43,8 +44,19 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
 
   // Collect obs from all MPI tasks onto the io pool tasks, and
   // then transfer those obs to the output file(s)
-  collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf);
-  saveObs(dataOutParams, obsIoPool, commAll, srcOsdf, osdfMetadata);
+  if (preserveInputs) {
+    // create new output objects to pass to collectObs
+    std::shared_ptr<Distribution> outOspaceDist;
+    ObsSourceStats outObsSourceStats;
+    std::unique_ptr<osdf::IFrame> outOsdf;
+    collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf,
+               outOspaceDist, outObsSourceStats, outOsdf);
+    saveObs(dataOutParams, obsIoPool, commAll, outOsdf, osdfMetadata);
+    outOsdf.reset();  // free memory used for the output osdf since we won't need it anymore
+  } else {
+    collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf);
+    saveObs(dataOutParams, obsIoPool, commAll, srcOsdf, osdfMetadata);
+  }
 
   oops::Log::trace() << "writer::obsWrite end" << std::endl;
 }

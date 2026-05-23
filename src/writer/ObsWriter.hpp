@@ -38,13 +38,15 @@ namespace writer {
 /// \param srcOsdf source OSDF to be transferred to the output file
 /// \param obsSourceStats statistics about the obs source (file)
 /// \param osdfMetadata frame metadata object associated with srcOsdf
+/// \param preserveInputs preserves the srcOsdf (requires more memory). Otherwise it is overwritten.
 void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const ioda::IoPool::IoPoolParameters & ioPoolParams,
               const eckit::mpi::Comm & commAll,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
               ObsSourceStats & obsSourceStats,
-              osdf::FrameMetadata & osdfMetadata);
+              osdf::FrameMetadata & osdfMetadata,
+              const bool preserveInputs = false);
 
 }  // namespace writer
 }  // namespace ioda

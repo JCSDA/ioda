@@ -1,0 +1,204 @@
+---
+
+obs types:
+- name: "Sondes"
+  obsdataout:
+    engine:
+      type: H5File
+      obsfile: "testoutput/osdf_writer_obswrite_sondes.nc4"
+    write multiple files: true
+  io pool:
+    max pool size: 1
+  test data:
+    number of locations: 10
+    frame metadata:
+      channel numbers: []
+      variables with channels: []
+      variable dim names: []
+      number of variables: 1
+
+    mpi size2:
+      rank0:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [0, 1, 2, 3 ]
+        - name: "MetaData/dateTime"
+          type: int64
+          values:
+          - 1000000000
+          - 2000000000
+          - 3000000000
+          - 4000000000
+        - name: "MetaData/latitude"
+          type: float
+          values: [10.0, 20.0, 30.0, 40.0 ]
+        - name: "MetaData/longitude"
+          type: float
+          values: [100.0, 110.0, 120.0, 130.0 ]
+        - name: "MetaData/stationIdentification"
+          type: string
+          values: [ xyz1, xyz1, xyz1, abc2 ]
+        - name: "MetaData/myChar"
+          type: char
+          values: [ a, b, c, missing]
+        - name: "MetaData/myInt64"
+          type: int64
+          values: [ 0, 1, 2, 3]
+        - name: "ObsValue/airTemperature"
+          type: float
+          values: [270.0, 273.0, 276.0, 279.0 ]
+        - name: "PreQC/airTemperature"
+          type: int
+          values: [missing, 1, 1, 1]
+      rank1:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [4, 5, 6, 7, 8, 9]
+        - name: "MetaData/dateTime"
+          type: int64
+          values:
+          - 5000000000
+          - 6000000000
+          - 7000000000
+          - 8000000000
+          - 9000000000
+          - 10000000000
+        - name: "MetaData/latitude"
+          type: float
+          values: [50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
+        - name: "MetaData/longitude"
+          type: float
+          values: [140.0, 150.0, 160.0, 170.0, 180.0, 190.0]
+        - name: "MetaData/stationIdentification"
+          type: string
+          values: [ abc2, abc2, abc2, missing, jkl3, jkl3 ]
+        - name: "MetaData/myChar"
+          type: char
+          values: [ e, f, g, h, i, j ]
+        - name: "MetaData/myInt64"
+          type: int64
+          values: [ 4, 5, 6, missing, 8, 9 ]
+        - name: "ObsValue/airTemperature"
+          type: float
+          values: [282.0, 285.0, 288.0, 291.0, 294.0, missing]
+        - name: "PreQC/airTemperature"
+          type: int
+          values: [1, 1, 0, 0, 0 ,0]
+
+- name: "AMSUA"
+  obsdataout:
+    engine:
+      type: H5File
+      obsfile: "testoutput/osdf_writer_obswrite_amsua.nc4"
+    write multiple files: true
+  io pool:
+    max pool size: 1
+  test data:
+    number of locations: 10
+    frame metadata:
+      channel numbers: [1, 3, 6]
+      variables with channels:
+      - "ObsValue/brightnessTemperature"
+      - "MetaData/chanCentralFrequency"
+      variable dim names:
+      - name: "ObsValue/brightnessTemperature"
+        dim names: ["Location", "Channel"]
+      - name: "MetaData/chanCentralFrequency"
+        dim names: ["Channel"]
+      number of variables: 1
+
+    mpi size2:
+      rank0:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [0, 1, 2, 3 ]
+        - name: "MetaData/dateTime"
+          type: int64
+          values:
+          - 1000000000
+          - 2000000000
+          - 3000000000
+          - 4000000000
+        - name: "MetaData/latitude"
+          type: float
+          values: [10.0, 20.0, 30.0, 40.0 ]
+        - name: "MetaData/longitude"
+          type: float
+          values: [100.0, 110.0, 120.0, 130.0 ]
+        - name: "ObsValue/brightnessTemperature_1"
+          type: float
+          values: [270.0, 273.0, 276.0, 279.0 ]
+        - name: "ObsValue/brightnessTemperature_3"
+          type: float
+          values: [271.0, 274.0, 277.0, 280.0 ]
+        - name: "ObsValue/brightnessTemperature_6"
+          type: float
+          values: [missing, 275.0, 278.0, 281.0 ]
+        - name: "MetaData/chanCentralFrequency_1"
+          type: float
+          values: [1.0e9, 1.0e9, 1.0e9, 1.0e9]
+        - name: "MetaData/chanCentralFrequency_3"
+          type: float
+          values: [3.0e9, 3.0e9, 3.0e9, 3.0e9]
+        - name: "MetaData/chanCentralFrequency_6"
+          type: float
+          values: [6.0e9, 6.0e9, 6.0e9, 6.0e9]
+        - name: "Diagnostics/BadValueFlags/flags"
+          type: int
+          values: [1, 2, 3, 4]
+        - name: "Diagnostics/QcFlags/Missing/flags"
+          type: int
+          values: [0, 0, 0, 0]
+        - name: "Diagnostics/QcFlags/InflateError/flags"
+          type: float
+          values: [0.1, 0.2, 0.3, 0.4]
+      rank1:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [4, 5, 6, 7, 8, 9]
+        - name: "MetaData/dateTime"
+          type: int64
+          values:
+          - 5000000000
+          - 6000000000
+          - 7000000000
+          - 8000000000
+          - 9000000000
+          - 10000000000
+        - name: "MetaData/latitude"
+          type: float
+          values: [50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
+        - name: "MetaData/longitude"
+          type: float
+          values: [140.0, 150.0, 160.0, 170.0, 180.0, 190.0]
+        - name: "ObsValue/brightnessTemperature_1"
+          type: float
+          values: [282.0, 285.0, 288.0, 291.0, 294.0, missing]
+        - name: "ObsValue/brightnessTemperature_3"
+          type: float
+          values: [283.0, 286.0, 289.0, 292.0, 295.0, 298.0]
+        - name: "ObsValue/brightnessTemperature_6"
+          type: float
+          values: [284.0, 287.0, 290.0, 293.0, 296.0, 299.0]
+        - name: "MetaData/chanCentralFrequency_1"
+          type: float
+          values: [1.0e9, 1.0e9, 1.0e9, 1.0e9, 1.0e9, 1.0e9]
+        - name: "MetaData/chanCentralFrequency_3"
+          type: float
+          values: [3.0e9, 3.0e9, 3.0e9, 3.0e9, 3.0e9, 3.0e9]
+        - name: "MetaData/chanCentralFrequency_6"
+          type: float
+          values: [6.0e9, 6.0e9, 6.0e9, 6.0e9, 6.0e9, 6.0e9]
+        - name: "Diagnostics/BadValueFlags/flags"
+          type: int
+          values: [5, 6, 7, 8, 9, 10]
+        - name: "Diagnostics/QcFlags/Missing/flags"
+          type: int
+          values: [0, 1, 1, 0, 0, 0]
+        - name: "Diagnostics/QcFlags/InflateError/flags"
+          type: float
+          values: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]

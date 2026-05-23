@@ -204,7 +204,9 @@ namespace ioda {
         ///          ObsSpace destructor (C++) is still writing to that file. These
         ///          actions can sometimes get out of sync since they are being triggered
         ///          from different sources during the clean up after a job completes.
-        void save();
+        ///
+        /// \param preserveDistribution Keeps existing MPI distribution in place (uses more memory)
+        void save(bool preserveDistribution = false);
 
         /// @}
         /// @name General querying functions
