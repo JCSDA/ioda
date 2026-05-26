@@ -7,7 +7,8 @@
 module obsdatavector_mod
 	use,intrinsic :: iso_c_binding
 	use,intrinsic :: iso_fortran_env
-	use :: cxx_string_mod
+	use :: cxx_str_mod
+	use :: f_c_str_mod
 		
 	type :: obsdatavector_int
 		type(c_ptr) :: data_ptr = c_null_ptr

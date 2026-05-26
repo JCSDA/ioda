@@ -86,7 +86,7 @@ AddExample_CXX (ioda-engines-05b 05b-ObsGroupAppend.cpp)
 #AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
 #AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
 
-if (IODA_BUILD_LANGUAGE_FORTRAN)
+if (IODA_BUILD_ENGINES_FORTRAN)
 	AddExample_F   (ioda-engines-00-Strings-F 00-Strings.f90)
 	AddExample_F   (ioda-engines-00-VecStrings-F 00-VecStrings.f90)
 	AddExample_F   (ioda-engines-01-GroupsAndObsSpaces-F 01-GroupsAndObsSpaces.f90)

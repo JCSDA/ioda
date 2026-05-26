@@ -2293,12 +2293,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_dist_write_atlas
                   TEST_DEPENDS ioda_obsspace_dist_write)
 
 # IODA ObsSpace class - Fortran interface test
-add_fctest( TARGET  ioda_obsspace_fortran
-            SOURCES ioda/obsspace.F90
-            ARGS    --config testinput/iodatest_obsspace_fortran.yaml
-            LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
-            LIBS  ioda_test
-            )
+if (IODA_BUILD_OBSSPACE_FORTRAN)
+    add_fctest( TARGET  ioda_obsspace_fortran
+                SOURCES ioda/obsspace.F90
+                ARGS    --config testinput/iodatest_obsspace_fortran.yaml
+                LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
+                LIBS  ioda_test
+                )
+endif()
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  ioda_sort

@@ -9,9 +9,10 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.15 )
-option(IODA_BUILD_LANGUAGE_FORTRAN "Build Fortran bindings." ON)
+option(IODA_BUILD_OBSSPACE_FORTRAN "Build ObsSpace Fortran bindings (src/, src/core/)." ON)
+option(IODA_BUILD_ENGINES_FORTRAN "Build ioda-engines Fortran bindings (src/engines/)." OFF)
 list( APPEND IODA_LANGUAGES CXX)
-if (IODA_BUILD_LANGUAGE_FORTRAN)
+if (IODA_BUILD_OBSSPACE_FORTRAN OR IODA_BUILD_ENGINES_FORTRAN)
 	list( APPEND IODA_LANGUAGES Fortran)
 endif()
 

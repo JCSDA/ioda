@@ -412,7 +412,7 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/ioda/config.h
 
 ## Fortran and Python libraries are built separately.
 
-if (IODA_BUILD_LANGUAGE_FORTRAN)  # TODO: Rename?
+if (IODA_BUILD_ENGINES_FORTRAN)
     add_subdirectory(fortran)
 endif()
 
