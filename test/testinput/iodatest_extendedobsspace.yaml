@@ -5,11 +5,11 @@
 # the test is run on one, two or three PEs and the data are taken from sondes_obs_2018041500_{m,s}.nc4.
 # If the number of PEs or the input data sets change then the expected numbers should be modified accordingly.
 
-extend obs space, RoundRobin, 71 entries per averaged profile:
+extend obs space, RoundRobin, 71 entries per averaged profile: &case_1
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_1
     name: Sondes
     obsdatain:
       engine:
@@ -59,11 +59,18 @@ extend obs space, RoundRobin, 71 entries per averaged profile:
     118.8593, 111.9674, 11.9, 274.07, 267.74, 255.4557, 236.99, 315.77, 305.33,
     311.7622, 295.79, 177.45, 139.48, 159.07, 103.65, 102.33, 112.77, 134.05]
 
-extend obs space, InefficientDistribution, 71 entries per averaged profile:
+extend obs space, RoundRobin, 71 entries per averaged profile, OSDF:
+  <<: *case_1
+  obs space:
+    <<: *obs_space_1
+    name: Sondes, OSDF
+    use data frame container: true
+
+extend obs space, InefficientDistribution, 71 entries per averaged profile: &case_2
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_2
     name: Sondes
     obsdatain:
       engine:
@@ -101,11 +108,18 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile:
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude
 
-extend obs space, 0 entries per averaged profile:
+extend obs space, InefficientDistribution, 71 entries per averaged profile, OSDF:
+  <<: *case_2
+  obs space:
+    <<: *obs_space_2
+    name: Sondes, OSDF
+    use data frame container: true
+
+extend obs space, 0 entries per averaged profile: &case_3
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_3
     name: Sondes
     obsdatain:
       engine:
@@ -120,11 +134,18 @@ extend obs space, 0 entries per averaged profile:
       allocate companion records with length: 0
   # the test exits if nlevs <= 0, so there are no expected values
 
-extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set:
+extend obs space, 0 entries per averaged profile, OSDF:
+  <<: *case_3
+  obs space:
+    <<: *obs_space_3
+    name: Sondes, OSDF
+    use data frame container: true
+
+extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set: &case_4
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_4
     name: Sondes
     obsdatain:
       engine:
@@ -162,11 +183,18 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
   expected latitude: [43.21716, 36.07, -20.68, -7.37]
   expected longitude: [144.9913, 120.33, 139.48, 112.77]
 
-extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values:
+extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set:
+  <<: *case_4
+  obs space:
+    <<: *obs_space_4
+    name: Sondes, OSDF
+    use data frame container: true
+
+extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values: &case_5
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_5
     name: Sondes
     obsdatain:
       engine:
@@ -205,11 +233,18 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude
 
-extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values:
+extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values, OSDF:
+  <<: *case_5
+  obs space:
+    <<: *obs_space_5
+    name: Sondes, OSDF
+    use data frame container: true
+
+extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values: &case_6
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_6
     name: Sondes
     obsdatain:
       engine:
@@ -247,3 +282,10 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
   expected pressure: *expected_pressure
   expected latitude: *expected_latitude
   expected longitude: *expected_longitude
+
+extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values, OSDF:
+  <<: *case_6
+  obs space:
+    <<: *obs_space_6
+    name: Sondes, OSDF
+    use data frame container: true

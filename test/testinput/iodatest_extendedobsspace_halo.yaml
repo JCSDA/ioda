@@ -7,11 +7,11 @@
 # accordingly. (It does not make sense to run this test on a single PE with the chosen halo radius,
 # since the halo does not then cover the whole Earth.)
 
-extend obs space, Halo, 71 entries per averaged profile:
+extend obs space, Halo, 71 entries per averaged profile: &case_1
   time window:
     begin: 2018-04-14T20:30:00Z
     end: 2018-04-15T03:30:00Z
-  obs space:
+  obs space: &obs_space_1
     name: Sondes
     obsdatain:
       engine:
@@ -62,3 +62,10 @@ extend obs space, Halo, 71 entries per averaged profile:
     79.83, 114.17, 129.9456, 144.9913, 101.07, 123.55, 120.33, 113.65, 110.0,
     118.8593, 111.9674, 11.9, 274.07, 267.74, 255.4557, 236.99, 315.77, 305.33,
     311.7622, 295.79, 177.45, 139.48, 159.07, 103.65, 102.33, 112.77, 134.05]
+
+extend obs space, Halo, 71 entries per averaged profile, OSDF:
+  <<: *case_1
+  obs space:
+    <<: *obs_space_1
+    name: Sondes, OSDF
+    use data frame container: true

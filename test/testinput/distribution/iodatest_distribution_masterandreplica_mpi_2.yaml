@@ -13,7 +13,7 @@ time window:
 
 observations:
 
-- obs space:
+- obs space: &round_robin_space
     name: RoundRobin, with extension
     obsdatain:
       engine:
@@ -27,7 +27,7 @@ observations:
       name: RoundRobin
     extension:
       allocate companion records with length: 3
-  specs:
+  specs: &round_robin_specs
     gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
     allgatherv: [ 0, 1, 2, 4, 5, 6, 7, 8, 9, 3, 10, 11, 12, 16, 17, 18, 13, 14, 15 ]
     rank0:
@@ -46,6 +46,12 @@ observations:
       patchIndex: [ 3, 13, 14, 15 ]
 
 - obs space:
+    <<: *round_robin_space
+    name: RoundRobin, with extension, OSDF
+    use data frame container: true
+  specs: *round_robin_specs
+
+- obs space: &inefficient_space
     name: Inefficient, with extension
     obsdatain:
       engine:
@@ -59,7 +65,7 @@ observations:
       name: InefficientDistribution
     extension:
       allocate companion records with length: 3
-  specs:
+  specs: &inefficient_specs
     gnlocs: 19  # 10 original obs + 9 averaged obs (3 levels * 3 records)
     allgatherv: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 ]
     rank0:
@@ -77,3 +83,8 @@ observations:
       recnums: [ 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 3, 3, 3, 4, 4, 4, 5, 5, 5 ]
       patchIndex: [ ]
 
+- obs space:
+    <<: *inefficient_space
+    name: RoundRobin, with extension, OSDF
+    use data frame container: true
+  specs: *inefficient_specs

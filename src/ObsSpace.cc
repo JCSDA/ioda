@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include <gsl/gsl-lite.hpp>
+
 #include "containers/ColumnMetadata.h"
 #include "containers/FrameUtils.h"
 #include "containers/IFrame.h"
@@ -114,6 +116,52 @@ void genCanonicalNameAndSuffixList(const std::string & name,
         canonicalName = name;
         canonicalSuffixList = suffixList;
     }
+}
+
+/// \brief Fills companion records with the first non-missing value in the corresponding original
+/// record.
+///
+/// (This is a utility function called during obsspace extension; see the comment at the start of
+/// ObsSpace::extendObsSpace for the definitions of *companion* and *original* records.)
+///
+/// \param recidx
+///   Maps record indices to vectors of indices of locations belonging to these records.
+/// \param companionRecordIndexOffset
+///   Offset of companion record indices with respect to the corresponding original record indices.
+/// \param originalLocations
+///   Variable values at locations belonging to original records.
+/// \param[inout] companionLocations
+///   Variable values at locations belonging to companion records. On input, assumed to be filled
+///   with missing value indicators; on output, filled with the first non-missing value found in the
+///   corresponding original record.
+template <typename DataType>
+void fillCompanionLocations(const ObsSpace::RecIdxMap &recidx,
+                            const size_t companionRecordIndexOffset,
+                            const gsl::span<const DataType> & originalLocations,
+                            const gsl::span<DataType> & companionLocations) {
+  const DataType missing = util::missingValue<DataType>();
+  const size_t numOriginalLocations = originalLocations.size();
+
+  for (const auto & recordindex : recidx) {
+    // Only deal with records in the original ObsSpace.
+    if (recordindex.first >= companionRecordIndexOffset) break;
+
+    // Find the first non-missing value in the original record.
+    DataType fillValue = missing;
+    for (const auto & jloc : recordindex.second) {
+      if (originalLocations[jloc] != missing) {
+        fillValue = originalLocations[jloc];
+        break;
+      }
+    }
+
+    // Fill the companion record with the first non-missing value in the original record.
+    if (fillValue != missing) {
+      for (const auto & jloc : recidx.at(recordindex.first + companionRecordIndexOffset)) {
+        companionLocations[jloc - numOriginalLocations] = fillValue;
+      }
+    }
+  }
 }
 
 }  // namespace
@@ -2052,35 +2100,18 @@ void ObsSpace::buildRecIdxUnsorted() {
 template <typename DataType>
 void ObsSpace::extendVariable(Variable & extendVar,
                               const size_t upperBoundOnGlobalNumOriginalRecs) {
-    const DataType missing = util::missingValue<DataType>();
-
     // Read in variable data values. At this point the values will contain
     // the extended region filled with missing values. The read call will size
     // the varVals vector accordingly.
     std::vector<DataType> varVals;
     extendVar.read<DataType>(varVals);
 
-    for (const auto & recordindex : recidx_) {
-      // Only deal with records in the original ObsSpace.
-      if (recordindex.first >= upperBoundOnGlobalNumOriginalRecs) break;
-
-      // Find the first non-missing value in the original record.
-      DataType fillValue = missing;
-      for (const auto & jloc : recordindex.second) {
-        if (varVals[jloc] != missing) {
-          fillValue = varVals[jloc];
-          break;
-        }
-      }
-
-      // Fill the companion record with the first non-missing value in the original record.
-      // (If all values are missing, do nothing.)
-      if (fillValue != missing) {
-        for (const auto & jloc : recidx_[recordindex.first + upperBoundOnGlobalNumOriginalRecs]) {
-          varVals[jloc] = fillValue;
-        }
-      }
-    }
+    const size_t numOriginalLocs = nlocs();
+    fillCompanionLocations(recidx_, upperBoundOnGlobalNumOriginalRecs,
+                           gsl::span<const DataType>(varVals.data(),
+                                                     varVals.data() + numOriginalLocs),
+                           gsl::span<DataType>(varVals.data() + numOriginalLocs,
+                                               varVals.data() + varVals.size()));
 
     // Write out values of the companion record.
     extendVar.write<DataType>(varVals);
@@ -2158,40 +2189,109 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     const size_t numCompanionLocs = companionLoc;
     const size_t numExtendedLocs = numOriginalLocs + numCompanionLocs;
 
-    // Extend all existing vectors with missing values.
-    // Only vectors with (at least) one dimension equal to nlocs are modified.
-    // Second argument (bool) to resizeLocation tells function:
-    //       true -> append the amount in first argument to the existing size
-    //      false -> reset the existing size to the amount in the first argument
-    this->resizeLocation(numExtendedLocs, false);
-
-    // Extend all existing vectors with missing values, excepting those
-    // that have been selected to be filled with non-missing values.
-    // By default, some spatial and temporal coordinates are filled in this way.
+    // Extend all existing vectors with missing values, excepting those that have been
+    // selected to be filled with non-missing values. By default, some spatial and
+    // temporal coordinates are filled in this way.
     //
-    // The resizeLocation() call above has extended all variables with Location as a first
-    // dimension to the new Locationext size, and filled all the extended parts with
-    // missing values. Go through the list of variables that are to be filled with
-    // non-missing values, check if they exist and if so fill in the extended section
-    // with non-missing values.
+    // The two container backends (ObsGroup and OSDF) do this differently:
+    //   * ObsGroup: resize the Location dimension (which extends every variable
+    //     attached to Location, padding with missing values), then post-process the
+    //     non-missing-extended variables in place.
+    //   * OSDF: build a companion frame holding only the new rows (initialized to
+    //     missing, with non-missing-extended variables filled from the corresponding
+    //     original records), then append it to the existing frame. IFrame has no
+    //     row-resize API, so the new-rows-as-frame approach replaces the resize.
     const std::vector <std::string> &nonMissingExtendedVars = params.nonMissingExtendedVars;
-    for (auto & varName : nonMissingExtendedVars) {
-      // It is implied that these variables are in the MetaData group
-      const std::string groupName = "MetaData";
-      const std::string fullVname = fullVarName(groupName, varName);
-      if (obs_group_->vars.exists(fullVname)) {
-        // Note Location at this point holds the original size before extending.
-        // The numOriginalLocs argument passed to extendVariable indicates where to start filling.
-        Variable extendVar = obs_group_->vars.open(fullVname);
-        VarUtils::forAnySupportedVariableType(
-              extendVar,
-              [&](auto typeDiscriminator) {
-                  typedef decltype(typeDiscriminator) T;
-                  extendVariable<T>(extendVar, upperBoundOnGlobalNumOriginalRecs);
-              },
-              VarUtils::ThrowIfVariableIsOfUnsupportedType(fullVname));
+    if (use_dataframe_) {
+      // Collect the fully-qualified column names that should be filled with
+      // non-missing values in the companion rows.
+      std::set<std::string> nonMissingExtendedFullNames;
+      for (const auto & varName : nonMissingExtendedVars) {
+        nonMissingExtendedFullNames.insert(fullVarName("MetaData", varName));
+      }
+
+      // Build a companion frame of the same type as osdf_, populated with one row
+      // per companion location. Iterating uniqueOriginalRecs in the same order as
+      // the bookkeeping loop above guarantees that companion-row positions line up
+      // with the extendedLoc values recorded in recidx_/locIndices.
+      std::unique_ptr<osdf::IFrame> companionOsdf = osdf::createIFrame(osdf_->frameType());
+      const std::vector<std::string> existingColumns = osdf_->columnNames();
+      for (const std::string & colName : existingColumns) {
+        const std::int8_t colType = osdf_->getColumnType(colName);
+        const std::string unit = osdf_->getColumnUnits(colName);
+        osdf::FrameUtils::callWithSupportedType(colType, [&](auto typeDiscriminator) {
+          using T = decltype(typeDiscriminator);
+          const T missing = util::missingValue<T>();
+          std::vector<T> companionValues(numCompanionLocs, missing);
+
+          if (nonMissingExtendedFullNames.count(colName) > 0) {
+            // For each original record, find the first non-missing value in the
+            // original locations and broadcast it across the nlevs companion rows
+            // belonging to the corresponding companion record.
+            std::vector<T> originalValues;
+            osdf_->getColumn(colName, originalValues);
+            fillCompanionLocations(recidx_, upperBoundOnGlobalNumOriginalRecs,
+                                   gsl::span<const T>(originalValues),
+                                   gsl::span<T>(companionValues));
+          }
+          companionOsdf->appendNewColumn(colName, companionValues, unit);
+        });
+      }
+
+      {
+        // Copy global indices of companion locations from obs_src_stats_.locIndices to the
+        // sourceLocationIndices column.
+        std::vector<int> companionSourceLocationIndices;
+        companionOsdf->getColumn("sourceLocationIndices", companionSourceLocationIndices);
+        for (size_t companionLoc = 0; companionLoc < numCompanionLocs; ++companionLoc) {
+          const size_t extendedLoc = numOriginalLocs + companionLoc;
+          companionSourceLocationIndices[companionLoc] = obs_src_stats_.locIndices[extendedLoc];
+        }
+        companionOsdf->setColumn("sourceLocationIndices", companionSourceLocationIndices);
+      }
+
+      // Append the companion rows. IFrame::append places the new rows directly
+      // after the existing rows, matching the extendedLoc indices already pushed
+      // onto locIndices/recidx_.
+      osdf_->append(companionOsdf, false /*addOffsetToSourceLocationIndices*/);
+    } else {
+      // Extend the Location dimension; this grows every Location-indexed variable
+      // and fills the new entries with missing values.
+      // Second argument (bool) to resizeLocation tells function:
+      //       true -> append the amount in first argument to the existing size
+      //      false -> reset the existing size to the amount in the first argument
+      this->resizeLocation(numExtendedLocs, false);
+
+      // Copy global indices of companion locations from obs_src_stats_.locIndices to the Location
+      // variable.
+      assignLocationValues();
+
+      // Post-process the variables selected for non-missing extension.
+      for (auto & varName : nonMissingExtendedVars) {
+        // It is implied that these variables are in the MetaData group
+        const std::string groupName = "MetaData";
+        const std::string fullVname = fullVarName(groupName, varName);
+        if (obs_group_->vars.exists(fullVname)) {
+          // Note Location at this point holds the original size before extending.
+          // The numOriginalLocs argument passed to extendVariable indicates where
+          // to start filling.
+          Variable extendVar = obs_group_->vars.open(fullVname);
+          VarUtils::forAnySupportedVariableType(
+                extendVar,
+                [&](auto typeDiscriminator) {
+                    typedef decltype(typeDiscriminator) T;
+                    extendVariable<T>(extendVar, upperBoundOnGlobalNumOriginalRecs);
+                },
+                VarUtils::ThrowIfVariableIsOfUnsupportedType(fullVname));
+        }
       }
     }
+
+    // Update the Location dim size before put_db. The OSDF put_db path uses
+    // nlocs() to size newly created columns, so it must see the extended size.
+    // The ObsGroup put_db path doesn't depend on dim_info_, so this is harmless
+    // there.
+    dim_info_.set_dim_size(ObsDimensionId::Location, numExtendedLocs);
 
     // Fill extendedObsSpace with 0, which indicates the standard section of the ObsSpace,
     // and 1, which indicates the extended section.
@@ -2213,8 +2313,8 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
                                                   numOriginalLocs,
                                                   upperBoundOnGlobalNumOriginalRecs);
 
-    // Increment location counts on this processor.
-    dim_info_.set_dim_size(ObsDimensionId::Location, numExtendedLocs);
+    // Increment location counts on this processor. dim_info_ Location was already
+    // updated above (before put_db); update the global/source counts here.
     obs_src_stats_.gNlocs += globalNumCompanionLocs;
     obs_src_stats_.sourceNlocs += globalNumCompanionLocs;
   }

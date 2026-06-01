@@ -197,6 +197,22 @@ void testExtendedObsSpace(const eckit::LocalConfiguration &conf) {
     }
   }
 
+  if (obsdata.useDataframe()) {
+    std::vector<int> locations(obsdata.nlocs());
+    obsdata.get_db("", "sourceLocationIndices", locations);
+    const auto & index = obsdata.index();
+    EXPECT_EQUAL(locations.size(), index.size());
+    for (size_t i = 0; i < locations.size(); ++i)
+      EXPECT_EQUAL(locations[i], index[i]);
+  } else {
+    std::vector<int64_t> locations(obsdata.nlocs());
+    obsdata.get_db("", "Location", locations);
+    const auto & index = obsdata.index();
+    EXPECT_EQUAL(locations.size(), index.size());
+    for (size_t i = 0; i < locations.size(); ++i)
+      EXPECT_EQUAL(locations[i], index[i]);
+  }
+
   obsdata.save();
 }
 

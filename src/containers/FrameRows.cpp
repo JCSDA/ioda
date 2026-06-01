@@ -247,7 +247,8 @@ void osdf::FrameRows::deserializeColumnMetadata(eckit::Buffer & columnMetadataBu
   data_.configColumns(ColumnMetadata::deserialize(columnMetadataBuffer));
 }
 
-void osdf::FrameRows::append(const std::unique_ptr<IFrame>& srcOsdf) {
+void osdf::FrameRows::append(const std::unique_ptr<IFrame>& srcOsdf,
+                             bool addOffsetToSourceLocationIndices) {
   const std::int32_t numParams = data_.getSizeCols();
 
   // Check if it is possible to append to the current OSDF
@@ -270,13 +271,17 @@ void osdf::FrameRows::append(const std::unique_ptr<IFrame>& srcOsdf) {
          "Column sourceLocationIndices not found in targetOsdf.");
   getColumn("sourceLocationIndices", targetOsdfLocIndices);
 
-  // Get greatest targetOsdfLocIndices value or maxId value if rows removed
-  std::size_t targetNumRows = numRows();
-  std::int64_t maxIndex = -1;
-  if (targetNumRows) {
-    maxIndex = targetOsdfLocIndices.back();
+  const std::size_t targetNumRows = numRows();
+
+  std::int64_t locationIndexOffset = 0;
+  if (addOffsetToSourceLocationIndices) {
+    // Get greatest targetOsdfLocIndices value or maxId value if rows removed
+    std::int64_t maxIndex = -1;
+    if (targetNumRows) {
+      maxIndex = targetOsdfLocIndices.back();
+    }
+    locationIndexOffset = (maxIndex < data_.getMaxId()) ? data_.getMaxId() + 1 : maxIndex + 1;
   }
-  maxIndex = (maxIndex < data_.getMaxId()) ? data_.getMaxId() + 1 : maxIndex + 1;
 
   // Append to the current OSDF
   std::vector<osdf::DataRow> dataRowsToAppend;
@@ -291,13 +296,15 @@ void osdf::FrameRows::append(const std::unique_ptr<IFrame>& srcOsdf) {
     data_.appendNewRow(newDataRow);
   }
 
-  // Correct sourceLocationIndices
-  std::vector<int> locationIndices;
-  getColumn("sourceLocationIndices", locationIndices);
-  for (std::size_t index = targetNumRows; index < numRows(); ++index) {
-    locationIndices[index] += maxIndex;
+  if (addOffsetToSourceLocationIndices) {
+    // Correct sourceLocationIndices
+    std::vector<int> locationIndices;
+    getColumn("sourceLocationIndices", locationIndices);
+    for (std::size_t index = targetNumRows; index < numRows(); ++index) {
+      locationIndices[index] += locationIndexOffset;
+    }
+    setColumn("sourceLocationIndices", locationIndices);
   }
-  setColumn("sourceLocationIndices", locationIndices);
 
   notify();
 }
