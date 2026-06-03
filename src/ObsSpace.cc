@@ -1678,8 +1678,10 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
             const bool varHasChanSuffix = extractChannelSuffixIfPresent(name, baseName, chanNum);
             if (varHasChanSuffix) {
                 // Name had an "_n" suffix, writing to a single channel
-                const std::string fullName = fullVarName(group, name);
-                osdf_->setColumn(fullName, varValues);
+                if (!varValues.empty()) {
+                    const std::string fullName = fullVarName(group, name);
+                    osdf_->setColumn(fullName, varValues);
+                }
             } else {
                 // Name did not have a suffix, writing to the entire
                 // set of columns
@@ -1692,14 +1694,18 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
                         const std::size_t indx = i + (j * numChans);
                         columnData[j] = varValues[indx];
                     }
-                    osdf_->setColumn(varName, columnData);
+                    if (!columnData.empty()) {
+                        osdf_->setColumn(varName, columnData);
+                    }
                 }
             }
 
         } else {
             // No channels, use name as is
-            const std::string fullName = fullVarName(group, name);
-            osdf_->setColumn(fullName, varValues);
+            if (!varValues.empty()) {
+                const std::string fullName = fullVarName(group, name);
+                osdf_->setColumn(fullName, varValues);
+            }
         }
     } else {
         // ObsGroup container

@@ -417,6 +417,25 @@ void testGetDb() {
 
 // -----------------------------------------------------------------------------
 
+template <typename T>
+void runTestPutDbChecks(ioda::ObsSpace & Odb, const std::string & GroupName,
+                        const std::string & VarName, const std::vector<T> & ExpectedVec) {
+    std::vector<T> TestVec(Odb.nlocs());
+
+    // Put/get roundtrip
+    Odb.put_db(GroupName, VarName, ExpectedVec);
+    Odb.get_db(GroupName, VarName, TestVec);
+    EXPECT_EQUAL(ExpectedVec, TestVec);
+
+    // Empty vector must be a no-op — existing data must be unchanged
+    const std::vector<T> EmptyVec;
+    Odb.put_db(GroupName, VarName, EmptyVec);
+    Odb.get_db(GroupName, VarName, TestVec);
+    EXPECT_EQUAL(ExpectedVec, TestVec);
+}
+
+// -----------------------------------------------------------------------------
+
 void testPutDb() {
   typedef ObsSpaceTestFixture Test_;
 
@@ -434,117 +453,40 @@ void testPutDb() {
     ioda::ObsSpace & Odb = Test_::obspace(jj);
     const std::size_t Nlocs = Odb.nlocs();
 
-    // Create a dummy vector of each supported type to put into the database.
-    // Load up the vector with contrived data, put the vector, then
-    // get the vector and see if the contrived data made it through.
+    // For each supported type: fill a vector with contrived data, exercise the
+    // put/get roundtrip, then verify that a subsequent put with an empty vector
+    // leaves the stored data unchanged.
 
-    // double
     {
-      const std::string VarName("DummyDoubleVar");
-      std::vector<double> TestVec(Nlocs);
       std::vector<double> ExpectedVec(Nlocs);
-
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = i * 0.5;
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = i * 0.5;
+      runTestPutDbChecks(Odb, GroupName, "DummyDoubleVar", ExpectedVec);
     }
-
-    // float
     {
-      const std::string VarName("DummyFloatVar");
-      std::vector<float> TestVec(Nlocs);
       std::vector<float> ExpectedVec(Nlocs);
-
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = i * 0.5f;
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = i * 0.5f;
+      runTestPutDbChecks(Odb, GroupName, "DummyFloatVar", ExpectedVec);
     }
-
-    // int
     {
-      const std::string VarName("DummyIntVar");
-      std::vector<int> TestVec(Nlocs);
       std::vector<int> ExpectedVec(Nlocs);
-
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = i;
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = i;
+      runTestPutDbChecks(Odb, GroupName, "DummyIntVar", ExpectedVec);
     }
-
-    // string
     {
-      const std::string VarName("DummyStringVar");
-      std::vector<std::string> TestVec(Nlocs);
       std::vector<std::string> ExpectedVec(Nlocs);
-
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = "location " + std::to_string(i);
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = "location " + std::to_string(i);
+      runTestPutDbChecks(Odb, GroupName, "DummyStringVar", ExpectedVec);
     }
-
-    // datetime
     {
-      const std::string VarName("DummyDateTimeVar");
-      std::vector<util::DateTime> TestVec(Nlocs);
-      std::vector<util::DateTime> ExpectedVec(Nlocs);
-
       const util::DateTime start(2001, 1, 1, 0, 0, 0);
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = start + util::Duration(i);
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      std::vector<util::DateTime> ExpectedVec(Nlocs);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = start + util::Duration(i);
+      runTestPutDbChecks(Odb, GroupName, "DummyDateTimeVar", ExpectedVec);
     }
-
-    // bool
     {
-      const std::string VarName("DummyBoolVar");
-      std::vector<bool> TestVec(Nlocs);
       std::vector<bool> ExpectedVec(Nlocs);
-
-      for (std::size_t i = 0; i < Nlocs; ++i) {
-        ExpectedVec[i] = (i % 2) == 0;
-      }
-
-      // Put the vector into the database. Then read the vector back from the database
-      // and compare to the original
-      Odb.put_db(GroupName, VarName, ExpectedVec);
-      Odb.get_db(GroupName, VarName, TestVec);
-
-      EXPECT_EQUAL(ExpectedVec, TestVec);
+      for (std::size_t i = 0; i < Nlocs; ++i) ExpectedVec[i] = (i % 2) == 0;
+      runTestPutDbChecks(Odb, GroupName, "DummyBoolVar", ExpectedVec);
     }
 
     // Test the listing of all groups and variables in the ObsSpace.
