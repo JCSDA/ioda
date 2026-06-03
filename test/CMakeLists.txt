@@ -453,6 +453,18 @@ ecbuild_add_test( TARGET  ioda_osdf_sort_rows
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_osdf_slice_rows
+                  SOURCES mains/containers/TestOsdfSliceRows.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_osdf_iframe_slice_frame
+                  SOURCES mains/containers/TestOsdfIFrameSliceFrame.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
 ecbuild_add_test( TARGET  ioda_osdf_ser_deser_column_metadata
                   SOURCES mains/containers/TestOsdfSerDeserColumnMetadata.cc
                   ARGS    "testinput/containers/iodatest_osdf_ser_deser_column_metadata.yaml"

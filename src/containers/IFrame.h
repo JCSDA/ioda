@@ -162,6 +162,20 @@ class IFrame {
   /// \brief Outputs a string corresponding to the subclass of IFrame being used
   /// e.g. "FrameRows" or "FrameCols".
   virtual std::string frameType() const = 0;
+
+  /// \brief Returns a heap-allocated filtered copy of this frame containing only rows that satisfy
+  /// the comparison against the threshold value in the named column.
+  /// \param The target column name.
+  /// \param One of five enum values (see osdf::consts::eComparisons).
+  /// \param The value to compare against.
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                             const int) const = 0;
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                             const std::int64_t) const = 0;
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                             const float) const = 0;
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                             const std::string) const = 0;
 };
 
 }  // namespace osdf

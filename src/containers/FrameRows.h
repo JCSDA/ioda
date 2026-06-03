@@ -122,6 +122,15 @@ class FrameRows : public IFrame {
   FrameRows sliceRows(const std::string&, const std::int8_t, const float) const;
   FrameRows sliceRows(const std::string&, const std::int8_t, const std::string) const;
 
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const int) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const std::int64_t) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const float) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const std::string) const override;
+
   /// \brief Additional to the interface, this function accepts a custom lambda comparator function.
   //  (Commented out for now as not currently used or fully tested.)
   // void sortRows(const std::string&, const std::function<std::int8_t(
@@ -221,6 +230,9 @@ class FrameRows : public IFrame {
                                       const std::int8_t) const;
   /// \brief Templated function called from the local functions to slice the data container.
   template<typename T> FrameRows sliceRows(const std::string&, const std::int8_t, const T) const;
+  /// \brief Extracts filtered column metadata and data rows without constructing a FrameRows.
+  template<typename T> std::pair<ColumnMetadata, std::vector<DataRow>>
+      sliceRowsImpl(const std::string&, const std::int8_t, const T) const;
 
   FunctionsRows funcs_;  /// \brief Functions for row-priority containers.
   FrameRowsData data_;  /// \brief The data model.

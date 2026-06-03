@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -121,6 +122,15 @@ class FrameCols : public IFrame {
   FrameCols sliceRows(const std::string&, const std::int8_t, const float) const;
   FrameCols sliceRows(const std::string&, const std::int8_t, const std::string) const;
 
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const int) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const std::int64_t) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const float) const override;
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+                                     const std::string) const override;
+
   /// \brief Returns an instance of a class with a read-only view of the containing data.
   ViewCols makeView();
 
@@ -188,6 +198,11 @@ class FrameCols : public IFrame {
                                       const std::int8_t) const;
   /// \brief Templated function called from the local functions to slice the data container.
   template<typename T> FrameCols sliceRows(const std::string&, const std::int8_t, const T) const;
+  /// \brief Extracts filtered column metadata, ids, and data columns without
+  /// constructing a FrameCols.
+  template<typename T> std::tuple<ColumnMetadata, std::vector<std::int64_t>,
+      std::vector<std::shared_ptr<DataBase>>>
+      sliceRowsImpl(const std::string&, const std::int8_t, const T) const;
 
   FunctionsCols funcs_;  /// \brief Functions for column-priority containers.
   FrameColsData data_;  /// \brief The data model.

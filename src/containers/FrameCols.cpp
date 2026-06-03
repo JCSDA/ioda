@@ -459,17 +459,53 @@ void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& v
 }
 
 template<typename T>
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
-                                           const T threshold) const {
+std::tuple<osdf::ColumnMetadata, std::vector<std::int64_t>,
+           std::vector<std::shared_ptr<osdf::DataBase>>>
+osdf::FrameCols::sliceRowsImpl(const std::string& name, const std::int8_t comparison,
+                               const T threshold) const {
+  if (data_.columnExists(name) != true) {
+    const std::string errMsg = std::string("ERROR: Column named ")
+                               + name + std::string(" not found in current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
   std::vector<std::shared_ptr<DataBase>> newDataColumns;
   std::vector<std::int64_t> newIds;
   ColumnMetadata newColumnMetadata;
-  if (data_.columnExists(name) != true) {
-    const std::string errMsg = std::string("ERROR: Column named ")
-                               + name
-                               + std::string(" not found in current data frame.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
   funcs_.sliceRows(&data_, newDataColumns, newColumnMetadata, newIds, name, comparison, threshold);
-  return FrameCols(newColumnMetadata, newIds, newDataColumns);
+  return {newColumnMetadata, newIds, newDataColumns};
+}
+
+template<typename T>
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+                                           const T threshold) const {
+  auto[meta, ids, cols] = sliceRowsImpl<T>(name, comparison, threshold);
+  return FrameCols(meta, ids, cols);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const int threshold) const {
+  auto[meta, ids, cols] = sliceRowsImpl<int>(name, comparison, threshold);
+  return std::make_unique<FrameCols>(meta, ids, cols);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const std::int64_t threshold) const {
+  auto[meta, ids, cols] = sliceRowsImpl<std::int64_t>(name, comparison, threshold);
+  return std::make_unique<FrameCols>(meta, ids, cols);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const float threshold) const {
+  auto[meta, ids, cols] = sliceRowsImpl<float>(name, comparison, threshold);
+  return std::make_unique<FrameCols>(meta, ids, cols);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const std::string threshold) const {
+  auto[meta, ids, cols] = sliceRowsImpl<std::string>(name, comparison, threshold);
+  return std::make_unique<FrameCols>(meta, ids, cols);
 }

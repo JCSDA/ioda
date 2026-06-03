@@ -344,6 +344,34 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
   return sliceRows<std::string>(name, comparison, threshold);
 }
 
+std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const int threshold) const {
+  auto[meta, rows] = sliceRowsImpl<int>(name, comparison, threshold);
+  return std::make_unique<FrameRows>(meta, rows);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const std::int64_t threshold) const {
+  auto[meta, rows] = sliceRowsImpl<std::int64_t>(name, comparison, threshold);
+  return std::make_unique<FrameRows>(meta, rows);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const float threshold) const {
+  auto[meta, rows] = sliceRowsImpl<float>(name, comparison, threshold);
+  return std::make_unique<FrameRows>(meta, rows);
+}
+
+std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
+                                                          const std::int8_t comparison,
+                                                          const std::string threshold) const {
+  auto[meta, rows] = sliceRowsImpl<std::string>(name, comparison, threshold);
+  return std::make_unique<FrameRows>(meta, rows);
+}
+
 /// Commented out overload of sortRows below.
 /// It allows caller to pass a custom comparison function.
 /// Not currently used or fully tested. May be added back in future if needed.
@@ -518,26 +546,24 @@ void osdf::FrameRows::setColumn(const std::string& name, const std::vector<T>& d
 }
 
 template<typename T>
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                           const T threshold) const {
-  std::vector<DataRow> newDataRows;
-  ColumnMetadata newColumnMetadata;
+std::pair<osdf::ColumnMetadata, std::vector<osdf::DataRow>>
+osdf::FrameRows::sliceRowsImpl(const std::string& name, const std::int8_t comparison,
+                               const T threshold) const {
   if (data_.columnExists(name) != true) {
     const std::string errMsg = std::string("ERROR: Column named ")
       + name + std::string(" not found in current data frame.");
     throw eckit::BadParameter(errMsg, Here());
   }
-
+  std::vector<DataRow> newDataRows;
   newDataRows.reserve(static_cast<std::size_t>(data_.getSizeRows()));
-  newColumnMetadata = data_.getColumnMetadata();
+  ColumnMetadata newColumnMetadata = data_.getColumnMetadata();
   newColumnMetadata.resetMaxId();  // Only relevant for column alignment when printing
   const std::int32_t index = data_.getIndex(name);
   const std::vector<DataRow>& dataRows = data_.getDataRows();
-
   std::copy_if(dataRows.begin(), dataRows.end(), std::back_inserter(newDataRows),
                [&](const DataRow& dataRow) {
                  const std::shared_ptr<DatumBase>& datum = dataRow.getColumn(index);
-                 const T value                           = funcs_.getDatumValue<T>(datum);
+                 const T value = funcs_.getDatumValue<T>(datum);
                  const std::int8_t retVal = funcs_.compareToThreshold(comparison, threshold, value);
                  if (retVal == true) {
                    newColumnMetadata.updateMaxId(dataRow.getId());
@@ -545,5 +571,12 @@ osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::i
                  return retVal;
                });
   newDataRows.shrink_to_fit();
-  return FrameRows(newColumnMetadata, newDataRows);
+  return {newColumnMetadata, newDataRows};
+}
+
+template<typename T>
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
+                                           const T threshold) const {
+  auto[meta, rows] = sliceRowsImpl<T>(name, comparison, threshold);
+  return FrameRows(meta, rows);
 }
