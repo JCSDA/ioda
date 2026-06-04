@@ -8,15 +8,14 @@
 !>  This example parallels the C++ example. See 02-Attributes.cpp for comments and walkthrough.
 
 program ioda_fortran_02_attributes
-    use, intrinsic :: iso_fortran_env
-    use :: f_c_string_mod
-    use :: cxx_string_mod
-    use :: cxx_vector_string_mod
-    use :: ioda_group_mod
-    use :: ioda_engines_mod
-    use :: ioda_attribute_mod
-    use :: ioda_has_attributes_mod
-    use :: ioda_dimensions_mod
+    use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32
+    use :: cxx_string_mod, only: cxx_string
+    use :: cxx_vector_string_mod, only: cxx_vector_string
+    use :: ioda_group_mod, only: ioda_group
+    use :: ioda_engines_mod, only: ioda_engines_hh_create_file
+    use :: ioda_attribute_mod, only: ioda_attribute, ioda_attribute_init
+    use :: ioda_has_attributes_mod, only: ioda_has_attributes
+    use :: ioda_dimensions_mod, only: ioda_dimensions
     implicit none
 
     type(ioda_group) :: grpFromFile
@@ -29,15 +28,15 @@ program ioda_fortran_02_attributes
     integer(int64),dimension(6) :: cdims
     integer(int32),dimension(2) :: wint
     real(real32),dimension(4) :: fint
-    integer(int64) :: ns,nd;
+    integer(int64) :: ns,nd
     character(len=256) :: test_str
     integer(int32) :: create_mode
-    
-    test_str  = 'this is a test'         
+
+    test_str  = "this is a test"
     ! Create a file
     !grpFromFile = engines%obsstore%createRootGroup()
     create_mode = 1
-    grpFromFile = ioda_engines_hh_create_file('Example-02-F.hdf5', create_mode)
+    grpFromFile = ioda_engines_hh_create_file("Example-02-F.hdf5", create_mode)
 
 !    call ioda_attribute_init(intatt1)
 !    call ioda_attribute_init(intatt2)
@@ -46,27 +45,27 @@ program ioda_fortran_02_attributes
 !    call ioda_attribute_init(check_intatt2)
 !    call ioda_has_attributes_init(g_has_att)
 
-    g_has_att = grpFromFile%has_attributes() 
+    g_has_att = grpFromFile%has_attributes()
     ! Create attributes. These are a bit less flexible than in C++.
     cdims(1) = 1
     ns = 9
     nd = 1
-    res1 = g_has_att%create_int32(ns,'int-att-1', nd, cdims, intatt1)
+    res1 = g_has_att%create_int32(ns,"int-att-1", nd, cdims, intatt1)
     if ( res1 .eqv. .false.) then
-       write(error_unit,*)'first has_attributes create int failed'
+       write(error_unit,*)"first has_attributes create int failed"
        stop -1
     end if
     wint(1) = 5
     res1 = intatt1%write(nd,wint)
     if (res1 .eqv. .false.) then
-      write(error_unit,*)'Attribute write failed'
-      stop -1	
+      write(error_unit,*)"Attribute write failed"
+      stop -1
     end if
 
-    cdims(1) = 2 
-    res1 = g_has_att%create_int32(ns,'int-att-2', nd, cdims, intatt2)
+    cdims(1) = 2
+    res1 = g_has_att%create_int32(ns,"int-att-2", nd, cdims, intatt2)
     if ( res1 .eqv. .false.) then
-    	write(error_unit,*)'has_attributes create_int32 failed'
+        write(error_unit,*)"has_attributes create_int32 failed"
         stop -1
     end if
     wint(1) = 1
@@ -77,63 +76,63 @@ program ioda_fortran_02_attributes
     ns = 10
     cdims(1) = 2
     nd = 1
-    res1 = g_has_att%create_float(ns,'float-att-1', nd, cdims, floatatt1)
+    res1 = g_has_att%create_float(ns,"float-att-1", nd, cdims, floatatt1)
     if ( res1 .eqv. .false.) then
-    	write(error_unit,*)'has_attributes create_float failed'
+        write(error_unit,*)"has_attributes create_float failed"
         stop -1
     end if
 
     fint(1) = 2.35e0
-    fint(2) = 3.1415927e0     
+    fint(2) = 3.1415927e0
     nd = 2
     res1 = floatatt1%write(nd,fint )
 
-    cdims(1) = 1 
+    cdims(1) = 1
     ns = 5
     nd = 1
-    res1 = g_has_att%create_str(ns,'str-1', nd, cdims ,stratt1)
+    res1 = g_has_att%create_str(ns,"str-1", nd, cdims ,stratt1)
     if ( res1 .eqv. .false.) then
-    	write(error_unit,*)'f has_attributes create_str failed'
+        write(error_unit,*)"f has_attributes create_str failed"
         stop -1
     end if
 
     call xstr%set(test_str)
     res1 = stratt1%write_str(xstr)
     if ( res1 .eqv. .false.) then
-    	write(error_unit,*)'f attributes write_str failed'
+        write(error_unit,*)"f attributes write_str failed"
         stop -1
     end if
 
     ! Check attribute type
-    if (stratt1%is_a_str() .ne. 1) then
-        write(error_unit,*)'Attribute type check failed'
+    if (stratt1%is_a_str() /= 1) then
+        write(error_unit,*)"Attribute type check failed"
         stop -1
     end if
 
     ! List attributes
-    att_list = g_has_att%list()  
+    att_list = g_has_att%list()
     if (att_list%size() /= 4) then
-        write(error_unit,*)'Wrong number of attributes'
+        write(error_unit,*)"Wrong number of attributes"
         stop -1
     end if
 
     ! Open an attribute
 
     ns = 9
-    check_intatt2 = g_has_att%open(ns,'int-att-2')
+    check_intatt2 = g_has_att%open(ns,"int-att-2")
     ! Get dimensionality and dimensions
     dims =  check_intatt2%get_dimensions()
-    if (dims%get_dimensionality() .ne. 1) then
-        write(error_unit,*)'Attribute dimensionality check failed'
-        stop -1  
+    if (dims%get_dimensionality() /= 1) then
+        write(error_unit,*)"Attribute dimensionality check failed"
+        stop -1
     end if
-    if (dims%get_num_elements() .ne. 2) then
-        write(error_unit,*)'Attribute has wrong number of elements'
-        stop -1  
+    if (dims%get_num_elements() /= 2) then
+        write(error_unit,*)"Attribute has wrong number of elements"
+        stop -1
     end if
-    if (dims%get_dims_cur_size() .ne. 1) then
-        write(error_unit,*)'Attribute has wrong # of current dimensions'
-        stop -1 
+    if (dims%get_dims_cur_size() /= 1) then
+        write(error_unit,*)"Attribute has wrong # of current dimensions"
+        stop -1
     end if
 
 end program ioda_fortran_02_attributes

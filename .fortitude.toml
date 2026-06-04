@@ -1,0 +1,46 @@
+[check]
+target-std="f2008"
+line-length=133
+
+[check.per-file-ignores]
+"src/obsspace_mod.F90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/core/cxx_str_mod.f90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/core/f_c_str_mod.f90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/cxx_string_mod.f90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/cxx_vector_string_mod.f90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/f_c_string_mod.f90" = [
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/ioda_attribute_mod.f90" = [
+    "C071", # assumed-size
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/ioda_dimensions_mod.f90" = [
+    "C071", # assumed-size
+]
+"src/engines/ioda/fortran/ioda_has_attributes_mod.f90" = [
+    "C071", # assumed-size
+]
+"src/engines/ioda/fortran/ioda_has_variables_mod.f90" = [
+    "C071", # assumed-size
+]
+"src/engines/ioda/fortran/ioda_variable_mod.f90" = [
+    "C071", # assumed-size
+    "C072", # assumed-size-character-intent
+]
+"src/engines/ioda/fortran/ioda_variable_creation_parameters_mod.f90" = [
+    "C071", # assumed-size
+]
+"test/ioda/obsspace.F90" = [
+    "E001", # syntax-error
+]

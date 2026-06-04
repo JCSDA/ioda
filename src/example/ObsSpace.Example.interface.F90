@@ -10,15 +10,13 @@
 
 module ioda_obs_example_mod_c
 
-use iso_c_binding
-use string_f_c_mod
-use config_mod
-use datetime_mod
-use duration_mod
-use ioda_obs_vectors
-use ioda_obs_example_mod
+use, intrinsic :: iso_c_binding, only: c_int, c_ptr
+use config_mod, only: config_element_exists, config_get_int, config_get_string
+use datetime_mod, only: c_f_datetime, datetime
+use ioda_obs_example_mod, only: &
+  ioda_obs_example, ioda_obs_example_delete, ioda_obs_example_generate, &
+  ioda_obs_example_read
 use fckit_log_module, only : fckit_log
-use kinds
 
 implicit none
 private
@@ -45,7 +43,7 @@ contains
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_example_setup_c(c_key_self, c_conf) bind(c,name='ioda_obsdb_example_setup_f90')
+subroutine ioda_obsdb_example_setup_c(c_key_self, c_conf) bind(c,name="ioda_obsdb_example_setup_f90")
 implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
@@ -59,7 +57,7 @@ if (config_element_exists(c_conf,"obs space.obsdatain")) then
   fin  = config_get_string(c_conf,max_string,"obs space.obsdatain.obsfile")
 else
   fin  = ""
-endif
+end if
 call fckit_log%info(record)
 
 call ioda_obs_example_registry%init()
@@ -69,13 +67,13 @@ if (trim(fin) /= "") then
 ! TODO: replace with the call to your Fortran routine for reading observations
 !       (defined in ioda_obs_<your_obs_space_name>_mod.F90)
   call ioda_obs_example_read(fin, self)
-endif
+end if
 
 end subroutine ioda_obsdb_example_setup_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_example_generate_c(c_key_self, c_conf, c_t1, c_t2) bind(c,name='ioda_obsdb_example_generate_f90')
+subroutine ioda_obsdb_example_generate_c(c_key_self, c_conf, c_t1, c_t2) bind(c,name="ioda_obsdb_example_generate_f90")
 implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(c_ptr), intent(in)       :: c_conf !< configuration
@@ -99,7 +97,7 @@ end subroutine ioda_obsdb_example_generate_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_example_nobs_c(c_key_self, kobs) bind(c,name='ioda_obsdb_example_nobs_f90')
+subroutine ioda_obsdb_example_nobs_c(c_key_self, kobs) bind(c,name="ioda_obsdb_example_nobs_f90")
 implicit none
 integer(c_int), intent(in) :: c_key_self
 integer(c_int), intent(inout) :: kobs
@@ -113,7 +111,7 @@ end subroutine ioda_obsdb_example_nobs_c
 
 ! ------------------------------------------------------------------------------
 
-subroutine ioda_obsdb_example_delete_c(c_key_self) bind(c,name='ioda_obsdb_example_delete_f90')
+subroutine ioda_obsdb_example_delete_c(c_key_self) bind(c,name="ioda_obsdb_example_delete_f90")
 implicit none
 integer(c_int), intent(inout) :: c_key_self
 type(ioda_obs_example), pointer :: self

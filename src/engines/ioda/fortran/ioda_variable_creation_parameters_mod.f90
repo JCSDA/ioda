@@ -4,13 +4,17 @@
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 module ioda_variable_creation_parameters_mod
-   use, intrinsic :: iso_c_binding
-   use, intrinsic :: iso_fortran_env
+   use, intrinsic :: iso_c_binding, only: &
+     c_bool, c_char, c_double, c_float, c_int16_t, c_int32_t, c_int64_t, &
+     c_null_ptr, c_ptr
+   use, intrinsic :: iso_fortran_env, only: int16, int32, int64, real32, real64
+   implicit none
+   private
 
-   type :: ioda_variable_creation_parameters
+   type, public :: ioda_variable_creation_parameters
       type(c_ptr) :: data_ptr = c_null_ptr
    contains
-      final ioda_variable_creation_parameters_dtor
+      final :: ioda_variable_creation_parameters_dtor
       procedure :: init => ioda_variable_creation_parameters_init
       procedure :: chunking => ioda_variable_creation_parameters_chunking
       procedure :: no_compress => ioda_variable_creation_parameters_no_compress
@@ -29,191 +33,204 @@ module ioda_variable_creation_parameters_mod
       procedure, private, pass(this) ::ioda_variable_creation_parameters_copy
       generic, public :: assignment(=) => ioda_variable_creation_parameters_copy
 
-   end type
+   end type ioda_variable_creation_parameters
 
    interface
       function ioda_variable_creation_parameters_c_alloc() result(p) &
               & bind(C, name="ioda_variable_creation_parameters_c_alloc")
          import c_ptr
+         implicit none
          type(c_ptr) :: p
-      end function
+      end function ioda_variable_creation_parameters_c_alloc
 
       subroutine ioda_variable_creation_parameters_c_dtor(p) bind(C, name="ioda_variable_creation_parameters_c_dtor")
          import c_ptr
+         implicit none
          type(c_ptr), value :: p
-      end subroutine
+      end subroutine ioda_variable_creation_parameters_c_dtor
 
       subroutine ioda_variable_creation_parameters_c_clone(this, rhs) bind(C, name="ioda_variable_creation_parameters_c_clone")
          import c_ptr
+         implicit none
          type(c_ptr), value :: rhs
-         type(c_ptr) :: this
-      end subroutine
+         type(c_ptr), intent(inout) :: this
+      end subroutine ioda_variable_creation_parameters_c_clone
 
       subroutine ioda_variable_creation_parameters_c_no_compress(p) bind(C, name="ioda_variable_creation_parameters_c_no_compress")
          import c_ptr
+         implicit none
          type(c_ptr), value :: p
-      end subroutine
+      end subroutine ioda_variable_creation_parameters_c_no_compress
 
       subroutine ioda_variable_creation_parameters_c_chunking(p, do_chunk, ndim, chunks) &
           & bind(C, name="ioda_variable_creation_parameters_c_chunking")
          import c_ptr, c_int64_t, c_bool
+         implicit none
          type(c_ptr), value :: p
          logical(c_bool), value :: do_chunk
          integer(c_int64_t), value :: ndim
          integer(c_int64_t), dimension(*), intent(in) :: chunks
-      end subroutine
+      end subroutine ioda_variable_creation_parameters_c_chunking
 
       subroutine ioda_variable_creation_parameters_c_compress_with_gzip(p, level) &
          & bind(C, name="ioda_variable_creation_parameters_c_compress_with_gzip")
          import c_ptr, c_int32_t
+         implicit none
          type(c_ptr), value :: p
          integer(c_int32_t), value :: level
-      end subroutine
+      end subroutine ioda_variable_creation_parameters_c_compress_with_gzip
 
       subroutine ioda_variable_creation_parameters_c_compress_with_szip(p, pix_per_block, option) &
          & bind(C, name="ioda_variable_creation_parameters_c_compress_with_szip")
          import c_ptr, c_int32_t
+         implicit none
          type(c_ptr), value :: p
          integer(c_int32_t), value :: pix_per_block, option
-      end subroutine
+      end subroutine ioda_variable_creation_parameters_c_compress_with_szip
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_float(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_float")
          import c_ptr, c_float
+         implicit none
          type(c_ptr), value :: p
-         real(c_float) :: v
-      end subroutine
+         real(c_float), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_float
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_double(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_double")
          import c_ptr, c_double
+         implicit none
          type(c_ptr), value :: p
-         real(c_double) :: v
-      end subroutine
+         real(c_double), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_double
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_char(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_char")
          import c_ptr, c_char
+         implicit none
          type(c_ptr), value :: p
-         character(c_char) :: v
-      end subroutine
+         character(c_char), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_char
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_int16(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_int16")
          import c_ptr, c_int16_t
+         implicit none
          type(c_ptr), value :: p
-         integer(c_int16_t) :: v
-      end subroutine
+         integer(c_int16_t), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_int16
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_int32(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_int32")
          import c_ptr, c_int32_t
+         implicit none
          type(c_ptr), value :: p
-         integer(c_int32_t) :: v
-      end subroutine
+         integer(c_int32_t), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_int32
 
       subroutine ioda_variable_creation_parameters_c_set_fill_value_int64(p, v) &
               & bind(C, name="ioda_variable_creation_parameters_c_set_fill_value_int64")
          import c_ptr, c_int64_t
+         implicit none
          type(c_ptr), value :: p
-         integer(c_int64_t) :: v
-      end subroutine
+         integer(c_int64_t), intent(in) :: v
+      end subroutine ioda_variable_creation_parameters_c_set_fill_value_int64
 
    end interface
 contains
    subroutine ioda_variable_creation_parameters_init(this)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       this%data_ptr = ioda_variable_creation_parameters_c_alloc()
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_init
 
    subroutine ioda_variable_creation_parameters_dtor(this)
       implicit none
-      type(ioda_variable_creation_parameters) :: this
+      type(ioda_variable_creation_parameters), intent(inout) :: this
 !      call ioda_variable_creation_parameters_c_dtor(this%data_ptr)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_dtor
 
    subroutine ioda_variable_creation_parameters_copy(this, rhs)
       implicit none
       class(ioda_variable_creation_parameters), intent(in) :: rhs
       class(ioda_variable_creation_parameters), intent(out) :: this
       call ioda_variable_creation_parameters_c_clone(this%data_ptr, rhs%data_ptr)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_copy
 
    subroutine ioda_variable_creation_parameters_no_compress(this)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       call ioda_variable_creation_parameters_c_no_compress(this%data_ptr)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_no_compress
 
    subroutine ioda_variable_creation_parameters_compress_with_gzip(this, level)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       integer(int32), intent(in) :: level
       call ioda_variable_creation_parameters_c_compress_with_gzip(this%data_ptr, level)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_compress_with_gzip
 
    subroutine ioda_variable_creation_parameters_compress_with_szip(this, pix_per_block, option)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       integer(int32), intent(in) :: pix_per_block, option
       call ioda_variable_creation_parameters_c_compress_with_szip(this%data_ptr,&
               &  pix_per_block, option)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_compress_with_szip
 
    subroutine ioda_variable_creation_parameters_chunking(this, do_chunk, ndim, chunks)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       logical, intent(in) :: do_chunk
       integer(int64), intent(in) :: ndim
       integer(int64), dimension(:), intent(in) :: chunks
       logical(c_bool) :: do_chunk_c
       do_chunk_c = do_chunk
       call ioda_variable_creation_parameters_c_chunking(this%data_ptr, do_chunk_c, ndim, chunks)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_chunking
 
    subroutine ioda_variable_creation_parameters_set_fill_value_float(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       real(real32), intent(in) :: val
       call ioda_variable_creation_parameters_c_set_fill_value_float(this%data_ptr, val)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_float
 
    subroutine ioda_variable_creation_parameters_set_fill_value_double(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       real(real64), intent(in) :: val
       call ioda_variable_creation_parameters_c_set_fill_value_double(this%data_ptr, val)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_double
 
    subroutine ioda_variable_creation_parameters_set_fill_value_char(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       character, intent(in) :: val
       character :: val_c
       val_c = val
       call ioda_variable_creation_parameters_c_set_fill_value_char(this%data_ptr, val_C)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_char
 
    subroutine ioda_variable_creation_parameters_set_fill_value_int16(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       integer(int16), intent(in) :: val
       call ioda_variable_creation_parameters_c_set_fill_value_int16(this%data_ptr, val)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_int16
 
    subroutine ioda_variable_creation_parameters_set_fill_value_int32(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       integer(int32), intent(in) :: val
       call ioda_variable_creation_parameters_c_set_fill_value_int32(this%data_ptr, val)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_int32
 
    subroutine ioda_variable_creation_parameters_set_fill_value_int64(this, val)
       implicit none
-      class(ioda_variable_creation_parameters) :: this
+      class(ioda_variable_creation_parameters), intent(inout) :: this
       integer(int64), intent(in) :: val
       call ioda_variable_creation_parameters_c_set_fill_value_int64(this%data_ptr, val)
-   end subroutine
+   end subroutine ioda_variable_creation_parameters_set_fill_value_int64
 
-end module
+end module ioda_variable_creation_parameters_mod

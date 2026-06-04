@@ -12,16 +12,16 @@
 TESTSUITE(obsspace_fortran)
 
 TESTSUITE_INIT
-  use fckit_module
-  use liboops_mod
+  use fckit_module, only: fckit_main
+  use liboops_mod, only: liboops_initialise
 
   call fckit_main%init()
   call liboops_initialise()
 END_TESTSUITE_INIT
 
 TESTSUITE_FINALIZE
-  use fckit_module
-  use liboops_mod
+  use fckit_module, only: fckit_main
+  use liboops_mod, only: liboops_finalise
 
   call liboops_finalise()
   call fckit_main%final()
@@ -29,13 +29,15 @@ END_TESTSUITE_FINALIZE
 
 !> Test obsspace_construct
 TEST(test_obsspace_construct)
-  use fckit_configuration_module
+  use fckit_configuration_module, only: &
+    fckit_configuration, fckit_YAMLConfiguration
   use fckit_pathname_module, only : fckit_pathname
-  use fckit_module
-  use datetime_mod
-  use obsspace_mod
-  use obs_variables_mod
-  use, intrinsic :: iso_c_binding
+  use fckit_module, only: fckit_main, fckit_resource
+  use obsspace_mod, only: &
+    obsspace_construct, obsspace_destruct, obsspace_get_dim_id, &
+    obsspace_get_dim_size, obsspace_obsname, obsspace_obsvariables
+  use obs_variables_mod, only: obs_variables
+  use, intrinsic :: iso_c_binding, only: c_char, c_ptr
   implicit none
 
   character(len=:), allocatable :: filename
@@ -85,25 +87,29 @@ TEST(test_obsspace_construct)
     vars = obsspace_obsvariables(obsspace(iobstype))
     call testconfig%get_or_die("nvars obsvars", nvars_ref)
     CHECK_EQUAL(vars%nvars(), nvars_ref)
-  enddo
+  end do
 
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
     call obsspace_destruct(obsspace(iobstype))
-  enddo
+  end do
   deallocate(obsspace, obsname_ref)
 
 END_TEST
 
 !> Test obsspace_get_db and obsspace_put_db
 TEST(test_obsspace_get_db_put_db)
-  use fckit_configuration_module
+  use fckit_configuration_module, only: &
+    fckit_configuration, fckit_YAMLConfiguration
   use fckit_pathname_module, only : fckit_pathname
-  use fckit_module
-  use datetime_mod
-  use obsspace_mod
-  use obs_variables_mod
-  use, intrinsic :: iso_c_binding
+  use fckit_module, only: fckit_main, fckit_resource
+  use datetime_mod, only: datetime, datetime_delete, datetime_to_string
+  use obsspace_mod, only: &
+    obsspace_construct, obsspace_destruct, obsspace_get_db, &
+    obsspace_get_dim_id, obsspace_get_dim_size, obsspace_get_window, &
+    obsspace_put_db
+  use, intrinsic :: iso_c_binding, only: &
+    c_bool, c_char, c_double, c_float, c_int32_t, c_int64_t, c_ptr
   implicit none
 
   character(len=:), allocatable :: filename
@@ -193,7 +199,7 @@ TEST(test_obsspace_get_db_put_db)
     call obsspace_get_db(obsspace(iobstype), "MyGroup", "bool", output_bool_var)
     do iloc = 1, nlocs
       CHECK(input_bool_var(iloc) .eqv. output_bool_var(iloc))
-    enddo
+    end do
     deallocate(input_bool_var, output_bool_var)
 
     !> test get method for datetime produces equivalent ouput to input string
@@ -205,12 +211,12 @@ TEST(test_obsspace_get_db_put_db)
     call datetime_delete(winbgnread)
     call datetime_delete(winendread)
 
-  enddo
+  end do
 
   !> destruct all obsspaces
   do iobstype = 1, size(obsspace)
     call obsspace_destruct(obsspace(iobstype))
-  enddo
+  end do
   deallocate(obsspace)
 
 END_TEST

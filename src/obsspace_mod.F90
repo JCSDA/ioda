@@ -10,9 +10,8 @@ module obsspace_mod
 
    use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_char, c_size_t, &
        & c_int, c_int32_t, c_int64_t, c_float, c_double, c_bool
-   use kinds
-   use string_f_c_mod
-   use datetime_mod
+   use string_f_c_mod, only: c_f_string, f_c_string
+   use datetime_mod, only: c_f_datetime, datetime, datetime_create, f_c_datetime
 
    implicit none
 
@@ -95,7 +94,7 @@ contains
 !> Get obsname from ObsSpace
 
    subroutine obsspace_obsname(obss, obsname)
-      use string_f_c_mod
+      use string_f_c_mod, only: c_f_string
       implicit none
 
       type(c_ptr), value, intent(in) :: obss
@@ -118,7 +117,7 @@ contains
 !> Get obsvariables from ObsSpace
 
    type(obs_variables) function obsspace_obsvariables(obss)
-      use obs_variables_mod
+      use obs_variables_mod, only: ctor_from_ptr, obs_variables
       implicit none
       type(c_ptr), value, intent(in) :: obss
 
@@ -186,7 +185,7 @@ contains
 !>  Return the ObsSpace dimension name given the dimension id
 
    subroutine obsspace_get_dim_name(obss, dim_id, dim_name)
-      use string_f_c_mod
+      use string_f_c_mod, only: c_f_string
       implicit none
 
       type(c_ptr), value, intent(in) :: obss
@@ -221,7 +220,7 @@ contains
 !>  Return the ObsSpace dimension id given the dimension name
 
    integer function obsspace_get_dim_id(obss, dim_name)
-      use string_f_c_mod
+      use string_f_c_mod, only: f_c_string
       implicit none
       type(c_ptr), intent(in) :: obss
       character(len=*), intent(in) :: dim_name
@@ -237,7 +236,7 @@ contains
 !>  Return the name and name length of obsspace communicator
    subroutine obsspace_get_comm(obss, f_comm)
       use fckit_mpi_module, only: fckit_mpi_comm
-      use string_f_c_mod
+      use string_f_c_mod, only: c_f_string
       implicit none
 
       type(c_ptr), intent(in)          :: obss
@@ -472,8 +471,8 @@ contains
       ! Constrct datatime based on date and time
       do i = 1, length
          write (fstring, "(i4.4, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a, i2.2, a)") &
-            date(i)/10000, '-', MOD(date(i), 10000)/100, '-', MOD(MOD(date(i), 10000), 100), 'T', &
-            time(i)/10000, ':', MOD(time(i), 10000)/100, ':', MOD(MOD(time(i), 10000), 100), 'Z'
+            date(i)/10000, "-", MOD(date(i), 10000)/100, "-", MOD(MOD(date(i), 10000), 100), "T", &
+            time(i)/10000, ":", MOD(time(i), 10000)/100, ":", MOD(MOD(time(i), 10000), 100), "Z"
          call datetime_create(fstring, vect(i))
       end do
 
@@ -659,7 +658,7 @@ contains
          call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
       else
          ndims = 1
-         fallback_dim_ids = (/obsspace_get_location_dim_id()/)
+         fallback_dim_ids = [obsspace_get_location_dim_id()]
          call c_obsspace_put_int32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
       end if
 
@@ -693,7 +692,7 @@ contains
          call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
       else
          ndims = 1
-         fallback_dim_ids = (/obsspace_get_location_dim_id()/)
+         fallback_dim_ids = [obsspace_get_location_dim_id()]
          call c_obsspace_put_int64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
       end if
 
@@ -727,7 +726,7 @@ contains
          call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, dim_ids)
       else
          ndims = 1
-         fallback_dim_ids = (/obsspace_get_location_dim_id()/)
+         fallback_dim_ids = [obsspace_get_location_dim_id()]
          call c_obsspace_put_real32(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
       end if
 
@@ -761,7 +760,7 @@ contains
          call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, dim_ids)
       else
          ndims = 1
-         fallback_dim_ids = (/obsspace_get_location_dim_id()/)
+         fallback_dim_ids = [obsspace_get_location_dim_id()]
          call c_obsspace_put_real64(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
       end if
 
@@ -794,7 +793,7 @@ contains
          call c_obsspace_put_bool(obss, c_group, c_vname, length, vect, ndims, dim_ids)
       else
          ndims = 1
-         fallback_dim_ids = (/obsspace_get_location_dim_id()/)
+         fallback_dim_ids = [obsspace_get_location_dim_id()]
          call c_obsspace_put_bool(obss, c_group, c_vname, length, vect, ndims, fallback_dim_ids)
       end if
 

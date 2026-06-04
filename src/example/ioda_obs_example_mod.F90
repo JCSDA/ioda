@@ -10,7 +10,6 @@
 
 module ioda_obs_example_mod
 
-   use kinds
    use fckit_log_module, only: fckit_log
 
    implicit none
