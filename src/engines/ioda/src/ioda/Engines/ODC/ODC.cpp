@@ -14,6 +14,7 @@
 #include "ioda/Engines/ODC.h"
 
 #include <algorithm>
+#include <cmath>
 #include <ctime>
 #include <ostream>
 #include <optional>
@@ -946,10 +947,18 @@ void fillFloatArray(const Group &storageGroup, const std::string varname, const 
     storageGroup.vars[varname].read<float>(buffer);
     const ioda::Variable var = storageGroup.vars[varname];
     const float fillValue    = ioda::detail::getFillValue<float>(var.getFillValue());
+    const float utilMissingFloat = util::missingValue<float>();
+    const float utilMissingDoubleAsFloat = static_cast<float>(util::missingValue<double>());
+    const float odbMissingAsFloat = static_cast<float>(odb_missing_float);
+    const auto isMissing = [&](float value) {
+      return value == fillValue || value == utilMissingFloat
+             || value == utilMissingDoubleAsFloat || value == odbMissingAsFloat
+             || (std::isnan(value) && std::isnan(fillValue));
+    };
     if (derived_odb) {
       if (metadata_varname) {
         for (int j = 0; j < numrows; j++) {
-          if (fillValue == buffer[j]) {
+          if (isMissing(buffer[j])) {
             outdata[j] = odb_missing_float;
           } else {
             outdata[j] = buffer[j];
@@ -958,7 +967,7 @@ void fillFloatArray(const Group &storageGroup, const std::string varname, const 
       } else {
         for (int j = 0; j < numrows; j++) {
           if ((derived_varname && extendeds[j] == 0) || (!derived_varname && extendeds[j] == 1)
-              || fillValue == buffer[j]) {
+              || isMissing(buffer[j])) {
             outdata[j] = odb_missing_float;
           } else {
             outdata[j] = buffer[j];
@@ -967,7 +976,7 @@ void fillFloatArray(const Group &storageGroup, const std::string varname, const 
       }
     } else {
       for (int j = 0; j < numrows; j++) {
-        if (fillValue == buffer[j]) {
+        if (isMissing(buffer[j])) {
           outdata[j] = odb_missing_float;
         } else {
           outdata[j] = buffer[j];
@@ -987,8 +996,14 @@ void fillIntArray(const Group &storageGroup, const std::string varname, const in
       storageGroup.vars[varname].read<int>(buf);
       const int fillValue
         = ioda::detail::getFillValue<int>(storageGroup.vars[varname].getFillValue());
+      const int utilMissingInt = util::missingValue<int>();
+      const int odbMissingAsInt = static_cast<int>(odb_missing_int);
+      const auto isMissing = [&](int value) {
+        return value == fillValue || value == utilMissingInt || 
+               value == odbMissingAsInt;
+      };
       for (int j = 0; j < numrows; j++) {
-        if (fillValue == buf[j]) {
+        if (isMissing(buf[j])) {
           outdata[j] = odb_missing_int;
         } else {
           outdata[j] = buf[j];
@@ -1011,8 +1026,15 @@ void fillIntArray(const Group &storageGroup, const std::string varname, const in
         std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
         throw Exception(errMsg.c_str(), ioda_Here());
       }
+      const long utilMissingLong = util::missingValue<long>();
+      const long utilMissingInt64AsLong = static_cast<long>(util::missingValue<int64_t>());
+      const long odbMissingAsLong = static_cast<long>(odb_missing_int);
+      const auto isMissing = [&](long value) {
+        return value == fillValue || value == utilMissingLong
+               || value == utilMissingInt64AsLong || value == odbMissingAsLong;
+      };
       for (int j = 0; j < numrows; j++) {
-        if (fillValue == buf[j]) {
+        if (isMissing(buf[j])) {
           outdata[j] = odb_missing_int;
         } else {
           outdata[j] = buf[j];
@@ -1388,6 +1410,10 @@ Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
   eckit::PathName p(odcparams.outputFile);
   odc::Writer<> oda(p);
   odc::Writer<>::iterator writer = oda.begin();
+
+  // Initialise the odc missing values before writing header
+  odc_set_missing_double(static_cast<double>(odb_missing_float));
+  odc_set_missing_integer(odb_missing_int);
 
   // Setup to column information
   writer->setNumberOfColumns(total_num_cols);
