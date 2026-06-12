@@ -546,15 +546,20 @@ void testPutGetChanSelect() {
           EXPECT(VarDataType == ObsDtype::Float);
       }
 
-      // Read in the variable
-      std::vector<float> OrigVec(Nlocs);
+      // Read in the variable. get_db will resize OrigVec to match the variable shape,
+      // so no pre-sizing is needed.
+      std::vector<float> OrigVec;
       Odb->get_db(GroupName, VarName, OrigVec, Channels);
 
-      // Write the variable into the new group
+      // Write the variable into the new group.
+      // An optional YAML "dim_list" field allows the caller to override the default
+      // {"Location"} dimList, which is necessary for Channel-only variables.
       std::string TestGroupName = GroupName + "_Test";
       std::string PutDbVarName = VarName;
-      std::vector<std::string> DimList = { "Location" };
-      if (!Channels.empty()) {
+      const std::vector<std::string> defaultDimList = { "Location" };
+      std::vector<std::string> DimList =
+          varconf[i].getStringVector("dim_list", defaultDimList);
+      if (DimList == defaultDimList && !Channels.empty()) {
         PutDbVarName += "_" + std::to_string(Channels[0]);
         DimList.push_back("Channel");
       }
@@ -563,8 +568,8 @@ void testPutGetChanSelect() {
 
       Odb->put_db(TestGroupName, PutDbVarName, OrigVec, DimList);
 
-      // Read in what was just written and compare to original data
-      std::vector<float> TestVec(Nlocs);
+      // Read back what was just written and compare to the original data.
+      std::vector<float> TestVec;
       Odb->get_db(TestGroupName, VarName, TestVec, Channels);
 
       EXPECT(TestVec == OrigVec);

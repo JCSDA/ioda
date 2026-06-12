@@ -2495,6 +2495,13 @@ ecbuild_add_test( TARGET  ioda_clean_time_io_files
                           "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0001.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0002.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi4_0003.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi1.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi2_0000.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi2_0001.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0000.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0001.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0002.nc4"
+                          "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0003.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_osdf_mpi1.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2_0000.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2_0001.nc4"
@@ -2670,6 +2677,69 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0003
                           netcdf
                           "echo Checking time io amsua_n19 mpi4_0003 (osdf)"
                           amsua_n19_obs_2018041500_m_time_osdf_mpi4_0003.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi1
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi1.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi1)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi2_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi2_0000 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi2_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi2_0001 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi4_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi4_0000 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi4_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi4_0001 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi4_0002
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi4_0002 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0002.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi4_0003
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io GMI GPM mpi4_0003 (osdf)"
+                          gmi_gpm_obs_2018041500_m_time_osdf_mpi4_0003.nc4
                   TEST_DEPENDS ioda_time_io_osdf_mpi4)
 
 # this test creates new output files

@@ -234,9 +234,23 @@ observations:
         group: "MetaData"
         type: "float"
         norm: 172.29837728971688
+
+      - name: "sensorCentralFrequency"
+        group: "NewMetaData"
+        type: "float"
+        norm: 382.151710630909
+
+      - name: "sensorChannelNumber"
+        group: "NewMetaData"
+        type: "integer"
+        norm: 28.6181760425084
     tolerance:
       - 1.0e-11
-    variables for putget test: []
+    variables for putget test:
+      - name: "sensorCentralFrequency"
+        group: "NewMetaData"
+        channels: []
+        dim_list: ["Channel"]
 
 - obs space:
     name: "Radiosonde"

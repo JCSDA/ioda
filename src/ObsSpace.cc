@@ -1533,6 +1533,10 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
         const std::size_t numChans = chanSelectToUse.size();
         const std::string groupVarName = fullVarName(groupToUse, nameToUse);
         if (varHasChans) {
+            // Channel-only variables (dimNames == {"Channel"}) return numChans values.
+            // Location x Channel variables return numLocs * numChans values.
+            const bool isChanOnly =
+                (osdfMetadata_.getVarDimNames(groupVarName).size() == 1);
             for (std::size_t i = 0; i < numChans; ++i) {
                 // Read in the column corresponding to the i-th channel number
                 std::vector<VarType> singleChanData;
@@ -1541,17 +1545,22 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                     singleChanData);
 
                 // If on the first iteration, resize the output vector
-                // and set up the number of location for the indexing
+                // and set up the number of locations for the indexing
                 // into the output vector.
                 if (i == 0) {
                     numLocs = singleChanData.size();
-                    varValues.resize(numLocs * numChans);
+                    varValues.resize(isChanOnly ? numChans : numLocs * numChans);
                 }
 
                 // Place the single channel data into the output vector
-                for (std::size_t j = 0; j < numLocs; ++j) {
-                    const size_t indx = i + (j * numChans);
-                    varValues[indx] = singleChanData[j];
+                if (isChanOnly) {
+                    // All rows in the column hold the same value; take the first.
+                    varValues[i] = singleChanData[0];
+                } else {
+                    for (std::size_t j = 0; j < numLocs; ++j) {
+                        const size_t indx = i + (j * numChans);
+                        varValues[indx] = singleChanData[j];
+                    }
                 }
             }
         } else {
@@ -1676,23 +1685,39 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         if (varHasChans) {
             int chanNum;
             const bool varHasChanSuffix = extractChannelSuffixIfPresent(name, baseName, chanNum);
+            const bool isChanOnly = (dimList.size() == 1 && dimList[0] == "Channel");
             if (varHasChanSuffix) {
-                // Name had an "_n" suffix, writing to a single channel
+                // Name had an "_n" suffix, writing to a single channel.
+                // For Channel-only variables, varValues holds one value; broadcast
+                // it across all locations in the column.
                 if (!varValues.empty()) {
                     const std::string fullName = fullVarName(group, name);
-                    osdf_->setColumn(fullName, varValues);
+                    if (isChanOnly) {
+                        osdf_->setColumn(fullName,
+                                         std::vector<VarType>(numLocs, varValues[0]));
+                    } else {
+                        osdf_->setColumn(fullName, varValues);
+                    }
                 }
             } else {
-                // Name did not have a suffix, writing to the entire
-                // set of columns
+                // Name did not have a suffix, writing to the entire set of columns.
+                // For Channel-only variables, varValues has numChans elements and each
+                // OSDF column is filled with the constant value for that channel.
+                // For Location x Channel variables, varValues has numLocs * numChans
+                // elements and is unpacked with the standard index formula.
                 const std::string fullName = fullVarName(group, name);
                 for (std::size_t i = 0; i < osdfMetadata_.getChanNums().size(); ++i) {
                     const std::string varName = fullName + std::string("_") +
                                                 std::to_string(osdfMetadata_.getChanNums()[i]);
-                    std::vector<VarType> columnData(numLocs);
-                    for (std::size_t j = 0; j < numLocs; ++j) {
-                        const std::size_t indx = i + (j * numChans);
-                        columnData[j] = varValues[indx];
+                    std::vector<VarType> columnData;
+                    if (isChanOnly) {
+                        columnData.assign(numLocs, varValues[i]);
+                    } else {
+                        columnData.resize(numLocs);
+                        for (std::size_t j = 0; j < numLocs; ++j) {
+                            const std::size_t indx = i + (j * numChans);
+                            columnData[j] = varValues[indx];
+                        }
                     }
                     if (!columnData.empty()) {
                         osdf_->setColumn(varName, columnData);
