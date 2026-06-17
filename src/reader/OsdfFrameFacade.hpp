@@ -153,7 +153,7 @@ class OsdfFrameFacade : public Engines::ContainerFacade {
 
   template <typename T>
   void setTypedIodaVariableValues(const std::string &iodaName, const std::vector<T> &values,
-                                  bool hasChannelAxis, MemoryLayout layout,
+                                  const std::string &secondDimName, MemoryLayout layout,
                                   const std::optional<T> &missingValue, bool createNewColumns);
 
  private:

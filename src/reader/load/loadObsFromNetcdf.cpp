@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
@@ -41,10 +42,10 @@ namespace reader {
 static bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & varName);
 
 /// \brief check if we can keep a variable for loading into the OSDF container
-/// \details For now, the storage capability of the OSDF container is limited to
-/// 1D variables dimensioned by Location or Channel, or 2D variables dimensioned
-/// by Location and Channel. This function will check for this and return true
-/// if the variable can be loaded into the OSDF.
+/// \details The OSDF container accepts any 1D variable (dimensioned by Location or by any
+/// second dimension), and any 2D variable whose first dimension is Location (the second
+/// dimension may have any name). This function checks for this and returns true if the
+/// variable can be loaded into the OSDF.
 /// \param varName hierarchical variable name
 /// \param var netCDF variable to check
 /// \param varDimNames list in order of dimension names for the variable
@@ -152,7 +153,6 @@ std::string getNcVarUnits(const netCDF::NcVar & var);
 /// \param varName hierarchical name of variable
 /// \param varUnit unit of the variable
 /// \param varData variable data
-/// \param chanNums channel numbers
 /// \param varDimNames variable dimension names
 /// \param destOSDF destination OSDF container
 /// \param osdfMetadata frame metadata for dest OSDF
@@ -161,7 +161,6 @@ static void transferVarDataToOSDF(const std::string& varName,
                                   const std::string& varUnit,
                                   const std::vector<VarType> & varData,
                                   const std::size_t numlocs,
-                                  const std::vector<int> & chanNums,
                                   const std::vector<std::string> & varDimNames,
                                   std::unique_ptr<osdf::IFrame> & destOSDF,
                                   osdf::FrameMetadata & osdfMetadata);
@@ -204,11 +203,10 @@ bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & va
 bool keepNetcdfVarForOSDF(const std::string & varName,
                           const netCDF::NcVar & var,
                           std::vector<std::string> & varDimNames) {
-  // Get a list of the dimensions attached to this variable. For now we want to keep
+  // Get a list of the dimensions attached to this variable. We want to keep
   // variables that are dimensioned by:
-  //    1D: Location
-  //    1D: Channel
-  //    2D: Location, Channel
+  //    1D: any single dimension
+  //    2D: Location, <any non-Location dimension>
   bool keepVar = true;
   const std::vector<netCDF::NcDim> varDims = var.getDims();
   const std::size_t numDims = varDims.size();
@@ -219,24 +217,21 @@ bool keepNetcdfVarForOSDF(const std::string & varName,
 
     keepVar = false;
   } else if (numDims == 1) {
-    // 1D variable, check if it is dimensioned either by Location or by Channel
-    if (varDims[0].getName() == "Location") {
-      varDimNames.push_back("Location");
-    } else if (varDims[0].getName() == "Channel") {
-      varDimNames.push_back("Channel");
-    } else {
-      oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 1D Variable: " << varName
-                << " is not dimensioned by either Location or Channel. Skipping." << std::endl;
-      keepVar = false;
-    }
+    // 1D variable: accept it regardless of the dimension name.
+    varDimNames.push_back(varDims[0].getName());
   } else {
-    // 2D variable, check if it is dimensioned by Location and Channel
-    if ((varDims[0].getName() == "Location") && (varDims[1].getName() == "Channel")) {
-      varDimNames.push_back("Location");
-      varDimNames.push_back("Channel");
+    // 2D variable: accept it only if the first dimension is Location and the second dimension
+    // is some *other* (non-Location) dimension. A [Location, Location] variable has no second
+    // dimension for the OSDF to expand into slice columns (only non-Location dims are registered
+    // in FrameMetadata), so it cannot round-trip -- skip it rather than silently mangle it.
+    const std::string firstDimName = varDims[0].getName();
+    const std::string secondDimName = varDims[1].getName();
+    if (firstDimName == "Location" && secondDimName != "Location") {
+      varDimNames.push_back(firstDimName);
+      varDimNames.push_back(secondDimName);
     } else {
       oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 2D Variable: " << varName
-                << " is not dimensioned by Location and Channel. Skipping." << std::endl;
+                << " is not dimensioned [Location, <non-Location>]. Skipping." << std::endl;
       keepVar = false;
     }
   }
@@ -507,15 +502,14 @@ void transferVarDataToOSDF(const std::string& varName,
                            const std::string& varUnit,
                            const std::vector<VarType> & varData,
                            const std::size_t numLocs,
-                           const std::vector<int> & chanNums,
                            const std::vector<std::string> & varDimNames,
                            std::unique_ptr<osdf::IFrame> & destOSDF,
                            osdf::FrameMetadata & osdfMetadata) {
-  // varData should be the proper size. It is either 1D (Location),
-  // or 1D (Channel) or or 2D (Location X Channel). We've already
-  // verified the dimensioning when we decided to keep the variable
-  // for loading into the OSDF container.
-  const std::size_t numChannels = chanNums.size();
+  // varData should be the proper size. It is either 1D (Location), 1D (some second
+  // dimension) or 2D (Location X some second dimension). We've already verified the
+  // dimensioning when we decided to keep the variable for loading into the OSDF container.
+  // The slice index values (real coordinate values or synthetic 0..n-1 indices) come from
+  // the FrameMetadata dimension registry, and serve as the "_<index>" column suffixes.
   if (varDimNames.size() == 1) {
     if (varDimNames[0] == "Location") {
       // 1D variable dimensioned by Location
@@ -527,52 +521,50 @@ void transferVarDataToOSDF(const std::string& varName,
             std::string("1D Variable (Location) size != numLocs: ") + varName;
         throw std::runtime_error(errMsg);
       }
-    } else if (varDimNames[0] == "Channel") {
-      // 1D variable dimensioned by Channel
-      if (varData.size() == numChannels) {
-        // Expand into one column per channel. Do this by looping through the channels
-        // and creating a vector that is numLocs in length with the specific channel value
-        // repeated for all locations.
+    } else {
+      // 1D variable dimensioned by some second dimension (e.g. Channel, Level): broadcast
+      // each slice value across all locations, one column per slice.
+      const std::string & dimName = varDimNames[0];
+      const std::vector<int> & dimNums = osdfMetadata.getDimNums(dimName);
+      if (varData.size() == dimNums.size()) {
         // TODO(srh): This is inefficient in terms of memory usage. We can address
         // this later if it turns out to be problematic.
-        for (std::size_t ichan = 0; ichan < numChannels; ++ichan) {
-          std::vector<VarType> dataChannel(numLocs, varData[ichan]);
+        for (std::size_t islice = 0; islice < dimNums.size(); ++islice) {
+          std::vector<VarType> dataSlice(numLocs, varData[islice]);
           destOSDF->appendNewColumn(
-            varName + std::string("_") + std::to_string(chanNums[ichan]),
-            dataChannel, varUnit);
+            varName + std::string("_") + std::to_string(dimNums[islice]),
+            dataSlice, varUnit);
         }
-        osdfMetadata.addVarToVarsWithChans(varName);
         osdfMetadata.addVarDimNames(varName, varDimNames);
       } else {
         const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
-            std::string("1D Variable (Channel) size != numChannels: ") + varName;
+            std::string("1D Variable (") + dimName + std::string(") size != dim size: ") + varName;
         throw std::runtime_error(errMsg);
       }
     }
   } else if (varDimNames.size() == 2) {
-    // 2D variable, check if it is dimensioned by Location and Channel
-    if ((varDimNames[0] == "Location") && (varDimNames[1] == "Channel")) {
-      // 2D variable dimensioned by Location and Channel
-      if (varData.size() == (numLocs * numChannels)) {
-        // Expand into one column per channel
-        for (std::size_t ichan = 0; ichan < numChannels; ++ichan) {
-          std::vector<VarType> dataChannel(numLocs);
-          for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
-            const std::size_t idata = (numChannels * iloc) + ichan;
-            dataChannel[iloc] = varData[idata];
-          }
-          destOSDF->appendNewColumn(
-            varName + std::string("_") + std::to_string(chanNums[ichan]),
-            dataChannel, varUnit);
+    // 2D variable dimensioned by Location and some second dimension. Expand into one
+    // column per slice of the second dimension.
+    const std::string & dimName = varDimNames[1];
+    const std::vector<int> & dimNums = osdfMetadata.getDimNums(dimName);
+    const std::size_t numSlices = dimNums.size();
+    if (varData.size() == (numLocs * numSlices)) {
+      for (std::size_t islice = 0; islice < numSlices; ++islice) {
+        std::vector<VarType> dataSlice(numLocs);
+        for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
+          const std::size_t idata = (numSlices * iloc) + islice;
+          dataSlice[iloc] = varData[idata];
         }
-        osdfMetadata.addVarToVarsWithChans(varName);
-        osdfMetadata.addVarDimNames(varName, varDimNames);
-      } else {
-        const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
-          std::string("2D Variable (Location, Channel) size != (numLocs * numChans): ") +
-          varName;
-        throw std::runtime_error(errMsg);
+        destOSDF->appendNewColumn(
+          varName + std::string("_") + std::to_string(dimNums[islice]),
+          dataSlice, varUnit);
       }
+      osdfMetadata.addVarDimNames(varName, varDimNames);
+    } else {
+      const std::string errMsg = std::string("ioda::reader::transferVarDataToOSDF: ") +
+        std::string("2D Variable (Location, ") + dimName +
+        std::string(") size != (numLocs * dim size): ") + varName;
+      throw std::runtime_error(errMsg);
     }
   }
 
@@ -589,17 +581,14 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                            std::unique_ptr<osdf::IFrame> & destOSDF,
                            osdf::FrameMetadata & osdfMetadata) {
   // Get a list of all the dimensions in the file. We won't store dimensions directly in
-  // the destOSDF container, but we need to get the channel numbers if they exist.
-  // The number of locations that will be read from the file is given by the locCount
-  // parameter. But we want to check that locCount is not greater than the
+  // the destOSDF container, but we need to register their coordinate values so the per-slice
+  // columns can be expanded. The number of locations that will be read from the file is given
+  // by the locCount parameter. But we want to check that locCount is not greater than the
   // total number of locations in the file.
-  std::vector<int> chanNums;
   const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
   for (const auto & dimName : allDims) {
-    // Look for the dimensions Location and Channel (in the top level group). For
-    // Location record the dimension size (number of Locations) and for Channel record
-    // the dimension size (number of Channels) and the channel numbers.
     if (dimName == "Location") {
+      // For Location, just bounds-check the requested location count.
       netCDF::NcDim dim = inFile.getDim(dimName);
       checkNcObj(dim, "ioda::reader::loadObsBlockFromNetcdf: Failed to get dimension: " + dimName);
       const std::size_t numLocations = dim.getSize();
@@ -607,15 +596,27 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
         throw std::runtime_error("ioda::reader::loadObsBlockFromNetcdf: locCount is greater than "
                                  "number of locations in the file.");
       }
-    } else if (dimName == "Channel") {
+    } else {
+      // Register every non-Location dimension. If the coordinate values are a set of unique
+      // integers, store them as-is (e.g. Channel: {1, 3, 5, ..., 22}). Otherwise (non-integer
+      // type, or non-unique integers) store synthetic 0-based indices {0, 1, ..., n-1} so that
+      // the "_<index>" column suffixes are always unique.
       netCDF::NcVar var = inFile.getVar(dimName);
-      if (var.getType() != netCDF::NcType::ncType::nc_INT) {
-        throw std::runtime_error(
-          "ioda::reader::loadObsBlockFromNetcdf: Channel variable is not int type.");
+      if (var.isNull()) {
+        continue;
       }
-      chanNums.resize(var.getDim(0).getSize());
-      var.getVar(chanNums.data());
-      osdfMetadata.setChanNums(chanNums);
+      const std::size_t dimSize = var.getDim(0).getSize();
+      bool useRealValues = false;
+      std::vector<int> dimNums(dimSize);
+      if (var.getType() == netCDF::NcType::ncType::nc_INT) {
+        var.getVar(dimNums.data());
+        const std::unordered_set<int> uniqueVals(dimNums.begin(), dimNums.end());
+        useRealValues = (uniqueVals.size() == dimSize);
+      }
+      if (!useRealValues) {
+        std::iota(dimNums.begin(), dimNums.end(), 0);
+      }
+      osdfMetadata.setDimNums(dimName, dimNums);
     }
   }
 
@@ -639,28 +640,28 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
         std::vector<int> varData = getNcVarData<int>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int>(var, varData);
         transferVarDataToOSDF<int>(
-          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "int64") {
         std::vector<int64_t> varData = getNcVarData<int64_t>(startLoc, locCount, var);
         replaceFillValuesWithMissing<int64_t>(var, varData);
         transferVarDataToOSDF<int64_t>(
-          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "float") {
         std::vector<float> varData = getNcVarData<float>(startLoc, locCount, var);
         replaceFillValuesWithMissing<float>(var, varData);
         transferVarDataToOSDF<float>(
-          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "byte") {
         std::vector<char> varData = getNcVarData<char>(startLoc, locCount, var);
         replaceFillValuesWithMissing<char>(var, varData);
         transferVarDataToOSDF<char>(
-          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
       } else if (varType.getName() == "string") {
         std::vector<std::string> varData =
                                  getNcVarData<std::string>(startLoc, locCount, var);
         replaceFillValuesWithMissing<std::string>(var, varData);
         transferVarDataToOSDF<std::string>(
-          varName, varUnit, varData, locCount, chanNums, varDimNames, destOSDF, osdfMetadata);
+          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
       } else {
         oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
                           << varName << " is not int, int64, float, char or string. Skipping."

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2021 UCAR
+ * (C) Copyright 2025-2026 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -14,42 +14,67 @@ namespace osdf {
 
 //----------------------------------------------------------------------
 FrameMetadata::FrameMetadata()
-                  : chanNums_({}),
-                    varsWithChans_({}),
+                  : dimNums_({}),
                     varDimNames_({}),
                     numVars_(0) {
 }
 
 //----------------------------------------------------------------------
-// setters
-void FrameMetadata::setChanNums(const std::vector<int> & chanNums) {
-  // For now, only set the first time. The assumption is that there exists
-  // only one channel dimension and those channel numbers are being passed
-  // into this function.
-  if (chanNums_.empty()) {
-    chanNums_ = chanNums;
+void FrameMetadata::setDimNums(const std::string &dimName, const std::vector<int> &nums) {
+  // We don't want to allow overwriting or duplicating an existing dimension.
+  if (dimNums_.count(dimName) == 0) {
+    dimNums_.insert({dimName, nums});
+  } else {
+    throw eckit::BadValue("FrameMetadata::setDimNums: Dimension already registered: " +
+                           dimName, Here());
   }
 }
 
-void FrameMetadata::setVarsWithChans(const std::unordered_set<std::string> & varsWithChans) {
-  varsWithChans_ = varsWithChans;
+const std::vector<int> &FrameMetadata::getDimNums(const std::string &dimName) const {
+  static const std::vector<int> emptyVec;
+  const auto it = dimNums_.find(dimName);
+  return (it != dimNums_.end()) ? it->second : emptyVec;
 }
 
+bool FrameMetadata::hasDim(const std::string &dimName) const {
+  return dimNums_.count(dimName) > 0;
+}
+
+std::vector<std::string> FrameMetadata::getDimNames() const {
+  std::vector<std::string> names;
+  names.reserve(dimNums_.size());
+  for (const auto &kv : dimNums_) {
+    names.push_back(kv.first);
+  }
+  return names;
+}
+
+std::string FrameMetadata::varSecondDimName(const std::string &varName) const {
+  const auto it = varDimNames_.find(varName);
+  if (it == varDimNames_.end()) return "";
+  for (const auto &d : it->second) {
+    if (d != "Location") return d;
+  }
+  return "";
+}
+
+std::unordered_set<std::string> FrameMetadata::getMultiSliceVars() const {
+  std::unordered_set<std::string> result;
+  for (const auto &kv : varDimNames_) {
+    if (!varSecondDimName(kv.first).empty()) result.insert(kv.first);
+  }
+  return result;
+}
+
+//----------------------------------------------------------------------
+// setters
 void FrameMetadata::setNumVars(const int numVars) {
   numVars_ = numVars;
 }
 
 //----------------------------------------------------------------------
 // getters
-const std::vector<int> & FrameMetadata::getChanNums() const {
-  return chanNums_;
-}
-
-const std::unordered_set<std::string> & FrameMetadata::getVarsWithChans() const {
-  return varsWithChans_;
-}
-
-const std::vector<std::string> & FrameMetadata::getVarDimNames(const std::string & varName) const {
+const std::vector<std::string> &FrameMetadata::getVarDimNames(const std::string &varName) const {
   const auto it = varDimNames_.find(varName);
   if (it != varDimNames_.end()) {
     return it->second;
@@ -70,13 +95,8 @@ void FrameMetadata::incrNumVars() {
 }
 
 //----------------------------------------------------------------------
-void FrameMetadata::addVarToVarsWithChans(const std::string & varName) {
-  varsWithChans_.insert(varName);
-}
-
-//----------------------------------------------------------------------
-void FrameMetadata::addVarDimNames(const std::string & varName,
-                                   const std::vector<std::string> & varDimNames) {
+void FrameMetadata::addVarDimNames(const std::string &varName,
+                                   const std::vector<std::string> &varDimNames) {
   varDimNames_[varName] = varDimNames;
 }
 
@@ -86,85 +106,98 @@ std::size_t FrameMetadata::removeVarDimNames(const std::string &varName) {
 }
 
 //----------------------------------------------------------------------
-bool FrameMetadata::varHasChannels(const std::string & varName) const {
-  return (varsWithChans_.find(varName) != varsWithChans_.end());
+// Backward-compatible wrappers
+void FrameMetadata::setChanNums(const std::vector<int> &chanNums) {
+  if (!hasDim("Channel")) setDimNums("Channel", chanNums);
+}
+
+const std::vector<int> &FrameMetadata::getChanNums() const {
+  return getDimNums("Channel");
+}
+
+bool FrameMetadata::varHasChannels(const std::string &varName) const {
+  return varSecondDimName(varName) == "Channel";
+}
+
+std::unordered_set<std::string> FrameMetadata::getVarsWithChans() const {
+  std::unordered_set<std::string> result;
+  for (const auto &kv : varDimNames_) {
+    if (varSecondDimName(kv.first) == "Channel") result.insert(kv.first);
+  }
+  return result;
 }
 
 //----------------------------------------------------------------------
-std::size_t FrameMetadata::serialize(eckit::Buffer & bufr) const {
-  // Serialize in the following format using the eckit::Buffer and
-  // eckit::ResizableMemoryStream utilities.
+std::size_t FrameMetadata::serialize(eckit::Buffer &bufr) const {
+  // Serialize in the following format using eckit::Buffer and
+  // eckit::ResizableMemoryStream.
   //
   // 1. numVars_ (int)
-  //      integer
   //
-  // 2. chanNums_ (vector<int>)
-  //      size_t - size of vector
-  //      vector entries (int)
+  // 2. dimNums_ (unordered_map<string, vector<int>>)
+  //      size_t - number of entries
+  //      per entry:
+  //        string - dimension name
+  //        size_t - number of coordinate values
+  //        int[]  - coordinate values
   //
-  // 3. varsWithChans_ (unordered_set<string>)
-  //      size_t - size of set
-  //      vector entries (string)
-  //
-  // 4. varDimNames (unordered_map<strin, vector<string>>)
-  //      size_t - size of map
-  //      key,value pair
-  //        size_t - size of vector
-  //        vector entries (strings)
+  // 3. varDimNames_ (unordered_map<string, vector<string>>)
+  //      size_t - number of entries
+  //      per entry:
+  //        string   - variable name
+  //        size_t   - number of dimension names
+  //        string[] - dimension names
   //
   eckit::ResizableMemoryStream memStream(bufr);
 
   // numVars_
   memStream << numVars_;
 
-  // chanNums_
-  memStream << chanNums_.size();
-  for (std::size_t i = 0; i < chanNums_.size(); ++i) {
-    memStream << chanNums_[i];
-  }
-
-  // varsWithChans_
-  memStream << varsWithChans_.size();
-  for (const std::string & varName : varsWithChans_) {
-    memStream << varName;
+  // dimNums_
+  memStream << dimNums_.size();
+  for (const auto &kv : dimNums_) {
+    memStream << kv.first;
+    memStream << kv.second.size();
+    for (int n : kv.second) {
+      memStream << n;
+    }
   }
 
   // varDimNames_
   memStream << varDimNames_.size();
-  for (const std::pair<std::string, std::vector<std::string>> varDimInfo : varDimNames_) {
-    memStream << varDimInfo.first;
-    memStream << varDimInfo.second.size();
-    for (const std::string & dimName : varDimInfo.second) {
+  for (const auto &kv : varDimNames_) {
+    memStream << kv.first;
+    memStream << kv.second.size();
+    for (const std::string &dimName : kv.second) {
       memStream << dimName;
     }
   }
+
   return memStream.position();
 }
 
 //----------------------------------------------------------------------
-void FrameMetadata::deserialize(eckit::Buffer & bufr) {
-  // Follow the layout described above in the serialize function.
+void FrameMetadata::deserialize(eckit::Buffer &bufr) {
+  // Follow the layout described in the serialize function.
   eckit::ResizableMemoryStream memStream(bufr);
 
   // numVars_
   memStream >> numVars_;
 
-  // chanNums_
+  // dimNums_
   std::size_t numEntries;
   memStream >> numEntries;
-  chanNums_.clear();
-  chanNums_.resize(numEntries);
+  dimNums_.clear();
   for (std::size_t i = 0; i < numEntries; ++i) {
-    memStream >> chanNums_[i];
-  }
-
-  // varsWithChans_
-  memStream >> numEntries;
-  varsWithChans_.clear();
-  for (std::size_t i = 0; i < numEntries; ++i) {
-    std::string varName;
-    memStream >> varName;
-    varsWithChans_.insert(varName);
+    std::string dimName;
+    memStream >> dimName;
+    std::size_t numNums;
+    memStream >> numNums;
+    std::vector<int> nums(numNums);
+    for (std::size_t j = 0; j < numNums; ++j) {
+      memStream >> nums[j];
+    }
+    dimNums_[dimName] = nums;
   }
 
   // varDimNames_
@@ -185,47 +218,39 @@ void FrameMetadata::deserialize(eckit::Buffer & bufr) {
 
 //----------------------------------------------------------------------
 std::size_t FrameMetadata::bufrSize() const {
-  // Add up the number of bytes of each data member. This will get a close
-  // enough estimate of the actual size used by the eckit::Buffer
-  // and eckit::ResizableMemoryStream utilities. The ResizableMemoryStream
-  // checks if you are going to overrun the buffer and allocates more
-  // space if necessary.
-  //
-  // This follows the layout described in the serialize function
+  // Add up the number of bytes of each data member to estimate the buffer size.
+  // The ResizableMemoryStream will grow the buffer if needed.
+  // This follows the layout described in the serialize function.
 
   // numVars_
   std::size_t numBytes = sizeof(int);
 
-  // chanNums_
-  numBytes += sizeof(std::size_t);  // size of vector
-  numBytes += (chanNums_.size()) * sizeof(int);
-
-  // varsWithChans_
-  numBytes += sizeof(std::size_t);   // size of set
-  for (const std::string & varName : varsWithChans_) {
-    numBytes += varName.size();
+  // dimNums_
+  numBytes += sizeof(std::size_t);  // number of entries
+  for (const auto &kv : dimNums_) {
+    numBytes += kv.first.size();
+    numBytes += sizeof(std::size_t);              // number of coordinate values
+    numBytes += kv.second.size() * sizeof(int);   // coordinate values
   }
 
   // varDimNames_
-  numBytes += sizeof(std::size_t);  // size of map
-  for (const std::pair<std::string, std::vector<std::string>> varInfo : varDimNames_) {
-    numBytes += varInfo.first.size();
-    numBytes += sizeof(std::size_t);   // size of string vector (variable dim names)
-    for (const std::string & varDimName : varInfo.second) {
-      numBytes += varDimName.size();
+  numBytes += sizeof(std::size_t);  // number of entries
+  for (const auto &kv : varDimNames_) {
+    numBytes += kv.first.size();
+    numBytes += sizeof(std::size_t);  // number of dimension names
+    for (const std::string &dimName : kv.second) {
+      numBytes += dimName.size();
     }
   }
+
   return numBytes;
 }
 
 //----------------------------------------------------------------------
-bool FrameMetadata::operator==(const FrameMetadata & refFrameMetadata) const {
-  // checke each data member for equality.
-  const bool match = (this->numVars_ == refFrameMetadata.numVars_) &&
-                     (this->chanNums_ == refFrameMetadata.chanNums_) &&
-                     (this->varsWithChans_ == refFrameMetadata.varsWithChans_) &&
-                     (this->varDimNames_ == refFrameMetadata.varDimNames_);
-  return match;
+bool FrameMetadata::operator==(const FrameMetadata &refFrameMetadata) const {
+  return (this->numVars_ == refFrameMetadata.numVars_) &&
+         (this->dimNums_ == refFrameMetadata.dimNums_) &&
+         (this->varDimNames_ == refFrameMetadata.varDimNames_);
 }
 
 }  // namespace osdf

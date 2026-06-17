@@ -33,39 +33,39 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  974
-        nvars:  64
+        nvars:  69
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  487
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  487
-        nvars:  64
+        nvars:  69
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  487
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  0
-        nvars:  64
+        nvars:  69
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  487
-        nvars:  64
+        nvars:  69
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  64
+        nvars:  69
 
 - name: "Radiosondes-SplitInput: 2 files"
   obsdatain:
@@ -96,39 +96,39 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  974
-        nvars:  64
+        nvars:  69
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  530  # nlocs differ from the non-split case; the split files are not exactly even
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  444
-        nvars:  64
+        nvars:  69
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  530
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  0
-        nvars:  64
+        nvars:  69
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  444
-        nvars:  64
+        nvars:  69
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  64
+        nvars:  69
 
 - name: "Radiosondes-SplitInput: 4 Files"
   obsdatain:
@@ -159,39 +159,39 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  974
-        nvars:  64
+        nvars:  69
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  530  # nlocs differ from the non-split case; the split files are not exactly even
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  444
-        nvars:  64
+        nvars:  69
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  530
-        nvars:  64
+        nvars:  69
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  444
-        nvars:  64
+        nvars:  69
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  64
+        nvars:  69
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  64
+        nvars:  69
 
 - name: "AMSU-A NOAA 19"
   obsdatain:
@@ -232,36 +232,36 @@ obs types:
         pool comm size: 1
         pool comm rank: 0
         nlocs:  100
-        nvars:  117
+        nvars:  238
     mpi size2:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  50
-        nvars:  117
+        nvars:  238
       rank1:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  50
-        nvars:  117
+        nvars:  238
     mpi size4:
       rank0:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  50
-        nvars:  117
+        nvars:  238
       rank1:
         pool comm size: 2
         pool comm rank: 0
         nlocs:  0
-        nvars:  117
+        nvars:  238
       rank2:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  50
-        nvars:  117
+        nvars:  238
       rank3:
         pool comm size: 2
         pool comm rank: 1
         nlocs:  0
-        nvars:  117
+        nvars:  238

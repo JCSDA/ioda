@@ -95,12 +95,13 @@ std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & sr
   std::transform(colNames.begin(), colNames.end(), colNamesWithoutNumericSuffixes.begin(),
                  ioda::removeStringNumericSuffix);
 
-  // If a name without a numeric suffix is in the list of vars with channels,
-  // keep that name, otherwise use the name with the numeric suffix.
-  const std::unordered_set<std::string> varsWithChans = frameMetadata.getVarsWithChans();
+  // If a name without a numeric suffix is in the list of multi-slice variables (variables
+  // that have any non-Location second dimension, e.g. Channel, Level, nfactors), keep that
+  // collapsed name, otherwise use the name with the numeric suffix.
+  const std::unordered_set<std::string> multiSliceVars = frameMetadata.getMultiSliceVars();
   std::set<std::string> uniqueVars;
   for (std::size_t i = 0; i < colNamesWithoutNumericSuffixes.size(); ++i) {
-    if (varsWithChans.find(colNamesWithoutNumericSuffixes[i]) != varsWithChans.end()) {
+    if (multiSliceVars.find(colNamesWithoutNumericSuffixes[i]) != multiSliceVars.end()) {
       uniqueVars.insert(colNamesWithoutNumericSuffixes[i]);
     } else {
       uniqueVars.insert(colNames[i]);

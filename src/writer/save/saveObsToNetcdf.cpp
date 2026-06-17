@@ -8,6 +8,7 @@
 #include "ioda/writer/save/saveObsToNetcdf.hpp"
 
 #include <netcdf>
+#include <algorithm>
 #include <unordered_set>
 #include <utility>
 
@@ -69,11 +70,11 @@ static netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType
 /// \param varName variable name without channel suffix
 /// \param srcOsdf source OSDF container from which to get the column names
 /// \param osdfMetadata source OSDF metadata containing information about the variables
-/// \return column name with channel suffix if the variable uses channels,
+/// \return column name with the first slice suffix if the variable has a second dimension,
 /// otherwise return varName
-static std::string findColNameWithChanSuffix(const std::string & varName,
-                                            const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                            const osdf::FrameMetadata & osdfMetadata);
+static std::string findColNameWithSliceSuffix(const std::string & varName,
+                                             const std::unique_ptr<osdf::IFrame> & srcOsdf,
+                                             const osdf::FrameMetadata & osdfMetadata);
 
 /// \brief Create a data structure containing the output (ioda) dimension names with their
 /// corresponding creation paramters.
@@ -202,16 +203,20 @@ netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType) {
 }
 
 //---------------------------------------------------------------------
-std::string findColNameWithChanSuffix(const std::string & varName,
-                                      const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                      const osdf::FrameMetadata & osdfMetadata) {
-  // If the variable uses channels, then use the first column name with a channel suffix.
-  // Otherwise, just return the variable name.
-  std::string colNameWithChanSuffix = varName;
-  if (osdfMetadata.varHasChannels(varName)) {
-    colNameWithChanSuffix += "_" + std::to_string(osdfMetadata.getChanNums().front());
+std::string findColNameWithSliceSuffix(const std::string & varName,
+                                       const std::unique_ptr<osdf::IFrame> & srcOsdf,
+                                       const osdf::FrameMetadata & osdfMetadata) {
+  // If the variable has a second (non-Location) dimension, then use the first column name with
+  // a slice suffix. Otherwise, just return the variable name.
+  std::string colNameWithSliceSuffix = varName;
+  const std::string dimName = osdfMetadata.varSecondDimName(varName);
+  if (!dimName.empty()) {
+    const std::vector<int> & sliceNums = osdfMetadata.getDimNums(dimName);
+    if (!sliceNums.empty()) {
+      colNameWithSliceSuffix += "_" + std::to_string(sliceNums.front());
+    }
   }
-  return colNameWithChanSuffix;
+  return colNameWithSliceSuffix;
 }
 
 //---------------------------------------------------------------------
@@ -272,25 +277,21 @@ void setNcVarAttributes(netCDF::NcVar & var, const VarCreationParameters & creat
 //---------------------------------------------------------------------
 DimCreationList makeDimCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
                                     const osdf::FrameMetadata & osdfMetadata) {
-  // todo(SRH) For now we are only handling Location and Channel as dimensions.
-  // We may need to generalize this further in the future.
-  // We always have the Location dimension, and optionally have the Channel
-  // dimension. Make the Location dimension with unlimited size.
-  std::vector<std::string> dimNames(1, "Location");
-  const int numChans = osdfMetadata.getChanNums().size();
-  if (numChans > 0) {
-    dimNames.push_back("Channel");
-  }
-
+  // We always have the Location dimension (unlimited size). In addition, we create a dimension
+  // for every second dimension registered in the frame metadata (Channel, Level, nfactors, etc.).
+  // The registered dimension names are sorted so the output file layout is deterministic.
   DimCreationList dimCreationList;
-  for (auto & dimName : dimNames) {
+  dimCreationList.emplace_back(
+    std::make_pair(std::string("Location"), DimCreationParameters(srcOsdf->numRows(), true)));
+
+  std::vector<std::string> secondDimNames = osdfMetadata.getDimNames();
+  std::sort(secondDimNames.begin(), secondDimNames.end());
+  for (const auto & dimName : secondDimNames) {
     if (dimName == "Location") {
-      DimCreationParameters createParams(srcOsdf->numRows(), true);
-      dimCreationList.emplace_back(std::make_pair(dimName, createParams));
-    } else {
-      DimCreationParameters createParams(numChans, false);
-      dimCreationList.emplace_back(std::make_pair(dimName, createParams));
+      continue;  // Location is handled above; never expected in the registry, but guard anyway
     }
+    const int dimSize = osdfMetadata.getDimNums(dimName).size();
+    dimCreationList.emplace_back(std::make_pair(dimName, DimCreationParameters(dimSize, false)));
   }
   return dimCreationList;
 }
@@ -314,12 +315,17 @@ VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & src
     varCreationList.emplace_back(std::make_pair(locDimName, locVarCreateParams));
   }
 
-  if (osdfMetadata.getChanNums().size() > 0) {
-    // We need the Channel dimension
-    const std::string chanName("Channel");
-    VarCreationParameters chanVarCreateParams(chanName, {chanName},
-                                              netCDF::NcType::nc_INT, varUnits);
-    varCreationList.emplace_back(std::make_pair(chanName, chanVarCreateParams));
+  // Create a coordinate variable for every registered second dimension (Channel, Level,
+  // nfactors, etc.). Sorted for deterministic output file layout.
+  std::vector<std::string> secondDimNames = osdfMetadata.getDimNames();
+  std::sort(secondDimNames.begin(), secondDimNames.end());
+  for (const auto & dimName : secondDimNames) {
+    if (dimName == "Location") {
+      continue;
+    }
+    VarCreationParameters dimVarCreateParams(dimName, {dimName},
+                                             netCDF::NcType::nc_INT, varUnits);
+    varCreationList.emplace_back(std::make_pair(dimName, dimVarCreateParams));
   }
   return varCreationList;
 }
@@ -341,17 +347,16 @@ void createNcDim(netCDF::NcGroup & group, const std::string & dimName,
 void setNcDimVar(netCDF::NcVar & dimVar,
                  const std::unique_ptr<osdf::IFrame> & srcOsdf,
                  const osdf::FrameMetadata & osdfMetadata) {
-  // todo(SRH) Only supporting Location and Channel dimensions for now.
-  // The Location values are in the osdf column "sourceLocationIndices",
-  // and the Channel values are in the osdfMetadata.
+  // The Location values are in the osdf column "sourceLocationIndices". The values for every
+  // other (second) dimension are held in the frame metadata dimension registry.
   std::string dimVarName = dimVar.getName();
   if (dimVarName == "Location") {
     std::vector<int> locVals;
     srcOsdf->getColumn("sourceLocationIndices", locVals);
     dimVar.putVar({0}, {locVals.size()}, locVals.data());
-  } else if (dimVarName == "Channel") {
-    const std::vector<int> & chanVals = osdfMetadata.getChanNums();
-    dimVar.putVar(chanVals.data());
+  } else if (osdfMetadata.hasDim(dimVarName)) {
+    const std::vector<int> & dimVals = osdfMetadata.getDimNums(dimVarName);
+    dimVar.putVar(dimVals.data());
   } else {
     throw eckit::BadValue(
       "ioda::write::setNcDimVar: unknown dimension name: " + dimVarName, Here());
@@ -376,18 +381,18 @@ VarCreationList makeVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsd
       continue;
     }
 
-    // When testing if the variable uses channels, we need to ignore the
-    // channel number suffixes on the variable name.
+    // Determine whether the variable has a second (non-Location) dimension. The column names
+    // here have had their numeric slice suffixes stripped, so columnName is the collapsed name.
     std::vector<std::string> varDimNames;
     std::string associatedColumn;
-    if (osdfMetadata.varHasChannels(columnName)) {
-      // This variable uses channels, so it will be dimensioned by either Channel
-      // or Location and Channel. Either way the osdfMetadata will have the proper
+    if (!osdfMetadata.varSecondDimName(columnName).empty()) {
+      // This variable has a second dimension, so it will be dimensioned by either
+      // [<dim>] or [Location, <dim>]. Either way the osdfMetadata holds the proper
       // dimension names.
       varDimNames = osdfMetadata.getVarDimNames(columnName);
-      associatedColumn = findColNameWithChanSuffix(columnName, srcOsdf, osdfMetadata);
+      associatedColumn = findColNameWithSliceSuffix(columnName, srcOsdf, osdfMetadata);
     } else {
-      // This variable does not use channels, so it will be dimensioned by Location only.
+      // This variable has no second dimension, so it is dimensioned by Location only.
       varDimNames = std::vector<std::string>{"Location"};
       associatedColumn = columnName;
     }
@@ -495,52 +500,58 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
   const std::string varName = var.getName();
 
   // Need to strip off any numerical suffix on the associated column name
-  // to check whether the column has channels.
-  const std::string colWithChans = ioda::removeStringNumericSuffix(assocColumn);
-  const bool hasChannels = osdfMetadata.varHasChannels(colWithChans);
-  if (hasChannels) {
-    // Use colWithChans for the desired column name. Code will attach all of the
-    // channel suffixes to pull data from the srcOsdf.
+  // to look up the variable's second (non-Location) dimension.
+  const std::string colWithSlices = ioda::removeStringNumericSuffix(assocColumn);
+  const std::string secondDimName = osdfMetadata.varSecondDimName(colWithSlices);
+  if (!secondDimName.empty()) {
+    // Use colWithSlices for the desired column name. Code will attach all of the slice
+    // suffixes (the second dimension's index values) to pull data from the srcOsdf.
     // For now assume we are always writing the entire variable data in one putVar call,
     // so the start value is always 0 and the count value is always the size of the varData vector.
     // We can generalize this in the future when we want to write the variable data in chunks.
-    const std::vector<int> & chanNums = osdfMetadata.getChanNums();
-    const std::size_t numChans = chanNums.size();
+    const std::vector<int> & sliceNums = osdfMetadata.getDimNums(secondDimName);
+    const std::size_t numSlices = sliceNums.size();
     const std::size_t numLocs = srcOsdf->numRows();
-    if (osdfMetadata.getVarDimNames(colWithChans).size() == 1) {
-      // dimensions: [ Channel ]
-      // The data in srcOsdf is stored in one column for each channel. Each
-      // of these columns has the data repeated for each location so we only
-      // need to read from the first row of each column to assemble the
-      // data for the output netCDF variable.
+    if (osdfMetadata.getVarDimNames(colWithSlices).size() == 1) {
+      // dimensions: [ <secondDim> ]
+      // The data in srcOsdf is stored in one column per slice. Each of these columns has the
+      // data repeated for each location, so we only need to read from the first row of each
+      // column to re-pack the original 1D array. If there are no locations (e.g. all
+      // observations were filtered out), the per-slice value is unrecoverable, so we write the
+      // dimension out with missing data.
       osdf::FrameUtils::callWithSupportedType(
         srcOsdf->getColumnType(assocColumn),
         [&](auto typeDiscriminator) {
           using T = decltype(typeDiscriminator);
-          std::vector<T> varVals(numChans);
-          for (std::size_t ichan = 0; ichan < numChans; ++ichan) {
-            std::vector<T> chanVals(numLocs);
-            srcOsdf->getColumn(colWithChans + "_" + std::to_string(chanNums[ichan]), chanVals);
-            varVals[ichan] = chanVals[0];
-          }
-          setNcVarData<T>(var, {0}, {numChans}, varVals);
-          });
-    } else {
-      // dimension: [ Location, Channel ]
-      osdf::FrameUtils::callWithSupportedType(
-        srcOsdf->getColumnType(assocColumn),
-        [&](auto typeDiscriminator) {
-          using T = decltype(typeDiscriminator);
-          std::vector<T> varVals(numLocs * numChans);
-          for (std::size_t ichan = 0; ichan < numChans; ++ichan) {
-            std::vector<T> chanVals(numLocs);
-            srcOsdf->getColumn(colWithChans + "_" + std::to_string(chanNums[ichan]), chanVals);
-            for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
-              const std::size_t ival =  (iloc * numChans) + ichan;
-              varVals[ival] = chanVals[iloc];
+          std::vector<T> varVals(numSlices);
+          for (std::size_t islice = 0; islice < numSlices; ++islice) {
+            if (numLocs > 0) {
+              std::vector<T> sliceVals(numLocs);
+              srcOsdf->getColumn(colWithSlices + "_" + std::to_string(sliceNums[islice]),
+                                 sliceVals);
+              varVals[islice] = sliceVals[0];
+            } else {
+              varVals[islice] = util::missingValue<T>();
             }
           }
-          setNcVarData<T>(var, {0, 0}, {numLocs, numChans}, varVals);
+          setNcVarData<T>(var, {0}, {numSlices}, varVals);
+          });
+    } else {
+      // dimension: [ Location, <secondDim> ]
+      osdf::FrameUtils::callWithSupportedType(
+        srcOsdf->getColumnType(assocColumn),
+        [&](auto typeDiscriminator) {
+          using T = decltype(typeDiscriminator);
+          std::vector<T> varVals(numLocs * numSlices);
+          for (std::size_t islice = 0; islice < numSlices; ++islice) {
+            std::vector<T> sliceVals(numLocs);
+            srcOsdf->getColumn(colWithSlices + "_" + std::to_string(sliceNums[islice]), sliceVals);
+            for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
+              const std::size_t ival =  (iloc * numSlices) + islice;
+              varVals[ival] = sliceVals[iloc];
+            }
+          }
+          setNcVarData<T>(var, {0, 0}, {numLocs, numSlices}, varVals);
           });
     }
   } else {

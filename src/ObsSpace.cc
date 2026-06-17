@@ -980,10 +980,35 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             // Create temporary osdf to append to
             std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(osdf_->frameType());
 
-            // Read file into temp osdf using the same metadata, etc  as osdf_
+            // Read the file to be appended into the temporary osdf using a fresh, separate frame
+            // metadata object. The reader populates dimension and variable metadata from scratch
+            // (e.g. registering the Channel dimension via setDimNums), so it must not be handed
+            // the already-populated osdfMetadata_ -- doing so would attempt to re-register
+            // dimensions and trip the no-overwrite guard in FrameMetadata::setDimNums. The append
+            // below merges the new rows into osdf_; osdfMetadata_ already describes the (unchanged)
+            // variable/dimension structure, so this temporary metadata is discarded afterwards.
+            osdf::FrameMetadata appendOsdfMetadata;
             reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
-                            timeWindow_, dist_, tempOsdf, obsSourceStats, osdfMetadata_);
+                            timeWindow_, dist_, tempOsdf, obsSourceStats, appendOsdfMetadata);
+
+            // Verify that any multi-slice variable common to both frames uses the same second
+            // dimension before merging. The OSDF append only compares column names/types/units;
+            // because a column name encodes the second-dim index value (foo_3) but not the
+            // dimension name, the same variable carried on a different second dimension with the
+            // same index values would produce identical column names and silently merge into a
+            // structurally inconsistent result. (Variables present only in the appended frame have
+            // no target second dim and are skipped here -- they are handled by the column
+            // reconciliation in prepareSourceOsdfDerivedVariables / the OSDF append.)
+            for (const std::string & varName : appendOsdfMetadata.getMultiSliceVars()) {
+              const std::string targetDimName = osdfMetadata_.varSecondDimName(varName);
+              const std::string appendDimName = appendOsdfMetadata.varSecondDimName(varName);
+              if (!targetDimName.empty() && targetDimName != appendDimName) {
+                throw eckit::BadValue("ObsSpace::append: variable '" + varName + "' uses second "
+                                "dimension '" + appendDimName + "' in the appended file but '" +
+                                targetDimName + "' in the existing ObsSpace", Here());
+              }
+            }
 
             prepareSourceOsdfDerivedVariables(tempOsdf);
             appendOsdf(tempOsdf, obsSourceStats);
@@ -1665,8 +1690,6 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
                     osdf_->appendNewColumn(varName, missingValues, unit);
                 }
 
-                // Add the new variable to the "vars with channels" list
-                osdfMetadata_.addVarToVarsWithChans(fullName);
                 osdfMetadata_.addVarDimNames(fullName, dimList);
             } else {
                 // Use name as is and create a single column

@@ -471,6 +471,12 @@ ecbuild_add_test( TARGET  ioda_osdf_ser_deser_column_metadata
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_osdf_frame_metadata
+                  SOURCES mains/containers/TestOsdfFrameMetadata.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
 ecbuild_add_test( TARGET  ioda_osdf_ser_deser_frame_metadata
                   SOURCES mains/containers/TestOsdfSerDeserFrameMetadata.cc
                   ARGS    "testinput/containers/iodatest_osdf_ser_deser_frame_metadata.yaml"
@@ -499,6 +505,14 @@ ecbuild_add_test( TARGET  ioda_reader_load_mpi_4
                   COMMAND ioda_reader_load
                   MPI 4
                   ARGS    "testinput/reader/iodatest_reader_load.yaml"
+                  LIBS  ioda_test
+                  )
+
+# Reader variable-filter step: verifies that variables the OSDF cannot represent
+# (e.g. [Location, Location]) are rejected during load. Generates its own input file.
+ecbuild_add_test( TARGET  ioda_reader_keepvar
+                  SOURCES mains/reader/TestReaderKeepVar.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
 

@@ -165,11 +165,6 @@ auto callWithSupportedTypeString(const std::string &typeString,
 void populateFrameMetadata(const eckit::LocalConfiguration & frameMetadataConfig,
                            osdf::FrameMetadata & osdfMetadata) {
   oops::Log::debug() << "Frame metadata configuration: " << frameMetadataConfig << std::endl;
-  std::vector<std::string> varsWithChans =
-    frameMetadataConfig.getStringVector("variables with channels");
-  std::unordered_set<std::string> varsWithChansSet(
-    varsWithChans.begin(), varsWithChans.end());
-  osdfMetadata.setVarsWithChans(varsWithChansSet);
   osdfMetadata.setChanNums(frameMetadataConfig.getIntVector("channel numbers"));
   osdfMetadata.setNumVars(frameMetadataConfig.getInt("number of variables"));
   const std::vector<eckit::LocalConfiguration> varDimNamesConfig =

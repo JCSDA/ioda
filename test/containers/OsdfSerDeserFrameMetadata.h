@@ -46,7 +46,6 @@ void testFrameMetadataEquality() {
     populateFrameMetadata(frameMetadataConfig, frameMetadata2);
     EXPECT(frameMetadata1 == frameMetadata2);
 
-    frameMetadata2.addVarToVarsWithChans("MetaData/myVarWithChans");
     frameMetadata2.addVarDimNames("MetaData/myVarWithChans", { "Location", "Channel" });
     EXPECT(!(frameMetadata1 == frameMetadata2));
   }

@@ -13,7 +13,6 @@ obs types:
     number of locations: 10
     frame metadata:
       channel numbers: []
-      variables with channels: []
       variable dim names: []
       number of variables: 1
 
@@ -99,9 +98,6 @@ obs types:
     number of locations: 10
     frame metadata:
       channel numbers: [1, 3, 6]
-      variables with channels:
-      - "ObsValue/brightnessTemperature"
-      - "MetaData/chanCentralFrequency"
       variable dim names:
       - name: "ObsValue/brightnessTemperature"
         dim names: ["Location", "Channel"]
