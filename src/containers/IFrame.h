@@ -12,8 +12,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "IFrameData.h"
+
 #include "eckit/serialisation/ResizableMemoryStream.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/IFrameData.h"
 #include "oops/util/missingValues.h"
 
 namespace osdf {
@@ -105,7 +107,7 @@ class IFrame {
 
   /// \brief Returns type for specified column. (See osdf::consts::eDataTypes for type enum.)
   /// \param The column name.
-  virtual std::int8_t getColumnType(const std::string&) const = 0;
+  virtual consts::eDataTypes getColumnType(const std::string&) const = 0;
 
   /// \brief Returns units for specified column.
   /// \param The column name.
@@ -133,8 +135,8 @@ class IFrame {
 
   /// \brief Sorts the order of the rows based on how the values in a target column compare.
   /// \param The target column name.
-  /// \param The comparator operator, specified in osdf::Constants::eComparisons.
-  virtual void sortRows(const std::string&, const std::int8_t) = 0;
+  /// \param The target ordering of column values, specified in osdf::consts::eSortOrders.
+  virtual void sortRows(const std::string&, const consts::eSortOrders) = 0;
 
   /// \brief Returns the number of rows in the container.
   virtual std::size_t numRows() const = 0;
@@ -166,15 +168,15 @@ class IFrame {
   /// \brief Returns a heap-allocated filtered copy of this frame containing only rows that satisfy
   /// the comparison against the threshold value in the named column.
   /// \param The target column name.
-  /// \param One of five enum values (see osdf::consts::eComparisons).
+  /// \param One of five enum values.
   /// \param The value to compare against.
-  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                              const int) const = 0;
-  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                              const std::int64_t) const = 0;
-  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                              const float) const = 0;
-  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  virtual std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                              const std::string) const = 0;
 };
 

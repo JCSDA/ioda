@@ -67,10 +67,11 @@ class FrameColsData : public IFrameData, public IColsData {
   /// \param A pointer to the column data.
   /// \param The column name.
   /// \param An enum value representing the column data type, \see Constants::eDataTypes.
+  /// \param An optional parameter specifying units of the column as a string
   /// \param An optional parameter specifying the column read-write capability.
-  void appendNewColumn(const std::shared_ptr<DataBase>&, const std::string&, const std::int8_t,
+  void appendNewColumn(const std::shared_ptr<DataBase>&, const std::string&, consts::eDataTypes,
                        const std::string& = util::missingValue<std::string>(),
-                       const std::int8_t = consts::eReadWrite);
+                       const consts::ePermissions = consts::eReadWrite);
 
   /// \brief Removes a column from the data frame.
   /// \param The index of the column.
@@ -106,13 +107,13 @@ class FrameColsData : public IFrameData, public IColsData {
 
   const std::string& getName(const std::int32_t) const override;
   const std::string& getUnits(const std::int32_t) const override;
-  const std::int8_t getType(const std::int32_t) const override;
-  const std::int8_t getPermission(const std::int32_t) const override;
+  const consts::eDataTypes getType(const std::int32_t) const override;
+  const consts::ePermissions getPermission(const std::int32_t) const override;
 
   /// \brief Checks to see if a column with a specific name exists in the data frame.
   /// \param Column name to search.
   /// \return An 8-bit integer uses as a boolean.
-  const std::int8_t columnExists(const std::string&) const;
+  const bool columnExists(const std::string&) const;
 
   std::vector<std::int64_t>& getIds();
   const std::vector<std::int64_t>& getIds() const override;

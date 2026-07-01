@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/DataBase.h"
 #include "ioda/containers/DataRow.h"
 #include "ioda/containers/FunctionsCols.h"
@@ -55,12 +56,12 @@ class ViewColsData : public IColsData {
   /// \return The column index.
   const std::int32_t getIndex(const std::string&) const override;
   const std::string& getName(const std::int32_t) const;
-  const std::int8_t getType(const std::int32_t) const;
+  const consts::eDataTypes getType(const std::int32_t) const;
 
   /// \brief Checks to see if a column with a specific name exists in the data frame.
   /// \param Column name to search.
-  /// \return An 8-bit integer uses as a boolean.
-  const std::int8_t columnExists(const std::string&) const;
+  /// \return A boolean.
+  const bool columnExists(const std::string&) const;
 
   const std::shared_ptr<DataBase>& getDataColumn(const std::int32_t) const override;
 

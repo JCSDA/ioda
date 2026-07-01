@@ -11,12 +11,13 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/Functions.h"
 #include "ioda/containers/FunctionsRows.h"
 #include "ioda/containers/IView.h"
@@ -60,16 +61,16 @@ class ViewRows : public IView {
   /// \param name Target column name.
   /// \param comparison One of five enum values.
   /// \param threshold The value to compare against.
-  ViewRows sliceRows(const std::string&, const std::int8_t, const int) const;
-  ViewRows sliceRows(const std::string&, const std::int8_t, const std::int64_t) const;
-  ViewRows sliceRows(const std::string&, const std::int8_t, const float) const;
-  ViewRows sliceRows(const std::string&, const std::int8_t, const std::string) const;
+  ViewRows sliceRows(const std::string&, const consts::eComparisons, const int) const;
+  ViewRows sliceRows(const std::string&, const consts::eComparisons, const std::int64_t) const;
+  ViewRows sliceRows(const std::string&, const consts::eComparisons, const float) const;
+  ViewRows sliceRows(const std::string&, const consts::eComparisons, const std::string) const;
 
   /// \brief Additional to above, this function accepts a custom lambda comparator function.
   ViewRows sliceRows(const std::function<const std::int8_t(const DataRow*)>) const;
 
   /// \brief Orders rows based on target column without modifying original data.
-  void sortRows(const std::string&, const std::int8_t);
+  void sortRows(const std::string&, const consts::eSortOrders);
 
   /// \brief Orders rows based on target column and custom lambda comparator without modifying
   /// original data.
@@ -106,9 +107,11 @@ class ViewRows : public IView {
   }
 
   /// \brief Templated function called from the overridden interface functions.
-  template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
+  template <typename T>
+  void getColumn(const std::string&, std::vector<T>&, const consts::eDataTypes) const;
   /// \brief Templated function called from the local functions to slice the data container.
-  template<typename T> ViewRows sliceRows(const std::string&, const std::int8_t, const T) const;
+  template <typename T>
+  ViewRows sliceRows(const std::string&, const consts::eComparisons, const T) const;
 
   void clear();
 

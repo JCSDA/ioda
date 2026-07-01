@@ -6,8 +6,6 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <vector>
-
 #include "ioda/containers/Constants.h"
 
 #include "ioda/Exception.h"
@@ -27,7 +25,7 @@ namespace FrameUtils {
 ///
 /// Example of use:
 ///
-///     int8_t dtype = ...;  // dtype belonging to the eDataTypes enum
+///     osdf::consts::eDataTypes dtype = ...;  // dtype belonging to the eDataTypes enum
 ///     osdf::FrameUtils::callWithSupportedType(
 ///       dtype,
 ///       [&](auto typeDiscriminator) {  // This lambda is the "action" param in the code below
@@ -36,7 +34,7 @@ namespace FrameUtils {
 ///         doSomething2<T>(param3);
 ///       });
 template <typename Action>
-auto callWithSupportedType(const int8_t dtype, const Action &action) {
+auto callWithSupportedType(const consts::eDataTypes dtype, const Action &action) {
   switch (dtype) {
     case consts::eInt:
       return action(int());

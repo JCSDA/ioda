@@ -9,11 +9,11 @@
 #define CONTAINERS_FUNCTIONS_H_
 
 #include <cstdint>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
-#include "IFrameData.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/IFrameData.h"
 
 namespace osdf {
 
@@ -31,17 +31,17 @@ class Functions {
   Functions& operator=(Functions&&)      = delete;
   Functions& operator=(const Functions&) = delete;
 
-  template<typename T> void addColumnToRow(IFrameData* data, DataRow&, std::int8_t&,
+  template<typename T> void addColumnToRow(IFrameData* data, DataRow&, bool&,
                                            std::int32_t&, const T) const;
 
   template<typename T> const std::shared_ptr<DataBase> createData(const std::vector<T>&) const;
 
   template<typename T> const std::shared_ptr<DatumBase> createDatum(const T) const;
 
-  const std::int8_t compareDatums(const std::shared_ptr<DatumBase>&,
+  const bool compareDatums(const std::shared_ptr<DatumBase>&,
                                   const std::shared_ptr<DatumBase>&) const;
 
-  template<typename T> const std::int8_t compareToThreshold(const std::int8_t,
+  template<typename T> const bool compareToThreshold(const consts::eComparisons,
                                                             const T, const T) const;
 
   template<typename T> const std::vector<T>& getDataValues(const std::shared_ptr<DataBase>&) const;

@@ -17,11 +17,12 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include "IodaTestUtils.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "ioda/containers/CreateIFrame.h"
+#include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameUtils.h"
-#include "IodaTestUtils.h"
 #include "ioda/ObsSpace.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"

@@ -8,9 +8,6 @@
 #include "ioda/containers/ViewRows.h"
 
 #include "eckit/exception/Exceptions.h"
-
-#include "ioda/containers/Constants.h"
-#include "ioda/containers/Datum.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/FrameRows.h"
 
@@ -41,27 +38,31 @@ void osdf::ViewRows::getColumn(const std::string& name, std::vector<std::string>
   getColumn<std::string>(name, values, consts::eString);
 }
 
-osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const int threshold) const {
   return sliceRows<int>(name, comparison, threshold);
 }
 
-osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const std::int64_t threshold) const {
   return sliceRows<std::int64_t>(name, comparison, threshold);
 }
 
-osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
 }
 
-osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const std::string threshold) const {
   return sliceRows<std::string>(name, comparison, threshold);
 }
 
-void osdf::ViewRows::sortRows(const std::string& columnName, const std::int8_t order) {
+void osdf::ViewRows::sortRows(const std::string& columnName, const consts::eSortOrders order) {
   if (data_.columnExists(columnName) == true) {
     const std::int32_t index = data_.getIndex(columnName);
     if (order == consts::eAscending) {
@@ -74,6 +75,10 @@ void osdf::ViewRows::sortRows(const std::string& columnName, const std::int8_t o
                                  std::shared_ptr<DatumBase>& datumB) {
         return funcs_.compareDatums(datumB, datumA);
       });
+    } else {
+      const std::string errMsg = std::string("ERROR: Invalid sort order: ") + std::to_string(order)
+                                 + std::string(". Must be either eAscending or eDescending.");
+      throw eckit::BadParameter(errMsg, Here());
     }
   } else {
     const std::string errMsg = std::string("ERROR: Column named \"") + columnName +
@@ -129,10 +134,10 @@ void osdf::ViewRows::setUpdatedObjects(const ColumnMetadata& columnMetadata,
 
 template<typename T>
 void osdf::ViewRows::getColumn(const std::string& name, std::vector<T>& values,
-                               const std::int8_t type) const {
+                               const consts::eDataTypes type) const {
   if (data_.columnExists(name) == true)  {
     const std::int32_t columnIndex = data_.getIndex(name);
-    const std::int8_t columnType = data_.getType(columnIndex);
+    const consts::eDataTypes columnType = data_.getType(columnIndex);
     if (type == columnType) {
       values.resize(static_cast<std::size_t>(data_.getSizeRows()));
       for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
@@ -153,8 +158,9 @@ void osdf::ViewRows::getColumn(const std::string& name, std::vector<T>& values,
   }
 }
 
-template<typename T>
-osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int8_t comparison,
+template <typename T>
+osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const T threshold) const {
   std::vector<DataRow*> newDataRows;
   ColumnMetadata newColumnMetadata;
@@ -168,7 +174,7 @@ osdf::ViewRows osdf::ViewRows::sliceRows(const std::string& name, const std::int
                                                    [&](const DataRow* dataRow) {
       const std::shared_ptr<DatumBase>& datum = dataRow->getColumn(index);
       const T value = funcs_.getDatumValue<T>(datum);
-      const std::int8_t retVal = funcs_.compareToThreshold(comparison, threshold, value);
+      const bool retVal = funcs_.compareToThreshold(comparison, threshold, value);
       if (retVal == true) {
         newColumnMetadata.updateMaxId(dataRow->getId());
       }

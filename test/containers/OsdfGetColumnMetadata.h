@@ -15,7 +15,6 @@
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/FrameUtils.h"
 #include "oops/runs/Test.h"
-#include "oops/test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {
@@ -25,9 +24,9 @@ void testGetColumnMetadata() {
 
   std::array<std::string, numMetadatum> names = {"name", "longname", "longername"};
   std::array<std::string, numMetadatum> units = {"K", "m", "ms-2"};
-  std::array<std::int8_t, numMetadatum> types
+  std::array<osdf::consts::eDataTypes, numMetadatum> types
     = {osdf::consts::eString, osdf::consts::eInt, osdf::consts::eInt};
-  std::array<std::int8_t, numMetadatum> permissions
+  std::array<osdf::consts::ePermissions, numMetadatum> permissions
     = {osdf::consts::eReadWrite, osdf::consts::eReadWrite, osdf::consts::eReadOnly};
 
   osdf::ColumnMetadata newColumnMetadata;

@@ -7,7 +7,6 @@
 
 #include "ioda/containers/FunctionsRows.h"
 
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/Datum.h"
 
 osdf::FunctionsRows::FunctionsRows() {}

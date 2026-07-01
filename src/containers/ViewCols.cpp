@@ -8,8 +8,6 @@
 #include "ioda/containers/ViewCols.h"
 
 #include "eckit/exception/Exceptions.h"
-
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameCols.h"
 
 osdf::ViewCols::ViewCols(const ColumnMetadata& columnMetadata, const std::vector<std::int64_t>& ids,
@@ -39,22 +37,26 @@ void osdf::ViewCols::getColumn(const std::string& name, std::vector<std::string>
   getColumn<std::string>(name, values, consts::eString);
 }
 
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const int threshold) const {
   return sliceRows<int>(name, comparison, threshold);
 }
 
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const std::int64_t threshold) const {
   return sliceRows<std::int64_t>(name, comparison, threshold);
 }
 
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
 }
 
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const std::string threshold) const {
   return sliceRows<std::string>(name, comparison, threshold);
 }
@@ -72,10 +74,10 @@ void osdf::ViewCols::setUpdatedObjects(const ColumnMetadata& columnMetadata,
 
 template<typename T>
 void osdf::ViewCols::getColumn(const std::string& name, std::vector<T>& values,
-                               const std::int8_t type) const {
+                               const consts::eDataTypes type) const {
   if (data_.columnExists(name) == true)  {
     const std::int32_t columnIndex = data_.getIndex(name);
-    const std::int8_t columnType = data_.getType(columnIndex);
+    const consts::eDataTypes columnType = data_.getType(columnIndex);
     if (type == columnType) {
       const std::shared_ptr<DataBase>& dataCol = data_.getDataColumn(columnIndex);
       values = funcs_.getDataValues<T>(dataCol);
@@ -91,8 +93,9 @@ void osdf::ViewCols::getColumn(const std::string& name, std::vector<T>& values,
   }
 }
 
-template<typename T>
-osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name, const std::int8_t comparison,
+template <typename T>
+osdf::ViewCols osdf::ViewCols::sliceRows(const std::string& name,
+                                         const consts::eComparisons comparison,
                                          const T threshold) const {
   std::vector<std::shared_ptr<DataBase>> newDataColumns;
   std::vector<std::int64_t> newIds;

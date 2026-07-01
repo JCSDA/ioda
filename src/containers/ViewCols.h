@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/Functions.h"
 #include "ioda/containers/FunctionsCols.h"
 #include "ioda/containers/IView.h"
@@ -59,19 +59,21 @@ class ViewCols : public IView {
   /// \param name Target column name.
   /// \param comparison One of five enum values.
   /// \param threshold The value to compare against.
-  ViewCols sliceRows(const std::string&, const std::int8_t, const int) const;
-  ViewCols sliceRows(const std::string&, const std::int8_t, const std::int64_t) const;
-  ViewCols sliceRows(const std::string&, const std::int8_t, const float) const;
-  ViewCols sliceRows(const std::string&, const std::int8_t, const std::string) const;
+  ViewCols sliceRows(const std::string&, const consts::eComparisons, const int) const;
+  ViewCols sliceRows(const std::string&, const consts::eComparisons, const std::int64_t) const;
+  ViewCols sliceRows(const std::string&, const consts::eComparisons, const float) const;
+  ViewCols sliceRows(const std::string&, const consts::eComparisons, const std::string) const;
 
   void setUpdatedObjects(const ColumnMetadata&, const std::vector<std::int64_t>&,
                          const std::vector<std::shared_ptr<DataBase>>&);
 
  private:
   /// \brief Templated function called from the overridden interface functions.
-  template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
+  template <typename T>
+    void getColumn(const std::string&, std::vector<T>&, const consts::eDataTypes) const;
   /// \brief Templated function called from the local functions to slice the data container.
-  template<typename T> ViewCols sliceRows(const std::string&, const std::int8_t, const T) const;
+  template <typename T>
+    ViewCols sliceRows(const std::string&, const consts::eComparisons, const T) const;
 
   void clear();
 

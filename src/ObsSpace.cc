@@ -20,42 +20,40 @@
 
 #include <gsl/gsl-lite.hpp>
 
-#include "containers/ColumnMetadata.h"
-#include "containers/FrameUtils.h"
-#include "containers/IFrame.h"
 #include "core/IodaUtils.h"
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
-
-#include "oops/mpi/mpi.h"
-#include "oops/util/abor1_cpp.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
-#include "oops/util/Timer.h"
-
-#include "ioda/containers/CreateIFrame.h"
-#include "ioda/containers/Constants.h"
-#include "ioda/containers/FrameMetadata.h"
 #include "ioda/Copying.h"
+#include "ioda/Engines/EngineUtils.h"
+#include "ioda/Exception.h"
+#include "ioda/Misc/StringFuncs.h"
+#include "ioda/Variables/VarUtils.h"
+#include "ioda/Variables/Variable.h"
+#include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/CreateIFrame.h"
+#include "ioda/containers/FrameMetadata.h"
+#include "ioda/containers/FrameUtils.h"
+#include "ioda/containers/IFrame.h"
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
-#include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/ReaderPoolBase.h"
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/ioPool/WriterPoolFactory.h"
-#include "ioda/reader/distribute/distributeObs.hpp"
-#include "ioda/Misc/StringFuncs.h"
 #include "ioda/reader/ObsReader.hpp"
-#include "ioda/Variables/Variable.h"
-#include "ioda/Variables/VarUtils.h"
+#include "ioda/reader/distribute/distributeObs.hpp"
 #include "ioda/writer/ObsWriter.hpp"
+#include "oops/mpi/mpi.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/missingValues.h"
 
 namespace ioda {
 namespace {
@@ -2271,7 +2269,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
       std::unique_ptr<osdf::IFrame> companionOsdf = osdf::createIFrame(osdf_->frameType());
       const std::vector<std::string> existingColumns = osdf_->columnNames();
       for (const std::string & colName : existingColumns) {
-        const std::int8_t colType = osdf_->getColumnType(colName);
+        const osdf::consts::eDataTypes colType = osdf_->getColumnType(colName);
         const std::string unit = osdf_->getColumnUnits(colName);
         osdf::FrameUtils::callWithSupportedType(colType, [&](auto typeDiscriminator) {
           using T = decltype(typeDiscriminator);

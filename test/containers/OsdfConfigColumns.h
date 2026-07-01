@@ -23,7 +23,6 @@
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/FrameUtils.h"
 #include "oops/runs/Test.h"
-#include "oops/test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {
@@ -95,7 +94,8 @@ void testOsdfConfigColumns(std::string frameType) {
 
   // Check newly added columns are correct size and full of missing data
   for (size_t index = 0; index < expectedColumnNames.size(); ++index) {
-    std::int8_t columnType = testFilledFrame->getColumnType(expectedColumnNames[index]);
+    osdf::consts::eDataTypes columnType
+      = testFilledFrame->getColumnType(expectedColumnNames[index]);
     EXPECT(columnType == expectedDataTypes[index]);
     std::string columnUnit = testFilledFrame->getColumnUnits(expectedColumnNames[index]);
     EXPECT(columnUnit == expectedColumnUnits[index]);

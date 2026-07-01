@@ -11,6 +11,7 @@
 #include <sstream>
 #include <vector>
 
+#include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/IFrame.h"

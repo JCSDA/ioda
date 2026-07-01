@@ -8,12 +8,8 @@
 #ifndef CONTAINERS_FUNCTIONSROWS_H_
 #define CONTAINERS_FUNCTIONSROWS_H_
 
-#include <cstdint>
 #include <functional>
 #include <memory>
-#include <numeric>
-#include <string>
-#include <vector>
 
 #include "ioda/containers/DataRow.h"
 #include "ioda/containers/DatumBase.h"

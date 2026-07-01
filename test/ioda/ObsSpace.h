@@ -520,7 +520,6 @@ void testPutGetChanSelect() {
 
     // Set up a pointer to the ObsSpace object for convenience
     ioda::ObsSpace * Odb = &(Test_::obspace(jj));
-    std::size_t Nlocs = Odb->nlocs();
 
     // Get the variables section from the test data and perform checks accordingly
     std::vector<eckit::LocalConfiguration> varconf =

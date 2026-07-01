@@ -16,15 +16,13 @@
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
-
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/ColumnMetadatum.h"
-#include "ioda/containers/Datum.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameRowsData.h"
 #include "ioda/containers/FunctionsRows.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/ViewRows.h"
-#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace osdf {
@@ -92,10 +90,10 @@ class FrameRows : public IFrame {
   void removeRow(const std::int64_t) override;
   void removeRows(const std::vector<bool> &) override;
 
-  std::int8_t getColumnType(const std::string&) const override;
+  consts::eDataTypes getColumnType(const std::string&) const override;
   std::string getColumnUnits(const std::string&) const override;
 
-  void sortRows(const std::string&, const std::int8_t) override;
+  void sortRows(const std::string&, const consts::eSortOrders) override;
 
   std::size_t numRows() const override { return data_.getSizeRows(); }
   std::size_t numCols() const override { return data_.getSizeCols(); }
@@ -117,23 +115,23 @@ class FrameRows : public IFrame {
   /// \param Target column name.
   /// \param One of five enum values.
   /// \param The value to compare against.
-  FrameRows sliceRows(const std::string&, const std::int8_t, const int) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const std::int64_t) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const float) const;
-  FrameRows sliceRows(const std::string&, const std::int8_t, const std::string) const;
+  FrameRows sliceRows(const std::string&, const consts::eComparisons, const int) const;
+  FrameRows sliceRows(const std::string&, const consts::eComparisons, const std::int64_t) const;
+  FrameRows sliceRows(const std::string&, const consts::eComparisons, const float) const;
+  FrameRows sliceRows(const std::string&, const consts::eComparisons, const std::string) const;
 
-  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                      const int) const override;
-  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                      const std::int64_t) const override;
-  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                      const float) const override;
-  std::unique_ptr<IFrame> sliceFrame(const std::string&, const std::int8_t,
+  std::unique_ptr<IFrame> sliceFrame(const std::string&, const consts::eComparisons,
                                      const std::string) const override;
 
   /// \brief Additional to the interface, this function accepts a custom lambda comparator function.
   //  (Commented out for now as not currently used or fully tested.)
-  // void sortRows(const std::string&, const std::function<std::int8_t(
+  // void sortRows(const std::string&, const std::function<const std::int8_t(
   //               const std::shared_ptr<DatumBase>, const std::shared_ptr<DatumBase>)>);
 
   /// \brief Additional to above, this function accepts a custom lambda comparator function.
@@ -168,7 +166,7 @@ class FrameRows : public IFrame {
     }
 
     for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
-      const std::int8_t permission = data_.getPermission(columnIndex);
+      const consts::ePermissions permission = data_.getPermission(columnIndex);
       if (permission != consts::eReadWrite) {
         const std::string errMsg = std::string("ERROR: Column named ")
           + data_.getName(columnIndex) + std::string(" is set to read only.");
@@ -177,7 +175,7 @@ class FrameRows : public IFrame {
     }
 
     DataRow newRow(data_.getMaxId() + 1);
-    std::int8_t typeMatch = true;
+    bool typeMatch = true;
     std::int32_t columnIndex = 0;
     // Iterative function call to unpack variadic template
     ((void) funcs_.addColumnToRow(&data_, newRow, typeMatch,
@@ -221,18 +219,20 @@ class FrameRows : public IFrame {
 
   /// \brief Templated function called from the overridden interface functions.
   template <typename T>
-  void appendNewColumn(const std::string&, const std::vector<T>&, const std::int8_t,
+  void appendNewColumn(const std::string&, const std::vector<T>&, const consts::eDataTypes,
                        const std::string& = util::missingValue<std::string>());
   /// \brief Templated function called from the overridden interface functions.
-  template<typename T> void getColumn(const std::string&, std::vector<T>&, const std::int8_t) const;
+  template <typename T>
+  void getColumn(const std::string&, std::vector<T>&, const consts::eDataTypes) const;
   /// \brief Templated function called from the overridden interface functions.
   template<typename T> void setColumn(const std::string&, const std::vector<T>&,
-                                      const std::int8_t) const;
+                                      const consts::eDataTypes) const;
   /// \brief Templated function called from the local functions to slice the data container.
-  template<typename T> FrameRows sliceRows(const std::string&, const std::int8_t, const T) const;
+  template <typename T>
+  FrameRows sliceRows(const std::string&, const consts::eComparisons, const T) const;
   /// \brief Extracts filtered column metadata and data rows without constructing a FrameRows.
   template<typename T> std::pair<ColumnMetadata, std::vector<DataRow>>
-      sliceRowsImpl(const std::string&, const std::int8_t, const T) const;
+      sliceRowsImpl(const std::string&, const consts::eComparisons, const T) const;
 
   FunctionsRows funcs_;  /// \brief Functions for row-priority containers.
   FrameRowsData data_;  /// \brief The data model.

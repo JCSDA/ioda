@@ -9,8 +9,6 @@
 
 #include "oops/util/Logger.h"
 
-#include "ioda/containers/Constants.h"
-
 osdf::ViewColsData::ViewColsData(const FunctionsCols& funcs,
     const ColumnMetadata& columnMetadata, const std::vector<std::int64_t>& ids,
     const std::vector<std::shared_ptr<DataBase>>& dataColumns) :
@@ -37,11 +35,11 @@ const std::string& osdf::ViewColsData::getName(const std::int32_t index) const {
   return columnMetadata_.getName(index);
 }
 
-const std::int8_t osdf::ViewColsData::getType(const std::int32_t index) const {
+const osdf::consts::eDataTypes osdf::ViewColsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }
 
-const std::int8_t osdf::ViewColsData::columnExists(const std::string& name) const {
+const bool osdf::ViewColsData::columnExists(const std::string& name) const {
   return columnMetadata_.exists(name);
 }
 

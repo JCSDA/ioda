@@ -8,17 +8,12 @@
 #include "ioda/containers/FrameRowsData.h"
 
 #include <algorithm>
-#include <memory>
 #include <utility>
 
 #include "eckit/exception/Exceptions.h"
-#include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/DataRow.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/FrameUtils.h"
-#include "oops/util/missingValues.h"
-#include "oops/util/Logger.h"
 
 osdf::FrameRowsData::FrameRowsData(const FunctionsRows& funcs) :
     IFrameData(), funcs_(funcs) {}
@@ -63,8 +58,9 @@ void osdf::FrameRowsData::appendNewRow(const DataRow& newRow) {
   dataRows_.push_back(newRow);
 }
 
-void osdf::FrameRowsData::appendNewColumn(const std::string& name, const std::int8_t type,
-                                          const std::string& unit, const std::int8_t permission) {
+void osdf::FrameRowsData::appendNewColumn(const std::string& name, const consts::eDataTypes type,
+                                          const std::string& unit,
+                                          const consts::ePermissions permission) {
   // Note that `add` throws an exception if columnMetadata with name already exists
   columnMetadata_.add(ColumnMetadatum(name, unit, type, permission));
 }
@@ -121,15 +117,16 @@ const std::string& osdf::FrameRowsData::getUnits(const std::int32_t index) const
   return columnMetadata_.getUnit(index);
 }
 
-const std::int8_t osdf::FrameRowsData::getType(const std::int32_t index) const {
+const osdf::consts::eDataTypes osdf::FrameRowsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }
 
-const std::int8_t osdf::FrameRowsData::getPermission(const std::int32_t index) const {
+const osdf::consts::ePermissions osdf::FrameRowsData::getPermission(
+  const std::int32_t index) const {
   return columnMetadata_.getPermission(index);
 }
 
-const std::int8_t osdf::FrameRowsData::columnExists(const std::string& name) const {
+const bool osdf::FrameRowsData::columnExists(const std::string& name) const {
   return columnMetadata_.exists(name);
 }
 

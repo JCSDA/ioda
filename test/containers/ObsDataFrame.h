@@ -20,9 +20,6 @@
 #include "eckit/io/Buffer.h"
 #include "eckit/testing/Test.h"
 
-#include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/Constants.h"
-#include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameRows.h"
 

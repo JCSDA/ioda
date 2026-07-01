@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "eckit/io/Buffer.h"
-
 #include "ioda/containers/ColumnMetadatum.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/Functions.h"
 
 namespace osdf {
@@ -23,7 +23,7 @@ class ColumnMetadata {
  public:
   ColumnMetadata();
 
-  const std::int8_t exists(const std::string&) const;
+  const bool exists(const std::string&) const;
   const std::int32_t add(const ColumnMetadatum);
   const std::int32_t add(const std::vector<ColumnMetadatum>);
 
@@ -42,9 +42,9 @@ class ColumnMetadata {
   void validateCanWriteAllData() const;
   const std::string& getName(const std::int32_t) const;
   const std::string& getUnit(const std::int32_t) const;
-  const std::int8_t getType(const std::int32_t) const;
+  const consts::eDataTypes getType(const std::int32_t) const;
   const std::int16_t getWidth(const std::int32_t index) const;
-  const std::int8_t getPermission(const std::int32_t) const;
+  const consts::ePermissions getPermission(const std::int32_t) const;
   const std::int32_t getIndex(const std::string&) const;
   const std::int32_t getSizeCols() const;
   const std::int64_t getMaxId() const;

@@ -6,12 +6,10 @@
  */
 
 #include "ioda/containers/FrameRows.h"
+
 #include <string>
 
 #include "eckit/exception/Exceptions.h"
-
-#include "ioda/containers/Constants.h"
-#include "ioda/containers/Data.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameUtils.h"
@@ -35,7 +33,7 @@ osdf::FrameRows::FrameRows(const FrameCols& frameCols) :
     std::string columnUnit = columnMetadatum.getUnit();
     const std::size_t colIdx = static_cast<std::size_t>(columnIndex);
     const std::shared_ptr<DataBase>& data = frameCols.getData().getDataCols().at(colIdx);
-    const std::int8_t type = data->getType();
+    const consts::eDataTypes type = data->getType();
     osdf::FrameUtils::callWithSupportedType(
       type,
       [&](auto typeDiscriminator) {
@@ -137,7 +135,7 @@ void osdf::FrameRows::setColumn(const std::string& name,
 void osdf::FrameRows::removeColumn(const std::string& name) {
   // no need to check if column with name exists, getIndex throws exception if not.
   const std::int32_t index = data_.getIndex(name);
-  const std::int8_t permission = data_.getPermission(index);
+  const consts::ePermissions permission = data_.getPermission(index);
   if (permission != consts::eReadWrite) {
     const std::string errMsg = std::string("ERROR: Column named ")
       + name + std::string(" is set to read-only.");
@@ -148,7 +146,7 @@ void osdf::FrameRows::removeColumn(const std::string& name) {
 }
 
 void osdf::FrameRows::removeColumn(const std::int32_t index) {
-  const std::int8_t permission = data_.getPermission(index);
+  const consts::ePermissions permission = data_.getPermission(index);
   if (permission != consts::eReadWrite) {
     const std::string errMsg = std::string("ERROR: Column at index ")
       + std::to_string(index) + std::string(" is set to read-only.");
@@ -165,7 +163,7 @@ void osdf::FrameRows::removeRow(const std::int64_t index) {
     throw eckit::OutOfRange(errMsg, Here());
   }
   for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-    const std::int8_t permission = data_.getPermission(colIndex);
+    const consts::ePermissions permission = data_.getPermission(colIndex);
     if (permission == consts::eReadOnly) {
       const std::string errMsg = std::string("ERROR: Cannot remove row. Column ")
         + data_.getName(colIndex) + std::string(" is set to read-only.");
@@ -190,7 +188,7 @@ void osdf::FrameRows::removeRows(const std::vector<bool> & keepRows) {
   }
 }
 
-std::int8_t osdf::FrameRows::getColumnType(const std::string& name) const {
+osdf::consts::eDataTypes osdf::FrameRows::getColumnType(const std::string& name) const {
   return data_.getType(data_.getIndex(name));
 }
 
@@ -198,7 +196,7 @@ std::string osdf::FrameRows::getColumnUnits(const std::string& name) const {
   return data_.getUnits(data_.getIndex(name));
 }
 
-void osdf::FrameRows::sortRows(const std::string& columnName, const std::int8_t order) {
+void osdf::FrameRows::sortRows(const std::string& columnName, const consts::eSortOrders order) {
   if (data_.columnExists(columnName) != true) {
     const std::string errMsg = std::string("ERROR: Column named ")
       + columnName + std::string(" not found in current data frame.");
@@ -324,49 +322,53 @@ void osdf::FrameRows::clear() {
 
 /// Other public functions
 
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const int threshold) const {
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
+                                           const int threshold) const {
   return sliceRows<int>(name, comparison, threshold);
 }
 
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const std::int64_t threshold) const {
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
+                                           const std::int64_t threshold) const {
   return sliceRows<std::int64_t>(name, comparison, threshold);
 }
 
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const float threshold) const {
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
+                                           const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
 }
 
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
-                                       const std::string threshold) const {
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
+                                           const std::string threshold) const {
   return sliceRows<std::string>(name, comparison, threshold);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const int threshold) const {
   auto[meta, rows] = sliceRowsImpl<int>(name, comparison, threshold);
   return std::make_unique<FrameRows>(meta, rows);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const std::int64_t threshold) const {
   auto[meta, rows] = sliceRowsImpl<std::int64_t>(name, comparison, threshold);
   return std::make_unique<FrameRows>(meta, rows);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const float threshold) const {
   auto[meta, rows] = sliceRowsImpl<float>(name, comparison, threshold);
   return std::make_unique<FrameRows>(meta, rows);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameRows::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const std::string threshold) const {
   auto[meta, rows] = sliceRowsImpl<std::string>(name, comparison, threshold);
   return std::make_unique<FrameRows>(meta, rows);
@@ -463,7 +465,7 @@ std::vector<osdf::DataRow*> osdf::FrameRows::getViewDataRows() {
 
 template <typename T>
 void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector<T>& values,
-                                      const std::int8_t type, const std::string& unit) {
+                                      const consts::eDataTypes type, const std::string& unit) {
   if (data_.columnExists(name) != false) {
     const std::string errMsg
       = std::string("ERROR: A column named ") + name + std::string(" already exists.");
@@ -497,10 +499,10 @@ void osdf::FrameRows::appendNewColumn(const std::string& name, const std::vector
 
 template <typename T>
 void osdf::FrameRows::getColumn(const std::string& name, std::vector<T>& values,
-                                const std::int8_t type) const {
+                                const consts::eDataTypes type) const {
   // no need to check if column exists as if not, then getIndex will throw an exception
   const std::int32_t columnIndex = data_.getIndex(name);
-  const std::int8_t columnType   = data_.getType(columnIndex);
+  const consts::eDataTypes columnType   = data_.getType(columnIndex);
 
   if (type != columnType) {
     const std::string errMsg = std::string("ERROR: Input vector for column ")
@@ -517,17 +519,17 @@ void osdf::FrameRows::getColumn(const std::string& name, std::vector<T>& values,
 
 template <typename T>
 void osdf::FrameRows::setColumn(const std::string& name, const std::vector<T>& data,
-                                const std::int8_t type) const {
+                                const consts::eDataTypes type) const {
   // no need to check if column exists as getIndex will throw an exception if not
   const std::int32_t columnIndex = data_.getIndex(name);
-  const std::int8_t permission   = data_.getPermission(columnIndex);
+  const consts::ePermissions permission   = data_.getPermission(columnIndex);
 
   if (permission != consts::eReadWrite) {
     const std::string errMsg = std::string("ERROR: The column ")
       + name + std::string(" is set to read-only.");
     throw eckit::BadParameter(errMsg, Here());
   }
-  std::int8_t columnType = data_.getType(columnIndex);
+  consts::eDataTypes columnType = data_.getType(columnIndex);
   if (type != columnType) {
     const std::string errMsg = std::string("ERROR: Input vector for column ")
       + name + std::string(" is not the required data type.");
@@ -547,7 +549,7 @@ void osdf::FrameRows::setColumn(const std::string& name, const std::vector<T>& d
 
 template<typename T>
 std::pair<osdf::ColumnMetadata, std::vector<osdf::DataRow>>
-osdf::FrameRows::sliceRowsImpl(const std::string& name, const std::int8_t comparison,
+osdf::FrameRows::sliceRowsImpl(const std::string& name, const consts::eComparisons comparison,
                                const T threshold) const {
   if (data_.columnExists(name) != true) {
     const std::string errMsg = std::string("ERROR: Column named ")
@@ -564,7 +566,7 @@ osdf::FrameRows::sliceRowsImpl(const std::string& name, const std::int8_t compar
                [&](const DataRow& dataRow) {
                  const std::shared_ptr<DatumBase>& datum = dataRow.getColumn(index);
                  const T value = funcs_.getDatumValue<T>(datum);
-                 const std::int8_t retVal = funcs_.compareToThreshold(comparison, threshold, value);
+                 const bool retVal = funcs_.compareToThreshold(comparison, threshold, value);
                  if (retVal == true) {
                    newColumnMetadata.updateMaxId(dataRow.getId());
                  }
@@ -574,8 +576,9 @@ osdf::FrameRows::sliceRowsImpl(const std::string& name, const std::int8_t compar
   return {newColumnMetadata, newDataRows};
 }
 
-template<typename T>
-osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name, const std::int8_t comparison,
+template <typename T>
+osdf::FrameRows osdf::FrameRows::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const T threshold) const {
   auto[meta, rows] = sliceRowsImpl<T>(name, comparison, threshold);
   return FrameRows(meta, rows);

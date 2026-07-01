@@ -15,7 +15,6 @@
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
-#include "ioda/containers/FrameColsData.h"
 #include "ioda/containers/FrameUtils.h"
 
 osdf::FunctionsCols::FunctionsCols() {}
@@ -75,7 +74,7 @@ template void osdf::FunctionsCols::removeDatum<std::string>(std::shared_ptr<Data
 
 template<typename T>
 void osdf::FunctionsCols::sequenceIndices(std::vector<std::int64_t>& indices,
-                   const std::vector<T>& values, const std::int8_t order) const {
+                   const std::vector<T>& values, const consts::eSortOrders order) const {
   if (order == consts::eAscending) {
     std::sort(std::begin(indices), std::end(indices), [&](const std::int64_t& i,
               const std::int64_t& j) {
@@ -94,15 +93,15 @@ void osdf::FunctionsCols::sequenceIndices(std::vector<std::int64_t>& indices,
 }
 
 template void osdf::FunctionsCols::sequenceIndices<int>(
-    std::vector<std::int64_t>&, const std::vector<int>&, const std::int8_t) const;
+    std::vector<std::int64_t>&, const std::vector<int>&, const consts::eSortOrders) const;
 template void osdf::FunctionsCols::sequenceIndices<std::int64_t>(
-    std::vector<std::int64_t>&, const std::vector<std::int64_t>&, const std::int8_t) const;
+    std::vector<std::int64_t>&, const std::vector<std::int64_t>&, const consts::eSortOrders) const;
 template void osdf::FunctionsCols::sequenceIndices<float>(
-    std::vector<std::int64_t>&, const std::vector<float>&, const std::int8_t) const;
+    std::vector<std::int64_t>&, const std::vector<float>&, const consts::eSortOrders) const;
 template void osdf::FunctionsCols::sequenceIndices<char>(
-    std::vector<std::int64_t>&, const std::vector<char>&, const std::int8_t) const;
+    std::vector<std::int64_t>&, const std::vector<char>&, const consts::eSortOrders) const;
 template void osdf::FunctionsCols::sequenceIndices<std::string>(
-    std::vector<std::int64_t>&, const std::vector<std::string>&, const std::int8_t) const;
+    std::vector<std::int64_t>&, const std::vector<std::string>&, const consts::eSortOrders) const;
 
 template<typename T>
 void osdf::FunctionsCols::reorderValues(std::vector<std::int64_t> indices,
@@ -128,9 +127,12 @@ template void osdf::FunctionsCols::reorderValues<char>(std::vector<std::int64_t>
 template void osdf::FunctionsCols::reorderValues<std::string>(std::vector<std::int64_t>,
                                                               std::vector<std::string>&) const;
 
-template<typename T> void osdf::FunctionsCols::sliceRows(const osdf::IColsData* data,
-    std::vector<std::shared_ptr<DataBase>>& newDataColumns, ColumnMetadata& newColumnMetadata,
-    std::vector<std::int64_t>& newIds, const std::string& name, const std::int8_t comparison,
+template <typename T>
+void osdf::FunctionsCols::sliceRows(const osdf::IColsData* data,
+                                    std::vector<std::shared_ptr<DataBase>>& newDataColumns,
+                                    ColumnMetadata& newColumnMetadata,
+                                    std::vector<std::int64_t>& newIds, const std::string& name,
+                                    const consts::eComparisons comparison,
     const T threshold) const {
   newDataColumns.reserve(static_cast<std::size_t>(data->getSizeCols()));
   newColumnMetadata = data->getColumnMetadata();
@@ -164,20 +166,28 @@ template<typename T> void osdf::FunctionsCols::sliceRows(const osdf::IColsData* 
 }
 
 template void osdf::FunctionsCols::sliceRows<int>(const osdf::IColsData*,
-    std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
-    std::vector<std::int64_t>&, const std::string&, const std::int8_t, const int) const;
-template void osdf::FunctionsCols::sliceRows<std::int64_t>(const osdf::IColsData*,
-    std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
-    std::vector<std::int64_t>&, const std::string&, const std::int8_t, const std::int64_t) const;
+                                                  std::vector<std::shared_ptr<DataBase>>&,
+                                                  ColumnMetadata&, std::vector<std::int64_t>&,
+                                                  const std::string&, const consts::eComparisons,
+                                                  const int) const;
+template void osdf::FunctionsCols::sliceRows<std::int64_t>(
+  const osdf::IColsData*, std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
+  std::vector<std::int64_t>&, const std::string&, const consts::eComparisons,
+  const std::int64_t) const;
 template void osdf::FunctionsCols::sliceRows<float>(const osdf::IColsData*,
-    std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
-    std::vector<std::int64_t>&, const std::string&, const std::int8_t, const float) const;
+                                                    std::vector<std::shared_ptr<DataBase>>&,
+                                                    ColumnMetadata&, std::vector<std::int64_t>&,
+                                                    const std::string&, const consts::eComparisons,
+                                                    const float) const;
 template void osdf::FunctionsCols::sliceRows<char>(const osdf::IColsData*,
-    std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
-    std::vector<std::int64_t>&, const std::string&, const std::int8_t, const char) const;
-template void osdf::FunctionsCols::sliceRows<std::string>(const osdf::IColsData*,
-    std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
-    std::vector<std::int64_t>&, const std::string&, const std::int8_t, const std::string) const;
+                                                   std::vector<std::shared_ptr<DataBase>>&,
+                                                   ColumnMetadata&, std::vector<std::int64_t>&,
+                                                   const std::string&, const consts::eComparisons,
+                                                   const char) const;
+template void osdf::FunctionsCols::sliceRows<std::string>(
+  const osdf::IColsData*, std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&,
+  std::vector<std::int64_t>&, const std::string&, const consts::eComparisons,
+  const std::string) const;
 
 template<typename T> const std::vector<T> osdf::FunctionsCols::getSlicedValues(
                      const std::vector<T>& values, const std::vector<std::int64_t>& indices) const {
@@ -272,7 +282,7 @@ template const std::int16_t osdf::FunctionsCols::getSize<char>(
 template const std::int16_t osdf::FunctionsCols::getSize<std::string>(
          const std::shared_ptr<DataBase>&, const std::int64_t) const;
 
-template<typename T> std::int8_t osdf::FunctionsCols::hasData(
+template<typename T> bool osdf::FunctionsCols::hasData(
                      const std::shared_ptr<DataBase>& data) const {
   std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
   if (dataType->getValues().size() != 0) {
@@ -282,13 +292,13 @@ template<typename T> std::int8_t osdf::FunctionsCols::hasData(
   }
 }
 
-template std::int8_t osdf::FunctionsCols::hasData<int>(
+template bool osdf::FunctionsCols::hasData<int>(
          const std::shared_ptr<DataBase>&) const;
-template std::int8_t osdf::FunctionsCols::hasData<std::int64_t>(
+template bool osdf::FunctionsCols::hasData<std::int64_t>(
          const std::shared_ptr<DataBase>&) const;
-template std::int8_t osdf::FunctionsCols::hasData<float>(
+template bool osdf::FunctionsCols::hasData<float>(
          const std::shared_ptr<DataBase>&) const;
-template std::int8_t osdf::FunctionsCols::hasData<char>(
+template bool osdf::FunctionsCols::hasData<char>(
          const std::shared_ptr<DataBase>&) const;
-template std::int8_t osdf::FunctionsCols::hasData<std::string>(
+template bool osdf::FunctionsCols::hasData<std::string>(
          const std::shared_ptr<DataBase>&) const;

@@ -10,11 +10,12 @@
 
 #include <cstdint>
 #include <string>
+#include "ioda/containers/Constants.h"
 
 namespace osdf {
 class DataBase {
  public:
-  explicit DataBase(const std::int8_t type) : type_(type) {}
+  explicit DataBase(const consts::eDataTypes type) : type_(type) {}
   virtual ~DataBase() = default;
 
   DataBase()                           = delete;
@@ -25,12 +26,12 @@ class DataBase {
 
   virtual const std::string getValueStr(const std::int64_t) const = 0;
 
-  const std::int8_t getType() const {
+  const consts::eDataTypes getType() const {
     return type_;
   }
 
  protected:
-  std::int8_t type_;
+  consts::eDataTypes type_;
 };
 }  // namespace osdf
 

@@ -7,21 +7,18 @@
 
 #include "ioda/containers/ColumnMetadata.h"
 
-#include <algorithm>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
-#include "ColumnMetadatum.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/serialisation/ResizableMemoryStream.h"
+#include "ioda/containers/ColumnMetadatum.h"
 #include "ioda/containers/Constants.h"
-#include "ioda/core/IodaUtils.h"
 #include "oops/util/Logger.h"
 
 osdf::ColumnMetadata::ColumnMetadata(): maxId_(-1) {}
 
-const std::int8_t osdf::ColumnMetadata::exists(const std::string& name) const {
+const bool osdf::ColumnMetadata::exists(const std::string& name) const {
   auto it = columnLookup_.find(name);
   if (it != columnLookup_.end()) {
     return true;
@@ -134,7 +131,7 @@ void osdf::ColumnMetadata::validateColumnMetadata(
 
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
     const std::string& targetColumnName = this->getName(columnIndex);
-    const std::int8_t targetColumnType  = this->getType(columnIndex);
+    const consts::eDataTypes targetColumnType  = this->getType(columnIndex);
     const std::string& targetColumnUnit = this->getUnit(columnIndex);
 
     if (srcColumnMetadata.getName(columnIndex) != targetColumnName) {
@@ -178,7 +175,7 @@ void osdf::ColumnMetadata::validateColumnMetadataPermissions(
 
   // compare permissions of columns regardless of other metadata
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
-    const std::int8_t targetColumnPermission = this->getPermission(columnIndex);
+    const consts::ePermissions targetColumnPermission = this->getPermission(columnIndex);
     if (srcColumnMetadata.getPermission(columnIndex) != targetColumnPermission) {
       std::string errMsg = std::string("Column at index ") + std::to_string(columnIndex)
                            + std::string(
@@ -193,7 +190,7 @@ void osdf::ColumnMetadata::validateCanWriteAllData() const {
   const std::int32_t numParams = getSizeCols();
 
   for (std::int32_t columnIndex = 0; columnIndex < numParams; ++columnIndex) {
-    const std::int8_t permission = getPermission(columnIndex);
+    const consts::ePermissions permission = getPermission(columnIndex);
     const std::string& targetColumnName = getName(columnIndex);
 
     if (permission != consts::eReadWrite) {
@@ -222,7 +219,7 @@ const std::string& osdf::ColumnMetadata::getUnit(const std::int32_t index) const
   return columnMetadata_.at(static_cast<std::size_t>(index)).getUnit();
 }
 
-const std::int8_t osdf::ColumnMetadata::getType(const std::int32_t index) const {
+const osdf::consts::eDataTypes osdf::ColumnMetadata::getType(const std::int32_t index) const {
   if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
     const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
           std::string(" is out of bounds.");
@@ -240,7 +237,8 @@ const std::int16_t osdf::ColumnMetadata::getWidth(const std::int32_t index) cons
   return columnMetadata_.at(static_cast<std::size_t>(index)).getWidth();
 }
 
-const std::int8_t osdf::ColumnMetadata::getPermission(const std::int32_t index) const {
+const osdf::consts::ePermissions osdf::ColumnMetadata::getPermission(
+  const std::int32_t index) const {
   if (index < 0 || index >= static_cast<std::int32_t>(columnMetadata_.size())) {
     const std::string errMsg = std::string("ERROR: Column index ") + std::to_string(index) +
           std::string(" is out of bounds.");
@@ -339,8 +337,8 @@ std::vector<osdf::ColumnMetadatum> osdf::ColumnMetadata::deserialize(eckit::Buff
     memStream >> width;
     memStream >> type_c;
     memStream >> permission_c;
-    const std::int8_t type = static_cast<std::int8_t>(type_c);
-    const std::int8_t permission = static_cast<std::int8_t>(permission_c);
+    const consts::eDataTypes type = static_cast<consts::eDataTypes>(type_c);
+    const consts::ePermissions permission = static_cast<consts::ePermissions>(permission_c);
     ColumnMetadatum col(name, unit, type, permission);
     col.setWidth(width);
     columnMetadata.push_back(col);
@@ -360,8 +358,8 @@ std::size_t osdf::ColumnMetadata::bufrSize(const ColumnMetadata & columnMetadata
     numBytes += col.getName().size();
     numBytes += col.getUnit().size();
     numBytes += sizeof(std::int16_t);  // width_
-    numBytes += sizeof(std::int8_t);   // type_
-    numBytes += sizeof(std::int8_t);   // permission_
+    numBytes += sizeof(consts::eDataTypes);   // type_
+    numBytes += sizeof(consts::ePermissions);   // permission_
   }
 
   return numBytes;

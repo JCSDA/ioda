@@ -8,7 +8,6 @@
 #pragma once
 
 #include <memory>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -52,7 +51,8 @@ void testGetColumn(std::unique_ptr<osdf::IFrame> & testFrame) {
         EXPECT(testColumn == expectedColumn);
       });
     // Try to get the column data using the wrong vector type and check that an error is thrown.
-    const int8_t wrongType = (columnType + 1) % osdf::consts::eNumberOfDataTypes;
+    const osdf::consts::eDataTypes wrongType
+      = static_cast<osdf::consts::eDataTypes>((columnType + 1) % osdf::consts::eNumberOfDataTypes);
     osdf::FrameUtils::callWithSupportedType(
       wrongType,
       [&](auto typeDiscriminator) {

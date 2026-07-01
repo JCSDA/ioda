@@ -8,13 +8,13 @@
 #ifndef CONTAINERS_DATUMBASE_H_
 #define CONTAINERS_DATUMBASE_H_
 
-#include <cstdint>
 #include <string>
+#include "ioda/containers/Constants.h"
 
 namespace osdf {
 class DatumBase {
  public:
-  explicit DatumBase(const std::int8_t type) : type_(type) {}
+  explicit DatumBase(const consts::eDataTypes type) : type_(type) {}
   virtual ~DatumBase() = default;
 
   DatumBase()                            = delete;
@@ -25,12 +25,12 @@ class DatumBase {
 
   virtual const std::string getValueStr() const = 0;
 
-  const std::int8_t getType() const {
+  const consts::eDataTypes getType() const {
     return type_;
   }
 
  protected:
-  std::int8_t type_;
+  consts::eDataTypes type_;
 };
 }  // namespace osdf
 

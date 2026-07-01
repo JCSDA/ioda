@@ -57,14 +57,15 @@ void testSortRows(std::string frameType) {
                       eckit::BadParameter);
 
     // Make sure exception is thrown if invalid sort order is provided
-    EXPECT_THROWS_AS(testFrame->sortRows(originalColumnNames.at(0), 99),
+    EXPECT_THROWS_AS(testFrame->sortRows(originalColumnNames.at(0),
+                                         static_cast<osdf::consts::eSortOrders>(99)),
                       eckit::BadParameter);
 
     for (std::size_t sortIndex = 0; sortIndex < sortsConfig.size(); ++sortIndex) {
       eckit::LocalConfiguration sortConfig = sortsConfig[sortIndex];
       std::string sortColumn = sortConfig.getString("column");
       std::string sortOrderStr = sortConfig.getString("order");
-      std::int8_t sortOrder;
+      osdf::consts::eSortOrders sortOrder;
       if (sortOrderStr == "ascending") {
         sortOrder = osdf::consts::eAscending;
       } else if (sortOrderStr == "descending") {

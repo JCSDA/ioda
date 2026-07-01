@@ -7,8 +7,6 @@
 
 #include "ioda/containers/ViewRowsData.h"
 
-#include "ioda/containers/Constants.h"
-
 osdf::ViewRowsData::ViewRowsData(const Functions& funcs, const ColumnMetadata& columnMetadata,
                                 const std::vector<DataRow*>& dataRows) :
     funcs_(funcs), columnMetadata_(columnMetadata), dataRows_(dataRows) {}
@@ -37,11 +35,11 @@ const std::string& osdf::ViewRowsData::getName(const std::int32_t index) const {
   return columnMetadata_.getName(index);
 }
 
-const std::int8_t osdf::ViewRowsData::getType(const std::int32_t index) const {
+const osdf::consts::eDataTypes osdf::ViewRowsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }
 
-const std::int8_t osdf::ViewRowsData::columnExists(const std::string& name) const {
+const bool osdf::ViewRowsData::columnExists(const std::string& name) const {
   return columnMetadata_.exists(name);
 }
 

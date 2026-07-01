@@ -9,15 +9,13 @@
 #define CONTAINERS_VIEWROWSDATA_H_
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
-#include "ioda/containers/DataBase.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/DataRow.h"
 #include "ioda/containers/Functions.h"
-#include "ioda/containers/FunctionsRows.h"
 
 namespace osdf {
 
@@ -54,12 +52,12 @@ class ViewRowsData {
   /// \return The column index.
   const std::int32_t getIndex(const std::string&) const;
   const std::string& getName(const std::int32_t) const;
-  const std::int8_t getType(const std::int32_t) const;
+  const consts::eDataTypes getType(const std::int32_t) const;
 
   /// \brief Checks to see if a column with a specific name exists in the data frame.
   /// \param Column name to search.
-  /// \return An 8-bit integer uses as a boolean.
-  const std::int8_t columnExists(const std::string&) const;
+  /// \return Boolean indicating whether or not column exists.
+  const bool columnExists(const std::string&) const;
 
   DataRow* getDataRow(const std::int64_t);
   const DataRow* getDataRow(const std::int64_t) const;

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/DataBase.h"
 #include "ioda/containers/DatumBase.h"
 #include "ioda/containers/Functions.h"
@@ -39,7 +40,7 @@ class FunctionsCols : public Functions {
   template<typename T> void removeDatum(std::shared_ptr<DataBase>&, const std::int64_t) const;
 
   template<typename T> void sequenceIndices(std::vector<std::int64_t>&, const std::vector<T>&,
-                                            const std::int8_t) const;
+                                            const consts::eSortOrders) const;
 
   // Takes a copy of indices by design - the input order is required for subsequent calls
   template<typename T> void reorderValues(std::vector<std::int64_t>, std::vector<T>&) const;
@@ -49,7 +50,7 @@ class FunctionsCols : public Functions {
 
   template<typename T> void sliceRows(const osdf::IColsData*,
     std::vector<std::shared_ptr<DataBase>>&, ColumnMetadata&, std::vector<std::int64_t>&,
-    const std::string&, const std::int8_t, const T) const;
+    const std::string&, const consts::eComparisons, const T) const;
 
   template<typename T> void sliceData(std::vector<std::shared_ptr<DataBase>>&,
                        const std::shared_ptr<DataBase>&, const std::vector<std::int64_t>&) const;
@@ -64,7 +65,7 @@ class FunctionsCols : public Functions {
                                                   const std::int64_t = 0) const;
 
 
-  template<typename T> std::int8_t hasData(const std::shared_ptr<DataBase>&) const;
+  template<typename T> bool hasData(const std::shared_ptr<DataBase>&) const;
 };
 }  // namespace osdf
 

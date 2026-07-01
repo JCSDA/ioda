@@ -7,11 +7,7 @@
 
 #include "ioda/containers/FrameCols.h"
 #include <algorithm>
-#include <string>
 
-#include "ColumnMetadata.h"
-#include "eckit/exception/Exceptions.h"
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/FrameUtils.h"
 
@@ -33,7 +29,7 @@ osdf::FrameCols::FrameCols(const FrameRows& frameRows) :
   columnVector.reserve(static_cast<std::size_t>(columnMetadata.getSizeCols()));
   for (const ColumnMetadatum& columnMetadatum : columnMetadata.get()) {
     const std::string name = columnMetadatum.getName();
-    const std::int8_t type = columnMetadatum.getType();
+    const consts::eDataTypes type = columnMetadatum.getType();
     const std::string unit = columnMetadatum.getUnit();
     ColumnMetadatum thisColumnMetadatum(name, unit, type);
     columnVector.push_back(thisColumnMetadatum);
@@ -138,7 +134,7 @@ void osdf::FrameCols::setColumn(const std::string& name,
 void osdf::FrameCols::removeColumn(const std::string& name) {
   // no need to check if column with name exists, getIndex throws exception if not.
   const std::int32_t index = data_.getIndex(name);
-  const std::int8_t permission = data_.getPermission(index);
+  const consts::ePermissions permission = data_.getPermission(index);
   if (permission != consts::eReadWrite) {
     const std::string errMsg
       = std::string("ERROR: Column named ") + name + std::string(" is set to read-only.");
@@ -149,7 +145,7 @@ void osdf::FrameCols::removeColumn(const std::string& name) {
 }
 
 void osdf::FrameCols::removeColumn(const std::int32_t index) {
-  const std::int8_t permission = data_.getPermission(index);
+  const consts::ePermissions permission = data_.getPermission(index);
   if (permission != consts::eReadWrite) {
     const std::string errMsg = std::string("ERROR: Column at index ") + std::to_string(index)
                                + std::string(" is set to read-only.");
@@ -159,7 +155,7 @@ void osdf::FrameCols::removeColumn(const std::int32_t index) {
   notify();
 }
 
-std::int8_t osdf::FrameCols::getColumnType(const std::string& name) const {
+osdf::consts::eDataTypes osdf::FrameCols::getColumnType(const std::string& name) const {
   return data_.getType(data_.getIndex(name));
 }
 
@@ -175,7 +171,7 @@ void osdf::FrameCols::removeRow(const std::int64_t index) {
   }
 
   for (std::int32_t colIndex = 0; colIndex < data_.getSizeCols(); ++colIndex) {
-    const std::int8_t permission = data_.getPermission(colIndex);
+    const consts::ePermissions permission = data_.getPermission(colIndex);
     if (permission == consts::eReadOnly) {
       const std::string errMsg = std::string("ERROR: Cannot remove row. Column ")
                                  + data_.getName(colIndex)
@@ -201,7 +197,7 @@ void osdf::FrameCols::removeRows(const std::vector<bool>& keepRows) {
   }
 }
 
-void osdf::FrameCols::sortRows(const std::string& columnName, const std::int8_t order) {
+void osdf::FrameCols::sortRows(const std::string& columnName, const consts::eSortOrders order) {
   if (data_.columnExists(columnName) != true) {
     const std::string errMsg = std::string("ERROR: Column named ") + columnName
                                + std::string(" not found in current data frame.");
@@ -335,22 +331,26 @@ void osdf::FrameCols::clear() {
 
 /// Other public functions
 
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const int threshold) const {
   return sliceRows<int>(name, comparison, threshold);
 }
 
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const std::int64_t threshold) const {
   return sliceRows<std::int64_t>(name, comparison, threshold);
 }
 
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const float threshold) const {
   return sliceRows<float>(name, comparison, threshold);
 }
 
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const std::string threshold) const {
   return sliceRows<std::string>(name, comparison, threshold);
 }
@@ -386,7 +386,7 @@ void osdf::FrameCols::notify() {
 
 template <typename T>
 void osdf::FrameCols::appendNewColumn(const std::string& name, const std::vector<T>& values,
-                                      const std::int8_t type, const std::string& unit) {
+                                      const consts::eDataTypes type, const std::string& unit) {
   if (data_.columnExists(name) != false) {
     const std::string errMsg = std::string("ERROR: A column named ") + name
                                + std::string(" already exists.");
@@ -413,10 +413,10 @@ void osdf::FrameCols::appendNewColumn(const std::string& name, const std::vector
 
 template <typename T>
 void osdf::FrameCols::getColumn(const std::string& name, std::vector<T>& values,
-                                const std::int8_t type) const {
+                                const consts::eDataTypes type) const {
   // no need to check if column exists as getIndex throws error otherwise
   const std::int32_t columnIndex = data_.getIndex(name);
-  const std::int8_t columnType   = data_.getType(columnIndex);
+  const consts::eDataTypes columnType   = data_.getType(columnIndex);
 
   if (type != columnType) {
     const std::string errMsg = std::string("ERROR: Input vector for column ")
@@ -430,10 +430,10 @@ void osdf::FrameCols::getColumn(const std::string& name, std::vector<T>& values,
 
 template<typename T>
 void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& values,
-                                const std::int8_t type) const {
+                                const consts::eDataTypes type) const {
   // no need to check if column with name exists as getIndex throws exception
   const std::int32_t columnIndex = data_.getIndex(name);
-  const std::int8_t permission   = data_.getPermission(columnIndex);
+  const consts::ePermissions permission   = data_.getPermission(columnIndex);
 
   if (permission != consts::eReadWrite) {
     const std::string errMsg = std::string("ERROR: The column ")
@@ -441,7 +441,7 @@ void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& v
                                + std::string(" is set to read-only.");
     throw eckit::BadParameter(errMsg, Here());
   }
-  std::int8_t columnType = data_.getType(columnIndex);
+  consts::eDataTypes columnType = data_.getType(columnIndex);
   if (type != columnType) {
     const std::string errMsg = std::string("ERROR: Input vector for column ") + name
                                + std::string(" is not the required data type.");
@@ -461,7 +461,7 @@ void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& v
 template<typename T>
 std::tuple<osdf::ColumnMetadata, std::vector<std::int64_t>,
            std::vector<std::shared_ptr<osdf::DataBase>>>
-osdf::FrameCols::sliceRowsImpl(const std::string& name, const std::int8_t comparison,
+osdf::FrameCols::sliceRowsImpl(const std::string& name, const consts::eComparisons comparison,
                                const T threshold) const {
   if (data_.columnExists(name) != true) {
     const std::string errMsg = std::string("ERROR: Column named ")
@@ -475,36 +475,37 @@ osdf::FrameCols::sliceRowsImpl(const std::string& name, const std::int8_t compar
   return {newColumnMetadata, newIds, newDataColumns};
 }
 
-template<typename T>
-osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name, const std::int8_t comparison,
+template <typename T>
+osdf::FrameCols osdf::FrameCols::sliceRows(const std::string& name,
+                                           const consts::eComparisons comparison,
                                            const T threshold) const {
   auto[meta, ids, cols] = sliceRowsImpl<T>(name, comparison, threshold);
   return FrameCols(meta, ids, cols);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const int threshold) const {
   auto[meta, ids, cols] = sliceRowsImpl<int>(name, comparison, threshold);
   return std::make_unique<FrameCols>(meta, ids, cols);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const std::int64_t threshold) const {
   auto[meta, ids, cols] = sliceRowsImpl<std::int64_t>(name, comparison, threshold);
   return std::make_unique<FrameCols>(meta, ids, cols);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const float threshold) const {
   auto[meta, ids, cols] = sliceRowsImpl<float>(name, comparison, threshold);
   return std::make_unique<FrameCols>(meta, ids, cols);
 }
 
 std::unique_ptr<osdf::IFrame> osdf::FrameCols::sliceFrame(const std::string& name,
-                                                          const std::int8_t comparison,
+                                                          const consts::eComparisons comparison,
                                                           const std::string threshold) const {
   auto[meta, ids, cols] = sliceRowsImpl<std::string>(name, comparison, threshold);
   return std::make_unique<FrameCols>(meta, ids, cols);

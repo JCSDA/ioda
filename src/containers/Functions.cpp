@@ -8,7 +8,6 @@
 #include "ioda/containers/Functions.h"
 #include "ioda/Exception.h"
 
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameUtils.h"
@@ -17,18 +16,18 @@
 osdf::Functions::Functions() {}
 
 template<> void osdf::Functions::addColumnToRow<const char*>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t& columnIndex, const char* param) const {
+    bool& isValid, std::int32_t& columnIndex, const char* param) const {
   std::string paramStr = std::string(param);
   addColumnToRow<std::string>(data, row, isValid, columnIndex, paramStr);
 }
 
 template<typename T>
 void osdf::Functions::addColumnToRow(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t& columnIndex, const T param) const {
+    bool& isValid, std::int32_t& columnIndex, const T param) const {
   if (isValid == true) {
     columnIndex = row.getSize();
 
-    const std::int8_t type = data->getType(columnIndex);
+    const consts::eDataTypes type = data->getType(columnIndex);
     std::shared_ptr<DatumBase> newDatum = createDatum<T>(param);
     if (newDatum->getType() == type) {
       row.insert(newDatum);
@@ -39,15 +38,15 @@ void osdf::Functions::addColumnToRow(IFrameData* data, DataRow& row,
 }
 
 template void osdf::Functions::addColumnToRow<>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const int param) const;
+    bool& isValid, std::int32_t&, const int param) const;
 template void osdf::Functions::addColumnToRow<std::int64_t>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const std::int64_t param) const;
+    bool& isValid, std::int32_t&, const std::int64_t param) const;
 template void osdf::Functions::addColumnToRow<float>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const float param) const;
+    bool& isValid, std::int32_t&, const float param) const;
 template void osdf::Functions::addColumnToRow<char>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const char param) const;
+    bool& isValid, std::int32_t&, const char param) const;
 template void osdf::Functions::addColumnToRow<std::string>(IFrameData* data, DataRow& row,
-    std::int8_t& isValid, std::int32_t&, const std::string param) const;
+    bool& isValid, std::int32_t&, const std::string param) const;
 
 template<typename T> const std::shared_ptr<osdf::DataBase> osdf::Functions::createData(
                                                      const std::vector<T>& values) const {
@@ -102,7 +101,7 @@ const std::shared_ptr<osdf::DatumBase> osdf::Functions::createDatum<char const*>
   return datum;
 }
 
-const std::int8_t osdf::Functions::compareDatums(const std::shared_ptr<osdf::DatumBase>& datumA,
+const bool osdf::Functions::compareDatums(const std::shared_ptr<osdf::DatumBase>& datumA,
     const std::shared_ptr<DatumBase>& datumB) const {
   return osdf::FrameUtils::callWithSupportedType(
     datumA->getType(),
@@ -116,7 +115,7 @@ const std::int8_t osdf::Functions::compareDatums(const std::shared_ptr<osdf::Dat
 
 
 template<typename T>
-const std::int8_t osdf::Functions::compareToThreshold(const std::int8_t comparison,
+const bool osdf::Functions::compareToThreshold(const consts::eComparisons comparison,
                                                       const T threshold,
                                                       const T value) const {
   switch (comparison) {
@@ -130,16 +129,17 @@ const std::int8_t osdf::Functions::compareToThreshold(const std::int8_t comparis
   }
 }
 
-template const std::int8_t osdf::Functions::compareToThreshold<int>(
-                           const std::int8_t, const int, const int) const;
-template const std::int8_t osdf::Functions::compareToThreshold<std::int64_t>(
-                           const std::int8_t, const std::int64_t, const std::int64_t) const;
-template const std::int8_t osdf::Functions::compareToThreshold<float>(
-                           const std::int8_t, const float, const float) const;
-template const std::int8_t osdf::Functions::compareToThreshold<char>(
-                           const std::int8_t, const char, const char) const;
-template const std::int8_t osdf::Functions::compareToThreshold<std::string>(
-                           const std::int8_t, const std::string, const std::string) const;
+template const bool osdf::Functions::compareToThreshold<int>(
+                           const consts::eComparisons, const int, const int) const;
+template const bool osdf::Functions::compareToThreshold<std::int64_t>(const consts::eComparisons,
+                                                                      const std::int64_t,
+                                                                      const std::int64_t) const;
+template const bool osdf::Functions::compareToThreshold<float>(
+                           const consts::eComparisons, const float, const float) const;
+template const bool osdf::Functions::compareToThreshold<char>(
+                           const consts::eComparisons, const char, const char) const;
+template const bool osdf::Functions::compareToThreshold<std::string>(
+                           const consts::eComparisons, const std::string, const std::string) const;
 
 template<typename T> const std::vector<T>& osdf::Functions::getDataValues(
                                            const std::shared_ptr<DataBase>& data) const {

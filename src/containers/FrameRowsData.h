@@ -9,15 +9,12 @@
 #define CONTAINERS_FRAMEROWSDATA_H_
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Constants.h"
-#include "ioda/containers/DataBase.h"
 #include "ioda/containers/DataRow.h"
-#include "ioda/containers/DatumBase.h"
 #include "ioda/containers/Functions.h"
 #include "ioda/containers/FunctionsRows.h"
 #include "ioda/containers/IFrameData.h"
@@ -74,9 +71,9 @@ class FrameRowsData : public IFrameData  {
   /// \param An enum value representing the column data type, \see Constants::eDataTypes.
   /// \param An optional parameter specifying column units (if units not provided, set as missing)
   /// \param An optional parameter specifying the column read-write capability.
-  void appendNewColumn(const std::string&, const std::int8_t,
+  void appendNewColumn(const std::string&, const consts::eDataTypes,
                        const std::string& = util::missingValue<std::string>(),
-                       const std::int8_t = consts::eReadWrite);
+                       const consts::ePermissions = consts::eReadWrite);
 
   /// \brief Removes a column from the data frame.
   /// \param The index of the column.
@@ -103,17 +100,17 @@ class FrameRowsData : public IFrameData  {
   /// Throws an exception if the column is not found.
   /// \param Column name to search.
   /// \return The column index.
-  const std::int32_t getIndex(const std::string&) const;
+  const std::int32_t getIndex(const std::string&) const override;
 
   const std::string& getName(const std::int32_t) const override;
   const std::string& getUnits(const std::int32_t) const override;
-  const std::int8_t getType(const std::int32_t) const override;
-  const std::int8_t getPermission(const std::int32_t) const override;
+  const consts::eDataTypes getType(const std::int32_t) const override;
+  const consts::ePermissions getPermission(const std::int32_t) const override;
 
   /// \brief Checks to see if a column with a specific name exists in the data frame.
   /// \param Column name to search.
   /// \return An 8-bit integer uses as a boolean.
-  const std::int8_t columnExists(const std::string&) const;
+  const bool columnExists(const std::string&) const;
 
   DataRow& getDataRow(const std::int64_t);
   const DataRow& getDataRow(const std::int64_t) const;

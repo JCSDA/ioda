@@ -8,17 +8,13 @@
 #include "ioda/containers/FrameColsData.h"
 
 #include <algorithm>
-#include <cstdint>
-#include <memory>
 #include <utility>
 
-#include "DataRow.h"
 #include "eckit/exception/Exceptions.h"
-#include "ioda/containers/Constants.h"
 #include "ioda/containers/Data.h"
+#include "ioda/containers/DataRow.h"
 #include "ioda/containers/FrameUtils.h"
 #include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
 
 osdf::FrameColsData::FrameColsData(const FunctionsCols& funcs,
     const ColumnMetadata& columnMetadata, const std::vector<std::int64_t>& ids,
@@ -82,9 +78,9 @@ void osdf::FrameColsData::appendNewRow(const DataRow& newRow) {
 }
 
 void osdf::FrameColsData::appendNewColumn(const std::shared_ptr<DataBase>& data,
-                                          const std::string& name, const std::int8_t type,
+                                          const std::string& name, const consts::eDataTypes type,
                                           const std::string& unit,
-                                          const std::int8_t permission) {
+                                          const consts::ePermissions permission) {
   // Note that `add` throws an exception if columnMetadata with name already exists
   columnMetadata_.add(ColumnMetadatum(name, unit, type, permission));
   dataColumns_.push_back(data);
@@ -152,15 +148,16 @@ const std::string& osdf::FrameColsData::getUnits(const std::int32_t index) const
   return columnMetadata_.getUnit(index);
 }
 
-const std::int8_t osdf::FrameColsData::getType(const std::int32_t index) const {
+const osdf::consts::eDataTypes osdf::FrameColsData::getType(const std::int32_t index) const {
   return columnMetadata_.getType(index);
 }
 
-const std::int8_t osdf::FrameColsData::getPermission(const std::int32_t index) const {
+const osdf::consts::ePermissions osdf::FrameColsData::getPermission(
+  const std::int32_t index) const {
   return columnMetadata_.getPermission(index);
 }
 
-const std::int8_t osdf::FrameColsData::columnExists(const std::string& name) const {
+const bool osdf::FrameColsData::columnExists(const std::string& name) const {
   return columnMetadata_.exists(name);
 }
 

@@ -11,9 +11,7 @@
 #include <cmath>
 #include <memory>
 #include <string>
-#include <unordered_set>
 #include <vector>
-#include "ioda/Exception.h"
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -109,8 +107,8 @@ bool testCompareTwoDataRows(osdf::DataRow testRow, osdf::DataRow compareRow,
   }
 
   for (std::int32_t index = 0; index < testSize; ++index) {
-    const std::int8_t testType = testRow.getColumn(index)->getType();
-    const std::int8_t compareType = compareRow.getColumn(index)->getType();
+    const osdf::consts::eDataTypes testType = testRow.getColumn(index)->getType();
+    const osdf::consts::eDataTypes compareType = compareRow.getColumn(index)->getType();
     if (testType != compareType) {
       return false;
     }

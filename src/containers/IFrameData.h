@@ -11,7 +11,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "DataRow.h"
+#include "ioda/containers/Constants.h"
+#include "ioda/containers/DataRow.h"
 
 namespace osdf {
 
@@ -37,8 +38,8 @@ class IFrameData {
   virtual const std::string& getName(const std::int32_t) const = 0;
   virtual const std::int32_t getIndex(const std::string& name) const = 0;
   virtual const std::string& getUnits(const std::int32_t) const = 0;
-  virtual const std::int8_t getType(const std::int32_t) const = 0;
-  virtual const std::int8_t getPermission(const std::int32_t) const = 0;
+  virtual const consts::eDataTypes getType(const std::int32_t) const = 0;
+  virtual const consts::ePermissions getPermission(const std::int32_t) const = 0;
 
   virtual const ColumnMetadata& getColumnMetadata() const = 0;
   virtual const std::int32_t getSizeCols() const  = 0;
