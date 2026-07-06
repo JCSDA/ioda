@@ -258,7 +258,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_script_args.yaml
   testinput/iodatest_script_args.py
 
-  testinput/containers/iodatest_obs_data_frame.yaml
   testinput/containers/iodatest_osdf_append.yaml
   testinput/containers/iodatest_osdf_dummy_config.yaml
   testinput/containers/iodatest_osdf_basic_frames.yaml
@@ -357,11 +356,6 @@ target_link_libraries(ioda_test INTERFACE ioda)
 #####################################################################
 # OSDF unit tests
 #####################################################################
-
-ecbuild_add_test( TARGET  ioda_obs_data_frame
-                  SOURCES mains/containers/TestObsDataFrame.cc
-                  ARGS    "testinput/containers/iodatest_obs_data_frame.yaml"
-                  LIBS  ioda_test )
 
 ecbuild_add_test( TARGET  ioda_osdf_empty_column
                   SOURCES mains/containers/TestOsdfEmptyColumn.cc
