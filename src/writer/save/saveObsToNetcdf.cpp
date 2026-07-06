@@ -70,7 +70,7 @@ static netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType
 /// \param varName variable name without channel suffix
 /// \param srcOsdf source OSDF container from which to get the column names
 /// \param osdfMetadata source OSDF metadata containing information about the variables
-/// \return column name with the first slice suffix if the variable has a second dimension,
+/// \return column name with the first slice suffix if the variable has a slice dimension,
 /// otherwise return varName
 static std::string findColNameWithSliceSuffix(const std::string & varName,
                                              const std::unique_ptr<osdf::IFrame> & srcOsdf,
@@ -206,10 +206,10 @@ netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType) {
 std::string findColNameWithSliceSuffix(const std::string & varName,
                                        const std::unique_ptr<osdf::IFrame> & srcOsdf,
                                        const osdf::FrameMetadata & osdfMetadata) {
-  // If the variable has a second (non-Location) dimension, then use the first column name with
+  // If the variable has a slice dimension, then use the first column name with
   // a slice suffix. Otherwise, just return the variable name.
   std::string colNameWithSliceSuffix = varName;
-  const std::string dimName = osdfMetadata.varSecondDimName(varName);
+  const std::string dimName = osdfMetadata.varSliceDimName(varName);
   if (!dimName.empty()) {
     const std::vector<int> & sliceNums = osdfMetadata.getDimNums(dimName);
     if (!sliceNums.empty()) {
@@ -278,15 +278,16 @@ void setNcVarAttributes(netCDF::NcVar & var, const VarCreationParameters & creat
 DimCreationList makeDimCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
                                     const osdf::FrameMetadata & osdfMetadata) {
   // We always have the Location dimension (unlimited size). In addition, we create a dimension
-  // for every second dimension registered in the frame metadata (Channel, Level, nfactors, etc.).
-  // The registered dimension names are sorted so the output file layout is deterministic.
+  // for every slice dimension registered in the frame metadata
+  // (Channel, Level, nfactors, etc.). The registered dimension names are sorted so the output
+  // file layout is deterministic.
   DimCreationList dimCreationList;
   dimCreationList.emplace_back(
     std::make_pair(std::string("Location"), DimCreationParameters(srcOsdf->numRows(), true)));
 
-  std::vector<std::string> secondDimNames = osdfMetadata.getDimNames();
-  std::sort(secondDimNames.begin(), secondDimNames.end());
-  for (const auto & dimName : secondDimNames) {
+  std::vector<std::string> sliceDimNames = osdfMetadata.getDimNames();
+  std::sort(sliceDimNames.begin(), sliceDimNames.end());
+  for (const auto & dimName : sliceDimNames) {
     if (dimName == "Location") {
       continue;  // Location is handled above; never expected in the registry, but guard anyway
     }
@@ -315,11 +316,11 @@ VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & src
     varCreationList.emplace_back(std::make_pair(locDimName, locVarCreateParams));
   }
 
-  // Create a coordinate variable for every registered second dimension (Channel, Level,
+  // Create a coordinate variable for every registered slice dimension (Channel, Level,
   // nfactors, etc.). Sorted for deterministic output file layout.
-  std::vector<std::string> secondDimNames = osdfMetadata.getDimNames();
-  std::sort(secondDimNames.begin(), secondDimNames.end());
-  for (const auto & dimName : secondDimNames) {
+  std::vector<std::string> sliceDimNames = osdfMetadata.getDimNames();
+  std::sort(sliceDimNames.begin(), sliceDimNames.end());
+  for (const auto & dimName : sliceDimNames) {
     if (dimName == "Location") {
       continue;
     }
@@ -381,18 +382,18 @@ VarCreationList makeVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsd
       continue;
     }
 
-    // Determine whether the variable has a second (non-Location) dimension. The column names
+    // Determine whether the variable has a slice dimension. The column names
     // here have had their numeric slice suffixes stripped, so columnName is the collapsed name.
     std::vector<std::string> varDimNames;
     std::string associatedColumn;
-    if (!osdfMetadata.varSecondDimName(columnName).empty()) {
-      // This variable has a second dimension, so it will be dimensioned by either
+    if (!osdfMetadata.varSliceDimName(columnName).empty()) {
+      // This variable has a slice dimension, so it will be dimensioned by either
       // [<dim>] or [Location, <dim>]. Either way the osdfMetadata holds the proper
       // dimension names.
       varDimNames = osdfMetadata.getVarDimNames(columnName);
       associatedColumn = findColNameWithSliceSuffix(columnName, srcOsdf, osdfMetadata);
     } else {
-      // This variable has no second dimension, so it is dimensioned by Location only.
+      // This variable has no slice dimension, so it is dimensioned by Location only.
       varDimNames = std::vector<std::string>{"Location"};
       associatedColumn = columnName;
     }
@@ -500,20 +501,20 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
   const std::string varName = var.getName();
 
   // Need to strip off any numerical suffix on the associated column name
-  // to look up the variable's second (non-Location) dimension.
+  // to look up the variable's slice dimension.
   const std::string colWithSlices = ioda::removeStringNumericSuffix(assocColumn);
-  const std::string secondDimName = osdfMetadata.varSecondDimName(colWithSlices);
-  if (!secondDimName.empty()) {
+  const std::string sliceDimName = osdfMetadata.varSliceDimName(colWithSlices);
+  if (!sliceDimName.empty()) {
     // Use colWithSlices for the desired column name. Code will attach all of the slice
-    // suffixes (the second dimension's index values) to pull data from the srcOsdf.
+    // suffixes (the slice dimension's index values) to pull data from the srcOsdf.
     // For now assume we are always writing the entire variable data in one putVar call,
     // so the start value is always 0 and the count value is always the size of the varData vector.
     // We can generalize this in the future when we want to write the variable data in chunks.
-    const std::vector<int> & sliceNums = osdfMetadata.getDimNums(secondDimName);
+    const std::vector<int> & sliceNums = osdfMetadata.getDimNums(sliceDimName);
     const std::size_t numSlices = sliceNums.size();
     const std::size_t numLocs = srcOsdf->numRows();
     if (osdfMetadata.getVarDimNames(colWithSlices).size() == 1) {
-      // dimensions: [ <secondDim> ]
+      // dimensions: [ <sliceDim> ]
       // The data in srcOsdf is stored in one column per slice. Each of these columns has the
       // data repeated for each location, so we only need to read from the first row of each
       // column to re-pack the original 1D array. If there are no locations (e.g. all
@@ -537,7 +538,7 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
           setNcVarData<T>(var, {0}, {numSlices}, varVals);
           });
     } else {
-      // dimension: [ Location, <secondDim> ]
+      // dimension: [ Location, <sliceDim> ]
       osdf::FrameUtils::callWithSupportedType(
         srcOsdf->getColumnType(assocColumn),
         [&](auto typeDiscriminator) {

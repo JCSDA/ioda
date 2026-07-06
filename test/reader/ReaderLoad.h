@@ -64,6 +64,13 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
     EXPECT(testOsdf->hasColumn(colName));
   }
 
+  // Check for the non existence of a few problem columns
+  const std::vector<std::string> sampleNonColNames
+    = testConfig.getStringVector("sample non column names");
+  for (const auto &colName : sampleNonColNames) {
+    EXPECT(!testOsdf->hasColumn(colName));
+  }
+
   // Check units of these sample columns
   const std::vector<std::string> sampleColUnits = testConfig.getStringVector("sample column units");
   EXPECT_EQUAL(sampleColNames.size(), sampleColUnits.size());
@@ -75,28 +82,34 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   EXPECT_EQUAL(testOsdf->frameType(), expectedFrameType);
 
   // Check the osdf metadata contents:
-  //   1) channel numbers
-  //   2) vars with channels
+  //   1) slice dimensions (e.g. Channel, Level, nfactors)
+  //   2) vars with slice dimensions (e.g. Channel)
   //   3) number of vars
 
-  // Channel numbers
-  const std::vector<int> expectedChannelNumbers =
-      testConfig.getIntVector("channel numbers");
-  const std::vector<int> channelNumbers = osdfMetadata.getChanNums();
-  EXPECT_EQUAL(channelNumbers, expectedChannelNumbers);
+  // Generalized slice dimension checks (issue 1744 multi-dimension coverage).
+  //   "non location dimensions" - verify the coordinate values of each registered dimension
+  //   "multi slice vars" - verify the full set of variables with any slice
+  //                        dimension.
+  const eckit::LocalConfiguration nonLocDimConfig =
+    testConfig.getSubConfiguration("non location dimensions");
+  for (const auto & dimConfig : nonLocDimConfig.getSubConfigurations()) {
+    const std::string dimName = dimConfig.getString("name");
+    const std::vector<int> expectedNums = dimConfig.getIntVector("numbers");
+    EXPECT_EQUAL(osdfMetadata.getDimNums(dimName), expectedNums);
+  }
 
-  // Vars with channels
-  const std::vector<std::string> configVarsWithChans =
-      testConfig.getStringVector("variables with channels");
-  const std::unordered_set<std::string> expectedVarsWithChannels(
-      configVarsWithChans.begin(), configVarsWithChans.end());
-  const std::unordered_set<std::string> varsWithChannels = osdfMetadata.getVarsWithChans();
-  EXPECT(varsWithChannels == expectedVarsWithChannels);
-
-  // Number of vars
-  const int expectedNumVars = testConfig.getInt("number of variables");
-  const int numVars = osdfMetadata.getNumVars();
-  EXPECT_EQUAL(numVars, expectedNumVars);
+  std::vector<std::string> expectedMultiSliceVars;
+  const eckit::LocalConfiguration multiSliceVarConfig =
+    testConfig.getSubConfiguration("multi slice vars");
+  for (const auto & dimConfig : multiSliceVarConfig.getSubConfigurations()) {
+    const std::string varName = dimConfig.getString("name");
+    const std::string nonLocDimName = dimConfig.getString("non location dimension");
+    expectedMultiSliceVars.push_back(varName);
+    EXPECT_EQUAL(osdfMetadata.varSliceDimName(varName), nonLocDimName);
+  }
+  const std::unordered_set<std::string> expectedMultiSliceVarsSet(
+    expectedMultiSliceVars.begin(), expectedMultiSliceVars.end());
+  EXPECT(osdfMetadata.getMultiSliceVars() == expectedMultiSliceVarsSet);
 }
 
 // -----------------------------------------------------------------------------

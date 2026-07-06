@@ -49,7 +49,7 @@ std::vector<std::string> FrameMetadata::getDimNames() const {
   return names;
 }
 
-std::string FrameMetadata::varSecondDimName(const std::string &varName) const {
+std::string FrameMetadata::varSliceDimName(const std::string &varName) const {
   const auto it = varDimNames_.find(varName);
   if (it == varDimNames_.end()) return "";
   for (const auto &d : it->second) {
@@ -61,7 +61,7 @@ std::string FrameMetadata::varSecondDimName(const std::string &varName) const {
 std::unordered_set<std::string> FrameMetadata::getMultiSliceVars() const {
   std::unordered_set<std::string> result;
   for (const auto &kv : varDimNames_) {
-    if (!varSecondDimName(kv.first).empty()) result.insert(kv.first);
+    if (!varSliceDimName(kv.first).empty()) result.insert(kv.first);
   }
   return result;
 }
@@ -103,28 +103,6 @@ void FrameMetadata::addVarDimNames(const std::string &varName,
 //----------------------------------------------------------------------
 std::size_t FrameMetadata::removeVarDimNames(const std::string &varName) {
   return varDimNames_.erase(varName);
-}
-
-//----------------------------------------------------------------------
-// Backward-compatible wrappers
-void FrameMetadata::setChanNums(const std::vector<int> &chanNums) {
-  if (!hasDim("Channel")) setDimNums("Channel", chanNums);
-}
-
-const std::vector<int> &FrameMetadata::getChanNums() const {
-  return getDimNums("Channel");
-}
-
-bool FrameMetadata::varHasChannels(const std::string &varName) const {
-  return varSecondDimName(varName) == "Channel";
-}
-
-std::unordered_set<std::string> FrameMetadata::getVarsWithChans() const {
-  std::unordered_set<std::string> result;
-  for (const auto &kv : varDimNames_) {
-    if (varSecondDimName(kv.first) == "Channel") result.insert(kv.first);
-  }
-  return result;
 }
 
 //----------------------------------------------------------------------

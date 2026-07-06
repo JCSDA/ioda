@@ -163,7 +163,7 @@ auto callWithSupportedTypeString(const std::string &typeString,
 void populateFrameMetadata(const eckit::LocalConfiguration & frameMetadataConfig,
                            osdf::FrameMetadata & osdfMetadata) {
   oops::Log::debug() << "Frame metadata configuration: " << frameMetadataConfig << std::endl;
-  osdfMetadata.setChanNums(frameMetadataConfig.getIntVector("channel numbers"));
+  osdfMetadata.setDimNums("Channel", frameMetadataConfig.getIntVector("channel numbers"));
   osdfMetadata.setNumVars(frameMetadataConfig.getInt("number of variables"));
   const std::vector<eckit::LocalConfiguration> varDimNamesConfig =
     frameMetadataConfig.getSubConfigurations("variable dim names");

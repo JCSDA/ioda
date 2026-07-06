@@ -40,8 +40,8 @@ void OsdfFrameFacade::initialize(size_t /*numLocations*/,
   dataLayoutPolicy_ = dataLayoutPolicy;
   options_ = options;
 
-  if (channelIndices) {
-    metadata_.setChanNums(*channelIndices);
+  if (channelIndices && !metadata_.hasDim("Channel")) {
+    metadata_.setDimNums("Channel", *channelIndices);
   }
   isInitialized_ = true;
 }
@@ -56,7 +56,7 @@ void OsdfFrameFacade::addDateTimeVariableToOptions(std::string dateTimeVariableN
 }
 
 int OsdfFrameFacade::numberOfChannels() const {
-  return std::max<int>(metadata_.getChanNums().size(), 1);
+  return std::max<int>(metadata_.getDimNums("Channel").size(), 1);
 }
 
 void OsdfFrameFacade::addVariable(const std::string &name, const std::vector<int> &values,
@@ -94,7 +94,7 @@ void OsdfFrameFacade::removeVariable(const std::string &name) {
     throw eckit::UserError("Frame has not been initialized yet", Here());
 
   const std::string iodaName = iodaVariableName(name);
-  const std::string dimName = metadata_.varSecondDimName(iodaName);
+  const std::string dimName = metadata_.varSliceDimName(iodaName);
   if (!dimName.empty()) {
     for (int v : metadata_.getDimNums(dimName))
       frame_.removeColumn(iodaName + '_' + std::to_string(v));
@@ -111,7 +111,7 @@ bool OsdfFrameFacade::hasVariable(const std::string &name) const {
     return false;
 
   const std::string iodaName = iodaVariableName(name);
-  const std::string dimName = metadata_.varSecondDimName(iodaName);
+  const std::string dimName = metadata_.varSliceDimName(iodaName);
   if (!dimName.empty() && !metadata_.getDimNums(dimName).empty())
     return frame_.hasColumn(iodaName + '_' + std::to_string(metadata_.getDimNums(dimName).front()));
   else
@@ -124,7 +124,7 @@ Engines::ContainerVariableType OsdfFrameFacade::variableType(const std::string &
 
   const std::string iodaName = iodaVariableName(name);
   int8_t typeAsInt;
-  const std::string dimName = metadata_.varSecondDimName(iodaName);
+  const std::string dimName = metadata_.varSliceDimName(iodaName);
   if (!dimName.empty() && !metadata_.getDimNums(dimName).empty())
     typeAsInt = frame_.getColumnType(iodaName + '_' +
                                      std::to_string(metadata_.getDimNums(dimName).front()));
@@ -205,8 +205,8 @@ std::vector<std::string> OsdfFrameFacade::iodaVariableNames() const {
   for (const std::string &name : frame_.columnNames()) {
     if (extractChannelSuffixIfPresent(name, prefix, channelIndex) &&
         multiSliceVars.count(prefix) != 0) {
-      // Treat `prefix` as the variable name (regardless of whether the channel index belongs to
-      // metadata_.getChanNums() or not, for the time being).
+      // Treat `prefix` as the variable name (regardless of whether the numeric suffix belongs to
+      // the variable's slice dimension index values or not, for the time being).
       if (unorderedNames.count(prefix) == 0) {
         unorderedNames.insert(prefix);
         orderedNames.push_back(prefix);
@@ -288,7 +288,7 @@ std::string OsdfFrameFacade::iodaVariableName(const std::string &name) const {
 }
 
 bool OsdfFrameFacade::iodaVariableHasChannelAxis(const std::string &iodaName) const {
-  return !metadata_.varSecondDimName(iodaName).empty();
+  return !metadata_.varSliceDimName(iodaName).empty();
 }
 
 template <typename T>
@@ -298,7 +298,7 @@ void OsdfFrameFacade::addTypedVariable(const std::string &name, const std::vecto
   if (!isInitialized_)
     throw eckit::UserError("Frame has not been initialized yet", Here());
 
-  if (hasChannelAxis && metadata_.getChanNums().empty())
+  if (hasChannelAxis && metadata_.getDimNums("Channel").empty())
     throw eckit::UserError("Channel indices have not been defined", Here());
 
   const std::string iodaName = iodaVariableName(name);
@@ -325,7 +325,7 @@ void OsdfFrameFacade::getTypedVariableValues(const std::string &name, std::vecto
                              " into a vector of incorrect type", Here());
 
   const std::string iodaName = iodaVariableName(name);
-  const std::string dimName = metadata_.varSecondDimName(iodaName);
+  const std::string dimName = metadata_.varSliceDimName(iodaName);
   if (!dimName.empty()) {
     using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
     const std::vector<int> &sliceIndices = metadata_.getDimNums(dimName);
@@ -395,26 +395,26 @@ void OsdfFrameFacade::setTypedVariableValues(const std::string &name, const std:
   const std::string iodaName = iodaVariableName(name);
   std::optional<T> missingValue;
   getTypedIodaVariableMissingValue(iodaName, missingValue);
-  setTypedIodaVariableValues(iodaName, values, metadata_.varSecondDimName(iodaName),
+  setTypedIodaVariableValues(iodaName, values, metadata_.varSliceDimName(iodaName),
                              layout, missingValue, false /*createNewColumns?*/);
 }
 
 template <typename T>
 void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
                                                  const std::vector<T> &values,
-                                                 const std::string &secondDimName,
+                                                 const std::string &sliceDimName,
                                                  MemoryLayout layout,
                                                  const std::optional<T> &missingValue,
                                                  bool createNewColumns) {
-  if (!secondDimName.empty()) {
+  if (!sliceDimName.empty()) {
     using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
-    const std::vector<int> &sliceIndices = metadata_.getDimNums(secondDimName);
+    const std::vector<int> &sliceIndices = metadata_.getDimNums(sliceDimName);
     const size_t numValues = values.size();
     const size_t numSlices = sliceIndices.size();
     const size_t numLocations = numValues / numSlices;
     if (numSlices * numLocations != numValues)
       throw eckit::BadValue("Number of values is not divisible by the number of " +
-                            secondDimName + " slices", Here());
+                            sliceDimName + " slices", Here());
 
     Matrix fallbackColumnMajorMatrix;
     Eigen::Map<const Matrix> valuesView(nullptr, 0, 0);

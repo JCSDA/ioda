@@ -13,8 +13,10 @@ obs types:
   io pool:
     max pool size: 2
   test data:
-    channel numbers: []
-    variables with channels: []
+    non location dimensions:
+    - { name: "nvars", numbers: [ 0, 1, 2, 3, 4 ] }
+    multi slice vars: 
+    - { name: "NewMetaData/variable_names", non location dimension: "nvars" }
     number of variables: 5
     sample column names:
     - "sourceLocationIndices"
@@ -22,12 +24,20 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    - "NewMetaData/variable_names_0"
+    - "NewMetaData/variable_names_4"
+    sample non column names:
+    # should not be a column variable_names as channels specified
+    - "NewMetaData/variable_names"
+    - "NewMetaData/variable_names_5"
     sample column units:
     - "MISSING*"
     - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
+    - "MISSING*"
+    - "MISSING*"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -76,8 +86,10 @@ obs types:
   io pool:
     max pool size: 2
   test data:
-    channel numbers: []
-    variables with channels: []
+    non location dimensions:
+    - { name: "nvars", numbers: [ 0, 1, 2, 3, 4 ] }
+    multi slice vars: 
+    - { name: "NewMetaData/variable_names", non location dimension: "nvars" }
     number of variables: 5
     sample column names:
     - "sourceLocationIndices"
@@ -85,12 +97,19 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    - "NewMetaData/variable_names_0"
+    - "NewMetaData/variable_names_4"
+    sample non column names:
+    - "NewMetaData/variable_names"
+    - "NewMetaData/variable_names_5"
     sample column units:
     - "MISSING*"
     - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
+    - "MISSING*"
+    - "MISSING*"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -139,8 +158,10 @@ obs types:
   io pool:
     max pool size: 4
   test data:
-    channel numbers: []
-    variables with channels: []
+    non location dimensions:
+    - { name: "nvars", numbers: [ 0, 1, 2, 3, 4 ] }
+    multi slice vars: 
+    - { name: "NewMetaData/variable_names", non location dimension: "nvars" }
     number of variables: 5
     sample column names:
     - "sourceLocationIndices"
@@ -148,12 +169,19 @@ obs types:
     - "MetaData/latitude"
     - "MetaData/longitude"
     - "ObsValue/airTemperature"
+    - "NewMetaData/variable_names_0"
+    - "NewMetaData/variable_names_4"
+    sample non column names:
+    - "NewMetaData/variable_names"
+    - "NewMetaData/variable_names_5"
     sample column units:
     - "MISSING*"
     - "seconds since 2018-04-14T21:00:00Z"
     - "degrees_north"
     - "degrees_east"
     - "K"
+    - "MISSING*"
+    - "MISSING*"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -201,15 +229,26 @@ obs types:
   io pool:
     max pool size: 2
   test data:
-    channel numbers: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
-    variables with channels:
-    - "GsiBc/brightnessTemperature"
-    - "GsiFinalObsError/brightnessTemperature"
-    - "GsiHofX/brightnessTemperature"
-    - "GsiHofXBc/brightnessTemperature"
-    - "ObsValue/brightnessTemperature"
-    - "ObsError/brightnessTemperature"
-    - "PreQC/brightnessTemperature"
+    non location dimensions:
+    - { name: "Channel",  numbers: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ] }
+    - { name: "nvars", numbers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ] }
+    multi slice vars:
+    - { name: "GsiBc/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "GsiFinalObsError/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "GsiHofX/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "GsiHofXBc/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "ObsValue/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "ObsError/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "PreQC/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "RecMetaData/sequenceNumber", non location dimension: "nrecs" }
+    - { name: "NewMetaData/ObsError", non location dimension: "nvars" }
+    - { name: "NewMetaData/gsi_use_flag", non location dimension: "nvars" }
+    - { name: "NewMetaData/mean_lapse_rate", non location dimension: "nvars" }
+    - { name: "NewMetaData/sensorCentralFrequency", non location dimension: "nvars" }
+    - { name: "NewMetaData/sensorCentralWavenumber", non location dimension: "nvars" }
+    - { name: "NewMetaData/sensorChannelNumber", non location dimension: "nvars" }
+    - { name: "NewMetaData/sensorPolarizationDirection", non location dimension: "nvars" }
+    - { name: "NewMetaData/variable_names", non location dimension: "nvars" }
     number of variables: 1
     sample column names:
     - "sourceLocationIndices"
@@ -219,6 +258,11 @@ obs types:
     - "ObsValue/brightnessTemperature_1"
     - "ObsValue/brightnessTemperature_7"
     - "ObsValue/brightnessTemperature_15"
+    # Test variables with only slice dimension, not location
+    - "NewMetaData/variable_names_0"
+    - "NewMetaData/variable_names_14"
+    sample non column names:
+    - "NewMetaData/sensorPolarizationDirection"
     sample column units:
     - "MISSING*"
     - "seconds since 1970-01-01T00:00:00Z"
@@ -227,6 +271,8 @@ obs types:
     - "K"
     - "K"
     - "K"
+    - "MISSING*"
+    - "MISSING*"
     mpi size1:
       rank0:
         pool comm size: 1
@@ -265,3 +311,163 @@ obs types:
         pool comm rank: 1
         nlocs:  0
         nvars:  238
+
+- name: "GMI GPM"
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+  io pool:
+    max pool size: 2
+  test data:
+    non location dimensions:
+    - { name: "Channel",  numbers: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ] }
+    multi slice vars:
+    - { name: "ObsError/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "PreQC/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "ObsValue/brightnessTemperature", non location dimension: "Channel"}
+    - { name: "NewMetaData/chaninfoidx", non location dimension: "Channel"}
+    - { name: "NewMetaData/error_variance", non location dimension: "Channel"}
+    - { name: "NewMetaData/satinfo_chan", non location dimension: "Channel"}
+    - { name: "NewMetaData/mean_lapse_rate", non location dimension: "Channel"}
+    - { name: "NewMetaData/sensorPolarizationDirection", non location dimension: "Channel"}
+    - { name: "NewMetaData/sensorCentralFrequency", non location dimension: "Channel"}
+    - { name: "NewMetaData/sensorCentralWavenumber", non location dimension: "Channel"}
+    - { name: "NewMetaData/use_flag", non location dimension: "Channel"}
+    - { name: "NewMetaData/sensorChannelNumber", non location dimension: "Channel"}
+    number of variables: 1
+    sample column names:
+    - "sourceLocationIndices"
+    - "MetaData/dateTime"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "ObsValue/brightnessTemperature_1"
+    - "ObsValue/brightnessTemperature_7"
+    - "ObsValue/brightnessTemperature_13"
+    # Test variables with only slice dimension, not location
+    - "NewMetaData/sensorChannelNumber_1"
+    - "NewMetaData/sensorChannelNumber_13"
+    sample non column names:
+    - "NewMetaData/sensorChannelNumber"
+    - "NewMetaData/sensorChannelNumber_0"
+    sample column units:
+    - "MISSING*"
+    - "seconds since 2018-04-15T00:00:00Z"
+    - "degrees_north"
+    - "degrees_east"
+    - "K"
+    - "K"
+    - "K"
+    - "MISSING*"
+    - "MISSING*"
+    mpi size1:
+      rank0:
+        pool comm size: 1
+        pool comm rank: 0
+        nlocs:  12
+        nvars:  168
+    mpi size2:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  6
+        nvars:  168
+      rank1:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  6
+        nvars:  168
+    mpi size4:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  6
+        nvars:  168
+      rank1:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  0
+        nvars:  168
+      rank2:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  6
+        nvars:  168
+      rank3:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
+        nvars:  168
+
+- name: "MultiDim (Channel + Level + nfactors)"
+  obsdatain:
+    engine:
+      type: H5File
+      obsfile: "Data/testinput_tier_1/multidim_obs_2018041500_m.nc4"
+  io pool:
+    max pool size: 2
+  test data:
+    non location dimensions:
+    - { name: "Channel",  numbers: [ 1, 3, 6 ] }
+    - { name: "Level",    numbers: [ 0, 1, 2, 3 ] }
+    - { name: "nfactors", numbers: [ 0, 1 ] }
+    multi slice vars:
+    - { name: "ObsValue/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "ObsError/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "PreQC/brightnessTemperature", non location dimension: "Channel" }
+    - { name: "MetaData/atmosphericTemperature", non location dimension: "Level" }
+    - { name: "MetaData/channelScaleFactor", non location dimension: "nfactors" }
+    number of variables: 1
+    sample column names:
+    - "sourceLocationIndices"
+    - "MetaData/latitude"
+    - "ObsValue/brightnessTemperature_1"
+    - "MetaData/atmosphericTemperature_0"
+    - "MetaData/channelScaleFactor_0"
+    sample non column names: 
+    - "MetaData/channelScaleFactor"
+    - "MetaData/atmosphericTemperature"
+    sample column units:
+    - "MISSING*"
+    - "degrees_north"
+    - "K"
+    - "K"
+    - "1"
+    mpi size1:
+      rank0:
+        pool comm size: 1
+        pool comm rank: 0
+        nlocs:  6
+        nvars:  19
+    mpi size2:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  3
+        nvars:  19
+      rank1:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  3
+        nvars:  19
+    mpi size4:
+      rank0:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  3
+        nvars:  19
+      rank1:
+        pool comm size: 2
+        pool comm rank: 0
+        nlocs:  0
+        nvars:  19
+      rank2:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  3
+        nvars:  19
+      rank3:
+        pool comm size: 2
+        pool comm rank: 1
+        nlocs:  0
+        nvars:  19

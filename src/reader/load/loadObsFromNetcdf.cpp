@@ -43,7 +43,7 @@ static bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::stri
 
 /// \brief check if we can keep a variable for loading into the OSDF container
 /// \details The OSDF container accepts any 1D variable (dimensioned by Location or by any
-/// second dimension), and any 2D variable whose first dimension is Location (the second
+/// slice dimension), and any 2D variable whose first dimension is Location (the second
 /// dimension may have any name). This function checks for this and returns true if the
 /// variable can be loaded into the OSDF.
 /// \param varName hierarchical variable name
@@ -206,7 +206,7 @@ bool keepNetcdfVarForOSDF(const std::string & varName,
   // Get a list of the dimensions attached to this variable. We want to keep
   // variables that are dimensioned by:
   //    1D: any single dimension
-  //    2D: Location, <any non-Location dimension>
+  //    2D: Location, <any slice dimension>
   bool keepVar = true;
   const std::vector<netCDF::NcDim> varDims = var.getDims();
   const std::size_t numDims = varDims.size();
@@ -221,17 +221,17 @@ bool keepNetcdfVarForOSDF(const std::string & varName,
     varDimNames.push_back(varDims[0].getName());
   } else {
     // 2D variable: accept it only if the first dimension is Location and the second dimension
-    // is some *other* (non-Location) dimension. A [Location, Location] variable has no second
-    // dimension for the OSDF to expand into slice columns (only non-Location dims are registered
+    // is some *other* slice dimension. A [Location, Location] variable has no slice
+    // dimension for the OSDF to expand into slice columns (only slice dims are registered
     // in FrameMetadata), so it cannot round-trip -- skip it rather than silently mangle it.
     const std::string firstDimName = varDims[0].getName();
-    const std::string secondDimName = varDims[1].getName();
-    if (firstDimName == "Location" && secondDimName != "Location") {
+    const std::string sliceDimName = varDims[1].getName();
+    if (firstDimName == "Location" && sliceDimName != "Location") {
       varDimNames.push_back(firstDimName);
-      varDimNames.push_back(secondDimName);
+      varDimNames.push_back(sliceDimName);
     } else {
       oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 2D Variable: " << varName
-                << " is not dimensioned [Location, <non-Location>]. Skipping." << std::endl;
+                << " is not dimensioned [Location, <slice-dim>]. Skipping." << std::endl;
       keepVar = false;
     }
   }
@@ -505,8 +505,8 @@ void transferVarDataToOSDF(const std::string& varName,
                            const std::vector<std::string> & varDimNames,
                            std::unique_ptr<osdf::IFrame> & destOSDF,
                            osdf::FrameMetadata & osdfMetadata) {
-  // varData should be the proper size. It is either 1D (Location), 1D (some second
-  // dimension) or 2D (Location X some second dimension). We've already verified the
+  // varData should be the proper size. It is either 1D (Location), 1D (some slice
+  // dimension) or 2D (Location X some slice dimension). We've already verified the
   // dimensioning when we decided to keep the variable for loading into the OSDF container.
   // The slice index values (real coordinate values or synthetic 0..n-1 indices) come from
   // the FrameMetadata dimension registry, and serve as the "_<index>" column suffixes.
@@ -522,7 +522,7 @@ void transferVarDataToOSDF(const std::string& varName,
         throw std::runtime_error(errMsg);
       }
     } else {
-      // 1D variable dimensioned by some second dimension (e.g. Channel, Level): broadcast
+      // 1D variable dimensioned by some slice dimension (e.g. Channel, Level): broadcast
       // each slice value across all locations, one column per slice.
       const std::string & dimName = varDimNames[0];
       const std::vector<int> & dimNums = osdfMetadata.getDimNums(dimName);
@@ -543,8 +543,8 @@ void transferVarDataToOSDF(const std::string& varName,
       }
     }
   } else if (varDimNames.size() == 2) {
-    // 2D variable dimensioned by Location and some second dimension. Expand into one
-    // column per slice of the second dimension.
+    // 2D variable dimensioned by Location and some slice dimension. Expand into one
+    // column per slice.
     const std::string & dimName = varDimNames[1];
     const std::vector<int> & dimNums = osdfMetadata.getDimNums(dimName);
     const std::size_t numSlices = dimNums.size();
@@ -597,7 +597,7 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                                  "number of locations in the file.");
       }
     } else {
-      // Register every non-Location dimension. If the coordinate values are a set of unique
+      // Register every slice dimension. If the coordinate values are a set of unique
       // integers, store them as-is (e.g. Channel: {1, 3, 5, ..., 22}). Otherwise (non-integer
       // type, or non-unique integers) store synthetic 0-based indices {0, 1, ..., n-1} so that
       // the "_<index>" column suffixes are always unique.

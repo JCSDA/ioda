@@ -2693,6 +2693,51 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi4_0003
                           amsua_n19_obs_2018041500_m_time_osdf_mpi4_0003.nc4
                   TEST_DEPENDS ioda_time_io_osdf_mpi4)
 
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim_osdf_mpi1
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io multidim (osdf)"
+                          multidim_obs_2018041500_m_time_osdf_mpi1.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi1)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim_osdf_mpi2_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io multidim mpi2_0000 (osdf)"
+                          multidim_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim_osdf_mpi2_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io multidim mpi2_0001 (osdf)"
+                          multidim_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim_osdf_mpi4_0000
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io multidim mpi4_0000 (osdf)"
+                          multidim_obs_2018041500_m_time_osdf_mpi4_0000.nc4:multidim_obs_2018041500_m_time_osdf_mpi2_0000.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim_osdf_mpi4_0001
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking time io multidim mpi4_0001 (osdf)"
+                          multidim_obs_2018041500_m_time_osdf_mpi4_0001.nc4:multidim_obs_2018041500_m_time_osdf_mpi2_0001.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
 ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm_osdf_mpi1
                   TYPE    SCRIPT
                   COMMAND bash

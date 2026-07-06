@@ -85,72 +85,48 @@ void testGetDimNames() {
 }
 
 // -----------------------------------------------------------------------------
-void testChanNums() {
+void testVarSliceDimName() {
   osdf::FrameMetadata md;
 
-  // getChanNums returns empty before anything is set
-  EXPECT(md.getChanNums().empty());
+  // variable not registered returns ""
+  EXPECT(md.varSliceDimName("someVar") == "");
 
-  // setChanNums registers "Channel" and getChanNums retrieves it
-  const std::vector<int> chanNums = {1, 3, 6};
-  md.setChanNums(chanNums);
-  EXPECT(md.getChanNums() == chanNums);
-  EXPECT(md.hasDim("Channel"));
-
-  // setChanNums is a no-op if Channel is already registered
-  md.setChanNums({10, 20, 30});
-  EXPECT(md.getChanNums() == chanNums);  // unchanged
-
-  // setChanNums with an empty vector still registers the dim
-  osdf::FrameMetadata md2;
-  md2.setChanNums({});
-  EXPECT(md2.hasDim("Channel"));
-  EXPECT(md2.getChanNums().empty());
-}
-
-// -----------------------------------------------------------------------------
-void testVarHasChannels() {
-  osdf::FrameMetadata md;
-
-  // variable not registered returns false
-  EXPECT(!md.varHasChannels("someVar"));
-
-  // 1D Channel variable (Channel is the only dim)
+  // 1D slice variable: the slice dim name is that dimension
   md.addVarDimNames("BT_1d", {"Channel"});
-  EXPECT(md.varHasChannels("BT_1d"));
+  EXPECT(md.varSliceDimName("BT_1d") == "Channel");
 
-  // 2D Location x Channel variable
+  // 2D Location x <dim> variable: the slice dim name is that dimension
   md.addVarDimNames("BT_2d", {"Location", "Channel"});
-  EXPECT(md.varHasChannels("BT_2d"));
-
-  // 1D Location variable — not a channel variable
-  md.addVarDimNames("airTemp", {"Location"});
-  EXPECT(!md.varHasChannels("airTemp"));
-
-  // 2D Location x Level variable — not a channel variable
+  EXPECT(md.varSliceDimName("BT_2d") == "Channel");
   md.addVarDimNames("tempProfile", {"Location", "Level"});
-  EXPECT(!md.varHasChannels("tempProfile"));
+  EXPECT(md.varSliceDimName("tempProfile") == "Level");
+
+  // 1D Location variable has no slice dimension
+  md.addVarDimNames("airTemp", {"Location"});
+  EXPECT(md.varSliceDimName("airTemp") == "");
 }
 
 // -----------------------------------------------------------------------------
-void testGetVarsWithChans() {
+void testGetMultiSliceVars() {
   osdf::FrameMetadata md;
 
   // empty result when no variables registered
-  EXPECT(md.getVarsWithChans().empty());
+  EXPECT(md.getMultiSliceVars().empty());
 
-  // add a mix of channel and non-channel variables
+  // add a mix of variables with and without a slice dimension
   md.addVarDimNames("ObsValue/bt_1d",       {"Channel"});
   md.addVarDimNames("ObsValue/bt_2d",       {"Location", "Channel"});
   md.addVarDimNames("MetaData/airTemp",     {"Location"});
   md.addVarDimNames("MetaData/tempProfile", {"Location", "Level"});
 
-  const std::unordered_set<std::string> result = md.getVarsWithChans();
-  EXPECT_EQUAL(result.size(), std::size_t(2));
+  // getMultiSliceVars returns any variable with a slice dim
+  // (Channel, Level, ...), not just Channel.
+  const std::unordered_set<std::string> result = md.getMultiSliceVars();
+  EXPECT_EQUAL(result.size(), std::size_t(3));
   EXPECT(result.count("ObsValue/bt_1d") == 1);
   EXPECT(result.count("ObsValue/bt_2d") == 1);
+  EXPECT(result.count("MetaData/tempProfile") == 1);
   EXPECT(result.count("MetaData/airTemp") == 0);
-  EXPECT(result.count("MetaData/tempProfile") == 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -212,12 +188,10 @@ class OsdfFrameMetadata : public oops::Test {
                     { testDimNums(); });
     ts.emplace_back(CASE("ioda/OsdfFrameMetadata/getDimNames")
                     { testGetDimNames(); });
-    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/chanNums")
-                    { testChanNums(); });
-    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/varHasChannels")
-                    { testVarHasChannels(); });
-    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/getVarsWithChans")
-                    { testGetVarsWithChans(); });
+    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/varSliceDimName")
+                    { testVarSliceDimName(); });
+    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/getMultiSliceVars")
+                    { testGetMultiSliceVars(); });
     ts.emplace_back(CASE("ioda/OsdfFrameMetadata/operatorEquals")
                     { testOperatorEquals(); });
   }

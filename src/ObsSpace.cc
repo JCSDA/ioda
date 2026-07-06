@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <set>
 #include <string>
 #include <utility>
@@ -216,7 +217,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
         // Set the sizes of the dimensions
         dim_info_.set_dim_size(ObsDimensionId::Location, obs_src_stats_.nlocs);
-        const int numChans = osdfMetadata_.getChanNums().size();
+        const int numChans = osdfMetadata_.getDimNums("Channel").size();
         if (numChans > 0) {
             dim_info_.set_dim_size(ObsDimensionId::Channel, numChans);
         }
@@ -420,8 +421,8 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
             // For backward compatibility, recognize and handle appropriately variable names with
             // channel suffixes.
             std::string nameToUse;
-            std::vector<int> chanSelectToUse;
-            splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+            std::vector<int> sliceSelectToUse;
+            splitSliceSuffix(group, name, { }, nameToUse, sliceSelectToUse, skipDerived);
             returnVal = strictHas(group, nameToUse, skipDerived);
         }
     }
@@ -449,9 +450,12 @@ bool ObsSpace::has(const std::string & group) const {
 std::string ObsSpace::osdfVarNameToUse(const std::string & group,
                                        const std::string & name) const {
     std::string nameToUse = name;
-    if (osdfMetadata_.varHasChannels(group + std::string("/") + name)) {
+    const std::string sliceDimName =
+        osdfMetadata_.varSliceDimName(group + std::string("/") + name);
+    if (!sliceDimName.empty()) {
         nameToUse =
-           name + std::string("_") + std::to_string(osdfMetadata_.getChanNums()[0]);
+           name + std::string("_") +
+              std::to_string(osdfMetadata_.getDimNums(sliceDimName)[0]);
     }
     return nameToUse;
 }
@@ -501,8 +505,8 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
             // For backward compatibility, recognize and handle appropriately variable names with
             // channel suffixes.
             std::string nameToUse;
-            std::vector<int> chanSelectToUse;
-            splitChanSuffix(group, name, { }, nameToUse, chanSelectToUse, skipDerived);
+            std::vector<int> sliceSelectToUse;
+            splitSliceSuffix(group, name, { }, nameToUse, sliceSelectToUse, skipDerived);
 
             const std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
 
@@ -611,7 +615,7 @@ std::vector<std::string> ObsSpace::listVariables(const bool osdfListColumns) con
         //      design is needed.
         const std::vector<std::string> columnNames = osdf_->columnNames();
         std::set<std::string> variableNamesToList;
-        if (!osdfListColumns && osdfMetadata_.getChanNums().size() > 0) {
+        if (!osdfListColumns && osdfMetadata_.getDimNums("Channel").size() > 0) {
             variableNamesToList.insert("Channel");
         }
         for (const auto & colName : columnNames) {
@@ -623,7 +627,7 @@ std::vector<std::string> ObsSpace::listVariables(const bool osdfListColumns) con
             std::string canonicalName;
             std::vector<int> canonicalSuffixList;
             genCanonicalNameAndSuffixList(colName, { }, canonicalName, canonicalSuffixList);
-            if (osdfMetadata_.varHasChannels(canonicalName)) {
+            if (!osdfMetadata_.varSliceDimName(canonicalName).empty()) {
                 variableNamesToList.insert(canonicalName);
             } else {
                 variableNamesToList.insert(colName);
@@ -652,72 +656,72 @@ std::vector<std::string> ObsSpace::listVariables(const bool osdfListColumns) con
 // that happens, we can remove this "fake-it" method.
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(int)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
-        loadVar<int>(group, name, chanSelect, vdata, skipDerived);
+        loadVar<int>(group, name, sliceSelect, vdata, skipDerived);
     }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<int64_t> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(int64)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
-        loadVar<int64_t>(group, name, chanSelect, vdata, skipDerived);
+        loadVar<int64_t>(group, name, sliceSelect, vdata, skipDerived);
     }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<float> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(float)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
-        loadVar<float>(group, name, chanSelect, vdata, skipDerived);
+        loadVar<float>(group, name, sliceSelect, vdata, skipDerived);
     }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<double> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(double)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
         // load the float values from the database and convert to double
         std::vector<float> floatData;
-        loadVar<float>(group, name, chanSelect, floatData, skipDerived);
+        loadVar<float>(group, name, sliceSelect, floatData, skipDerived);
         ConvertVarType<float, double>(floatData, vdata);
     }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<std::string> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(string)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
-        loadVar<std::string>(group, name, chanSelect, vdata, skipDerived);
+        loadVar<std::string>(group, name, sliceSelect, vdata, skipDerived);
     }
 }
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                      std::vector<util::DateTime> & vdata,
-                     const std::vector<int> & chanSelect, bool skipDerived) const {
+                     const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(DateTime)");
     if (this->empty()) {
         vdata.resize(0);
     } else {
         std::vector<int64_t> timeOffsets;
         util::DateTime epochDt;
-        loadVar<int64_t>(group, name, chanSelect, timeOffsets, skipDerived);
+        loadVar<int64_t>(group, name, sliceSelect, timeOffsets, skipDerived);
         if (use_dataframe_) {
             const std::int32_t dateTimeIndex =
                 osdf_->getData().getIndex(fullVarName(group, name));
@@ -733,7 +737,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
 
 void ObsSpace::get_db(const std::string & group, const std::string & name,
                       std::vector<bool> & vdata,
-                      const std::vector<int> & chanSelect, bool skipDerived) const {
+                      const std::vector<int> & sliceSelect, bool skipDerived) const {
     util::Timer timer(classname(), "get_db(bool)");
     if (this->empty()) {
         vdata.resize(0);
@@ -743,7 +747,7 @@ void ObsSpace::get_db(const std::string & group, const std::string & name,
         // TODO(wsmigaj): Store them as arrays of bits instead, at least in the ObsStore
         // backend, to reduce memory consumption and speed up the get_db and put_db functions.
         std::vector<char> charData(vdata.size());
-        loadVar<char>(group, name, chanSelect, charData, skipDerived);
+        loadVar<char>(group, name, sliceSelect, charData, skipDerived);
         vdata.assign(charData.begin(), charData.end());
     }
 }
@@ -990,17 +994,17 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
                             timeWindow_, dist_, tempOsdf, obsSourceStats, appendOsdfMetadata);
 
-            // Verify that any multi-slice variable common to both frames uses the same second
+            // Verify that any multi-slice variable common to both frames uses the same slice
             // dimension before merging. The OSDF append only compares column names/types/units;
-            // because a column name encodes the second-dim index value (foo_3) but not the
-            // dimension name, the same variable carried on a different second dimension with the
-            // same index values would produce identical column names and silently merge into a
-            // structurally inconsistent result. (Variables present only in the appended frame have
-            // no target second dim and are skipped here -- they are handled by the column
-            // reconciliation in prepareSourceOsdfDerivedVariables / the OSDF append.)
+            // because a column name encodes the slice-dim index value (foo_3) but not the
+            // dimension name, the same variable carried on a different slice dimension
+            // with the same index values would produce identical column names and silently merge
+            // into a structurally inconsistent result. (Variables present only in the appended
+            // frame have no target slice dim and are skipped here -- they are handled by
+            // the column reconciliation in prepareSourceOsdfDerivedVariables / the OSDF append.)
             for (const std::string & varName : appendOsdfMetadata.getMultiSliceVars()) {
-              const std::string targetDimName = osdfMetadata_.varSecondDimName(varName);
-              const std::string appendDimName = appendOsdfMetadata.varSecondDimName(varName);
+              const std::string targetDimName = osdfMetadata_.varSliceDimName(varName);
+              const std::string appendDimName = appendOsdfMetadata.varSliceDimName(varName);
               if (!targetDimName.empty() && targetDimName != appendDimName) {
                 throw eckit::BadValue("ObsSpace::append: variable '" + varName + "' uses second "
                                 "dimension '" + appendDimName + "' in the appended file but '" +
@@ -1287,7 +1291,7 @@ void ObsSpace::appendOsdf(const std::unique_ptr<osdf::IFrame> &appendOsdf,
     updateSourceStatsRecordNumbers(ObsSourceStats);
     // (LN) Unlike in the obsGroup case, the osdf append does not allow for appending
     // to an OSDF with fewer columns, so the number of channels does not need updating.
-    // If implemented, use osdfMetadata_.getChanNums().size() > 0
+    // If implemented, use osdfMetadata_.getDimNums("Channel").size() > 0
 }
 
 // -----------------------------------------------------------------------------
@@ -1484,39 +1488,45 @@ void ObsSpace::resizeLocation(const Dimensions_t LocationSize, const bool append
 
 template<typename VarType>
 void ObsSpace::loadVar(const std::string & group, const std::string & name,
-                       const std::vector<int> & chanSelect,
+                       const std::vector<int> & sliceSelect,
                        std::vector<VarType> & varValues,
                        bool skipDerived) const {
     std::string nameToUse;
     std::string groupToUse;
-    std::vector<int> chanSelectToUse;
+    std::vector<int> sliceSelectToUse;
     if (use_dataframe_) {
-        // Figure out the name, group and chanSelect that will be necessary to read
+        // Figure out the name, group and sliceSelect that will be necessary to read
         // the proper columns. Note that an empty canonical suffixList means all
         // channels when a variable has channels (and is meaningless when a variable
         // does not have channels).
         std::string canonicalName;
         std::vector<int> canonicalSuffixList;
         genCanonicalNameAndSuffixList(
-                        name, chanSelect, canonicalName, canonicalSuffixList);
+                        name, sliceSelect, canonicalName, canonicalSuffixList);
 
         const std::string derivedColumnName =
             fullVarName(std::string("Derived") + group, canonicalName);
         const std::string columnName = fullVarName(group, canonicalName);
-        const bool varHasChans =
-            ((!skipDerived) && osdfMetadata_.varHasChannels(derivedColumnName)) ||
-            (osdfMetadata_.varHasChannels(columnName));
+        // Determine the variable's slice dimension, if any. Check the Derived
+        // group first (unless skipping derived). An empty name means the variable has no second
+        // dimension. This generalizes the former Channel-only handling to any broadcast dimension
+        // (Channel, Level, nfactors, ...).
+        std::string sliceDimName;
+        if (!skipDerived) sliceDimName =
+            osdfMetadata_.varSliceDimName(derivedColumnName);
+        if (sliceDimName.empty()) sliceDimName =
+            osdfMetadata_.varSliceDimName(columnName);
+        const bool varHasSliceDim = !sliceDimName.empty();
 
-        if (varHasChans) {
-            // variable has channels so we want to use the canonical name
-            // and canonical suffix list. If the canonical suffix list is
-            // empty, then we want to replace it with the full list of
-            // channels
+        if (varHasSliceDim) {
+            // variable has a slice dimension so we want to use the canonical name and the
+            // canonical suffix list. If the canonical suffix list is empty, then we want to
+            // replace it with the variable's full list of slice dimension index values.
             nameToUse = canonicalName;
             if (canonicalSuffixList.empty()) {
-                chanSelectToUse = osdfMetadata_.getChanNums();
+                sliceSelectToUse = osdfMetadata_.getDimNums(sliceDimName);
             } else {
-                chanSelectToUse = canonicalSuffixList;
+                sliceSelectToUse = canonicalSuffixList;
             }
         } else {
             // variable does not have channels so the canonicalSuffixList
@@ -1541,7 +1551,7 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                 nameToUse = canonicalName + std::string("_") +
                             std::to_string(canonicalSuffixList[0]);
             }
-            chanSelectToUse = { };
+            sliceSelectToUse = { };
         }
 
         // Resolve group vs derived group
@@ -1550,21 +1560,21 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
         // At this point, we should have the variable name with the channel
         // suffix removed, and a non-empty channel select list with all of
         // the channels that are to be read. Simply walk through the
-        // list of channels and read them in one-by-one and copy the values
+        // list of slices and read them in one-by-one and copy the values
         // appropriately to the output varValues.
         std::size_t numLocs = 0;
-        const std::size_t numChans = chanSelectToUse.size();
+        const std::size_t numSlices = sliceSelectToUse.size();
         const std::string groupVarName = fullVarName(groupToUse, nameToUse);
-        if (varHasChans) {
-            // Channel-only variables (dimNames == {"Channel"}) return numChans values.
-            // Location x Channel variables return numLocs * numChans values.
-            const bool isChanOnly =
+        if (varHasSliceDim) {
+            // Slice-dim-only variables (dimNames == {"<dim>"}) return numSlices values.
+            // Location x <dim> variables return numLocs * numSlices values.
+            const bool isSliceDimOnly =
                 (osdfMetadata_.getVarDimNames(groupVarName).size() == 1);
-            for (std::size_t i = 0; i < numChans; ++i) {
-                // Read in the column corresponding to the i-th channel number
+            for (std::size_t i = 0; i < numSlices; ++i) {
+                // Read in the column corresponding to the i-th slice
                 std::vector<VarType> singleChanData;
                 osdf_->getColumn(
-                    groupVarName + std::string("_") + std::to_string(chanSelectToUse[i]),
+                    groupVarName + std::string("_") + std::to_string(sliceSelectToUse[i]),
                     singleChanData);
 
                 // If on the first iteration, resize the output vector
@@ -1572,22 +1582,22 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                 // into the output vector.
                 if (i == 0) {
                     numLocs = singleChanData.size();
-                    varValues.resize(isChanOnly ? numChans : numLocs * numChans);
+                    varValues.resize(isSliceDimOnly ? numSlices : numLocs * numSlices);
                 }
 
-                // Place the single channel data into the output vector
-                if (isChanOnly) {
+                // Place the single slice data into the output vector
+                if (isSliceDimOnly) {
                     // All rows in the column hold the same value; take the first.
                     varValues[i] = singleChanData[0];
                 } else {
                     for (std::size_t j = 0; j < numLocs; ++j) {
-                        const size_t indx = i + (j * numChans);
+                        const size_t indx = i + (j * numSlices);
                         varValues[indx] = singleChanData[j];
                     }
                 }
             }
         } else {
-            // Var does not have channels
+            // Var does not have a slice dimension
             osdf_->getColumn(groupVarName, varValues);
         }
     } else {
@@ -1595,7 +1605,7 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
 
         // For backward compatibility, recognize and handle appropriately variable names with
         // channel suffixes.
-        splitChanSuffix(group, name, chanSelect, nameToUse, chanSelectToUse);
+        splitSliceSuffix(group, name, sliceSelect, nameToUse, sliceSelectToUse);
 
         // Prefer variables from Derived* groups.
         const std::string groupToUse = this->groupToUse(group, nameToUse, skipDerived);
@@ -1611,15 +1621,15 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
             const Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             if (var.getDimensions().dimensionality > 1) {
                 if (var.isDimensionScaleAttached(1, ChannelVar) &&
-                (chanSelectToUse.size() > 0)) {
+                (sliceSelectToUse.size() > 0)) {
                     // This variable has Channel as the second dimension, and channel
                     // selection has been specified. Build selection objects based on the
                     // channel numbers. For now, select all locations (first dimension).
-                    const std::size_t ChannelDimIndex = 1;
+                    const std::size_t sliceDimIndex = 1;
                     Selection memSelect;
                     Selection obsGroupSelect;
-                    const std::size_t numElements = createChannelSelections(
-                        var, ChannelDimIndex, chanSelectToUse, memSelect, obsGroupSelect);
+                    const std::size_t numElements = createSliceSelections(
+                        var, sliceDimIndex, sliceSelectToUse, memSelect, obsGroupSelect);
 
                     var.read<VarType>(varValues, memSelect, obsGroupSelect);
                     varValues.resize(numElements);
@@ -1648,43 +1658,65 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
 
-    std::vector<int> channels;
+    std::vector<int> slices;
 
     if (use_dataframe_) {
         const std::size_t numLocs = this->nlocs();
-        const std::size_t numChans = this->nchans();
 
-        // The variable has channels if the dimList has "Channel"
-        // Note: for variables dimensioned by channel only, dimList[0] == "Channel"
-        bool varHasChans = false;
-        if (dimList.size() == 1) {
-            if (dimList[0] == "Channel") {
-                varHasChans = true;
-            }
+        // The variable's slice dimension, if any, comes from the caller's dimList.
+        // Generalizes the former Channel-only handling to any broadcast dimension.
+        std::string sliceDimName;
+        if (dimList.size() == 1 && dimList[0] != "Location") {
+            sliceDimName = dimList[0];
+        } else if (dimList.size() > 1) {
+            sliceDimName = dimList[1];
         }
-        if (dimList.size() > 1) {
-            if (dimList[1] == "Channel") {
-                varHasChans = true;
-            }
-        }
+        const bool varHasSliceDim = !sliceDimName.empty();
 
-        // strip off the "_n" suffix from name if it exists
+        // strip off the "_n" suffix from name if it exists. A non-empty sliceSelect means the
+        // caller is writing a single slice (suffixed name), whose data spans only that one slice.
         std::string baseName;
-        std::vector<int> chanSelect;
-        splitChanSuffix(group, name, { }, baseName, chanSelect);
+        std::vector<int> sliceSelect;
+        splitSliceSuffix(group, name, { }, baseName, sliceSelect);
+        const bool writingSingleSlice = !sliceSelect.empty();
+
+        // Register a brand-new slice dimension (one that was never in the input file and is
+        // therefore not yet registered) with synthetic 0..n-1 index values, deriving n from the
+        // data. This mirrors the reader's synthetic-index rule and gives the selection mechanism
+        // (numeric suffix / sliceSelect) index values to work with. Only do this for a
+        // full-variable write (no per-slice suffix), where the data spans the entire
+        // slice dimension -- a
+        // single-slice write cannot determine the dimension's full size. This supports creating a
+        // new slice dimension on the OSDF (dataframe) backend only; the ObsGroup backend
+        // does not.
+        if (varHasSliceDim && !osdfMetadata_.hasDim(sliceDimName) &&
+                                                         !writingSingleSlice) {
+            const std::size_t n = (dimList.size() == 1) ? varValues.size()
+                                  : (numLocs > 0 ? varValues.size() / numLocs : 0);
+            if (n == 0) {
+                throw eckit::BadValue("ObsSpace::storeVar: cannot infer the size of new "
+                    "dimension '" + sliceDimName + "' (no data / zero locations); register "
+                    "the dimension before creating the variable", Here());
+            }
+            std::vector<int> synth(n);
+            std::iota(synth.begin(), synth.end(), 0);
+            osdfMetadata_.setDimNums(sliceDimName, synth);
+        }
+        const std::size_t numSlices =
+            varHasSliceDim ? osdfMetadata_.getDimNums(sliceDimName).size() : 1;
 
         // Missing values for creation of columns
         const std::vector<VarType> missingValues(numLocs, util::missingValue<VarType>());
 
         // First create the variable if it doesn't exist.
         if (!this->has(group, name)) {
-            if (varHasChans) {
-                // Walk through the osdf channel numbers list and create
-                // new columns for every channel.
+            if (varHasSliceDim) {
+                // Walk through the slice dimension's index values and create
+                // new columns for every slice.
                 const std::string fullName = fullVarName(group, baseName);
-                for (auto & chanNum : osdfMetadata_.getChanNums()) {
+                for (int sliceIdx : osdfMetadata_.getDimNums(sliceDimName)) {
                     const std::string varName = fullName + std::string("_") +
-                                                std::to_string(chanNum);
+                                                std::to_string(sliceIdx);
                     osdf_->appendNewColumn(varName, missingValues, unit);
                 }
 
@@ -1703,17 +1735,17 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         }
 
         // Write the data to the variable
-        if (varHasChans) {
-            int chanNum;
-            const bool varHasChanSuffix = extractChannelSuffixIfPresent(name, baseName, chanNum);
-            const bool isChanOnly = (dimList.size() == 1 && dimList[0] == "Channel");
-            if (varHasChanSuffix) {
-                // Name had an "_n" suffix, writing to a single channel.
-                // For Channel-only variables, varValues holds one value; broadcast
+        if (varHasSliceDim) {
+            int sliceIdxTmp;
+            const bool varHasSuffix = extractChannelSuffixIfPresent(name, baseName, sliceIdxTmp);
+            const bool isSliceDimOnly = (dimList.size() == 1);
+            if (varHasSuffix) {
+                // Name had an "_n" suffix, writing to a single slice.
+                // For slice-dim-only variables, varValues holds one value; broadcast
                 // it across all locations in the column.
                 if (!varValues.empty()) {
                     const std::string fullName = fullVarName(group, name);
-                    if (isChanOnly) {
+                    if (isSliceDimOnly) {
                         osdf_->setColumn(fullName,
                                          std::vector<VarType>(numLocs, varValues[0]));
                     } else {
@@ -1722,21 +1754,22 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
                 }
             } else {
                 // Name did not have a suffix, writing to the entire set of columns.
-                // For Channel-only variables, varValues has numChans elements and each
-                // OSDF column is filled with the constant value for that channel.
-                // For Location x Channel variables, varValues has numLocs * numChans
+                // For slice-dim-only variables, varValues has numSlices elements and each
+                // OSDF column is filled with the constant value for that slice.
+                // For Location x <dim> variables, varValues has numLocs * numSlices
                 // elements and is unpacked with the standard index formula.
                 const std::string fullName = fullVarName(group, name);
-                for (std::size_t i = 0; i < osdfMetadata_.getChanNums().size(); ++i) {
+                const std::vector<int> & slices = osdfMetadata_.getDimNums(sliceDimName);
+                for (std::size_t i = 0; i < slices.size(); ++i) {
                     const std::string varName = fullName + std::string("_") +
-                                                std::to_string(osdfMetadata_.getChanNums()[i]);
+                                                std::to_string(slices[i]);
                     std::vector<VarType> columnData;
-                    if (isChanOnly) {
+                    if (isSliceDimOnly) {
                         columnData.assign(numLocs, varValues[i]);
                     } else {
                         columnData.resize(numLocs);
                         for (std::size_t j = 0; j < numLocs; ++j) {
-                            const std::size_t indx = i + (j * numChans);
+                            const std::size_t indx = i + (j * numSlices);
                             columnData[j] = varValues[indx];
                         }
                     }
@@ -1747,7 +1780,7 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
             }
 
         } else {
-            // No channels, use name as is
+            // No slice dimension, use name as is
             if (!varValues.empty()) {
                 const std::string fullName = fullVarName(group, name);
                 osdf_->setColumn(fullName, varValues);
@@ -1761,19 +1794,19 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
             // by a number, interpret the latter as a channel number selecting a slice of the
             // "Channel" dimension.
             std::string nameToUse;
-            splitChanSuffix(group, name, {}, nameToUse, channels);
+            splitSliceSuffix(group, name, {}, nameToUse, slices);
             name = std::move(nameToUse);
         }
 
         const std::string fullName = fullVarName(group, name);
 
         std::vector<std::string> dimListToUse = dimList;
-        if (!obs_group_->vars.exists(fullName) && !channels.empty()) {
+        if (!obs_group_->vars.exists(fullName) && !slices.empty()) {
             // Append "channels" to the dimensions list if not already present.
-            const size_t ChannelDimIndex =
+            const size_t sliceDimIndex =
                 std::find(dimListToUse.begin(), dimListToUse.end(), ChannelVarName) -
                 dimListToUse.begin();
-            if (ChannelDimIndex == dimListToUse.size())
+            if (sliceDimIndex == dimListToUse.size())
                 dimListToUse.push_back(ChannelVarName);
         }
         if (group == "MetaData") {
@@ -1784,23 +1817,23 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         }
         Variable var = openCreateVar<VarType>(fullName, dimListToUse);
 
-        if (channels.empty()) {
+        if (slices.empty()) {
             var.write<VarType>(varValues);
         } else {
             // Find the index of the Channel dimension
             const Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             const std::vector<std::vector<Named_Variable>> dimScales =
                 var.getDimensionScaleMappings({Named_Variable(ChannelVarName, ChannelVar)});
-            const size_t ChannelDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
+            const size_t sliceDimIndex = std::find_if(dimScales.begin(), dimScales.end(),
                                                 [](const std::vector<Named_Variable> &x)
                                                 { return !x.empty(); }) - dimScales.begin();
-            if (ChannelDimIndex == dimScales.size())
+            if (sliceDimIndex == dimScales.size())
                 throw eckit::UserError("Variable " + fullName +
                                     " is not indexed by channel numbers", Here());
 
             Selection memSelect;
             Selection obsGroupSelect;
-            createChannelSelections(var, ChannelDimIndex, channels,
+            createSliceSelections(var, sliceDimIndex, slices,
                                     memSelect, obsGroupSelect);
             var.write<VarType>(varValues, memSelect, obsGroupSelect);
         }
@@ -1809,22 +1842,22 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
 
 // -----------------------------------------------------------------------------
 
-std::size_t ObsSpace::createChannelSelections(const Variable & variable,
-                                             std::size_t ChannelDimIndex,
-                                             const std::vector<int> & channels,
+std::size_t ObsSpace::createSliceSelections(const Variable & variable,
+                                             std::size_t sliceDimIndex,
+                                             const std::vector<int> & slices,
                                              Selection & memSelect,
                                              Selection & obsGroupSelect) const {
     // Create a vector with the channel indices corresponding to
     // the channel numbers that have been requested.
     std::vector<Dimensions_t> chanIndices;
-    chanIndices.reserve(channels.size());
-    for (std::size_t i = 0; i < channels.size(); ++i) {
-        auto ichan = dim_info_.getChanNumToIndexMap().find(channels[i]);
+    chanIndices.reserve(slices.size());
+    for (std::size_t i = 0; i < slices.size(); ++i) {
+        auto ichan = dim_info_.getChanNumToIndexMap().find(slices[i]);
         if (ichan != dim_info_.getChanNumToIndexMap().end()) {
             chanIndices.push_back(ichan->second);
         } else {
             throw eckit::BadParameter("Selected channel number " +
-                std::to_string(channels[i]) + " does not exist.", Here());
+                std::to_string(slices[i]) + " does not exist.", Here());
         }
     }
 
@@ -1833,7 +1866,7 @@ std::size_t ObsSpace::createChannelSelections(const Variable & variable,
     std::vector<std::vector<Dimensions_t>> dimSelects(varDims.size());
     Dimensions_t numElements = 1;
     for (std::size_t i = 0; i < varDims.size(); ++i) {
-        if (i == ChannelDimIndex) {
+        if (i == sliceDimIndex) {
             // channels are the second dimension
             numElements *= chanIndices.size();
             dimSelects[i] = chanIndices;
@@ -1880,7 +1913,7 @@ void ObsSpace::fillChanNumToIndexMap() {
 
     if (use_dataframe_) {
         // OSDF container
-        chanNumbers = osdfMetadata_.getChanNums();
+        chanNumbers = osdfMetadata_.getDimNums("Channel");
     } else {
         // ObsGroup container
         if (obs_group_->vars.exists(ChannelVarName)) {
@@ -1906,18 +1939,18 @@ void ObsSpace::fillChanNumToIndexMap() {
 }
 
 // -----------------------------------------------------------------------------
-void ObsSpace::splitChanSuffix(const std::string & group, const std::string & name,
-                               const std::vector<int> & chanSelect, std::string & nameToUse,
-                               std::vector<int> & chanSelectToUse,
+void ObsSpace::splitSliceSuffix(const std::string & group, const std::string & name,
+                               const std::vector<int> & sliceSelect, std::string & nameToUse,
+                               std::vector<int> & sliceSelectToUse,
                                bool skipDerived) const {
     nameToUse = name;
-    chanSelectToUse = chanSelect;
+    sliceSelectToUse = sliceSelect;
     // For backward compatibility, recognize and handle appropriately variable names with
     // channel suffixes.
-    if (chanSelect.empty() && !strictHas(group, name, skipDerived)) {
+    if (sliceSelect.empty() && !strictHas(group, name, skipDerived)) {
         int channelNumber;
         if (extractChannelSuffixIfPresent(name, nameToUse, channelNumber))
-            chanSelectToUse = {channelNumber};
+            sliceSelectToUse = {channelNumber};
     }
 }
 
@@ -2602,8 +2635,10 @@ std::string ObsSpace::groupToUse(const std::string & group,
             // If we have a variable without channels, we need to simply check
             // for the existence of the column using fullName as is.
             //
-            if (osdfMetadata_.varHasChannels(fullName)) {
-                fullName.append("_" + std::to_string(osdfMetadata_.getChanNums()[0]));
+            const std::string sliceDimName = osdfMetadata_.varSliceDimName(fullName);
+            if (!sliceDimName.empty()) {
+                fullName.append(
+                    "_" + std::to_string(osdfMetadata_.getDimNums(sliceDimName)[0]));
             }
             if (!osdf_->hasColumn(fullName)) {
                 groupToUse = group;

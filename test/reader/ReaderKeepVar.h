@@ -38,7 +38,7 @@ namespace test {
 //   - MetaData/latitude          [Location]            -> kept (1D Location)
 //   - MetaData/longitude         [Location]            -> kept (1D Location)
 //   - ObsValue/brightnessTemp.   [Location, Channel]   -> kept (2D, expands to slices)
-//   - ObsError/badLocLoc         [Location, Location]  -> rejected (no second dimension)
+//   - ObsError/badLocLoc         [Location, Location]  -> rejected (no slice dimension)
 //   - ObsError/badChanLoc        [Channel, Location]   -> rejected (first dim not Location)
 void testKeepVarRejection() {
   // Build the obsdatain and io pool parameters pointing at the committed input file.

@@ -390,38 +390,50 @@ namespace ioda {
         /// \param group Name of container group (ObsValue, ObsError, MetaData, etc.)
         /// \param name  Name of container variable
         /// \param vdata Vector where container data is being transferred to
-        /// \param chanSelect Channel selection (list of channel numbers)
+        /// \param sliceSelect Slice selection (list of slice index values)
+        ///   The "slice" refers to a 2D variable which has dimensions [Location, slice-dim].
+        ///   Location is always the first dimension, and the slice dimension is an arbitrary
+        ///   dimension other than Location (e.g. Channel, Layer, Level, etc.). This parameter
+        ///   is a vector of integers that specify which items to select along the slice
+        ///   dimension. The values of these integers correspond to the assigned values of the
+        ///   slice dimension, which are different than the positional indices of the slice
+        ///   dimension. For example, if the slice dimension is Channel, and the
+        ///   instrument being represented has channel numbers 1, 2, 4, 5, 7, and 10, the
+        ///   sliceSelect vector needs to be a subset of these channel numbers. Note that
+        ///   the sliceSelect parameter can also be applied to 1D variables that are
+        ///   dimensioned by [slice-dim] (such as associated Channel metadata using our
+        ///   example above).
         /// \param skipDerived
         ///   By default, this function will look for the variable `name` in the group `"Derived" +
         ///   group` first and only if it doesn't exist will it look in the group `group`. Set this
         ///   parameter to `true` to look only in the group `group`.
         void get_db(const std::string & group, const std::string & name,
                     std::vector<int> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<int64_t> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<float> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<double> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<std::string> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<util::DateTime> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
         void get_db(const std::string & group, const std::string & name,
                     std::vector<bool> & vdata,
-                    const std::vector<int> & chanSelect = { },
+                    const std::vector<int> & sliceSelect = { },
                     bool skipDerived = false) const;
 
         /// \brief transfer data from vdata to the obs container
@@ -779,13 +791,13 @@ namespace ioda {
 
         /// \brief load a variable from the obs_group_ object
         /// \details This function will load data from the obs_group_ object into
-        ///          the memory buffer (vector) varValues. The chanSelect parameter
-        ///          is only used when the variable is 2D radiance data (Location X Channel),
-        ///          and contains a list of channel numbers to be selected from the
+        ///          the memory buffer (vector) varValues. The sliceSelect parameter
+        ///          is only used when the variable is 2D data (Location X slice dimension),
+        ///          and contains a list of slice index values to be selected from the
         ///          obs_group_ variable.
         /// \param group Name of Group in obs_group_
         /// \param name Name of Variable in group
-        /// \param selectChan Vector of channel numbers for selection
+        /// \param sliceSelect Vector of slice index values for selection
         /// \param varValues memory to load from obs_group_ variable
         /// \param skipDerived
         ///   By default, this function will search for the variable `name` both in the group
@@ -793,7 +805,7 @@ namespace ioda {
         ///   group `group`.
         template<typename VarType>
         void loadVar(const std::string & group, const std::string & name,
-                     const std::vector<int> & chanSelect,
+                     const std::vector<int> & sliceSelect,
                      std::vector<VarType> & varValues, bool skipDerived = false) const;
 
         /// \brief save a variable to the obs_group_ or osdf_ object
@@ -815,14 +827,14 @@ namespace ioda {
                      const std::string& unit);
 
         /// \brief Create selections of slices of the variable \p variable along dimension
-        /// \p ChannelDimIndex corresponding to channels \p channels.
+        /// \p sliceDimIndex corresponding to slices \p slices.
         ///
         /// \returns The number of elements in each selection.
-        std::size_t createChannelSelections(const Variable & variable,
-                                            std::size_t ChannelDimIndex,
-                                            const std::vector<int> & channels,
-                                            Selection & memSelect,
-                                            Selection & obsGroupSelect) const;
+        std::size_t createSliceSelections(const Variable & variable,
+                                          std::size_t sliceDimIndex,
+                                          const std::vector<int> & slices,
+                                          Selection & memSelect,
+                                          Selection & obsGroupSelect) const;
 
         /// \brief open an obs_group_ variable, create the variable if necessary
         template<typename VarType>
@@ -863,28 +875,28 @@ namespace ioda {
         /// \brief fill in the channel number to channel index map
         void fillChanNumToIndexMap();
 
-        /// \brief split off the channel number suffix from a given variable name
-        /// \details If the given variable name does not exist, the channelSelect vector
+        /// \brief split off the numeric suffix from a given variable name
+        /// \details If the given variable name does not exist, the sliceSelect vector
         ///          is empty, and the given variable name has a suffix matching
         ///          "_[0-9][0-9]*" (ie, a numeric suffix), then this routine will strip
-        ///          off the channel number from the name and place that channel number
-        ///          into the ouput canSelectToUse vector. The new name will be returned
+        ///          off the numeric suffix from the name and place the corresonding number
+        ///          into the ouput sliceSelectToUse vector. The new name will be returned
         ///          in the nameToUse string.
         ///          This is being done for backward compatibility until the ufo Variables
         ///          class and its clients are modified to handle a single variable name
         ///          and a vector of channel numbers.
         /// \param group Name of Group in obs_group_
         /// \param name Name of Variable in group
-        /// \param selectChan Vector of channel numbers for selection
+        /// \param sliceSelect Vector of slice index values for selection
         /// \param varName Name of Variable after splitting off the channel number
         /// \param skipDerived
         ///   By default, this function will search for the variable `name` both in the group
         ///   `group` and `"Derived" + group`. Set this parameter to `true` to search only in the
         ///   group `group`.
-        void splitChanSuffix(const std::string & group, const std::string & name,
-                             const std::vector<int> & chanSelect, std::string & nameToUse,
-                             std::vector<int> & chanSelectToUse,
-                             bool skipDerived = false) const;
+        void splitSliceSuffix(const std::string & group, const std::string & name,
+                              const std::vector<int> & sliceSelect, std::string & nameToUse,
+                              std::vector<int> & sliceSelectToUse,
+                              bool skipDerived = false) const;
 
         /// \brief Extend the given variable
         /// \param extendVar database variable to be extended

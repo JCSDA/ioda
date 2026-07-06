@@ -120,10 +120,10 @@ void obsspace_get_int32_f(const ObsSpace & obss, const char * group, const char 
                           const std::size_t & length, int32_t* vec,
                           const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
   std::vector<int32_t> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), vdata, sliceSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
@@ -131,10 +131,10 @@ void obsspace_get_int64_f(const ObsSpace & obss, const char * group, const char 
                           const std::size_t & length, int64_t* vec,
                           const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
   std::vector<int32_t> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), vdata, sliceSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
@@ -142,10 +142,10 @@ void obsspace_get_real32_f(const ObsSpace & obss, const char * group, const char
                            const std::size_t & length, float* vec,
                           const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
   std::vector<float> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), vdata, sliceSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------
@@ -153,10 +153,10 @@ void obsspace_get_real64_f(const ObsSpace & obss, const char * group, const char
                            const std::size_t & length, double* vec,
                           const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
   std::vector<double> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), vdata, sliceSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 
@@ -195,14 +195,14 @@ void obsspace_get_datetime_f(const ObsSpace & obss, const char * group, const ch
                              const std::size_t & length, int32_t* date, int32_t* time,
                           const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
 
   // Load a DateTime vector from the database, then convert to a date and time
   // vector which are then returned.
   util::DateTime temp_dt("0000-01-01T00:00:00Z");
   std::vector<util::DateTime> dt_vect(length, temp_dt);
-  obss.get_db(std::string(group), std::string(vname), dt_vect, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), dt_vect, sliceSelect);
 
   // Convert to date and time values. The DateTime utilities can return year, month,
   // day, hour, minute second.
@@ -229,10 +229,10 @@ void obsspace_get_bool_f(const ObsSpace & obss, const char * group, const char *
                          const std::size_t & length, bool* vec,
                          const std::size_t & len_cs, int* chan_select) {
   ASSERT(len_cs <= obss.nchans());
-  std::vector<int> chanSelect(len_cs);
-  chanSelect.assign(chan_select, chan_select + len_cs);
+  std::vector<int> sliceSelect(len_cs);
+  sliceSelect.assign(chan_select, chan_select + len_cs);
   std::vector<bool> vdata(length);
-  obss.get_db(std::string(group), std::string(vname), vdata, chanSelect);
+  obss.get_db(std::string(group), std::string(vname), vdata, sliceSelect);
   std::copy(vdata.begin(), vdata.end(), vec);
 }
 // -----------------------------------------------------------------------------

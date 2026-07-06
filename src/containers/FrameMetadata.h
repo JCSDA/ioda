@@ -23,7 +23,7 @@ class FrameMetadata {
   //----------------------------------------------------------------------
   // Data member accessors
 
-  /// \brief register coordinate values for a named second dimension
+  /// \brief register coordinate values for a named slice dimension
   /// \param dimName dimension name (e.g. "Channel", "Level", "nfactors")
   /// \param nums coordinate values for that dimension
   void setDimNums(const std::string &dimName, const std::vector<int> &nums);
@@ -44,7 +44,7 @@ class FrameMetadata {
   /// variables in the frame. This is typically not the number of columns
   /// for two reasons. First only the ObsValue columns are included in
   /// the count, and not columns such as the MetaData columns. Second,
-  /// when a second dimension is used, all of the ObsValue columns with matching
+  /// when a slice dimension is used, all of the ObsValue columns with matching
   /// names except for the "_<index>" suffixes are counted as one variable.
   /// This lines up with how the ObsSpace counts variables.
   void setNumVars(const int numVars);
@@ -85,26 +85,13 @@ class FrameMetadata {
   /// \brief overload == operator
   bool operator==(const FrameMetadata &refFrameMetadata) const;
 
-  //----------------------------------------------------------------------
-  // Backward-compatible wrappers — kept for Phase 1/2/3 transition; removed in Phase 4
+  /// \brief return the name of a variable's slice dimension -- its first dimension
+  ///        other than "Location" (e.g. "Channel", "Level") -- or "" if the variable
+  ///        is 1D/Location-only or not registered
+  std::string varSliceDimName(const std::string &varName) const;
 
-  /// \brief set channel numbers; wrapper for setDimNums("Channel", chanNums)
-  void setChanNums(const std::vector<int> &chanNums);
-
-  /// \brief return channel numbers; wrapper for getDimNums("Channel")
-  const std::vector<int> &getChanNums() const;
-
-  /// \brief return true if variable has a Channel second dimension
-  bool varHasChannels(const std::string &varName) const;
-
-  /// \brief return computed set of variables that have a Channel second dimension
-  std::unordered_set<std::string> getVarsWithChans() const;
-
-  /// \brief return the second (first non-"Location") dim name of a variable, or "" if the
-  ///        variable is 1D/Location-only or not registered
-  std::string varSecondDimName(const std::string &varName) const;
-
-  /// \brief return all variable names that have any non-"Location" dimension
+  /// \brief return all variable names that have a slice dimension (any dimension
+  ///        other than "Location")
   std::unordered_set<std::string> getMultiSliceVars() const;
 
  private:

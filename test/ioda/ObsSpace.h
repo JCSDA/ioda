@@ -676,10 +676,10 @@ void testMultiDimTransfer() {
       const std::vector<int>& channels = Odb->obsvariables().channels();
       ASSERT(channels.size() == Nchans);
 
-      std::vector<int> chanSelect;
+      std::vector<int> sliceSelect;
       for (int i = 0; i < numOddChannels; ++i) {
         const std::size_t channelIndex = 1 + 2 * i;
-        chanSelect.push_back(channels[channelIndex]);
+        sliceSelect.push_back(channels[channelIndex]);
       }
 
       ExpectedValues.clear();
@@ -690,7 +690,7 @@ void testMultiDimTransfer() {
         }
       }
 
-      Odb->get_db("MultiDimData", "DummyVar", TestValues, chanSelect);
+      Odb->get_db("MultiDimData", "DummyVar", TestValues, sliceSelect);
       EXPECT_EQUAL(TestValues, ExpectedValues);
     }
 
