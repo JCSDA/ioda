@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 
 namespace ioda {
 namespace test {
@@ -120,6 +121,7 @@ void testFrameRows() {
       ::test::TestEnvironment::config().getSubConfigurations("obs types");
   const eckit::LocalConfiguration timeWindowConfig =
       ::test::TestEnvironment::config().getSubConfiguration("time window");
+  const util::TimeWindow timeWindow(timeWindowConfig);
 
   for (auto & config : loadConfigs) {
     // Create parameters for obsdatain and io pool
@@ -128,6 +130,10 @@ void testFrameRows() {
     const eckit::LocalConfiguration testConfig = config.getSubConfiguration("test data");
     ioda::ObsDataInParameters dataInParams;
     dataInParams.deserialize(obsDataInConfig);
+
+    // Simulated variable names, used only by the generator backends (empty for file backends)
+    const std::vector<std::string> obsVarNames =
+        config.getStringVector("simulated variables", {});
 
     const eckit::LocalConfiguration ioPoolConfig = config.getSubConfiguration("io pool");
     ioda::IoPool::IoPoolParameters ioPoolParams;
@@ -141,7 +147,8 @@ void testFrameRows() {
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
     const eckit::mpi::Comm & commAll = oops::mpi::world();
-    reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
+    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
+                    osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameRows", testOsdf, osdfMetadata);
   }
 }
@@ -154,6 +161,7 @@ void testFrameCols() {
       ::test::TestEnvironment::config().getSubConfigurations("obs types");
   const eckit::LocalConfiguration timeWindowConfig =
       ::test::TestEnvironment::config().getSubConfiguration("time window");
+  const util::TimeWindow timeWindow(timeWindowConfig);
 
   for (auto & config : loadConfigs) {
     // Create parameters for obsdatain and io pool
@@ -162,6 +170,10 @@ void testFrameCols() {
     const eckit::LocalConfiguration testConfig = config.getSubConfiguration("test data");
     ioda::ObsDataInParameters dataInParams;
     dataInParams.deserialize(obsDataInConfig);
+
+    // Simulated variable names, used only by the generator backends (empty for file backends)
+    const std::vector<std::string> obsVarNames =
+        config.getStringVector("simulated variables", {});
 
     const eckit::LocalConfiguration ioPoolConfig = config.getSubConfiguration("io pool");
     ioda::IoPool::IoPoolParameters ioPoolParams;
@@ -174,7 +186,8 @@ void testFrameCols() {
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
     const eckit::mpi::Comm & commAll = oops::mpi::world();
-    reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
+    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
+                    osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameCols", testOsdf, osdfMetadata);
   }
 }

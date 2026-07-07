@@ -16,6 +16,7 @@
 #include "ioda/ObsDataIoParameters.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
+#include "ioda/reader/load/loadObsFromGenerators.hpp"
 #include "ioda/reader/load/loadObsFromNetcdf.hpp"
 #include "ioda/reader/load/loadObsFromOdb.hpp"
 
@@ -57,16 +58,19 @@ static void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisR
 void loadObs(const ObsDataInParameters & dataInParams,
              const IoPool::IoPoolParameters & ioPoolParams,
              const eckit::mpi::Comm & commAll,
+             const std::vector<std::string> & obsVarNames,
+             const util::TimeWindow & timeWindow,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              osdf::FrameMetadata & osdfMetadata) {
   oops::Log::trace() << "reader::loadObs start" << std::endl;
-  // todo(SRH): for now only supporting load from a netcdf or an ODB file.
-  // will want to eventually support BUFR files too.
+  // todo(SRH): for now only supporting load from a netcdf file, an ODB file, or a generator
+  // (GenList, GenRandom). Will want to eventually support BUFR files too.
   const std::string inputFileType =
     dataInParams.engine.value().engineParameters.value().type.value();
-  if (inputFileType != "H5File" && inputFileType != "ODB") {
+  if (inputFileType != "H5File" && inputFileType != "ODB" &&
+      inputFileType != "GenList" && inputFileType != "GenRandom") {
     const std::string errMsg = std::string("Unsupported input file type: ")
-    + inputFileType + std::string(". Must use 'H5File' or 'ODB' for now.");
+    + inputFileType + std::string(". Must use 'H5File', 'ODB', 'GenList' or 'GenRandom' for now.");
     throw eckit::BadParameter(errMsg, Here());
   }
 
@@ -89,8 +93,7 @@ void loadObs(const ObsDataInParameters & dataInParams,
     // check if the destOsdf has any columns: if numCols > 0, then it has
     // metadata, if 0 then it does not have metadata.
     thisRankHasMetadata = (destOsdf->numCols() > 0);
-  } else {
-    ASSERT(inputFileType == "ODB");
+  } else if (inputFileType == "ODB") {
     // Reading an ODB file.
     // Collectively call the loadOsdfFromOdb function with all io pool members.
     if (obsIoPool->inIoPool()) {
@@ -100,6 +103,21 @@ void loadObs(const ObsDataInParameters & dataInParams,
     // location.
     const bool thisRankHasLocations = destOsdf->numRows() > 0;
     thisRankHasMetadata = thisRankHasLocations && obsIoPool->inIoPool();
+  } else {
+    // Generating data (GenList or GenRandom).
+    // Generate the full set of locations on the lead io pool rank only, so that the rows are
+    // non-overlapping across ranks (as the later distribute step assumes). The metadata
+    // distribution below copies the column definitions to the other ranks, and the distribute
+    // step spreads the rows.
+    if (obsIoPool->inIoPool() && obsIoPool->commPool().rank() == 0) {
+      if (inputFileType == "GenList") {
+        loadOsdfFromGenList(dataInParams, obsVarNames, destOsdf, osdfMetadata);
+      } else {
+        ASSERT(inputFileType == "GenRandom");
+        loadOsdfFromGenRandom(dataInParams, obsVarNames, timeWindow, destOsdf, osdfMetadata);
+      }
+    }
+    thisRankHasMetadata = (destOsdf->numCols() > 0);
   }
 
   // Distribute the column metadata (definitions) from the first io pool rank that has them (if

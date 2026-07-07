@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -54,6 +55,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
              const ioda::IoPool::IoPoolParameters & ioPoolParams,
              const ioda::DistributionParametersBase & distParams,
              const eckit::mpi::Comm & commAll,
+             const std::vector<std::string> & obsVarNames,
              const util::TimeWindow & timeWindow,
              std::shared_ptr<Distribution> & ospaceDist,
              std::unique_ptr<osdf::IFrame> & destOsdf,

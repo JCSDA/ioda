@@ -45,41 +45,12 @@ GenList::GenList(const Parameters_ & params, const ReaderCreationParameters & cr
 
 //-------------------- private functions -------------------------------
 void GenList::genDistList(const GenList::Parameters_ & params) {
-    // Grab the parameters
-    const std::vector<float> obsVals = params.obsValues;
-    const std::vector<float> obsErrors = params.obsErrors;
-
-    if (!obsErrors.empty()){
-        ASSERT(obsErrors.size() == createParams_.obsVarNames.size());
-    }
-    if (!obsVals.empty()){
-        ASSERT(obsVals.size() == createParams_.obsVarNames.size());
-    }
-
-    const std::vector<float> latVals = params.lats;
-    const std::vector<float> lonVals = params.lons;
-    const std::vector<int64_t> dts = params.dateTimes;
-    const std::string epoch = params.epoch.value();
-
-    std::string vcoordType = "Undefined";
-    std::vector<float> vcoordVals;
-    if ( params.vcoordType.value() != boost::none ) {
-        vcoordType = params.vcoordType.value().get(); 
-
-	if ( vcoordType != "pressure" && vcoordType != "height" ){
-	    throw Exception("Invalid vertical coordinate type, " + vcoordType + ", for GenList. Valid values are 'pressure' or 'height'.", ioda_Here());
-	}
-
-        if ( params.vcoordVals.value() != boost::none ) {
-	    vcoordVals = params.vcoordVals.value().get();
-	} else {
-  	    throw Exception("If vert coord type specified in GenList then vert coords must also be specified.", ioda_Here());
-	}
-    }
+    // Generate the data (validation and value selection are shared with the OSDF reader)
+    const GeneratedObsData data = generateObsList(params, createParams_.obsVarNames);
 
     // Transfer the specified values to the ObsGroup
-    storeGenData(latVals, lonVals, vcoordType, vcoordVals, dts, epoch, 
-                 createParams_.obsVarNames, obsVals, obsErrors, obs_group_);
+    storeGenData(data.latVals, data.lonVals, data.vcoordType, data.vcoordVals, data.dts,
+                 data.epoch, data.obsVarNames, data.obsValues, data.obsErrors, obs_group_);
 }
 
 std::string GenList::fileName() const {

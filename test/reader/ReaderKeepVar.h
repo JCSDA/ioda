@@ -27,6 +27,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 
 namespace ioda {
 namespace test {
@@ -53,11 +54,20 @@ void testKeepVarRejection() {
   ioda::IoPool::IoPoolParameters ioPoolParams;
   ioPoolParams.validateAndDeserialize(ioPoolConfig);
 
-  // Load through the real reader pipeline.
+  // Load through the real reader pipeline. This is a file backend, so the simulated variable
+  // names and time window are unused by the load (they only matter for the generator backends),
+  // but loadObs still requires them.
+  const std::vector<std::string> obsVarNames;
+  eckit::LocalConfiguration timeWindowConfig;
+  timeWindowConfig.set("begin", "2018-01-01T00:00:00Z");
+  timeWindowConfig.set("end", "2018-01-01T06:00:00Z");
+  const util::TimeWindow timeWindow(timeWindowConfig);
+
   std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
   osdf::FrameMetadata osdfMetadata;
   const eckit::mpi::Comm & commAll = oops::mpi::world();
-  reader::loadObs(dataInParams, ioPoolParams, commAll, testOsdf, osdfMetadata);
+  reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
+                  osdfMetadata);
 
   // Kept variables produce columns.
   EXPECT(testOsdf->hasColumn("MetaData/latitude"));

@@ -14,6 +14,7 @@
  * \brief Definitions for setting up backends with file and memory I/O.
  */
 #include <mpi.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -23,12 +24,19 @@
 
 #include "oops/util/parameters/ParameterTraits.h"
 
+namespace util {
+class TimeWindow;
+}  // namespace util
+
 namespace ioda {
 class Group;
 class ObsGroup;
 
 /// The backends that implement the ioda-engines functionality.
 namespace Engines {
+
+class GenListParameters;
+class GenRandomParameters;
 
 /// \brief Backend names
 /// \ingroup ioda_cxx_engines_pub
@@ -135,7 +143,7 @@ std::string formFileWithSuffix(const std::string & fileName, const std::string &
 /// \param vcoordVals vector of vertical coordinate values
 /// \param dts vector of time offsets (s) relative to \p epoch
 /// \param epoch (ISO 8601 string) relative to which datetimes are computed
-/// \param obsVarNames vector (string) of simulated variable names
+/// \param obsVarNames vector (string) of observation variable names
 /// \param obsValues vector of observed values
 /// \param obsErrors vector of obs error estimates
 /// \param[out] obsGroup destination for the generated data
@@ -149,6 +157,42 @@ void storeGenData(const std::vector<float> & latVals,
                   const std::vector<float> & obsValues,
                   const std::vector<float> & obsErrors,
                   ObsGroup &obsGroup);
+
+/// \brief container-agnostic result of a generator (GenList or GenRandom)
+/// \details Holds the synthetic observation data produced by the generation routines as
+/// plain vectors, decoupled from any particular destination container. A storage routine
+/// (e.g. storeGenData for an ObsGroup) transfers these values into the target container.
+struct GeneratedObsData {
+  std::vector<float> latVals;           ///< latitude values
+  std::vector<float> lonVals;           ///< longitude values
+  std::string vcoordType;               ///< "Undefined", "pressure" or "height"
+  std::vector<float> vcoordVals;        ///< vertical coordinate values (empty if Undefined)
+  std::vector<int64_t> dts;             ///< time offsets (s) relative to epoch
+  std::string epoch;                    ///< ISO 8601 epoch string for the datetimes
+  std::vector<std::string> obsVarNames;  ///< observation variable names
+  std::vector<float> obsValues;         ///< per-variable obs values (may be empty)
+  std::vector<float> obsErrors;         ///< per-variable obs error estimates (may be empty)
+};
+
+/// \brief generate synthetic observation data from an explicit list of locations
+/// \details Container-agnostic core of the GenList reader. Validates the parameters and
+/// copies the listed latitude, longitude, datetime (and optional vertical coordinate)
+/// values into a GeneratedObsData result.
+/// \param params GenList parameters
+/// \param obsVarNames observation variable names (from the obs space)
+GeneratedObsData generateObsList(const GenListParameters & params,
+                                 const std::vector<std::string> & obsVarNames);
+
+/// \brief generate synthetic observation data at random locations
+/// \details Container-agnostic core of the GenRandom reader. Validates the parameters and
+/// generates random latitude, longitude, datetime (and optional vertical coordinate) values
+/// within the requested ranges and time window into a GeneratedObsData result.
+/// \param params GenRandom parameters
+/// \param obsVarNames observation variable names (from the obs space)
+/// \param timeWindow assimilation time window the generated datetimes must fall within
+GeneratedObsData generateObsRandom(const GenRandomParameters & params,
+                                   const std::vector<std::string> & obsVarNames,
+                                   const util::TimeWindow & timeWindow);
 
 /// \brief This is a wrapper function around the constructBackend
 ///   function for creating a backend based on command-line options.

@@ -138,8 +138,12 @@ reader/load/loadObs.cpp
 reader/load/loadObs.hpp
 reader/load/loadObsFromNetcdf.cpp
 reader/load/loadObsFromNetcdf.hpp
+reader/load/loadObsFromGenerators.cpp
+reader/load/loadObsFromGenerators.hpp
 reader/load/loadObsFromOdb.cpp
 reader/load/loadObsFromOdb.hpp
+reader/load/storeGenDataInFrame.cpp
+reader/load/storeGenDataInFrame.hpp
 reader/ObsReader.cpp
 reader/ObsReader.hpp
 reader/OsdfFrameFacade.cpp

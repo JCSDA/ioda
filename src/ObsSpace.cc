@@ -212,6 +212,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         reader::obsRead(obsDataInConfigs,
                         obs_params_.top_level_.ioPool.value(),
                         obs_params_.top_level_.distribution.value().params.value(), comm,
+                        obs_params_.top_level_.simVars.value().variables(),
                         timeWindow_, dist_, osdf_,
                         obs_src_stats_, osdfMetadata_);
 
@@ -992,6 +993,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             osdf::FrameMetadata appendOsdfMetadata;
             reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
+                            obs_params_.top_level_.simVars.value().variables(),
                             timeWindow_, dist_, tempOsdf, obsSourceStats, appendOsdfMetadata);
 
             // Verify that any multi-slice variable common to both frames uses the same slice

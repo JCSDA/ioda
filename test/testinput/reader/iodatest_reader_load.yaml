@@ -471,3 +471,124 @@ obs types:
         pool comm rank: 1
         nlocs:  0
         nvars:  19
+
+# Generator backends. These produce synthetic obs data (no input file) on the lead io pool
+# rank only, so the rows land on rank 0 and the column metadata is distributed to the other
+# ranks (nlocs 0, but nvars matches). The generated columns are all dimensioned by Location:
+# MetaData/{latitude,longitude,dateTime}, ObsError/<var>, ObsValue/<var>, sourceLocationIndices.
+- name: "GenList"
+  obsdatain:
+    engine:
+      type: GenList
+      lats: [ 10.0, 20.0, 30.0, 40.0 ]
+      lons: [ 100.0, 110.0, 120.0, 130.0 ]
+      dateTimes: [ 0, 900, 1800, 2700 ]
+      epoch: "seconds since 2018-04-14T21:00:00Z"
+      obs values: [ 280.0 ]
+      obs errors: [ 1.0 ]
+  io pool:
+    max pool size: 1
+  simulated variables: [ airTemperature ]
+  test data:
+    sample column names:
+    - "sourceLocationIndices"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "MetaData/dateTime"
+    - "ObsError/airTemperature"
+    - "ObsValue/airTemperature"
+    sample non column names:
+    - "MetaData/pressure"
+    - "MetaData/height"
+    - "ObsValue/wrongVariable"
+    sample column units:
+    - "MISSING*"
+    - "degrees_north"
+    - "degrees_east"
+    - "seconds since 2018-04-14T21:00:00Z"
+    - "MISSING*"
+    - "MISSING*"
+    number of variables: 1
+    mpi size1:
+      rank0:
+        nlocs:  4
+        nvars:  6
+    mpi size2:
+      rank0:
+        nlocs:  4
+        nvars:  6
+      rank1:
+        nlocs:  0
+        nvars:  6
+    mpi size4:
+      rank0:
+        nlocs:  4
+        nvars:  6
+      rank1:
+        nlocs:  0
+        nvars:  6
+      rank2:
+        nlocs:  0
+        nvars:  6
+      rank3:
+        nlocs:  0
+        nvars:  6
+
+- name: "GenRandom"
+  obsdatain:
+    engine:
+      type: GenRandom
+      nobs: 10
+      lat1: -90.0
+      lat2: 90.0
+      lon1: -180.0
+      lon2: 180.0
+      random seed: 29837
+      obs values: [ 285.0 ]
+      obs errors: [ 2.0 ]
+  io pool:
+    max pool size: 1
+  simulated variables: [ airTemperature ]
+  test data:
+    sample column names:
+    - "sourceLocationIndices"
+    - "MetaData/latitude"
+    - "MetaData/longitude"
+    - "MetaData/dateTime"
+    - "ObsError/airTemperature"
+    - "ObsValue/airTemperature"
+    sample non column names:
+    - "MetaData/pressure"
+    - "MetaData/height"
+    sample column units:
+    - "MISSING*"
+    - "degrees_north"
+    - "degrees_east"
+    - "seconds since 2018-04-14T21:00:00Z"
+    - "MISSING*"
+    - "MISSING*"
+    number of variables: 1
+    mpi size1:
+      rank0:
+        nlocs:  10
+        nvars:  6
+    mpi size2:
+      rank0:
+        nlocs:  10
+        nvars:  6
+      rank1:
+        nlocs:  0
+        nvars:  6
+    mpi size4:
+      rank0:
+        nlocs:  10
+        nvars:  6
+      rank1:
+        nlocs:  0
+        nvars:  6
+      rank2:
+        nlocs:  0
+        nvars:  6
+      rank3:
+        nlocs:  0
+        nvars:  6

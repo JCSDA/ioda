@@ -7,13 +7,18 @@
 
 #include "ioda/Engines/EngineUtils.h"
 
+#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/defs.h"
+#include "ioda/Engines/GenList.h"
+#include "ioda/Engines/GenRandom.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ObsStore.h"
 #include "ioda/Exception.h"
@@ -22,8 +27,12 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
 
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/Random.h"
+#include "oops/util/TimeWindow.h"
 
 namespace ioda {
 namespace Engines {
@@ -148,7 +157,7 @@ void storeGenData(const std::vector<float> & latVals,
     //        datetime
     //
     //     ObsError group
-    //        list of simulated variables in obsVarNames
+    //        list of observation variables in obsVarNames
     //
     // Valid values for vcoordType are "pressure" or "height"
 
@@ -176,10 +185,10 @@ void storeGenData(const std::vector<float> & latVals,
     // Create, write and attach units attributes to the variables
     obsGroup.vars.createWithScales<float>(latName, { LocationVar }, float_params)
         .write<float>(latVals)
-        .atts.add<std::string>("units", std::string("degrees_east"));
+        .atts.add<std::string>("units", std::string("degrees_north"));
     obsGroup.vars.createWithScales<float>(lonName, { LocationVar }, float_params)
         .write<float>(lonVals)
-        .atts.add<std::string>("units", std::string("degrees_north"));
+        .atts.add<std::string>("units", std::string("degrees_east"));
     obsGroup.vars.createWithScales<int64_t>(dtName, { LocationVar }, int64_params)
         .write<int64_t>(dts)
         .atts.add<std::string>("units", epoch);
@@ -205,6 +214,161 @@ void storeGenData(const std::vector<float> & latVals,
                     .write<float>(obsVals);
         }
     }
+}
+
+// -----------------------------------------------------------------------------
+GeneratedObsData generateObsList(const GenListParameters & params,
+                                 const std::vector<std::string> & obsVarNames) {
+    GeneratedObsData data;
+
+    // Grab the parameters
+    data.obsVarNames = obsVarNames;
+    data.obsValues = params.obsValues;
+    data.obsErrors = params.obsErrors;
+    if (!data.obsErrors.empty()) {
+        ASSERT(data.obsErrors.size() == obsVarNames.size());
+    }
+    if (!data.obsValues.empty()) {
+        ASSERT(data.obsValues.size() == obsVarNames.size());
+    }
+
+    data.latVals = params.lats;
+    data.lonVals = params.lons;
+    data.dts = params.dateTimes;
+    data.epoch = params.epoch.value();
+
+    data.vcoordType = "Undefined";
+    if (params.vcoordType.value() != boost::none) {
+        data.vcoordType = params.vcoordType.value().get();
+
+        if (data.vcoordType != "pressure" && data.vcoordType != "height") {
+            throw eckit::BadValue("Invalid vertical coordinate type, " + data.vcoordType +
+                ", for GenList. Valid values are 'pressure' or 'height'.", Here());
+        }
+
+        if (params.vcoordVals.value() != boost::none) {
+            data.vcoordVals = params.vcoordVals.value().get();
+        } else {
+            throw eckit::BadParameter("If vert coord type specified in GenList then vert coords "
+                "must also be specified.", Here());
+        }
+    }
+
+    return data;
+}
+
+// -----------------------------------------------------------------------------
+GeneratedObsData generateObsRandom(const GenRandomParameters & params,
+                                   const std::vector<std::string> & obsVarNames,
+                                   const util::TimeWindow & timeWindow) {
+    GeneratedObsData data;
+
+    // Grab the parameter values
+    data.obsVarNames = obsVarNames;
+    data.obsValues = params.obsValues;
+    data.obsErrors = params.obsErrors;
+    if (!data.obsErrors.empty()) {
+        ASSERT(data.obsErrors.size() == obsVarNames.size());
+    }
+    if (!data.obsValues.empty()) {
+        ASSERT(data.obsValues.size() == obsVarNames.size());
+    }
+
+    const size_t numLocs = params.numObs;
+    const float latStart = params.latStart;
+    const float latEnd = params.latEnd;
+    const float lonStart = params.lonStart;
+    const float lonEnd = params.lonEnd;
+
+    data.vcoordType = "Undefined";
+    float vcoordStart = 0.0f;
+    float vcoordEnd = 0.0f;
+    if (params.vcoordType.value() != boost::none) {
+        data.vcoordType = params.vcoordType.value().get();
+
+        if (data.vcoordType != "pressure" && data.vcoordType != "height") {
+            throw eckit::BadValue("Invalid vertical coordinate type, " + data.vcoordType +
+                ", for GenRandom. Valid values are 'pressure' or 'height'.", Here());
+        }
+
+        if (params.vcoordStart.value() == boost::none ||
+            params.vcoordEnd.value() == boost::none) {
+            throw eckit::BadParameter("Must specify both lower and upper limits of vertical "
+                "coodinate in GenRandom.", Here());
+        } else {
+            vcoordStart = params.vcoordStart.value().get();
+            vcoordEnd = params.vcoordEnd.value().get();
+
+            if (vcoordEnd < vcoordStart) {
+                throw eckit::BadValue("vert coord2 must be greater than or equal to vert coord1 "
+                    "in GenRandom.", Here());
+            }
+        }
+    }
+
+    int ranSeed;
+    if (params.ranSeed.value() != boost::none) {
+        ranSeed = params.ranSeed.value().get();
+    } else {
+        ranSeed = std::time(0);  // based on the current date/time.
+    }
+
+    // Use the following formula to generate random lat, lon and time values.
+    //
+    //   val = val1 + (random_number_between_0_and_1 * (val2-val1))
+    //
+    // where val2 > val1.
+    //
+    // Use different seeds for lat, lon and vert coord so that in the case where their ranges
+    // are the same, you get different sequences for each.
+    //
+    // Use the reset flag (fifth argument, set to true) to make sure that we get the same
+    // result (with the same seed value) regardless of how many times the generator is run.
+    std::vector<float> ranVals(numLocs, 0.0);
+    std::vector<float> ranVals2(numLocs, 0.0);
+    std::vector<float> ranVals3(numLocs, 0.0);
+    util::UniformDistribution<float> ranUD(numLocs, 0.0, 1.0, ranSeed, true);
+    util::UniformDistribution<float> ranUD2(numLocs, 0.0, 1.0, ranSeed+1, true);
+    util::UniformDistribution<float> ranUD3(numLocs, 0.0, 1.0, ranSeed+2, true);
+    ranVals = ranUD.data();
+    ranVals2 = ranUD2.data();
+    ranVals3 = ranUD3.data();
+
+    // Form the ranges val2-val1 for lat, lon, vert coord
+    float latRange = latEnd - latStart;
+    float lonRange = lonEnd - lonStart;
+    float vcoordRange = vcoordEnd - vcoordStart;
+    const util::Duration windowDuration(timeWindow.length());
+    float timeRange = static_cast<float>(windowDuration.toSeconds());
+
+    // Create vectors for lat, lon, vertical coordinate, time, and fill them with random
+    // values inside their respective ranges.
+    data.latVals.assign(numLocs, 0.0);
+    data.lonVals.assign(numLocs, 0.0);
+    data.dts.assign(numLocs, 0);
+
+    for (std::size_t ii = 0; ii < numLocs; ii++) {
+        data.latVals[ii] = latStart + (ranVals[ii] * latRange);
+        data.lonVals[ii] = lonStart + (ranVals2[ii] * lonRange);
+        if (params.vcoordType.value() != boost::none) {
+            data.vcoordVals.resize(numLocs);
+            data.vcoordVals[ii] = vcoordStart + (ranVals3[ii] * vcoordRange);
+        }
+
+        // Currently the filter for time stamps on obs values is:
+        //
+        //     windowStart < ObsTime <= windowEnd
+        //
+        int64_t offsetDt = static_cast<int64_t>(ranVals[ii] * timeRange);
+        // If we get a zero offsetDt, then change it to 1 second so that the observation
+        // will remain inside the timing window.
+        if (offsetDt == 0) offsetDt = 1;
+        data.dts[ii] = offsetDt;
+    }
+
+    data.epoch = std::string("seconds since ") + timeWindow.start().toString();
+
+    return data;
 }
 
 //----------------------------------------------------------------------

@@ -35,6 +35,7 @@ namespace reader {
 void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
              const ioda::IoPool::IoPoolParameters &ioPoolParams,
              const ioda::DistributionParametersBase &distParams, const eckit::mpi::Comm &commAll,
+             const std::vector<std::string> &obsVarNames,
              const util::TimeWindow &timeWindow, std::shared_ptr<Distribution> &ospaceDist,
              std::unique_ptr<osdf::IFrame> &destOsdf, ioda::ObsSourceStats &obsSourceStats,
              osdf::FrameMetadata &osdfMetadata) {
@@ -60,10 +61,12 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
 
     // Handle first osdf separately so that destOsdf has correct metadata for append.
     if (index == 0) {
-      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, destOsdf, osdfMetadata);
+      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, obsVarNames, timeWindow, destOsdf,
+              osdfMetadata);
     } else {
       std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(destOsdf->frameType());
-      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, tempOsdf, osdfMetadata);
+      loadObs(dataInParamsSingleFile, ioPoolParams, commAll, obsVarNames, timeWindow, tempOsdf,
+              osdfMetadata);
       destOsdf->append(tempOsdf);
     }
   }

@@ -190,6 +190,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_inclusive_lower_bound.yaml
   testinput/iodatest_obsspace_osdf_frame_cols.yaml
   testinput/iodatest_obsspace_osdf_frame_rows.yaml
+  testinput/iodatest_obsspace_generators_osdf.yaml
   testinput/iodatest_obsspace_osdf_prepare_derived.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_osdf_frame_cols.yaml
@@ -1653,6 +1654,12 @@ ecbuild_add_test( TARGET  ioda_obsspace_osdf_frame_cols
 ecbuild_add_test( TARGET  ioda_obsspace_osdf_frame_rows
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_osdf_frame_rows.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_generators_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_generators_osdf.yaml"
                   LIBS  ioda_test
                   )
 

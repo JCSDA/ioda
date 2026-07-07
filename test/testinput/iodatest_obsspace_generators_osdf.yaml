@@ -1,0 +1,119 @@
+---
+# ObsSpace-level test for the OSDF generator backends (GenList, GenRandom).
+#
+# This exercises the full OSDF reader pipeline (load -> filter -> distribute) for generated
+# observations. Its main purpose is to confirm that the time-window filter is applied to
+# generator output the same as it is for file backends:
+#   - GenList places some obs outside the window, which must be filtered out.
+#   - GenRandom generates all obs strictly inside the window, so none are filtered.
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+# ----------------------------------------------------------------------------------------
+# GenList: 6 generated locations, 2 of which fall outside the 6-hour (21600 s) window and
+# must be removed by the time-window filter, leaving 4.
+- obs space:
+    name: "GenList"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      engine:
+        type: GenList
+        lats:      [  1.0,   2.0,   4.0,  10.0,  50.0,  60.0 ]
+        lons:      [  2.0,   4.0,   8.0,  20.0, 100.0, 110.0 ]
+        # time offsets (s) relative to the epoch (= window start). The last two are outside
+        # the window: one is 1 hour past the end (25200 s > 21600 s), one is 1 hour before
+        # the start (-3600 s).
+        dateTimes: [ 3600,  7200, 10800, 14400, 25200, -3600 ]
+        epoch: "seconds since 2018-04-14T21:00:00Z"
+        obs values: [ 285.0 ]
+        obs errors: [   1.5 ]
+    obs perturbations seed: 0
+    use data frame container: true
+    data frame type: FrameRows
+  test data:
+    # 6 generated, 2 outside window -> 4 retained.
+    gnlocs: 4
+    gnlocs outside time window: 2
+    gnlocs rejected by qc: 0
+    nlocs from source: 6
+    nrecs: 4
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    # Norms are over the 4 surviving (in-window) locations:
+    #   latitude  {1,2,4,10}    -> sqrt(1+4+16+100)      = sqrt(121)    = 11
+    #   longitude {2,4,8,20}    -> sqrt(4+16+64+400)     = sqrt(484)    = 22
+    #   ObsValue/temperature is constant 285 -> sqrt(4*285^2) = 2*285   = 570
+    #   ObsError/temperature is constant 1.5 -> sqrt(4*1.5^2) = 2*1.5   = 3
+    variables for get test:
+      - name: "latitude"
+        group: "MetaData"
+        type: "float"
+        norm: 11.0
+      - name: "longitude"
+        group: "MetaData"
+        type: "float"
+        norm: 22.0
+      - name: "temperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 570.0
+      - name: "temperature"
+        group: "ObsError"
+        type: "float"
+        norm: 3.0
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
+
+# ----------------------------------------------------------------------------------------
+# GenRandom: 9 generated locations, all with datetimes strictly inside the window, so none
+# are removed by the time-window filter.
+- obs space:
+    name: "GenRandom"
+    simulated variables: ['temperature']
+    observed variables: ['temperature']
+    obsdatain:
+      engine:
+        type: GenRandom
+        nobs: 9
+        lat1:  -90.0
+        lat2:   90.0
+        lon1: -180.0
+        lon2:  180.0
+        random seed: 29837
+        obs values: [ 285.0 ]
+        obs errors: [   1.5 ]
+    obs perturbations seed: 0
+    use data frame container: true
+    data frame type: FrameRows
+  test data:
+    # None filtered: GenRandom datetimes are generated inside the window.
+    gnlocs: 9
+    gnlocs outside time window: 0
+    gnlocs rejected by qc: 0
+    nlocs from source: 9
+    nrecs: 9
+    obs perturbations seed: 0
+    expected group variables: []
+    expected sort variable: ""
+    expected sort order: "ascending"
+    # latitude/longitude are random, so only the constant obs value/error are checked:
+    #   ObsValue/temperature constant 285 -> sqrt(9*285^2) = 3*285 = 855
+    #   ObsError/temperature constant 1.5 -> sqrt(9*1.5^2) = 3*1.5 = 4.5
+    variables for get test:
+      - name: "temperature"
+        group: "ObsValue"
+        type: "float"
+        norm: 855.0
+      - name: "temperature"
+        group: "ObsError"
+        type: "float"
+        norm: 4.5
+    tolerance:
+      - 1.0e-11
+    variables for putget test: []
