@@ -402,10 +402,17 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
     } else {
         if (use_dataframe_) {
             if (!(returnVal = strictHas(group, name, skipDerived))) {
-                // name is not present. Check if it exists with a channel suffix for all channels.
+                // name is not present verbatim.
                 std::string baseName;
                 int nameChannel;
-                if (!extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
+                if (extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
+                    // The name carries a numeric suffix and is not a column. Per the
+                    // OSDF storage scheme it may be a spurious suffix on a variable dimensioned
+                    // only by Location, which is stored under the base (unsuffixed) name.
+                    returnVal = strictHas(group, baseName, skipDerived);
+                } else {
+                    // The name has no numeric suffix: it may be a channelled variable stored as
+                    // one column per channel. Report present only if every channel is present.
                     const std::vector<int> channels =
                         obs_params_.top_level_.simVars.value().channels();
                     for (int channel : channels) {
@@ -474,10 +481,22 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
         VarType = ObsDtype::Empty;
     } else {
         if (use_dataframe_) {
-            const std::string groupToUse = this->groupToUse(group, name, skipDerived);
+            std::string groupToUse = this->groupToUse(group, name, skipDerived);
             // Attach a channel suffix if name comes in without a channel suffix, but is
             // the name of a variable with channels.
-            const std::string nameToUse = osdfVarNameToUse(groupToUse, name);
+            std::string nameToUse = osdfVarNameToUse(groupToUse, name);
+            if (!this->strictHas(groupToUse, nameToUse, skipDerived)) {
+                // The resolved name is not a column. If it carries a numeric suffix, the
+                // suffix may be spurious on a variable dimensioned only by Location (stored
+                // under the base name). Strip it and re-resolve the group/name, mirroring
+                // loadVar/has and the ObsGroup backend.
+                std::string baseName;
+                int nameChannel;
+                if (extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
+                    groupToUse = this->groupToUse(group, baseName, skipDerived);
+                    nameToUse = osdfVarNameToUse(groupToUse, baseName);
+                }
+            }
             if (this->strictHas(groupToUse, nameToUse, skipDerived)) {
                 // If the variable exists, get its type from the backend. If the variable doesn't
                 // exist, leave the type as "None".
@@ -1531,28 +1550,13 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                 sliceSelectToUse = canonicalSuffixList;
             }
         } else {
-            // variable does not have channels so the canonicalSuffixList
-            // should either be empty or consist of one element (which was
-            // the original variable name that happened to have a numeric
-            // suffix)
-            if (canonicalSuffixList.size() == 0) {
-                nameToUse = canonicalName;
-            } else {
-                // Print a warning and use the first entry if the size
-                // of the canonicalSuffixList is > 1.
-                if (canonicalSuffixList.size() > 1) {
-                    oops::Log::info()
-                        << "WARNING: loadVar: (internal) osdf malformed variable "
-                        << "and numeric suffix list: suffix list size not <= 1"
-                        << std::endl
-                        << "    canonical name: " << canonicalName << std::endl
-                        << "    canonical suffix list: " << canonicalSuffixList
-                        << std::endl
-                        << "Using first entry in canonical suffix list" << std::endl;
-                }
-                nameToUse = canonicalName + std::string("_") +
-                            std::to_string(canonicalSuffixList[0]);
-            }
+            // No registered slice dimension. Per the OSDF storage scheme, a variable
+            // dimensioned only by Location is stored and accessed verbatim by its full
+            // name -- even when that name happens to end in a numeric suffix. It must not
+            // be routed through the per-slice selection logic.
+            splitSliceSuffix(group, name, sliceSelect, nameToUse, sliceSelectToUse, skipDerived);
+            // A 1-D variable is read whole (see the getColumn call below), so any residual
+            // slice selection is meaningless here.
             sliceSelectToUse = { };
         }
 

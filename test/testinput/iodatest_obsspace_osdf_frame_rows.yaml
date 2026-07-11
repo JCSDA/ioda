@@ -33,6 +33,15 @@ observations:
         type: "float"
         norm: 353.11505923005967
 
+      # Mechanism 2 (OSDF): a numeric suffix on a variable dimensioned only by Location is
+      # spurious -- the variable is stored under its base name and is read verbatim by
+      # stripping the suffix (matching the ObsGroup/HDF5 backend). Requesting "latitude_1"
+      # must therefore resolve to "latitude" and yield the same norm.
+      - name: "latitude_1"
+        group: "MetaData"
+        type: "float"
+        norm: 353.11505923005967
+
       - name: "longitude"
         group: "MetaData"
         type: "float"
