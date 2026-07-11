@@ -14,6 +14,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -418,17 +419,42 @@ void replaceFillValuesWithMissing(const netCDF::NcVar & var, std::vector<VarType
 //--------------------------------------------------------------------------------
 template <typename VarType>
 VarType getNcVarFillValue(const netCDF::NcVar & var) {
-  // Get the fill value for the variable. The fill value is stored as an attribute
-  // on the variable. The attribute name is _FillValue.
-  bool fillMode;
+  // Give precedence to an explicit _FillValue attribute; otherwise use the netCDF
+  // default. (Avoids NcVar::getFillModeParameters(), which is unreliable here.)
   VarType fillValue;
-  var.getFillModeParameters(fillMode, fillValue);
-  if (!fillMode) {
-    // If there is no fill value attribute, return the default fill value
+  const auto atts = var.getAtts();
+  const auto attIt = atts.find("_FillValue");
+  if (attIt == atts.end()) {
     // Just need to call getNcVarDefaultFillValue with a variable of the desired
     // data type to get the right overload function.
-    fillValue = getNcVarDefaultFillValue(fillValue);
+    return getNcVarDefaultFillValue(fillValue);
   }
+  const netCDF::NcVarAtt & fillAtt = attIt->second;
+  if constexpr (std::is_same<VarType, char>::value) {
+    // NcAtt::getValues(char *) always calls nc_get_att_text(), regardless of
+    // the attribute's actual netCDF type. That throws for the numeric
+    // (NC_BYTE) _FillValue attributes used on byte/bool variables, so read
+    // via signed char instead, which correctly uses nc_get_att_schar().
+    signed char attFillValue;
+    fillAtt.getValues(&attFillValue);
+    return static_cast<VarType>(attFillValue);
+  }
+  if constexpr (std::is_same<VarType, std::string>::value) {
+    // _FillValue on a string variable may be stored as either a variable-length
+    // NC_STRING or a fixed-length NC_CHAR attribute, and (as with getNcVarUnits()
+    // above) the getValues() overload needed differs for each: the std::string&
+    // overload always calls nc_get_att_text(), which only understands NC_CHAR.
+    if (fillAtt.getType().getName() == "string") {
+      char * attFillValue;
+      fillAtt.getValues(&attFillValue);
+      const std::string result(attFillValue);
+      nc_free_string(1, &attFillValue);
+      return result;
+    }
+    fillAtt.getValues(fillValue);
+    return fillValue;
+  }
+  fillAtt.getValues(&fillValue);
   return fillValue;
 }
 
@@ -484,6 +510,7 @@ std::string getNcVarUnits(const netCDF::NcVar & var) {
     char * tempString;
     unitsAttr.getValues(&tempString);
     unitsString = std::string(tempString);
+    nc_free_string(1, &tempString);
   } else if (unitsTypeName == "char") {
     // fixed length string
     unitsAttr.getValues(unitsString);
