@@ -9,6 +9,7 @@
 
 #include <netcdf>
 
+#include <cmath>
 #include <map>
 #include <numeric>
 #include <sstream>
@@ -624,10 +625,14 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                                  "number of locations in the file.");
       }
     } else {
-      // Register every slice dimension. If the coordinate values are a set of unique
-      // integers, store them as-is (e.g. Channel: {1, 3, 5, ..., 22}). Otherwise (non-integer
-      // type, or non-unique integers) store synthetic 0-based indices {0, 1, ..., n-1} so that
-      // the "_<index>" column suffixes are always unique.
+      // Register every slice dimension. Store the coordinate's real values as the slice
+      // index values when they form a set of unique integers -- either stored as an integer
+      // type (e.g. Channel: {1, 3, 5, ..., 22}) or stored as a floating type whose values are
+      // all whole numbers (e.g. float Channel: {1, 2, 3, 4}). Floating coordinates are read
+      // and cast to int only when every value is integral, so a genuinely fractional
+      // coordinate does not silently collide after truncation. In every other case (non-numeric
+      // type, non-integral floats, or non-unique integers) fall back to synthetic 0-based
+      // indices {0, 1, ..., n-1} so that the "_<index>" column suffixes are always unique.
       netCDF::NcVar var = inFile.getVar(dimName);
       if (var.isNull()) {
         continue;
@@ -635,10 +640,37 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
       const std::size_t dimSize = var.getDim(0).getSize();
       bool useRealValues = false;
       std::vector<int> dimNums(dimSize);
-      if (var.getType() == netCDF::NcType::ncType::nc_INT) {
+      const netCDF::NcType::ncType coordType = var.getType().getTypeClass();
+      if (coordType == netCDF::NcType::ncType::nc_INT) {
         var.getVar(dimNums.data());
         const std::unordered_set<int> uniqueVals(dimNums.begin(), dimNums.end());
         useRealValues = (uniqueVals.size() == dimSize);
+      } else if (coordType == netCDF::NcType::ncType::nc_FLOAT ||
+                 coordType == netCDF::NcType::ncType::nc_DOUBLE) {
+        // Read the raw floating values and accept them as slice indices only if every value
+        // is a whole number (so the int cast is exact) and the resulting set is unique.
+        std::vector<double> realVals(dimSize);
+        var.getVar(realVals.data());
+        bool allIntegral = true;
+        for (std::size_t i = 0; i < dimSize; ++i) {
+          if (realVals[i] != std::floor(realVals[i])) {
+            allIntegral = false;
+            break;
+          }
+          dimNums[i] = static_cast<int>(realVals[i]);
+        }
+        if (allIntegral) {
+          const std::unordered_set<int> uniqueVals(dimNums.begin(), dimNums.end());
+          useRealValues = (uniqueVals.size() == dimSize);
+        }
+      } else {
+        // Coordinate values are not int, float nor double. Throw an exception to
+        // discourage the use of non-numeric dimension coordinates.
+        const std::string errMsg =
+                "ioda::reader::loadObsBlockFromNetcdf: Unsupported coordinate "
+                "type for dimension: " + dimName + std::string("\n") +
+                "Must use one of: int, float or double";
+        throw eckit::BadParameter(errMsg, Here());
       }
       if (!useRealValues) {
         std::iota(dimNums.begin(), dimNums.end(), 0);
