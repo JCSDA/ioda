@@ -504,17 +504,25 @@ void osdf::FrameRows::getColumn(const std::string& name, std::vector<T>& values,
   const std::int32_t columnIndex = data_.getIndex(name);
   const consts::eDataTypes columnType   = data_.getType(columnIndex);
 
-  if (type != columnType) {
-    const std::string errMsg = std::string("ERROR: Input vector for column ")
-      + name + std::string(" is not the required data type.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
   values.resize(static_cast<std::size_t>(data_.getSizeRows()));
-  for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
-    const std::shared_ptr<DatumBase>& datum = data_.getDataRow(rowIndex).getColumn(columnIndex);
-    const T value                           = funcs_.getDatumValue<T>(datum);
-    values.at(static_cast<std::size_t>(rowIndex)) = value;
+  if (type == columnType) {
+    // Fast path: the requested type matches the stored type, copy each datum directly.
+    for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+      const std::shared_ptr<DatumBase>& datum = data_.getDataRow(rowIndex).getColumn(columnIndex);
+      values.at(static_cast<std::size_t>(rowIndex)) = funcs_.getDatumValue<T>(datum);
+    }
+    return;
   }
+  // The requested type differs from the stored type. Coerce each stored numeric datum into the
+  // requested numeric type (remapping missing-value markers). A string<->numeric request throws.
+  FrameUtils::withCoercionType<T>(columnType, name, [&](auto typeDiscriminator) {
+    using S = decltype(typeDiscriminator);
+    for (std::int32_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+      const std::shared_ptr<DatumBase>& datum = data_.getDataRow(rowIndex).getColumn(columnIndex);
+      values.at(static_cast<std::size_t>(rowIndex)) =
+          FrameUtils::coerce<T>(funcs_.getDatumValue<S>(datum));
+    }
+  });
 }
 
 template <typename T>
@@ -529,22 +537,32 @@ void osdf::FrameRows::setColumn(const std::string& name, const std::vector<T>& d
       + name + std::string(" is set to read-only.");
     throw eckit::BadParameter(errMsg, Here());
   }
-  consts::eDataTypes columnType = data_.getType(columnIndex);
-  if (type != columnType) {
-    const std::string errMsg = std::string("ERROR: Input vector for column ")
-      + name + std::string(" is not the required data type.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
+  const consts::eDataTypes columnType = data_.getType(columnIndex);
   if (static_cast<std::int64_t>(data.size()) != data_.getSizeRows()) {
     const std::string errMsg = std::string("ERROR: Input vector for column ")
       + name + std::string(" is not the required size.");
     throw eckit::BadParameter(errMsg, Here());
   }
-  for (std::int64_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
-    const std::shared_ptr<DatumBase>& datum =
-                                      data_.getDataRow(rowIndex).getColumn(columnIndex);
-    funcs_.setDatumValue<T>(datum, data.at(static_cast<std::size_t>(rowIndex)));
+  if (type == columnType) {
+    // Fast path: the incoming type matches the stored type, store each datum directly.
+    for (std::int64_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+      const std::shared_ptr<DatumBase>& datum =
+                                        data_.getDataRow(rowIndex).getColumn(columnIndex);
+      funcs_.setDatumValue<T>(datum, data.at(static_cast<std::size_t>(rowIndex)));
+    }
+    return;
   }
+  // The incoming type differs from the stored type. Coerce into the stored numeric type before
+  // storing (remapping missing-value markers). A string<->numeric request throws.
+  FrameUtils::withCoercionType<T>(columnType, name, [&](auto typeDiscriminator) {
+    using S = decltype(typeDiscriminator);
+    for (std::int64_t rowIndex = 0; rowIndex < data_.getSizeRows(); ++rowIndex) {
+      const std::shared_ptr<DatumBase>& datum =
+                                        data_.getDataRow(rowIndex).getColumn(columnIndex);
+      funcs_.setDatumValue<S>(datum,
+          FrameUtils::coerce<S>(data.at(static_cast<std::size_t>(rowIndex))));
+    }
+  });
 }
 
 template<typename T>

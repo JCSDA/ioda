@@ -417,15 +417,22 @@ void osdf::FrameCols::getColumn(const std::string& name, std::vector<T>& values,
   // no need to check if column exists as getIndex throws error otherwise
   const std::int32_t columnIndex = data_.getIndex(name);
   const consts::eDataTypes columnType   = data_.getType(columnIndex);
-
-  if (type != columnType) {
-    const std::string errMsg = std::string("ERROR: Input vector for column ")
-                               + name
-                               + std::string(" is not the required data type.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
   const std::shared_ptr<DataBase>& dataCol = data_.getDataColumn(columnIndex);
-  values = funcs_.getDataValues<T>(dataCol);
+
+  if (type == columnType) {
+    // Fast path: the requested type matches the stored type, copy the column directly.
+    values = funcs_.getDataValues<T>(dataCol);
+    return;
+  }
+  // The requested type differs from the stored type. Coerce the stored numeric data into the
+  // requested numeric type (remapping missing-value markers). A string<->numeric request throws.
+  FrameUtils::withCoercionType<T>(columnType, name, [&](auto typeDiscriminator) {
+    using S = decltype(typeDiscriminator);
+    const std::vector<S>& storedValues = funcs_.getDataValues<S>(dataCol);
+    values.resize(storedValues.size());
+    std::transform(storedValues.cbegin(), storedValues.cend(), values.begin(),
+                   [](const S storedValue) { return FrameUtils::coerce<T>(storedValue); });
+  });
 }
 
 template<typename T>
@@ -441,12 +448,7 @@ void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& v
                                + std::string(" is set to read-only.");
     throw eckit::BadParameter(errMsg, Here());
   }
-  consts::eDataTypes columnType = data_.getType(columnIndex);
-  if (type != columnType) {
-    const std::string errMsg = std::string("ERROR: Input vector for column ") + name
-                               + std::string(" is not the required data type.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
+  const consts::eDataTypes columnType = data_.getType(columnIndex);
   const std::int64_t valuesSize = static_cast<std::int64_t>(values.size());
   if (valuesSize != data_.getSizeRows()) {
     const std::string errMsg = std::string("ERROR: Input vector for column ")
@@ -455,7 +457,20 @@ void osdf::FrameCols::setColumn(const std::string& name, const std::vector<T>& v
     throw eckit::BadParameter(errMsg, Here());
   }
   const std::shared_ptr<DataBase>& data = data_.getDataColumn(columnIndex);
-  funcs_.setDataValues(data, values);
+  if (type == columnType) {
+    // Fast path: the incoming type matches the stored type, store the values directly.
+    funcs_.setDataValues(data, values);
+    return;
+  }
+  // The incoming type differs from the stored type. Coerce into the stored numeric type before
+  // storing (remapping missing-value markers). A string<->numeric request throws.
+  FrameUtils::withCoercionType<T>(columnType, name, [&](auto typeDiscriminator) {
+    using S = decltype(typeDiscriminator);
+    std::vector<S> storedValues(values.size());
+    std::transform(values.cbegin(), values.cend(), storedValues.begin(),
+                   [](const T value) { return FrameUtils::coerce<S>(value); });
+    funcs_.setDataValues(data, storedValues);
+  });
 }
 
 template<typename T>

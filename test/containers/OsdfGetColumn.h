@@ -50,7 +50,14 @@ void testGetColumn(std::unique_ptr<osdf::IFrame> & testFrame) {
         testFrame->getColumn(testColumnNames[i], testColumn);
         EXPECT(testColumn == expectedColumn);
       });
-    // Try to get the column data using the wrong vector type and check that an error is thrown.
+    // Try to get the column data using a different vector type. Numeric<->numeric requests are
+    // transparently coerced now (see the OsdfTypeCoercion test for value-level checks); only a
+    // request that crosses the string/numeric boundary is still rejected.
+    const std::size_t expectedSize =
+      ::test::TestEnvironment::config().getStringVector("expected column " +
+      std::to_string(i)).size();
+    // select the next type in the enum, wrapping around to 0 if necessary, to ensure that
+    // we are testing a different type than the one used to store the column data.
     const osdf::consts::eDataTypes wrongType
       = static_cast<osdf::consts::eDataTypes>((columnType + 1) % osdf::consts::eNumberOfDataTypes);
     osdf::FrameUtils::callWithSupportedType(
@@ -58,8 +65,14 @@ void testGetColumn(std::unique_ptr<osdf::IFrame> & testFrame) {
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
         std::vector<T> wrongTypeColumn;
-        EXPECT_THROWS_AS(testFrame->getColumn(testColumnNames[i], wrongTypeColumn),
-          eckit::BadParameter);
+        if (columnType == osdf::consts::eString || wrongType == osdf::consts::eString) {
+          EXPECT_THROWS_AS(testFrame->getColumn(testColumnNames[i], wrongTypeColumn),
+            eckit::BadParameter);
+        } else {
+          // Coercion between numeric types must succeed and preserve the element count.
+          testFrame->getColumn(testColumnNames[i], wrongTypeColumn);
+          EXPECT(wrongTypeColumn.size() == expectedSize);
+        }
       });
   }
 }
