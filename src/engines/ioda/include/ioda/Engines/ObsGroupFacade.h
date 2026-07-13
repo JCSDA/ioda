@@ -17,13 +17,17 @@
 namespace ioda {
 namespace Engines {
 
+/// \brief Mode for the container facade: eWriterMode uses values stored
+/// in the OSDF/ObsGroup to populate the facade's member vars.
+enum class facadeMode { readerMode, writerMode };
+
 /// \brief Provides a ContainerFacade-compatible interface to a wrapped ObsGroup object.
 class ObsGroupFacade : public ContainerFacade {
 public:
   /// \brief Constructor.
   ///
   /// \param group A Group that should be used to generate the wrapped ObsGroup.
-  explicit ObsGroupFacade(Group group);
+  explicit ObsGroupFacade(Group group, facadeMode mode = facadeMode::readerMode);
 
   void initialize(size_t numLocations, const std::optional<std::vector<int>> &channelIndices,
                   std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
@@ -31,7 +35,13 @@ public:
 
   void addDateTimeVariableToOptions(std::string dateTimeVariableName) override;
 
+  int numberOfLocations() const override;
+
   int numberOfChannels() const override;
+
+  std::string variableUnits(const std::string &name) const override;
+
+  std::vector<int> channelNumbers() const override;
 
   void addVariable(const std::string &name, const std::vector<int> &values,
                    bool hasChannelAxis, MemoryLayout layout = MemoryLayout::RowMajor,
@@ -139,6 +149,7 @@ private:
 private:
   Group group_;
   ContainerOptions options_;
+  facadeMode facadeMode_ = facadeMode::readerMode;
   bool isInitialized_ = false;
   ObsGroup og_;
   int numChannels_ = 1;

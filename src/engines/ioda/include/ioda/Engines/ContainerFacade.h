@@ -83,9 +83,18 @@ class ContainerFacade {
   ///   Variable of dateTime type to be added to options.datetimevariables
   virtual void addDateTimeVariableToOptions(std::string dateTimeVariableName) = 0;
 
-  /// \brief The number of channels specified during container initialization, or 1 if explicit
+  /// \brief The number of locations stored in the container (equal to the number of rows for the osdf)
+  virtual int numberOfLocations() const = 0;
+
+  /// \brief The number of channels specified during container initialization, or 1 if no explicit
   /// channel indices were specified.
   virtual int numberOfChannels() const = 0;
+
+  /// \brief Returns a vector of the channels specified during container initialization
+  virtual std::vector<int> channelNumbers() const = 0;
+
+  /// \brief Returns the units of the specified variable
+  virtual std::string variableUnits(const std::string &name) const = 0;
 
   /// \brief Add a variable to the wrapped container.
   ///

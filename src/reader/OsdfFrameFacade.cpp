@@ -7,17 +7,18 @@
 
 #include "ioda/reader/OsdfFrameFacade.hpp"
 
+#include <cstdint>
 #include <memory>
 #include <optional>  // NOLINT(build/include_order): linter mis-identifies C++ header as C
 #include <string>
 #include <unordered_map>
-#include <utility>
-#include <variant>  // NOLINT(build/include_order): linter mis-identifies C++ header as C
 #include <vector>
 
 #include <Eigen/Core>  // NOLINT(build/include_order): linter mis-identifies this as a C header
 
 #include "eckit/exception/Exceptions.h"
+#include "ioda/Engines/ContainerFacade.h"
+#include "ioda/Engines/ContainerVariableType.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
@@ -25,13 +26,61 @@
 #include "ioda/Layout.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "oops/util/missingValues.h"
-#include "oops/util/Logger.h"
 
 namespace ioda {
 
-OsdfFrameFacade::OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata)
-    : frame_(frame), metadata_(metadata)
-{}
+OsdfFrameFacade::OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata,
+                                 bool allowNonEmptyFrame)
+    : frame_(frame), metadata_(metadata), isInitialized_(false) {
+  // Add variables which already exist in input frame to missingValueByIodaName_ register
+  // if allowNonEmptyFrame set to true, otherwise throw an error if frame is non-empty.
+  if (allowNonEmptyFrame) {
+    std::vector<std::string> columnNames = frame_.columnNames();
+    const std::unordered_set<std::string> multiSliceVars = metadata.getMultiSliceVars();
+
+    for (const std::string &columnName : columnNames) {
+      // Store column name without numeric suffix if variable with slices
+      std::string columnNameInMap = columnName;
+      std::string columnNameWithoutNumericSuffix = ioda::removeStringNumericSuffix(columnName);
+      if (multiSliceVars.find(columnNameWithoutNumericSuffix) != multiSliceVars.end()) {
+        columnNameInMap = columnNameWithoutNumericSuffix;
+      }
+      // Only update the missing value if not already populated
+      if (missingValueByIodaName_.find(columnNameInMap) == missingValueByIodaName_.end()) {
+        osdf::consts::eDataTypes columnType = frame.getColumnType(columnName);
+        switch (columnType) {
+          case osdf::consts::eInt: {
+            std::optional<int> columnOptional;
+            missingValueByIodaName_[columnNameInMap] = columnOptional;
+          } break;
+          case osdf::consts::eInt64: {
+            std::optional<int64_t> columnOptional;
+            missingValueByIodaName_[columnNameInMap] = columnOptional;
+          } break;
+          case osdf::consts::eFloat: {
+            std::optional<float> columnOptional;
+            missingValueByIodaName_[columnNameInMap] = columnOptional;
+          } break;
+          case osdf::consts::eChar: {
+            std::optional<char> columnOptional;
+            missingValueByIodaName_[columnNameInMap] = columnOptional;
+          } break;
+          case osdf::consts::eString: {
+            std::optional<std::string> columnOptional;
+            missingValueByIodaName_[columnNameInMap] = columnOptional;
+          } break;
+          default:
+            std::string errMsg = "Column " + columnName + " of unsupported type: "
+                                 + std::to_string(columnType) + ". Aborting.";
+            throw eckit::BadParameter(errMsg, Here());
+        }
+      }
+    }
+  } else if (frame.numCols() != 0 || frame.numRows() != 0) {
+    std::string errMsg = "allowNonEmptyFrame set to false but non-empty frame passed to facade.";
+    throw eckit::BadParameter(errMsg, Here());
+  }
+}
 
 void OsdfFrameFacade::initialize(size_t /*numLocations*/,
                                  const std::optional<std::vector<int>> &channelIndices,
@@ -55,8 +104,20 @@ void OsdfFrameFacade::addDateTimeVariableToOptions(std::string dateTimeVariableN
   }
 }
 
+int OsdfFrameFacade::numberOfLocations() const {
+  return frame_.numRows();
+}
+
 int OsdfFrameFacade::numberOfChannels() const {
   return std::max<int>(metadata_.getDimNums("Channel").size(), 1);
+}
+
+std::string OsdfFrameFacade::variableUnits(const std::string &name) const {
+  return frame_.getColumnUnits(name);
+}
+
+std::vector<int> OsdfFrameFacade::channelNumbers() const {
+  return metadata_.getDimNums("Channel");
 }
 
 void OsdfFrameFacade::addVariable(const std::string &name, const std::vector<int> &values,
@@ -287,6 +348,8 @@ std::string OsdfFrameFacade::iodaVariableName(const std::string &name) const {
   return dataLayoutPolicy_->doMap(name);
 }
 
+// TODO(lewisn-met) this doesn't include variables dimensioned [Channel]
+// Equally, a variable may have second dimension not equal to channel.
 bool OsdfFrameFacade::iodaVariableHasChannelAxis(const std::string &iodaName) const {
   return !metadata_.varSliceDimName(iodaName).empty();
 }
@@ -330,7 +393,7 @@ void OsdfFrameFacade::getTypedVariableValues(const std::string &name, std::vecto
     using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
     const std::vector<int> &sliceIndices = metadata_.getDimNums(dimName);
     const size_t numSlices = sliceIndices.size();
-    const size_t numLocations = frame_.numRows();
+    const size_t numLocations = numberOfLocations();
 
     Matrix fallbackColumnMajorMatrix;
     Eigen::Map<Matrix> columnMajorValuesView(nullptr, 0, 0);
