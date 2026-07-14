@@ -157,8 +157,6 @@ writer/save/saveObs.cpp
 writer/save/saveObs.hpp
 writer/save/saveObsToNetcdf.cpp
 writer/save/saveObsToNetcdf.hpp
-writer/save/saveObsToOdb.cpp
-writer/save/saveObsToOdb.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

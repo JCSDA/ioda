@@ -301,10 +301,11 @@ void ObsSpace::save(bool preserveDistribution) {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
       if (create_empty_output_file_ || obs_src_stats_.gNlocs > 0) {
         if (use_dataframe_) {
-          oops::Log::info() << "Writing " << obsname() << std::endl;
-          writer::obsWrite(
-            *(obs_params_.top_level_.obsDataOut.value()), obs_params_.top_level_.ioPool,
-            obs_params_.comm(), dist_, osdf_, obs_src_stats_, osdfMetadata_, preserveDistribution);
+          writer::obsWrite(*(obs_params_.top_level_.obsDataOut.value()),
+                           obs_params_.top_level_.ioPool,
+                           obs_params_.comm(), dist_, osdf_,
+                           obs_src_stats_, osdfMetadata_,
+                           preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
@@ -1395,11 +1396,10 @@ void ObsSpace::recordCheckParameterInfo() {
       if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
         const ObsDataOutParameters obsDataOutParams =
                                    *(obs_params_.top_level_.obsDataOut.value());
-        if (obsDataOutParams.engine.value().engineParameters.value().type.value() != "H5File"
-            && obsDataOutParams.engine.value().engineParameters.value().type.value() != "ODB") {
-          throw eckit::UserError(
-            "When using the OSDF obs container, the output file type must be H5File or ODB",
-            Here());
+        if (obsDataOutParams.engine.value().engineParameters.value().type.value() != "H5File") {
+            throw eckit::UserError(
+                "When using the OSDF obs container, the output file type must be H5File",
+                Here());
         }
       }
     }

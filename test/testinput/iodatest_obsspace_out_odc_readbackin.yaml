@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space: &aircraft_readbackin
+- obs space:
     name: "Aircraft"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -19,7 +19,7 @@ observations:
         obsfile: "testoutput/diagout-aircraft-readbackin.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
-  test data: &aircraft_readbackin_data
+  test data:
     gnlocs: 157
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -47,24 +47,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *aircraft_readbackin
-    name: "Aircraft (OSDF)"
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aircraft-osdf.odc"
-        mapping file: ../share/test/testinput/odb_aircraft_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aircraft-readbackin-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
-  test data: *aircraft_readbackin_data
-
-- obs space: &ATMS_readbackin
     name: ATMS
     simulated variables: [brightnessTemperature]
     channels: 1-22
@@ -80,7 +62,7 @@ observations:
         obsfile: "testoutput/diagout-atms-readbackin.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
-  test data: &ATMS_readbackin_data
+  test data:
     gnlocs: 68
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -104,24 +86,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *ATMS_readbackin
-    name: "ATMS (OSDF)"
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-atms-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-atms-readbackin-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
-  test data: *ATMS_readbackin_data
-
-- obs space: &IASI_readbackin
     name: "IASI odb read back in"
     simulated variables: [brightnessTemperature]
     channels: 16, 38, 49, 51, 55, 57, 59, 61, 63, 66, 70, 72, 74, 79, 81,
@@ -157,7 +121,7 @@ observations:
         obsfile: "testoutput/diagout-iasi-readbackin.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
-  test data: &IASI_readbackin_data
+  test data:
     gnlocs: 10
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -189,24 +153,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *IASI_readbackin
-    name: "IASI (OSDF)"
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-iasi-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-iasi-readbackin-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
-  test data: *IASI_readbackin_data
-
-- obs space: &GroundGPS_readbackin
     name: GroundGPS
     simulated variables: [zenithTotalDelay]
     obsdatain:
@@ -221,7 +167,7 @@ observations:
         obsfile: "testoutput/diagout-groundgps-readbackin.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_groundgps.yaml
-  test data: &GroundGPS_readbackin_data
+  test data:
     gnlocs: 50
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -240,21 +186,3 @@ observations:
     tolerance:
       - 1.0e-7
     variables for putget test: []
-
-- obs space:
-    <<: *GroundGPS_readbackin
-    name: "GroundGPS (OSDF)"
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-groundgps-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_groundgps.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-groundgps-readbackin-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_groundgps.yaml
-  test data: *GroundGPS_readbackin_data

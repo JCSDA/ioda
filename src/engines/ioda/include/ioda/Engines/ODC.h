@@ -86,7 +86,7 @@ struct ODC_Parameters {
                        ContainerFacade &container,
                        const eckit::mpi::Comm *comm = nullptr);
 
- IODA_DL void createFile(const ODC_Parameters& params, ContainerFacade &container);
+ IODA_DL Group createFile(const ODC_Parameters& params, Group emptyStorageGroup = ioda::Engines::ObsStore::createRootGroup());
 
 }  // namespace ODC
 }  // namespace Engines

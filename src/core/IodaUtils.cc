@@ -81,7 +81,7 @@ std::string removeStringNumericSuffix(const std::string & str) {
       return str.substr(0, pos);
     }
   }
-  return str;
+    return str;
 }
 
 // -----------------------------------------------------------------------------

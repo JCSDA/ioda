@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space: &AOD_GOES_out
+- obs space:
     name: "AOD GOES"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -17,7 +17,7 @@ observations:
         obsfile: "testoutput/diagout-aod.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
-  test data: &AOD_GOES_out_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -40,7 +40,7 @@ observations:
       - 1.0e-11
     variables for putget test: []
 
-- obs space: &Radiosonde_out
+- obs space:
     name: "Radiosonde"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -53,7 +53,7 @@ observations:
         obsfile: "testoutput/diagout-sonde.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
-  test data: &Radiosonde_out_data
+  test data:
     gnlocs: 974
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -91,7 +91,7 @@ observations:
         group: "ObsValue"
         channels: []
 
-- obs space: &AMSUA_out
+- obs space:
     name: "AMSUA NOAA19"
     simulated variables: ['brightnessTemperature']
     channels: 1-15
@@ -108,7 +108,7 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_atovs_write.yaml
     obs perturbations seed: 250
-  test data: &AMSUA_out_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -138,7 +138,7 @@ observations:
         group: "ObsValue"
         channels: [ 11 ]
 
-- obs space: &GMI_out
+- obs space:
     name: "GMI GPM"
     simulated variables: ['brightnessTemperature']
     channels: 1-13
@@ -152,7 +152,7 @@ observations:
         obsfile: "testoutput/diagout-gmi.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_gmihigh_write.yaml
-  test data: &GMI_out_data
+  test data:
     gnlocs: 12
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -175,7 +175,7 @@ observations:
       - 1.0e-11
     variables for putget test: []
 
-- obs space: &aircraft_out
+- obs space:
     name: "Aircraft"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -190,7 +190,7 @@ observations:
         obsfile: "testoutput/diagout-aircraft.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
-  test data: &aircraft_out_data
+  test data:
     gnlocs: 157
     gnlocs outside time window: 43
     gnlocs rejected by qc: 0
@@ -217,7 +217,7 @@ observations:
       - 1.0e-7
     variables for putget test: []
 
-- obs space: &ATMS_out
+- obs space:
     name: ATMS
     simulated variables: [brightnessTemperature]
     channels: 1-22
@@ -233,7 +233,7 @@ observations:
         obsfile: "testoutput/diagout-atms.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
-  test data: &ATMS_out_data
+  test data:
     gnlocs: 68
     gnlocs outside time window: 32
     gnlocs rejected by qc: 0
@@ -256,7 +256,7 @@ observations:
       - 1.0e-7
     variables for putget test: []
 
-- obs space: &IASI_out
+- obs space:
     name: "IASI write odb"
     observed variables: [radiance]
     simulated variables: [brightnessTemperature]
@@ -292,7 +292,7 @@ observations:
         obsfile: "testoutput/diagout-iasi.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
-  test data: &IASI_out_data
+  test data:
     gnlocs: 10
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -325,7 +325,7 @@ observations:
 
 # Tests concatenation of the set of string columns site_name_1, site_name_2... into a single ioda
 # variable (on read) and its subsequent splitting (on write).
-- obs space: &GroundGPS_out
+- obs space:
     name: GroundGPS
     simulated variables: [zenithTotalDelay]
     obsdatain:
@@ -340,7 +340,7 @@ observations:
         obsfile: "testoutput/diagout-groundgps.odc"
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_groundgps.yaml
-  test data: &GroundGPS_out_data
+  test data:
     gnlocs: 50
     gnlocs outside time window: 50
     gnlocs rejected by qc: 0
@@ -359,107 +359,3 @@ observations:
     tolerance:
       - 1.0e-7
     variables for putget test: []
-
-- obs space:
-    <<: *AOD_GOES_out
-    name: "AOD GOES (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aod-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write.yaml
-  test data: 
-    <<: *AOD_GOES_out_data
-
-- obs space:
-    <<: *Radiosonde_out
-    name: "Radiosonde (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-sonde-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
-  test data: 
-    <<: *Radiosonde_out_data
-
-- obs space:
-    <<: *aircraft_out
-    name: "Aircraft (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aircraft-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aircraft_write.yaml
-  test data: 
-    <<: *aircraft_out_data
-
-- obs space:
-    <<: *AMSUA_out
-    name: "AMSUA NOAA19 (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-amsua-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atovs_write.yaml
-  test data: 
-    <<: *AMSUA_out_data
-
-- obs space:
-    <<: *GroundGPS_out
-    name: "GroundGPS (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-groundgps-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_groundgps.yaml
-  test data: 
-    <<: *GroundGPS_out_data
-
-- obs space:
-    <<: *GMI_out
-    name: "GMI GPM (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-gmi-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_gmihigh_write.yaml
-  test data: 
-    <<: *GMI_out_data
-
-- obs space:
-    <<: *ATMS_out
-    name: "ATMS (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-atms-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms_write.yaml
-  test data: 
-    <<: *ATMS_out_data
-
-- obs space:
-    <<: *IASI_out
-    name: "IASI write odb (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-iasi-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_iasi_write.yaml
-  test data: 
-    <<: *IASI_out_data

@@ -15,7 +15,6 @@
 #include "ioda/ObsDataIoParameters.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
 #include "ioda/writer/save/saveObsToNetcdf.hpp"
-#include "ioda/writer/save/saveObsToOdb.hpp"
 
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
@@ -38,8 +37,8 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata) {
   oops::Log::trace() << "writer::saveObs start" << std::endl;
-  // todo(SRH): For now, we are only supporting HDF5 and ODB file types. We will
-  // eventually want to support BUFR.
+  // todo(SRH): For now, we are only supporting HDF5 file types. We will
+  // eventually want to support ODB.
   const std::string fileType =
     dataOutParams.engine.value().engineParameters.value().type.value();
 
@@ -51,13 +50,9 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
       saveOsdfToNetcdf(dataOutParams, obsIoPool->commPool(), srcOsdf, osdfMetadata);
     }
   } else {
-    // Collectively save the OSDF to ODB across the io pool ranks.
-    // It is assumed that all of the obs have been collected onto the
-    // io pool ranks prior to calling this function.
-    ASSERT(fileType == "ODB");
-    if (obsIoPool->inIoPool()) {
-      saveOsdfToOdb(dataOutParams, obsIoPool->commPool(), srcOsdf, osdfMetadata);
-    }
+    const std::string errMsg = "Unsupported output file type: " + fileType +
+                               " Must use 'H5File' for now.";
+    throw eckit::BadParameter(errMsg, Here());
   }
   oops::Log::trace() << "writer::saveObs end" << std::endl;
 }

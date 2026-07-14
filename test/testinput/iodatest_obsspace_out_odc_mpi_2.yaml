@@ -4,7 +4,7 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space: &AOD_GOES_multi_npes
+- obs space:
     name: "AOD GOES test multiple output files and io pool members = npes"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -18,7 +18,7 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
       write multiple files: true
-  test data: &AOD_GOES_multi_npes_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -43,20 +43,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *AOD_GOES_multi_npes
-    name: "AOD GOES test multiple output files and io pool members = npes (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aod-multifiles-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-      write multiple files: true
-  test data: 
-    <<: *AOD_GOES_multi_npes_data
-
-- obs space: &AOD_GOES_multi_one
     name: "AOD GOES test multiple output files and io pool members = one"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -72,7 +58,7 @@ observations:
       write multiple files: true
     io pool:
       max pool size: 1
-  test data: &AOD_GOES_multi_one_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -97,20 +83,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *AOD_GOES_multi_one
-    name: "AOD GOES test multiple output files and io pool members = one (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aod-multifiles-oneiopool-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-      write multiple files: true
-  test data: 
-    <<: *AOD_GOES_multi_one_data
-
-- obs space: &AOD_GOES_single_npes
     name: "AOD GOES test single file output and io pool members = npes"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -124,7 +96,7 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
       write multiple files: false
-  test data: &AOD_GOES_single_npes_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -149,20 +121,6 @@ observations:
     variables for putget test: []
 
 - obs space:
-    <<: *AOD_GOES_single_npes
-    name: "AOD GOES test single file output and io pool members = npes (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aod-singlefile-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-      write multiple files: false
-  test data: 
-    <<: *AOD_GOES_single_npes_data
-
-- obs space: &AOD_GOES_single_one
     name: "AOD GOES test single file output and io pool members = 1"
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
@@ -178,7 +136,7 @@ observations:
       write multiple files: false
     io pool:
       max pool size: 1
-  test data: &AOD_GOES_single_one_data
+  test data:
     gnlocs: 100
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0
@@ -201,17 +159,3 @@ observations:
     tolerance:
       - 1.0e-11
     variables for putget test: []
-
-- obs space:
-    <<: *AOD_GOES_single_one
-    name: "AOD GOES test single file output and io pool members = one (OSDF)"
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/diagout-aod-singlefile-oneiopool-osdf.odc"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
-      write multiple files: false
-  test data: 
-    <<: *AOD_GOES_single_one_data

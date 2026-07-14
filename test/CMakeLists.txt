@@ -963,48 +963,13 @@ ecbuild_add_test( TARGET  ioda_obsspace_reader_pool
 if (odc_FOUND)
   ecbuild_add_test( TARGET  ioda_clean_obsspace_out_odc_files
                     COMMAND rm
-                    ARGS    "-f" 
-                    "testoutput/diagout-aircraft.odc" 
-                    "testoutput/diagout-atms.odc" 
-                    "testoutput/diagout-gmi.odc"
-                    "testoutput/diagout-amsua.odc" 
-                    "testoutput/diagout-sonde.odc" 
-                    "testoutput/diagout-sonde-mixed.odc" 
-                    "testoutput/diagout-sonde-derived.odc"
-                    "testoutput/diagout-aod.odc"
-                    "testoutput/diagout-iasi.odc" 
-                    "testoutput/diagout-groundgps.odc"
-                    "testoutput/diagout-aircraft-osdf.odc" 
-                    "testoutput/diagout-atms-osdf.odc" 
-                    "testoutput/diagout-gmi-osdf.odc"
-                    "testoutput/diagout-amsua-osdf.odc" 
-                    "testoutput/diagout-sonde-osdf.odc" 
-                    "testoutput/diagout-sonde-mixed-osdf.odc" 
-                    "testoutput/diagout-sonde-derived-osdf.odc"
-                    "testoutput/diagout-aod-osdf.odc"
-                    "testoutput/diagout-iasi-osdf.odc" 
-                    "testoutput/diagout-groundgps-osdf.odc"
-                    "testoutput/diagout-aod-multifiles_0000.odc"
-                    "testoutput/diagout-aod-multifiles_0001.odc" 
-                    "testoutput/diagout-aod-multifiles-oneiopool.odc"
-                    "testoutput/diagout-aod-singlefile-oneiopool.odc" 
-                    "testoutput/diagout-aod-singlefile.odc" 
-                    "testoutput/diagout-aod-multifiles-osdf_0000.odc"
-                    "testoutput/diagout-aod-multifiles-osdf_0001.odc"
-                    "testoutput/diagout-aod-multifiles-oneiopool-osdf.odc"
-                    "testoutput/diagout-aod-singlefile-oneiopool-osdf.odc"
-                    "testoutput/diagout-aod-singlefile-osdf.odc"
-                    "testoutput/diagout-atms-readbackin.odc"
-                    "testoutput/diagout-aircraft-readbackin.odc" 
-                    "testoutput/diagout-atms-readbackin.odc" 
-                    "testoutput/diagout-iasi-readbackin.odc"
-                    "testoutput/diagout-groundgps-readbackin.odc"
-                    "testoutput/diagout-atms-readbackin-osdf.odc"
-                    "testoutput/diagout-aircraft-readbackin-osdf.odc" 
-                    "testoutput/diagout-atms-readbackin-osdf.odc" 
-                    "testoutput/diagout-iasi-readbackin-osdf.odc"
-                    "testoutput/diagout-groundgps-readbackin-osdf.odc")
-
+                    ARGS    "-f" "testoutput/diagout-aircraft.odc" "testoutput/diagout-atms.odc" "testoutput/diagout-gmi.odc"
+                                 "testoutput/diagout-amsua.odc" "testoutput/diagout-sonde.odc" "testoutput/diagout-sonde-mixed.odc" "testoutput/diagout-aod.odc"
+                                 "testoutput/diagout-iasi.odc" "testoutput/diagout-groundgps.odc" "testoutput/diagout-aod-multifiles_0000.odc"
+                                 "testoutput/diagout-aod-multifiles_0001.odc" "testoutput/diagout-aod-multifiles-oneiopool.odc"
+                                 "testoutput/diagout-aod-singlefile-oneiopool.odc" "testoutput/diagout-aod-singlefile.odc" "testoutput/diagout-atms-readbackin.odc"
+                                 "testoutput/diagout-aircraft-readbackin.odc" "testoutput/diagout-atms-readbackin.odc" "testoutput/diagout-iasi-readbackin.odc"
+                                 "testoutput/diagout-groundgps-readbackin.odc")
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
@@ -1026,7 +991,6 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_obsspace_out_odc_mpi_2.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS ioda_clean_obsspace_out_odc_files )
-
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aircraft
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aircraft.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft.odc" ${ODC_TOOL_PATH}
@@ -1080,6 +1044,7 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-multifiles-oneiopool.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
+
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_singlefile
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-singlefile.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
@@ -1088,7 +1053,6 @@ if (odc_FOUND)
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aod-singlefile-oneiopool.odc" "Data/testinput_tier_1/test_reference/diagout-aod-2mpi.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_aircraft
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-aircraft-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-readbackin.odc" ${ODC_TOOL_PATH}
@@ -1104,85 +1068,6 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_groundgps
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-groundgps-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aircraft_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aircraft-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_atms_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-atms-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-atms-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_gmi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-gmi-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-gmi-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_amsua_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-amsua-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-amsua-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_groundgps_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-groundgps-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_mixed_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-mixed-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-mixed-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_derived_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-derived-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-derived-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_iasi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-iasi-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-iasi-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_osdf_0000
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-osdf_0000.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-osdf_0000.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_osdf_0001
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-osdf_0001.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-osdf_0001.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_oneiopool_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-oneiopool-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-oneiopool-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_singlefile_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-singlefile-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-singlefile-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_singlefile_oneiopool_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-singlefile-oneiopool-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-singlefile-oneiopool-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_aircraft_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aircraft-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_atms_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-atms-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-atms-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_iasi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-iasi-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-iasi-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_groundgps_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-groundgps-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin-osdf.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
 
   ecbuild_add_test( TARGET  ioda_odb_tables_iterator

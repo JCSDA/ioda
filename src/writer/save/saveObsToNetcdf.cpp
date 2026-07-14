@@ -23,6 +23,7 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/ObsDataIoParameters.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -195,9 +196,9 @@ netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType) {
       return netCDF::NcType::nc_STRING;
       break;
     default:
-      throw eckit::BadValue("ioda::writer::saveOsdfToNetcdf: Unrecognized osdf data type: "
-                              + std::to_string(osdfDataType),
-                            Here());
+      throw eckit::BadValue(
+        "ioda::writer::saveOsdfToNetcdf: Unrecognized osdf data type: " + osdfDataType,
+        Here());
   }
 }
 
@@ -604,7 +605,7 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
   // We eventually need to support this for when we output files on
   // successive time steps. Setting timeCommRank to -1 will cause the output
   // file name to not include the time communicator rank number. Only append
-  // the rank number if there is more than one rank in the io pool.
+  // the rank number if there are more than one rank in the io pool.
   if (ioPoolComm.size() > 1) {
     const int timeCommRank = -1;
     outputFileName = ioda::Engines::uniquifyFileName(outputFileName,
