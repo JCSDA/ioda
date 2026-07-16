@@ -402,17 +402,25 @@ void replaceFillValuesWithMissing(const netCDF::NcVar & var, std::vector<VarType
   // determined by the type of the variable.
   const VarType jediMissingValue = util::missingValue<VarType>();
   const VarType fillValue = getNcVarFillValue<VarType>(var);
-  if (fillValue == jediMissingValue) {
-    // If the fill value is the same as the JEDI missing value, then there is
-    // nothing to do.
-    return;
-  }
-
-  // Otherwise, loop through the variable data and replace the fill values
-  // with the JEDI missing value.
-  for (auto & varVal : varData) {
-    if (varVal == fillValue) {
-      varVal = jediMissingValue;
+  if constexpr (std::is_floating_point_v<VarType>) {
+    // Float path: always scan. A file may use IEEE NaN/inf as a "no-data"
+    // marker even when _FillValue == the JEDI missing value, so the
+    // early-return that applies to other types cannot be taken here.
+    for (auto & varVal : varData) {
+      if (varVal == fillValue || std::isnan(varVal) || std::isinf(varVal)) {
+        varVal = jediMissingValue;
+      }
+    }
+  } else {
+    // Non-float path: isnan/isinf are not meaningful, and if the fill value is
+    // the same as the JEDI missing value there is nothing to do.
+    if (fillValue == jediMissingValue) {
+      return;
+    }
+    for (auto & varVal : varData) {
+      if (varVal == fillValue) {
+        varVal = jediMissingValue;
+      }
     }
   }
 }

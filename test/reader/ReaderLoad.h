@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -33,6 +35,7 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/TimeWindow.h"
 
 namespace ioda {
@@ -111,6 +114,61 @@ void checkOsdf(const eckit::LocalConfiguration & testConfig,
   const std::unordered_set<std::string> expectedMultiSliceVarsSet(
     expectedMultiSliceVars.begin(), expectedMultiSliceVars.end());
   EXPECT(osdfMetadata.getMultiSliceVars() == expectedMultiSliceVarsSet);
+
+  // Value fidelity checks for the NaN/inf -> missing remapping performed by the
+  // reader (replaceFillValuesWithMissing in loadObsFromNetcdf.cpp). Both blocks
+  // below are optional, so existing obs types that omit them are unaffected.
+  const float missingFloat = util::missingValue<float>();
+
+  // 1) "float columns to sweep": on EVERY MPI rank, no element of the named
+  //    float columns may be NaN or inf (since the reader is supposed to
+  //    translate these to JEDI float missing values). This is invariant under
+  //    how rows are distributed across ranks, so it runs regardless of comm size.
+  const std::vector<std::string> sweepCols =
+      testConfig.getStringVector("float columns to sweep", {});
+  for (const auto & colName : sweepCols) {
+    EXPECT(testOsdf->hasColumn(colName));
+    std::vector<float> colData;
+    testOsdf->getColumn(colName, colData);
+    for (const float value : colData) {
+      EXPECT(!std::isnan(value));
+      EXPECT(!std::isinf(value));
+    }
+  }
+
+  // 2) "value checks": exact column contents, order-independent (the finite
+  //    values and the count of missing values). MPI distribution splits a
+  //    column's rows across ranks, so these run only when there is a single
+  //    rank and all rows are local.
+  if (mySize == 1 && testConfig.has("value checks")) {
+    const std::vector<eckit::LocalConfiguration> valueChecks =
+        testConfig.getSubConfigurations("value checks");
+    for (const auto & valueCheck : valueChecks) {
+      const std::string colName = valueCheck.getString("column");
+      EXPECT(testOsdf->hasColumn(colName));
+      std::vector<float> colData;
+      testOsdf->getColumn(colName, colData);
+
+      std::vector<float> finiteValues;
+      std::size_t missingCount = 0;
+      for (const float value : colData) {
+        if (value == missingFloat) {
+          ++missingCount;
+        } else {
+          finiteValues.push_back(value);
+        }
+      }
+      std::sort(finiteValues.begin(), finiteValues.end());
+
+      const std::vector<double> expectedFiniteD =
+          valueCheck.getDoubleVector("finite values");
+      std::vector<float> expectedFinite(expectedFiniteD.begin(), expectedFiniteD.end());
+      std::sort(expectedFinite.begin(), expectedFinite.end());
+
+      EXPECT_EQUAL(missingCount, valueCheck.getUnsigned("missing count"));
+      EXPECT(finiteValues == expectedFinite);
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
