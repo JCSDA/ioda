@@ -504,9 +504,20 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                     case osdf::consts::eDataTypes::eInt:
                         VarType = ObsDtype::Integer;
                         break;
-                    case osdf::consts::eDataTypes::eInt64:
-                        VarType = ObsDtype::Integer_64;
+                    case osdf::consts::eDataTypes::eInt64: {
+                        // An int64 column can represent a DateTime variable when it carries a
+                        // "seconds since <epoch>" units string. So check the units and return
+                        // either ObsDtype::DateTime or ObsDtype::Integer_64.
+                        const std::string epochUnits =
+                            osdf_->getColumnUnits(groupToUse + std::string("/") + nameToUse);
+                        const std::string epochPrefix("seconds since ");
+                        if (epochUnits.compare(0, epochPrefix.size(), epochPrefix) == 0) {
+                            VarType = ObsDtype::DateTime;
+                        } else {
+                            VarType = ObsDtype::Integer_64;
+                        }
                         break;
+                    }
                     case osdf::consts::eDataTypes::eFloat:
                         VarType = ObsDtype::Float;
                         break;

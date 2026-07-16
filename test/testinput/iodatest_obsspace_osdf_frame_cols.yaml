@@ -51,6 +51,17 @@ observations:
         group: "MetaData"
         type: "integer"
         norm: 10.099504938362077
+
+      # Regression: the dateTime variable in this file carries a non-1970 epoch
+      # (units = "seconds since 2018-04-15T00:00:00Z"). Reading it back through the
+      # OSDF/dataframe get_db<DateTime> path must reconstruct the absolute time using
+      # the file's real epoch, not a hard-coded 1970 epoch. A 1970 collapse would shift
+      # every value by the true epoch (~48 years) and fail this check.
+      - name: "dateTime"
+        group: "MetaData"
+        type: "datetime"
+        first value: "2018-04-15T00:06:00Z"
+        last value: "2018-04-14T23:58:00Z"
     tolerance:
       - 1.0e-14
     variables for putget test: []
