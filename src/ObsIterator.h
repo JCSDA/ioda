@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include "oops/util/Printable.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -49,6 +51,8 @@ class ObsIterator: public util::Printable, private util::ObjectCounter<ObsIterat
   const ObsSpace& obsSpace_;
   mutable std::shared_ptr<std::vector<float>> lats_;
   mutable std::shared_ptr<std::vector<float>> lons_;
+  mutable std::shared_ptr<std::vector<float>> vcoord_;
+  const boost::optional<std::string> vcName_;
   size_t obIndex_;
 
   friend class ObsSpace;

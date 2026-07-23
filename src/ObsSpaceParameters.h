@@ -95,6 +95,10 @@ class ObsTopLevelParameters : public oops::Parameters {
     oops::Parameter<bool> useDataFrame{"use data frame container", false, this};
 
     oops::Parameter<std::string> dataFrameType{"data frame type", "FrameCols", this};
+
+    /// Optional vertical coordinate variable name for 3D obs iteration.
+    /// When set, ObsIterator populates Point3 z-coordinate from MetaData/<name>.
+    oops::OptionalParameter<std::string> verticalCoordinate{"iterator vertical coordinate", this};
 };
 
 class ObsSpaceParameters {

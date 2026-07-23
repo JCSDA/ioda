@@ -589,6 +589,10 @@ namespace ioda {
         ObsIterator end() const {
             return ObsIterator(*this, nlocs());}
 
+        /// \brief Return the configured vertical coordinate variable name, or boost::none if unset.
+        const boost::optional<std::string> & verticalCoordinate() const {
+            return obs_params_.top_level_.verticalCoordinate.value();}
+
      private:
         // ----------------------------- private data members ---------------------------
         /// Time window class

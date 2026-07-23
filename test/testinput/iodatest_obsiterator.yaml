@@ -21,3 +21,27 @@ observations:
     lat1: 5.0
     lon2: 20.0
     lat2: 15.0
+
+- obs space:
+    name: obs with height
+    iterator vertical coordinate: height
+    simulated variables: [windEastward]
+    obsdatain:
+      engine:
+        type: GenList
+        lons: [10.0, 20.0, 30.0, 40.0, 50.0]
+        lats: [5.0, 15.0, 25.0, 35.0, 45.0]
+        dateTimes: [3600, 3600, 3600, 3600, 3600]
+        epoch: "seconds since 2000-01-01T00:00:00Z"
+        obs errors: [1.0]
+        vert coord type: height
+        vert coords: [100.0, 200.0, 300.0, 400.0, 500.0]
+  obs iterator test:
+    tolerance: 1.0e-5
+    reference nlocs: 5
+    lon1: 10.0
+    lat1: 5.0
+    z1: 100.0
+    lon2: 20.0
+    lat2: 15.0
+    z2: 200.0

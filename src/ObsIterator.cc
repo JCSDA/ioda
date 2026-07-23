@@ -16,7 +16,9 @@ namespace ioda {
 // -----------------------------------------------------------------------------
 
 ObsIterator::ObsIterator(const ObsSpace & obsSpace, size_t index)
-    : obsSpace_(obsSpace), obIndex_(index) {}
+    : obsSpace_(obsSpace),
+      vcName_(obsSpace.verticalCoordinate()),
+      obIndex_(index) {}
 
 // -----------------------------------------------------------------------------
 
@@ -42,9 +44,15 @@ eckit::geometry::Point3 ObsIterator::operator*() const {
     lons_ = std::make_shared<std::vector<float>>();
     obsSpace_.get_db("MetaData", "longitude", *lons_);
   }
-  // TODO(Travis) also get height/depth/pressure, whatever, once 3D
-  // localization is implemented for sequential EnKF.
-  return eckit::geometry::Point3((*lons_)[obIndex_], (*lats_)[obIndex_], 0.0);
+  double z = 0.0;
+  if (vcName_) {
+    if (!vcoord_) {
+      vcoord_ = std::make_shared<std::vector<float>>();
+      obsSpace_.get_db("MetaData", *vcName_, *vcoord_);
+    }
+    z = static_cast<double>((*vcoord_)[obIndex_]);
+  }
+  return eckit::geometry::Point3((*lons_)[obIndex_], (*lats_)[obIndex_], z);
 }
 
 // -----------------------------------------------------------------------------
