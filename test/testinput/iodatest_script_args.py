@@ -38,7 +38,7 @@ def create_obs_group(str_input:str,
     assert nn["nested_nested_list_input"] == [7, 8], "nested_nested_list_input value mismatch"
 
     # Return an empty ObsGroup object to make IODA happy
-    g = ioda.Engines.HH.createMemoryFile(name = "test.hdf5",
+    g = ioda.Engines.HH.createMemoryFile(name = "test-args.hdf5",
                                          mode = ioda.Engines.BackendCreateModes.Truncate_If_Exists)
     dims = [ioda.NewDimensionScale.int32('Location', 0, ioda.Unlimited, 0)]
 
