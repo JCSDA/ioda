@@ -31,11 +31,6 @@ class ReadH5FileParameters : public ReaderParametersBase {
     /// \brief Paths to multiple input file
     oops::Parameter<std::vector<std::string>> fileNames{"obsfiles", { }, this};
 
-    /// \brief action to take if input file is missing
-    /// \details the error action is the default which will write an error message
-    /// and throw an exception stopping the execution.
-    oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
-
     bool isFileBackend() const override { return true; }
 
     std::string getFileName() const override { return fileName.value(); }

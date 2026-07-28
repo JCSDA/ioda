@@ -25,6 +25,7 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/ObsDataIoParameters.h"
 
 #include "oops/mpi/mpi.h"
@@ -777,6 +778,23 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
                              readMultipleFiles,
                              myMpiRank,
                              -1);  // timeRankNum not relevant
+
+  const std::string missingFileAction =
+      dataInParams.engine.value().engineParameters.value().missingFileAction.value();
+
+  if (!Engines::haveFileReadAccess(fileName)) {
+    if (missingFileAction == "warn") {
+      oops::Log::info() << "WARNING: ioda::reader::loadOsdfFromNetcdf: input file is not "
+                        << "readable, will continue with empty file representation" << std::endl
+                        << "WARNING:     file: " << fileName << std::endl;
+      return;
+    } else if (missingFileAction != "error") {
+      const std::string errMsg = std::string("Unrecognized input file missing action: ") +
+                      missingFileAction;
+      throw eckit::BadParameter(errMsg, Here());
+    }
+    throw eckit::ReadError(fileName, Here());
+  }
 
   oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
                     << fileName << std::endl;

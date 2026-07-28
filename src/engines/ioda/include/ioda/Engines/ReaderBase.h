@@ -41,6 +41,11 @@ class ReaderParametersBase : public oops::Parameters {
     /// \brief Type of the ReaderBase subclass to use.
     oops::RequiredParameter<std::string> type{"type", this};
 
+    /// \brief action to take if input file is missing
+    /// \details the error action is the default which will write an error message
+    /// and throw an exception stopping the execution.
+    oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
+
     /// \brief return true if the backend uses an input file
     /// \details This is true for file backends and false for generator
     /// backends.

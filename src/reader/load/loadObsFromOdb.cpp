@@ -7,11 +7,15 @@
 
 #include "ioda/reader/load/loadObsFromOdb.hpp"
 
+#include "eckit/exception/Exceptions.h"
+
+#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/ODC.h"
 #include "ioda/reader/OsdfFrameFacade.hpp"
 #include "ioda/Engines/ReadOdbFile.h"
 #include "ioda/ObsDataIoParameters.h"
 
+#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace ioda {
@@ -30,6 +34,25 @@ void loadOsdfFromOdb(const ObsDataInParameters & dataInParams,
     const std::string errMsg =
         "ioda::reader::loadOsdfFromOdb: Reading multiple files is not supported with ODB engine.";
     throw eckit::NotImplemented(errMsg, Here());
+  }
+
+  const std::string fileName = readerParams.fileName.value();
+  const std::string missingFileAction = readerParams.missingFileAction.value();
+  if (!Engines::haveFileReadAccess(fileName)) {
+    if (missingFileAction == "warn") {
+      oops::Log::info() << "WARNING: ioda::reader::loadOsdfFromOdb: input file is not "
+                        << "readable, will continue with empty file representation" << std::endl
+                        << "WARNING:     file: " << fileName << std::endl;
+      // Leave destOsdf/osdfMetadata untouched (ie, no columns, no rows), matching the
+      // state loadObs()/distributeOsdfMetadata() already tolerate for io pool ranks that
+      // read zero locations from a (present) ODB file.
+      return;
+    } else if (missingFileAction != "error") {
+      const std::string errMsg = std::string("Unrecognized input file missing action: ") +
+                      missingFileAction;
+      throw eckit::BadParameter(errMsg, Here());
+    }
+    throw eckit::ReadError(fileName, Here());
   }
 
   Engines::ODC::ODC_Parameters odcparams;

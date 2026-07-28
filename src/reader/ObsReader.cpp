@@ -67,7 +67,16 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
       std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(destOsdf->frameType());
       loadObs(dataInParamsSingleFile, ioPoolParams, commAll, obsVarNames, timeWindow, tempOsdf,
               osdfMetadata);
-      destOsdf->append(tempOsdf);
+
+      // A warn-and-skipped missing file comes back with no column metadata, which
+      // FrameCols::append can't handle on either side, so treat it as a no-op instead.
+      if (tempOsdf->numCols() == 0) {
+        continue;
+      } else if (destOsdf->numCols() == 0) {
+        destOsdf = std::move(tempOsdf);
+      } else {
+        destOsdf->append(tempOsdf);
+      }
     }
   }
 

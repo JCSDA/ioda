@@ -43,11 +43,6 @@ class ReadOdbFileParameters : public ReaderParametersBase {
     oops::OptionalParameter<util::DateTime>
       timeWindowExtendedLowerBound{"time window extended lower bound", this};
 
-    /// \brief action to take if input file is missing
-    /// \details the error action is the default which will write an error message
-    /// and throw an exception stopping the execution.
-    oops::Parameter<std::string> missingFileAction{"missing file action", "error", this};
-
     /// \brief Maximum number of disjoint sequences of ODB frames read by an individual MPI process.
     ///
     /// Only relevant when parallel I/O is in use. Increasing this number will improve load
