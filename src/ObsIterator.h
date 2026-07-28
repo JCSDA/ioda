@@ -37,7 +37,7 @@ class ObsIterator: public util::Printable, private util::ObjectCounter<ObsIterat
   static std::string classname() {return "ioda::ObsIterator";}
 
   ObsIterator(const ObsIterator &) = default;
-  ObsIterator& operator=(const ObsIterator &) = default;
+  ObsIterator& operator=(const ObsIterator &) = delete;
 
   bool operator==(const ObsIterator &) const;
   bool operator!=(const ObsIterator &) const;
