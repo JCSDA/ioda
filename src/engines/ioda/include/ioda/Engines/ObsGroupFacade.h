@@ -141,7 +141,7 @@ private:
   ContainerOptions options_;
   bool isInitialized_ = false;
   ObsGroup og_;
-  int numChannels_ = 1;
+  int numChannels_ = 0;
 };
 
 }  // namespace Engines

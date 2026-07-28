@@ -56,7 +56,7 @@ void OsdfFrameFacade::addDateTimeVariableToOptions(std::string dateTimeVariableN
 }
 
 int OsdfFrameFacade::numberOfChannels() const {
-  return std::max<int>(metadata_.getDimNums("Channel").size(), 1);
+  return metadata_.getDimNums("Channel").size();
 }
 
 void OsdfFrameFacade::addVariable(const std::string &name, const std::vector<int> &values,

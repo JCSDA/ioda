@@ -94,7 +94,7 @@ void testUninitialisedContainer(
   std::unique_ptr<WrappedContainer> container = makeContainer();
   ContainerFacade &facade = container->facade();
 
-  EXPECT_EQUAL(facade.numberOfChannels(), 1);
+  EXPECT_EQUAL(facade.numberOfChannels(), 0);
   EXPECT_THROWS(facade.addVariable("initial_obsvalue/2", std::vector<float>({300.f}),
                                    false /*hasChannelAxis*/));
   EXPECT_THROWS(facade.removeVariable("initial_obsvalue/2"));
@@ -127,7 +127,7 @@ void testNumberOfChannels(const std::function<std::unique_ptr<WrappedContainer>(
     std::unique_ptr<WrappedContainer> container = makeContainer();
     ContainerFacade &facade = container->facade();
     initializeContainerWithoutChannels(facade);
-    EXPECT_EQUAL(facade.numberOfChannels(), 1);
+    EXPECT_EQUAL(facade.numberOfChannels(), 0);
   }
 
   // Section 2: Container initialised with channels

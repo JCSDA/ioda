@@ -83,8 +83,8 @@ class ContainerFacade {
   ///   Variable of dateTime type to be added to options.datetimevariables
   virtual void addDateTimeVariableToOptions(std::string dateTimeVariableName) = 0;
 
-  /// \brief The number of channels specified during container initialization, or 1 if explicit
-  /// channel indices were specified.
+  /// \brief The number of channels specified during container initialization, or 0 if none were
+  /// specified.
   virtual int numberOfChannels() const = 0;
 
   /// \brief Add a variable to the wrapped container.

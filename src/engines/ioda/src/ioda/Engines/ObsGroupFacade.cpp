@@ -47,7 +47,7 @@ void ObsGroupFacade::initialize(size_t numLocations,
     numChannels_ = channelIndices->size();
     scales.push_back(NewDimensionScale<int>("Channel", numChannels_, numChannels_, numChannels_));
   } else {
-    numChannels_ = 1;
+    numChannels_ = 0;
   }
 
   options_ = options;
@@ -257,6 +257,9 @@ void ObsGroupFacade::addTypedVariable(const std::string &name, const std::vector
                                       const std::optional<T> &missingValue) {
   if (!isInitialized_)
     throw eckit::UserError("ObsGroup has not been initialized yet", Here());
+  if (hasChannelAxis && numChannels_ == 0)
+    throw eckit::UserError("Attempted to add a variable " + name + " with a channel axis "
+                           "to an ObsGroup without channels");
 
   using Matrix = RowMajorMatrix<T>;
   Matrix fallbackRowMajorMatrix;
