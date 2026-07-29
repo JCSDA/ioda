@@ -870,7 +870,7 @@ void setODBColumn(std::map<std::string, std::string> &columnMappings, const Colu
   // transform name to lower case
   std::transform(colname2.begin(), colname2.end(), colname2.begin(),
                  [](unsigned char c) { return std::tolower(c); });
-  if (v.column_type == TypeClass::Integer) {
+  if (v.column_type == TypeClass::Integer || v.column_size == 1) {
     writer->setColumn(column_number, colname2, odc::api::INTEGER);
     column_number++;
   } else if (v.column_type == TypeClass::String) {
@@ -1056,11 +1056,11 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
     std::vector<double> data_store_date(arraySize);
     std::vector<int64_t> buf;
     storageGroup.vars[obsspacename].read<int64_t>(buf);
-    float fillValue
-      = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
+    int64_t fillValue
+      = ioda::detail::getFillValue<int64_t>(storageGroup.vars[obsspacename].getFillValue());
     for (int j = 0; j < arraySize; j++) {
       if (fillValue == buf[j]) {
-        data_store_date[j] = odb_missing_float;
+        data_store_date[j] = odb_missing_int;
       } else {
         // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
         // doesn't matter in this context.
@@ -1095,11 +1095,11 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
     std::vector<double> data_store_time(arraySize);
     std::vector<int64_t> buf;
     storageGroup.vars[obsspacename].read<int64_t>(buf);
-    const float fillValue
-      = ioda::detail::getFillValue<float>(storageGroup.vars[obsspacename].getFillValue());
+    const int64_t fillValue
+      = ioda::detail::getFillValue<int64_t>(storageGroup.vars[obsspacename].getFillValue());
     for (int j = 0; j < arraySize; j++) {
       if (fillValue == buf[j]) {
-        data_store_time[j] = odb_missing_float;
+        data_store_time[j] = odb_missing_int;
       } else {
         // See comments above in the date section.
         int64_t offset = buf[j];
