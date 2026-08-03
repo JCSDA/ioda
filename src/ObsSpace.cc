@@ -1631,35 +1631,36 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
         ioda::Variable var = obs_group_->vars.open(fullVarName(groupToUse, nameToUse));
 
         const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+        const std::string LayerVarName   = this->get_dim_name(ObsDimensionId::Layer);
 
-        // In the following code, assume that if a variable has channels, the
-        // Channel dimension will be the second dimension.
-        if (obs_group_->vars.exists(ChannelVarName)) {
-            const Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
+        // In the following code, assume that if a variable has a second dimension it is
+        // either Channel (radiance) or Layer (retrieval). So far [ Location, Channel, Layer ] (3D)
+        // so far has not been seen. If both dimensions happen to be present in the file,
+        // Channel is picked in preference to Layer.
+        if (obs_group_->vars.exists(ChannelVarName) || obs_group_->vars.exists(LayerVarName)) {
+            const std::string DimVarName = obs_group_->vars.exists(ChannelVarName)
+                                           ? ChannelVarName : LayerVarName;
+            const Variable DimVar = obs_group_->vars.open(DimVarName);
             if (var.getDimensions().dimensionality > 1) {
-                if (var.isDimensionScaleAttached(1, ChannelVar) &&
+                if (var.isDimensionScaleAttached(1, DimVar) &&
                 (sliceSelectToUse.size() > 0)) {
-                    // This variable has Channel as the second dimension, and channel
+                    // This variable has Channel or Layer as the second dimension, and slice
                     // selection has been specified. Build selection objects based on the
-                    // channel numbers. For now, select all locations (first dimension).
+                    // slice index numbers. For now, select all locations (first dimension).
                     const std::size_t sliceDimIndex = 1;
                     Selection memSelect;
                     Selection obsGroupSelect;
                     const std::size_t numElements = createSliceSelections(
                         var, sliceDimIndex, sliceSelectToUse, memSelect, obsGroupSelect);
-
                     var.read<VarType>(varValues, memSelect, obsGroupSelect);
                     varValues.resize(numElements);
                 } else {
-                // Not a radiance variable, just read in the whole variable
-                var.read<VarType>(varValues);
+                    var.read<VarType>(varValues);
                 }
             } else {
-                // Not a radiance variable, just read in the whole variable
                 var.read<VarType>(varValues);
             }
         } else {
-            // Not a radiance variable, just read in the whole variable
             var.read<VarType>(varValues);
         }
     }
@@ -1923,18 +1924,19 @@ std::size_t ObsSpace::createSliceSelections(const Variable & variable,
 }
 
 void ObsSpace::fillChanNumToIndexMap() {
-    // If there is a channels dimension, load up the channel number to index map
-    // for channel selection feature.
-    std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+    // If there is a channels or layers dimension, load up the channel number to index map
+    // for channel/layer selection feature.
+    const std::string ChannelVarName = this->get_dim_name(ObsDimensionId::Channel);
+    const std::string LayerVarName   = this->get_dim_name(ObsDimensionId::Layer);
     std::vector<int> chanNumbers;
 
     if (use_dataframe_) {
         // OSDF container
         chanNumbers = osdfMetadata_.getDimNums("Channel");
-    } else {
-        // ObsGroup container
+    } else if (obs_group_->vars.exists(ChannelVarName) || obs_group_->vars.exists(LayerVarName)) {
+        // ObsGroup container — Channel or Layer dimension
         if (obs_group_->vars.exists(ChannelVarName)) {
-            // Get the vector of channel numbers
+            // Channel dimension: read actual channel numbers from the variable.
             Variable ChannelVar = obs_group_->vars.open(ChannelVarName);
             if (ChannelVar.isA<int>()) {
                 ChannelVar.read<int>(chanNumbers);
@@ -1943,6 +1945,12 @@ void ObsSpace::fillChanNumToIndexMap() {
                 ChannelVar.read<float>(floatChanNumbers);
                 ConvertVarType<float, int>(floatChanNumbers, chanNumbers);
             }
+        } else {
+            // Layer dimension: synthesize a sequential 1-based map {1->0, 2->1, ..., N->N-1}
+            // so that YAML `layers: 1-N` can select individual layers by 1-based index.
+            std::size_t nLayers = obs_group_->vars.open(LayerVarName).getDimensions().dimsCur[0];
+            chanNumbers.resize(nLayers);
+            std::iota(chanNumbers.begin(), chanNumbers.end(), 1);
         }
     }
     // Record the channel number to index mapping. If you have chanNumbers

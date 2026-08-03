@@ -17,7 +17,8 @@ namespace ioda {
     /// initializer function stay in sync.
     enum class ObsDimensionId {
         Location,
-        Channel
+        Channel,
+        Layer
     };
 
     /// \brief Wrapper class that maps dimension ids to names.

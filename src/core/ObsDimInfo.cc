@@ -22,6 +22,11 @@ ObsDimInfo::ObsDimInfo() {
     dim_id_name_[ObsDimensionId::Channel] = dimName;
     dim_id_size_[ObsDimensionId::Channel] = 0;
     dim_name_id_[dimName] = ObsDimensionId::Channel;
+
+    dimName = "Layer";
+    dim_id_name_[ObsDimensionId::Layer] = dimName;
+    dim_id_size_[ObsDimensionId::Layer] = 0;
+    dim_name_id_[dimName] = ObsDimensionId::Layer;
 }
 
 ObsDimensionId ObsDimInfo::get_dim_id(const std::string & dimName) const {
