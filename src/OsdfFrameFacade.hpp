@@ -42,7 +42,11 @@ class OsdfFrameFacade : public Engines::ContainerFacade {
   ///   The frame to be wrapped.
   /// \param metadata
   ///   Frame metadata (to be kept in sync with the frame's contents).
-  OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata);
+  /// \param allowNonEmptyFrame
+  ///   Whether to allow the input frame to already contain data
+  ///   (Responsibility of caller to ensure frame and metadata in sync when passed in)
+  OsdfFrameFacade(osdf::IFrame &frame, osdf::FrameMetadata &metadata,
+                  bool allowNonEmptyFrame = false);
 
   void initialize(size_t numLocations, const std::optional<std::vector<int>> &channelIndices,
                   std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
@@ -50,7 +54,13 @@ class OsdfFrameFacade : public Engines::ContainerFacade {
 
   void addDateTimeVariableToOptions(std::string dateTimeVariableName) override;
 
+  int numberOfLocations() const override;
+
   int numberOfChannels() const override;
+
+  std::string variableUnits(const std::string &name) const override;
+
+  std::vector<int> channelNumbers() const override;
 
   void addVariable(const std::string &name, const std::vector<int> &values,
                    bool hasChannelAxis, MemoryLayout layout = MemoryLayout::RowMajor,

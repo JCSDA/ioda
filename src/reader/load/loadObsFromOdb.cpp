@@ -11,7 +11,7 @@
 
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/ODC.h"
-#include "ioda/reader/OsdfFrameFacade.hpp"
+#include "ioda/OsdfFrameFacade.hpp"
 #include "ioda/Engines/ReadOdbFile.h"
 #include "ioda/ObsDataIoParameters.h"
 

@@ -4,7 +4,7 @@ time window:
   end: "2021-07-01T15:00:00Z"
 
 observations:
-- obs space:
+- obs space: &radiosonde
     name: "Radiosonde"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -19,7 +19,7 @@ observations:
         obsfile: "testoutput/diagout-sonde-mixed.odc"
         mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
-  test data:
+  test data: &radiosonde_data
     gnlocs: 9234
     gnlocs outside time window: 155
     gnlocs rejected by qc: 0
@@ -53,6 +53,18 @@ observations:
         channels: []
 
 - obs space:
+    <<: *radiosonde
+    name: "Radiosonde (OSDF)"
+    use data frame container: true
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-sonde-mixed-osdf.odc"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
+  test data: *radiosonde_data
+
+- obs space: &radiosonde_derived
     name: "Radiosonde derived"
     simulated variables: ['airTemperature']
     obsdatain:
@@ -68,7 +80,7 @@ observations:
         mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
         odb type: derived
-  test data:
+  test data: &radiosonde_derived_data
     gnlocs: 9234
     gnlocs outside time window: 155
     gnlocs rejected by qc: 0
@@ -100,3 +112,16 @@ observations:
       - name: "airTemperature"
         group: "ObsValue"
         channels: []
+
+- obs space:
+    <<: *radiosonde_derived
+    name: "Radiosonde derived (OSDF)"
+    use data frame container: true
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/diagout-sonde-derived-osdf.odc"
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_write.yaml
+        odb type: derived
+  test data: *radiosonde_derived_data

@@ -11,7 +11,7 @@
 #include "ioda/Engines/WriteOdbFile.h"
 
 #include "ioda/Engines/EngineUtils.h"
-
+#include "ioda/Engines/ObsGroupFacade.h"
 #include "oops/util/Logger.h"
 
 namespace ioda {
@@ -58,8 +58,9 @@ void WriteOdbFile::finalize() {
     odcparams.outputFile = outFileName;
     odcparams.odbType = params_.odbType;
     odcparams.missingObsSpaceVariableAbort = params_.missingObsSpaceVariableAbort;
-    odcparams.ignoreChannelDimensionWrite = params_.ignoreChannelDimensionWrite;
-    Group writerGroup = ioda::Engines::ODC::createFile(odcparams, obs_group_);
+    odcparams.ignoreChannelDimensionWrite  = params_.ignoreChannelDimensionWrite;
+    ioda::Engines::ObsGroupFacade container(obs_group_, Engines::FacadeMode::WriterMode);
+    ioda::Engines::ODC::createFile(odcparams, container);
 }
 
 //---------------------------------------------------------------------

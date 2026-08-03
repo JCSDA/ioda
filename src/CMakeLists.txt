@@ -11,6 +11,8 @@ ObsDataIoParameters.h
 ObsSpaceParameters.h
 ObsVector.cc
 ObsVector.h
+OsdfFrameFacade.cpp
+OsdfFrameFacade.hpp
 
 containers/ColumnMetadata.cpp
 containers/ColumnMetadata.h
@@ -146,8 +148,6 @@ reader/load/storeGenDataInFrame.cpp
 reader/load/storeGenDataInFrame.hpp
 reader/ObsReader.cpp
 reader/ObsReader.hpp
-reader/OsdfFrameFacade.cpp
-reader/OsdfFrameFacade.hpp
 
 writer/ObsWriter.cpp
 writer/ObsWriter.hpp
@@ -157,6 +157,8 @@ writer/save/saveObs.cpp
 writer/save/saveObs.hpp
 writer/save/saveObsToNetcdf.cpp
 writer/save/saveObsToNetcdf.hpp
+writer/save/saveObsToOdb.cpp
+writer/save/saveObsToOdb.hpp
 
 c_obsdatavector_int.hpp
 c_obsdatavector_int.cpp

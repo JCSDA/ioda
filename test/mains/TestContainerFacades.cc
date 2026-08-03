@@ -23,7 +23,7 @@
 #include "ioda/Engines/ObsGroupFacade.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
-#include "ioda/reader/OsdfFrameFacade.hpp"
+#include "ioda/OsdfFrameFacade.hpp"
 
 // -----------------------------------------------------------------------------
 

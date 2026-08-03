@@ -15,25 +15,22 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ctime>
 #include <ostream>
 #include <optional>
 #include <set>
 #include <string>
-#include <typeinfo>
 #include <vector>
 
-#include "eckit/io/MemoryHandle.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/utils/StringTools.h"
 #include "ioda/Engines/ContainerFacade.h"
+#include "ioda/Engines/ContainerVariableType.h"
 #include "ioda/Exception.h"
-#include "ioda/Group.h"
 #include "ioda/Misc/UnitConversions.h"
 #include "ioda/ObsGroup.h"
-#include "ioda/Types/Type.h"
 #include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
-#include "ioda/defs.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -614,8 +611,7 @@ ReverseColumnMappings collectReverseColumnMappings(const detail::ODBLayoutParame
 
 struct ColumnInfo {
   std::string column_name;
-  TypeClass column_type;
-  int column_size;
+  ContainerVariableType column_type;
   int string_length;
   int epoch_year;
   int epoch_month;
@@ -655,156 +651,77 @@ void pushBackVector(std::vector<std::vector<double>> &data_store,
   }
 }
 
-std::vector<int> getChannelNumbers(const Group &storageGroup) {
-  TypeClass t = storageGroup.vars["Channel"].getType().getClass();
-  std::vector<int> Channel;
-  if (t == TypeClass::Integer) {
-    storageGroup.vars["Channel"].read<int>(Channel);
-  } else {
-    std::vector<float> ChannelFloat;
-    storageGroup.vars["Channel"].read<float>(ChannelFloat);
-    for (size_t i = 0; i < ChannelFloat.size(); ++i)
-      Channel.emplace_back(static_cast<int>(ChannelFloat[i]));
-  }
-  return Channel;
-}
-
-void setupColumnInfo(const Group &storageGroup,
+void setupColumnInfo(const ContainerFacade &container,
                      const std::map<std::string, std::string> &reverseColumnMap,
                      std::vector<ColumnInfo> &column_infos, int &num_columns,
                      const bool errorWithColumnNotInObsSpace, const bool ignoreChannels) {
-  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
-  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
-    for (size_t i = 0; i < it->second.size(); i++) {
-      const auto found = reverseColumnMap.find(it->second[i]);
-      if (found != reverseColumnMap.end()) {
-        if (!it->second[i].compare(metadata_prefix_size, it->second[i].size(), "dateTime")
-            || !it->second[i].compare(metadata_prefix_size, it->second[i].size(),
-                                      "receiptdateTime")) {
-          std::string datename           = "date";
-          std::string timename           = "time";
-          const std::string obsspacename = it->second[i];
-          if (obsspacename == "MetaData/receiptdateTime") {
-            datename = "receipt_date";
-            timename = "receipt_time";
-          }
-          ColumnInfo date, time;
-          date.column_name = datename;
-          date.column_type = storageGroup.vars[obsspacename].getType().getClass();
-          date.column_size = storageGroup.vars[obsspacename].getType().getSize();
-          std::string epochString
-            = storageGroup.vars[obsspacename].atts.open("units").read<std::string>();
-          std::size_t pos    = epochString.find("seconds since ");
-          epochString        = epochString.substr(pos + 14);
-          const int year     = std::stoi(epochString.substr(0, 4).c_str());
-          date.epoch_year    = year;
-          time.epoch_year    = year;
-          const int month    = std::stoi(epochString.substr(5, 2).c_str());
-          date.epoch_month   = month;
-          time.epoch_month   = month;
-          const int day      = std::stoi(epochString.substr(8, 2).c_str());
-          date.epoch_day     = day;
-          time.epoch_day     = day;
-          const int hour     = std::stoi(epochString.substr(11, 2).c_str());
-          date.epoch_hour    = hour;
-          time.epoch_hour    = hour;
-          const int minute   = std::stoi(epochString.substr(14, 2).c_str());
-          date.epoch_minute  = minute;
-          time.epoch_minute  = minute;
-          const int second   = std::stoi(epochString.substr(17, 2).c_str());
-          date.epoch_second  = second;
-          time.epoch_second  = second;
-          date.string_length = 0;
-          num_columns++;
-          time.column_name   = timename;
-          time.column_type   = storageGroup.vars[obsspacename].getType().getClass();
-          time.column_size   = storageGroup.vars[obsspacename].getType().getSize();
-          time.string_length = 0;
-          num_columns++;
-          column_infos.push_back(date);
-          column_infos.push_back(time);
-        } else {
-          ColumnInfo col;
-          col.column_name = it->second[i];
-          col.column_type = storageGroup.vars[col.column_name].getType().getClass();
-          col.column_size = storageGroup.vars[col.column_name].getType().getSize();
-          if (col.column_type == TypeClass::String) {
-            std::vector<std::string> buf;
-            storageGroup.vars[col.column_name].read<std::string>(buf);
-            size_t len = 0;
-            for (size_t j = 0; j < buf.size(); j++) {
-              if (buf[j].size() > len) {
-                len = buf[j].size();
-              }
-            }
-            col.string_length = len;
-            num_columns += 1 + ((col.string_length - 1) / 8);
-          } else {
-            col.string_length = 0;
-            num_columns++;
-          }
-          column_infos.push_back(col);
-        }
-      }
-      if (!it->second[i].compare("Channel") && !ignoreChannels) {
-        ColumnInfo col;
-        col.column_name   = "vertco_reference_1";
-        col.column_type   = storageGroup.vars["Channel"].getType().getClass();
-        col.column_size   = storageGroup.vars["Channel"].getType().getSize();
-        col.string_length = 0;
-        num_columns++;
-        column_infos.push_back(col);
-      }
-    }
+  // If Channel is a column in obsSpace, add to ODB columns
+  // (not needed for osdf, preserved for backwards compatibility)
+  if (!ignoreChannels && container.numberOfChannels() != 0 ) {
+    ColumnInfo col;
+    col.column_name   = "vertco_reference_1";
+    col.column_type   = ContainerVariableType::Int;
+    col.string_length = 0;
+    num_columns++;
+    column_infos.push_back(col);
   }
-  // Check that map entry requested is in the ObsGroup
-  for (const auto &map : reverseColumnMap) {
-    if (!storageGroup.vars.exists(map.first)) {
-      if (errorWithColumnNotInObsSpace) {
-        throw eckit::UserError("Variable " + map.first
-                                 + " requested via the query file is not in the ObsSpace "
-                                 + "therefore aborting as requested",
-                               Here());
-      } else {
-        oops::Log::warning() << "WARNING: Variable " + map.first + " is in query file "
-                             << "but not in ObsSpace therefore not being written out" << std::endl;
-      }
-    }  // end of if found
-  }  // end of map loop
-  // Add the processed data column
-  ColumnInfo col;
-  col.column_name   = "processed_data";
-  col.column_type   = TypeClass::Integer;
-  col.column_size   = 4;
-  col.string_length = 0;
-  num_columns++;
-  column_infos.push_back(col);
-}
+  const std::vector<std::string> objs = container.iodaVariableNames();
+  for (size_t i = 0; i < objs.size(); i++) {
+    const auto found = reverseColumnMap.find(objs[i]);
+    if (found != reverseColumnMap.end()) {
+      if (!objs[i].compare(metadata_prefix_size, objs[i].size(), "dateTime")
+          || !objs[i].compare(metadata_prefix_size, objs[i].size(), "receiptdateTime")) {
+        std::string datename           = "date";
+        std::string timename           = "time";
+        const std::string obsspacename = objs[i];
+        if (obsspacename == "MetaData/receiptdateTime") {
+          datename = "receipt_date";
+          timename = "receipt_time";
+        }
+        ColumnInfo date, time;
+        date.column_name = datename;
+        date.column_type = container.variableType(obsspacename);
 
-void setupBodyColumnInfo(const Group &storageGroup,
-                         const std::map<std::string, std::string> &reverseColumnMap,
-                         std::vector<ColumnInfo> &column_infos,
-                         std::vector<ColumnInfo> &column_infos_missing, int &num_columns,
-                         const bool errorWithColumnNotInObsSpace) {
-  std::vector<std::string> col_names;
-  std::vector<std::string> obs_space_found;
-  const auto objs = storageGroup.listObjects(ObjectType::Variable, true);
-  for (auto it = objs.cbegin(); it != objs.cend(); it++) {
-    for (size_t i = 0; i < it->second.size(); i++) {
-      const auto found = reverseColumnMap.find(it->second[i]);
-      if (found != reverseColumnMap.end()) {
-        obs_space_found.push_back(it->second[i]);
-        const auto alreadyExists = std::find(col_names.begin(), col_names.end(), found->second);
-        if (alreadyExists != col_names.end()) continue;
-        col_names.push_back(found->second);
+        // When retrieved from the units of the dateTime variable in container, epochString
+        // takes the form "seconds since 1970-01-01T00:00:00Z."
+        // The first substr call strips the "seconds since " prefix from epochString, leaving
+        // "1970-01-01T00:00:00Z"
+        // The following substr calls separate out year, month, day, hour, minute, and second.
+        std::string epochString = container.variableUnits(obsspacename);
+        std::size_t pos    = epochString.find("seconds since ");
+        epochString        = epochString.substr(pos + 14);
+        const int year     = std::stoi(epochString.substr(0, 4).c_str());
+        date.epoch_year    = year;
+        time.epoch_year    = year;
+        const int month    = std::stoi(epochString.substr(5, 2).c_str());
+        date.epoch_month   = month;
+        time.epoch_month   = month;
+        const int day      = std::stoi(epochString.substr(8, 2).c_str());
+        date.epoch_day     = day;
+        time.epoch_day     = day;
+        const int hour     = std::stoi(epochString.substr(11, 2).c_str());
+        date.epoch_hour    = hour;
+        time.epoch_hour    = hour;
+        const int minute   = std::stoi(epochString.substr(14, 2).c_str());
+        date.epoch_minute  = minute;
+        time.epoch_minute  = minute;
+        const int second   = std::stoi(epochString.substr(17, 2).c_str());
+        date.epoch_second  = second;
+        time.epoch_second  = second;
+        date.string_length = 0;
+        num_columns++;
+        time.column_name   = timename;
+        time.column_type = container.variableType(obsspacename);
+        time.string_length = 0;
+        num_columns++;
+        column_infos.push_back(date);
+        column_infos.push_back(time);
+      } else {
         ColumnInfo col;
-        col.column_name                = found->second;
-        const std::string obsspacename = it->second[i];
-        col.column_type                = storageGroup.vars[obsspacename].getType().getClass();
-        col.column_size                = storageGroup.vars[obsspacename].getType().getSize();
-        if (col.column_type == TypeClass::String) {
-          std::vector<std::string> buf;
-          storageGroup.vars[obsspacename].read<std::string>(buf);
+        col.column_name = objs[i];
+        col.column_type = container.variableType(col.column_name);
+        if (col.column_type == ContainerVariableType::String) {
+          std::vector<std::string> buf = container.variableValues<std::string>(col.column_name);
           size_t len = 0;
           for (size_t j = 0; j < buf.size(); j++) {
             if (buf[j].size() > len) {
@@ -822,6 +739,65 @@ void setupBodyColumnInfo(const Group &storageGroup,
     }
   }
   // Check that map entry requested is in the ObsGroup
+  for (const auto &map : reverseColumnMap) {
+    if (!container.hasVariable(map.first)) {
+      if (errorWithColumnNotInObsSpace) {
+        throw eckit::UserError("Variable " + map.first
+                                 + " requested via the query file is not in the ObsSpace "
+                                 + "therefore aborting as requested",
+                               Here());
+      } else {
+        oops::Log::warning() << "WARNING: Variable " + map.first + " is in query file "
+                             << "but not in ObsSpace therefore not being written out" << std::endl;
+      }
+    }  // end of if found
+  }  // end of map loop
+  // Add the processed data column
+  ColumnInfo col;
+  col.column_name   = "processed_data";
+  col.column_type   = ContainerVariableType::Int;
+  col.string_length = 0;
+  num_columns++;
+  column_infos.push_back(col);
+}
+
+void setupBodyColumnInfo(const ContainerFacade &container,
+                         const std::map<std::string, std::string> &reverseColumnMap,
+                         std::vector<ColumnInfo> &column_infos,
+                         std::vector<ColumnInfo> &column_infos_missing, int &num_columns,
+                         const bool errorWithColumnNotInObsSpace) {
+  std::vector<std::string> col_names;
+  std::vector<std::string> obs_space_found;
+  const std::vector<std::string> objs = container.iodaVariableNames();
+  for (size_t i = 0; i < objs.size(); i++) {
+    const auto found = reverseColumnMap.find(objs[i]);
+    if (found != reverseColumnMap.end()) {
+      obs_space_found.push_back(objs[i]);
+      const auto alreadyExists = std::find(col_names.begin(), col_names.end(), found->second);
+      if (alreadyExists != col_names.end()) continue;
+      col_names.push_back(found->second);
+      ColumnInfo col;
+      col.column_name                = found->second;
+      const std::string obsspacename = objs[i];
+      col.column_type = container.variableType(obsspacename);
+      if (col.column_type == ContainerVariableType::String) {
+        std::vector<std::string> buf = container.variableValues<std::string>(obsspacename);
+        size_t len = 0;
+        for (size_t j = 0; j < buf.size(); j++) {
+          if (buf[j].size() > len) {
+            len = buf[j].size();
+          }
+        }
+        col.string_length = len;
+        num_columns += 1 + ((col.string_length - 1) / 8);
+      } else {
+        col.string_length = 0;
+        num_columns++;
+      }
+      column_infos.push_back(col);
+    }
+  }
+  // Check that map entry requested is in the ObsGroup
   // if not create add to the missing which will get written
   // out with missing data
   for (const auto &map : reverseColumnMap) {
@@ -832,8 +808,7 @@ void setupBodyColumnInfo(const Group &storageGroup,
       if (alreadyListed == col_names.end()) {
         ColumnInfo col;
         col.column_name = map.second;
-        col.column_type = TypeClass::Float;
-        col.column_size = 4;
+        col.column_type = ContainerVariableType::Float;
         column_infos_missing.push_back(col);
         col_names.push_back(map.second);
       }
@@ -870,10 +845,12 @@ void setODBColumn(std::map<std::string, std::string> &columnMappings, const Colu
   // transform name to lower case
   std::transform(colname2.begin(), colname2.end(), colname2.begin(),
                  [](unsigned char c) { return std::tolower(c); });
-  if (v.column_type == TypeClass::Integer || v.column_size == 1) {
+  // Column size 1 is a bool, this will be put in the odb as an integer
+  if (v.column_type == ContainerVariableType::Int || v.column_type == ContainerVariableType::Int64
+      || v.column_type == ContainerVariableType::Char) {
     writer->setColumn(column_number, colname2, odc::api::INTEGER);
     column_number++;
-  } else if (v.column_type == TypeClass::String) {
+  } else if (v.column_type == ContainerVariableType::String) {
     if (v.string_length <= 8) {
       writer->setColumn(column_number, colname2, odc::api::STRING);
       column_number++;
@@ -892,10 +869,11 @@ void setODBColumn(std::map<std::string, std::string> &columnMappings, const Colu
 
 void setODBBodyColumn(const ColumnInfo &v, odc::Writer<>::iterator writer, int &column_number) {
   // Column size 1 is a bool, this will be put in the odb as an integer
-  if (v.column_type == TypeClass::Integer || v.column_size == 1) {
+  if (v.column_type == ContainerVariableType::Int || v.column_type == ContainerVariableType::Int64
+      || v.column_type == ContainerVariableType::Char) {
     writer->setColumn(column_number, v.column_name, odc::api::INTEGER);
     column_number++;
-  } else if (v.column_type == TypeClass::String) {
+  } else if (v.column_type == ContainerVariableType::String) {
     if (v.string_length <= 8) {
       writer->setColumn(column_number, v.column_name, odc::api::STRING);
       column_number++;
@@ -912,15 +890,15 @@ void setODBBodyColumn(const ColumnInfo &v, odc::Writer<>::iterator writer, int &
   }
 }
 
-void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos,
+void setupVarnos(const ContainerFacade &container,
                  const std::map<std::string, std::string> &mapping,
                  const bool errorWithColumnNotInObsSpace, std::vector<int> &varnos,
                  std::vector<std::string> &varno_names) {
   for (const auto &map : mapping) {
     const std::string derived_obsvalue_name = std::string(derived_obsvalue_prefix) + map.first;
     const std::string obsvalue_name         = std::string(obsvalue_prefix) + map.first;
-    if (storageGroup.vars.exists(obsvalue_name)
-        || storageGroup.vars.exists(derived_obsvalue_name)) {
+    if (container.hasVariable(obsvalue_name)
+        || container.hasVariable(derived_obsvalue_name)) {
       varnos.push_back(std::stoi(map.second));
       varno_names.push_back(map.first);
     } else {
@@ -937,23 +915,23 @@ void setupVarnos(const Group &storageGroup, const std::vector<int> &listOfVarNos
   }
 }
 
-void fillFloatArray(const Group &storageGroup, const std::string varname, const int numrows,
-                    std::vector<double> &outdata, std::string odbType, std::vector<int> extendeds) {
+void fillFloatArray(const ContainerFacade &container, const std::string varname,
+                    std::vector<double> &outdata, std::string odbType, std::vector<int> extendeds,
+                    const int numBodyColumnElements = -1) {
   const bool derived_varname  = varname.rfind("Derived", 0) == 0;
   const bool metadata_varname = varname.rfind("MetaData", 0) == 0;
   const bool derived_odb      = odbType == "derived";
-  if (storageGroup.vars.exists(varname)) {
-    std::vector<float> buffer;
-    storageGroup.vars[varname].read<float>(buffer);
-    const ioda::Variable var = storageGroup.vars[varname];
-    const float fillValue    = ioda::detail::getFillValue<float>(var.getFillValue());
-    const float utilMissingFloat = util::missingValue<float>();
+  if (container.hasVariable(varname)) {
+    std::vector<float> buffer = container.variableValues<float>(varname);
+    const std::optional<float> fillValue = container.missingValue<float>(varname);
+    const size_t numrows                 = buffer.size();
+    outdata.resize(numrows);
+    const float utilMissingFloat         = util::missingValue<float>();
     const float utilMissingDoubleAsFloat = static_cast<float>(util::missingValue<double>());
-    const float odbMissingAsFloat = static_cast<float>(odb_missing_float);
-    const auto isMissing = [&](float value) {
-      return value == fillValue || value == utilMissingFloat
-             || value == utilMissingDoubleAsFloat || value == odbMissingAsFloat
-             || (std::isnan(value) && std::isnan(fillValue));
+    const float odbMissingAsFloat        = static_cast<float>(odb_missing_float);
+    const auto isMissing                 = [&](float value) {
+      return value == fillValue || value == utilMissingFloat || value == utilMissingDoubleAsFloat
+             || value == odbMissingAsFloat || (std::isnan(value) && std::isnan(*fillValue));
     };
     if (derived_odb) {
       if (metadata_varname) {
@@ -984,23 +962,33 @@ void fillFloatArray(const Group &storageGroup, const std::string varname, const 
       }
     }
   } else {
-    for (int j = 0; j < numrows; j++) outdata[j] = odb_missing_float;
+    // When this method is called from readColumn(), varname should always exist, so
+    // this block should not execute.
+    // When this method is called from readBodyColumn(), varname may not exist and
+    // numBodyColumnElements should be set to provide the appropriate column size.
+    // Throw an exception if varname does not exist and numBodyColumnElements is not set (-1).
+    if (numBodyColumnElements < 0) {
+      std::string msg
+        = "Variable " + varname + " not found in container and numBodyColumnElements not set (-1).";
+      throw eckit::BadParameter(msg, Here());
+    }
+    outdata.assign(numBodyColumnElements, odb_missing_float);
   }
 }
 
-void fillIntArray(const Group &storageGroup, const std::string varname, const int numrows,
-                  const int columnsize, std::vector<double> &outdata) {
-  if (storageGroup.vars.exists(varname)) {
-    if (columnsize == 4) {
-      std::vector<int> buf;
-      storageGroup.vars[varname].read<int>(buf);
-      const int fillValue
-        = ioda::detail::getFillValue<int>(storageGroup.vars[varname].getFillValue());
-      const int utilMissingInt = util::missingValue<int>();
-      const int odbMissingAsInt = static_cast<int>(odb_missing_int);
-      const auto isMissing = [&](int value) {
-        return value == fillValue || value == utilMissingInt || 
-               value == odbMissingAsInt;
+void fillIntArray(const ContainerFacade &container, const std::string varname,
+                  const ContainerVariableType columntype, std::vector<double> &outdata,
+                  const int numBodyColumnElements = -1) {
+  if (container.hasVariable(varname)) {
+    if (columntype == ContainerVariableType::Int) {
+      std::vector<int> buf = container.variableValues<int>(varname);
+      const size_t numrows = buf.size();
+      outdata.resize(numrows);
+      const std::optional<int> fillValue = container.missingValue<int>(varname);
+      const int utilMissingInt           = util::missingValue<int>();
+      const int odbMissingAsInt          = static_cast<int>(odb_missing_int);
+      const auto isMissing               = [&](int value) {
+        return value == fillValue || value == utilMissingInt || value == odbMissingAsInt;
       };
       for (int j = 0; j < numrows; j++) {
         if (isMissing(buf[j])) {
@@ -1009,29 +997,17 @@ void fillIntArray(const Group &storageGroup, const std::string varname, const in
           outdata[j] = buf[j];
         }
       }
-    } else if (columnsize == 8) {
-      std::vector<long> buf;
-      long fillValue;
-      Variable var = storageGroup.vars.open(varname);
-      if (var.isA<long>()) {
-        var.read<long>(buf);
-        fillValue = ioda::detail::getFillValue<long>(var.getFillValue());
-      } else if (var.isA<int64_t>()) {
-        std::vector<int64_t> buf64;
-        var.read<int64_t>(buf64);
-        buf.reserve(buf64.size());
-        buf.assign(buf64.begin(), buf64.end());
-        fillValue = ioda::detail::getFillValue<int64_t>(var.getFillValue());
-      } else {
-        std::string errMsg("ODB Writer: Unrecognized data type for column size of 8");
-        throw Exception(errMsg.c_str(), ioda_Here());
-      }
-      const long utilMissingLong = util::missingValue<long>();
+    } else if (columntype == ContainerVariableType::Int64) {
+      std::vector<int64_t> buf = container.variableValues<int64_t>(varname);
+      std::optional<int64_t> fillValue = container.missingValue<int64_t>(varname);
+      const size_t numrows             = buf.size();
+      outdata.resize(numrows);
+      const long utilMissingLong        = util::missingValue<long>();
       const long utilMissingInt64AsLong = static_cast<long>(util::missingValue<int64_t>());
-      const long odbMissingAsLong = static_cast<long>(odb_missing_int);
-      const auto isMissing = [&](long value) {
-        return value == fillValue || value == utilMissingLong
-               || value == utilMissingInt64AsLong || value == odbMissingAsLong;
+      const long odbMissingAsLong       = static_cast<long>(odb_missing_int);
+      const auto isMissing              = [&](long value) {
+        return value == fillValue || value == utilMissingLong || value == utilMissingInt64AsLong
+               || value == odbMissingAsLong;
       };
       for (int j = 0; j < numrows; j++) {
         if (isMissing(buf[j])) {
@@ -1040,26 +1016,39 @@ void fillIntArray(const Group &storageGroup, const std::string varname, const in
           outdata[j] = buf[j];
         }
       }
+    } else {
+      throw eckit::BadParameter(
+        "Attempting to call fillIntArray with non-integer column type. Aborting.", Here());
     }
   } else {
-    for (int j = 0; j < numrows; j++) outdata[j] = odb_missing_int;
-  }
+    // When this method is called from readColumn(), varname should always exist, so
+    // this block should not execute.
+    // When this method is called from readBodyColumn(), varname may not exist and
+    // numBodyColumnElements should be set to provide the appropriate column size.
+    // Throw an exception if varname does not exist and numBodyColumnElements is not set (-1).
+    if (numBodyColumnElements < 0) {
+      std::string msg
+        = "Variable " + varname + " not found in container and numBodyColumnElements not set (-1).";
+      throw eckit::BadParameter(msg, Here());
+    }
+    outdata.assign(numBodyColumnElements, odb_missing_int);
+  } 
 }
 
-void readColumn(const Group &storageGroup, const ColumnInfo column,
+void readColumn(const ContainerFacade &container, const ColumnInfo column,
                 std::vector<std::vector<double>> &data_store, const int number_of_locations,
                 const int number_of_channels, std::string odb_type, std::vector<int> extendeds) {
   if (column.column_name == "date" || column.column_name == "receipt_date") {
     std::string obsspacename = "MetaData/dateTime";
-    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    const int arraySize = storageGroup.vars[obsspacename].getDimensions().numElements;
-    std::vector<double> data_store_date(arraySize);
-    std::vector<int64_t> buf;
-    storageGroup.vars[obsspacename].read<int64_t>(buf);
-    int64_t fillValue
-      = ioda::detail::getFillValue<int64_t>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < arraySize; j++) {
-      if (fillValue == buf[j]) {
+    if (column.column_name == "receipt_date") {
+      obsspacename = "MetaData/receiptdateTime";
+    }
+    std::vector<int64_t> buf = container.variableValues<int64_t>(obsspacename);
+    const size_t numrows     = buf.size();
+    std::vector<double> data_store_date(numrows);
+    const std::optional<int64_t> fillValue = container.missingValue<int64_t>(obsspacename);
+    for (int j = 0; j < numrows; j++) {
+      if (fillValue && fillValue.value() == buf[j]) {
         data_store_date[j] = odb_missing_int;
       } else {
         // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
@@ -1091,14 +1080,12 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
   } else if (column.column_name == "time" || column.column_name == "receipt_time") {
     std::string obsspacename = "MetaData/dateTime";
     if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
-    const int arraySize = storageGroup.vars[obsspacename].getDimensions().numElements;
-    std::vector<double> data_store_time(arraySize);
-    std::vector<int64_t> buf;
-    storageGroup.vars[obsspacename].read<int64_t>(buf);
-    const int64_t fillValue
-      = ioda::detail::getFillValue<int64_t>(storageGroup.vars[obsspacename].getFillValue());
-    for (int j = 0; j < arraySize; j++) {
-      if (fillValue == buf[j]) {
+    std::vector<int64_t> buf = container.variableValues<int64_t>(obsspacename);
+    const size_t numrows     = buf.size();
+    std::vector<double> data_store_time(numrows);
+    const std::optional<int64_t> fillValue = container.missingValue<int64_t>(obsspacename);
+    for (int j = 0; j < numrows; j++) {
+      if (fillValue && fillValue.value() == buf[j]) {
         data_store_time[j] = odb_missing_int;
       } else {
         // See comments above in the date section.
@@ -1119,7 +1106,7 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
     }
     pushBackVector(data_store, data_store_time, number_of_locations, number_of_channels);
   } else if (column.column_name == "vertco_reference_1") {
-    std::vector<int> buf = getChannelNumbers(storageGroup);
+    std::vector<int> buf = container.channelNumbers();
     std::vector<double> data_store_chan(number_of_locations * number_of_channels);
     for (int j = 0; j < number_of_locations; j++)
       for (int i = 0; i < number_of_channels; i++)
@@ -1137,25 +1124,23 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
       for (int j = 0; j < number_of_locations; j++) data_store_chan[j] = extendeds[j];
       pushBackVector(data_store, data_store_chan, number_of_locations, number_of_channels);
     }
-  } else if (column.column_type == TypeClass::Float) {
-    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
-    std::vector<double> data_store_float(arraySize);
-    fillFloatArray(storageGroup, column.column_name, arraySize, data_store_float, odb_type,
+  } else if (column.column_type == ContainerVariableType::Float) {
+    std::vector<double> data_store_float;
+    fillFloatArray(container, column.column_name, data_store_float, odb_type,
                    extendeds);
     pushBackVector(data_store, data_store_float, number_of_locations, number_of_channels);
-  } else if (column.column_type == TypeClass::Integer) {
-    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
-    std::vector<double> data_store_int(arraySize);
-    fillIntArray(storageGroup, column.column_name, arraySize, column.column_size, data_store_int);
+  } else if (column.column_type == ContainerVariableType::Int
+             || column.column_type == ContainerVariableType::Int64) {
+    std::vector<double> data_store_int;
+    fillIntArray(container, column.column_name, column.column_type, data_store_int);
     pushBackVector(data_store, data_store_int, number_of_locations, number_of_channels);
-  } else if (column.column_type == TypeClass::String) {
-    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
-    std::vector<double> data_store_string(arraySize);
-    std::vector<std::string> buf;
-    storageGroup.vars[column.column_name].read<std::string>(buf);
+  } else if (column.column_type == ContainerVariableType::String) {
+    std::vector<std::string> buf = container.variableValues<std::string>(column.column_name);
+    const size_t numrows = buf.size();
+    std::vector<double> data_store_string(numrows);
     int num_cols = 1 + ((column.string_length - 1) / 8);
     for (int c = 0; c < num_cols; c++) {
-      for (int j = 0; j < arraySize; j++) {
+      for (int j = 0; j < numrows; j++) {
         unsigned char uc[8];
         double dat;
         for (int k = 8 * c; k < std::min(8 * (c + 1), static_cast<int>(buf[j].size())); k++) {
@@ -1169,17 +1154,23 @@ void readColumn(const Group &storageGroup, const ColumnInfo column,
       }
       pushBackVector(data_store, data_store_string, number_of_locations, number_of_channels);
     }
-  } else if (column.column_type == TypeClass::Unknown) {
-    const int arraySize = storageGroup.vars[column.column_name].getDimensions().numElements;
-    std::vector<double> data_store_unknown(arraySize);
-    for (int j = 0; j < arraySize; j++) {
-      data_store_unknown[j] = -1.0;
+  } else if (column.column_type == ContainerVariableType::Char) {
+    std::vector<char> buf = container.variableValues<char>(column.column_name);
+    const size_t numrows  = buf.size();
+    std::vector<double> data_store_char(numrows);
+    for (int j = 0; j < numrows; j++) {
+      data_store_char[j] = -1.0;
     }
-    pushBackVector(data_store, data_store_unknown, number_of_locations, number_of_channels);
+    pushBackVector(data_store, data_store_char, number_of_locations, number_of_channels);
+  } else {
+    // This shouldn't be possible as all enum cases covered, but better be safe.
+    std::string errMsg
+      = "Column " + column.column_name + " has unrecognised ContainerVariableType. Aborting\n";
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 
-void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const std::string v,
+void readBodyColumns(const ContainerFacade &container, const ColumnInfo &column, const std::string v,
                      const int number_of_rows, const std::map<std::string, std::string> &reverseMap,
                      std::vector<std::vector<double>> &data_store, std::string odb_type,
                      std::vector<int> extendeds) {
@@ -1192,28 +1183,23 @@ void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const 
   }
   // Create data_store_tmp
   std::vector<double> data_store_tmp(number_of_rows);
-  if (column.column_type == TypeClass::Integer) {
-    fillIntArray(storageGroup, obsspacename, number_of_rows, column.column_size, data_store_tmp);
+  if (column.column_type == ContainerVariableType::Int || column.column_type == ContainerVariableType::Int64) {
+    fillIntArray(container, obsspacename, column.column_type, data_store_tmp, number_of_rows);
   } else if (obsspacename.substr(0, obsspacename.find("/")) == "DiagnosticFlags") {
-    std::vector<char> buf_char;
-    storageGroup.vars[obsspacename].read<char>(buf_char);
-    const ioda::Variable var = storageGroup.vars[obsspacename];
-    const char fillValue     = ioda::detail::getFillValue<char>(var.getFillValue());
+    std::vector<char> buf_char = container.variableValues<char>(obsspacename);
+    const std::optional<char> fillValue = container.missingValue<char>(obsspacename);
     for (int j = 0; j < number_of_rows; j++) {
-      if (fillValue == buf_char[j]) {
+      if (fillValue && fillValue.value() == buf_char[j]) {
         data_store_tmp[j] = 0;
       } else {
         const int flag    = buf_char[j] > 0;
         data_store_tmp[j] = flag;
       }
     }
-  } else if (column.column_type == TypeClass::Float) {
-    fillFloatArray(storageGroup, obsspacename, number_of_rows, data_store_tmp, odb_type, extendeds);
-  } else if (column.column_type == TypeClass::Integer) {
-    fillIntArray(storageGroup, obsspacename, number_of_rows, column.column_size, data_store_tmp);
-  } else if (column.column_type == TypeClass::String) {
-    std::vector<std::string> buf;
-    storageGroup.vars[obsspacename].read<std::string>(buf);
+  } else if (column.column_type == ContainerVariableType::Float) {
+    fillFloatArray(container, obsspacename, data_store_tmp, odb_type, extendeds, number_of_rows);
+  } else if (column.column_type == ContainerVariableType::String) {
+    std::vector<std::string> buf = container.variableValues<std::string>(obsspacename);
     int num_cols = 1 + ((column.string_length - 1) / 8);
     for (int c = 0; c < num_cols; c++) {
       for (int j = 0; j < number_of_rows; j++) {
@@ -1229,11 +1215,15 @@ void readBodyColumns(const Group &storageGroup, const ColumnInfo &column, const 
         data_store_tmp[j] = dat;
       }
     }
-  } else if (column.column_type == TypeClass::Unknown) {
+  } else if (column.column_type == ContainerVariableType::Char) {
     std::vector<double> data_store_tmp(number_of_rows);
     for (int j = 0; j < number_of_rows; j++) {
       data_store_tmp[j] = -1.0;
     }
+  } else {
+    // This shouldn't be possible as all enum cases covered, but better be safe.
+    std::string errMsg = "Column " + column.column_name + " has unrecognised ContainerVariableType. Aborting\n";
+    throw eckit::BadParameter(errMsg, Here());
   }
   // Push back tmp vector to input vector for output
   data_store.push_back(data_store_tmp);
@@ -1327,20 +1317,22 @@ void convertVariableUnits(ContainerFacade &container, const detail::DataLayoutPo
   }
 }
 
-Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
+void createFile(const ODC_Parameters &odcparams, ContainerFacade &container) {
 #if odc_FOUND
-  const int number_of_locations = storageGroup.vars["Location"].getDimensions().dimsCur[0];
+  const int number_of_locations = container.numberOfLocations();
   std::vector<int> extendeds;
-  int number_of_rows     = number_of_locations;
-  int number_of_channels = 0;
-  if (storageGroup.vars.exists("Channel") && !odcparams.ignoreChannelDimensionWrite) {
-    std::vector<int> channels = getChannelNumbers(storageGroup);
-    number_of_rows *= channels.size();
-    number_of_channels = channels.size();
+  int number_of_rows = number_of_locations;
+  int number_of_channels_to_write = 0;
+
+  if (container.numberOfChannels() && !odcparams.ignoreChannelDimensionWrite) {
+    number_of_channels_to_write = container.numberOfChannels();
+    number_of_rows *= number_of_channels_to_write;
   }
-  if (storageGroup.vars.exists("MetaData/extendedObsSpace")) {
-    storageGroup.vars["MetaData/extendedObsSpace"].read<int>(extendeds);
-  } else {
+  std::string extendedName = "MetaData/extendedObsSpace";
+  if (container.hasVariable(extendedName)) {
+    extendeds = container.variableValues<int>(extendedName);
+  }
+  else {
     extendeds.resize(number_of_rows, 0);
   }
 
@@ -1362,28 +1354,28 @@ Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
   // Setup the varno independent columns and vectors
   int num_varnoIndependnet_columns = 0;
   std::vector<ColumnInfo> column_infos;
-  setupColumnInfo(storageGroup, columnMappings.varnoIndependentColumns, column_infos,
+  setupColumnInfo(container, columnMappings.varnoIndependentColumns, column_infos,
                   num_varnoIndependnet_columns, odcparams.missingObsSpaceVariableAbort,
                   odcparams.ignoreChannelDimensionWrite);
-  if (num_varnoIndependnet_columns == 0) return storageGroup;
+  if (num_varnoIndependnet_columns == 0) return;
 
   // Fill data_store with varno independent data
   // access to this store is [col][rows]
   std::vector<std::vector<double>> data_store;
   for (const auto &v : column_infos) {
-    readColumn(storageGroup, v, data_store, number_of_locations, number_of_channels,
+    readColumn(container, v, data_store, number_of_locations, number_of_channels_to_write,
                odcparams.odbType, extendeds);
   }
 
   // Setup the varno dependent columns and vectors
   std::vector<int> varnos;
   std::vector<std::string> varno_names;
-  setupVarnos(storageGroup, listOfVarNos, columnMappings.varnoDependentColumns,
+  setupVarnos(container, columnMappings.varnoDependentColumns,
               odcparams.missingObsSpaceVariableAbort, varnos, varno_names);
   std::vector<ColumnInfo> body_column_infos;
   std::vector<ColumnInfo> body_column_missing_infos;
   int num_body_columns = 0;
-  setupBodyColumnInfo(storageGroup, columnMappings.varnoDependentColumnsNames, body_column_infos,
+  setupBodyColumnInfo(container, columnMappings.varnoDependentColumnsNames, body_column_infos,
                       body_column_missing_infos, num_body_columns,
                       odcparams.missingObsSpaceVariableAbort);
 
@@ -1399,7 +1391,7 @@ Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
   for (const auto &col : body_column_infos) {
     std::vector<std::vector<double>> data_tmp;
     for (const auto &varno : varno_names) {
-      readBodyColumns(storageGroup, col, varno, number_of_rows,
+      readBodyColumns(container, col, varno, number_of_rows,
                       columnMappings.varnoDependentColumnsNames, data_tmp, odcparams.odbType,
                       extendeds);
     }
@@ -1437,7 +1429,6 @@ Group createFile(const ODC_Parameters &odcparams, Group storageGroup) {
   writeODB(num_varnos, number_of_rows, writer, data_store, data_store_body,
            num_varnoIndependnet_columns, num_body_columns, num_body_columns_missing, varnos);
 #endif
-  return storageGroup;
 }
 
 void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,

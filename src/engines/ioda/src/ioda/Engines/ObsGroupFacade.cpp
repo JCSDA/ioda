@@ -31,43 +31,90 @@ std::vector<ioda::Variable> dimensionScales(const ObsGroup &og, bool hasChannelA
 
 }  // namespace
 
-
-ObsGroupFacade::ObsGroupFacade(Group group)
-    : group_(group), isInitialized_(false)
-{}
+ObsGroupFacade::ObsGroupFacade(Group group, FacadeMode mode)
+    : group_(group), FacadeMode_(mode), isInitialized_(false) {
+  // If the ObsGroupFacade is in writer mode, we don't want to create a new ObsGroup
+  if (FacadeMode_ == FacadeMode::WriterMode) {
+    og_ = group_;
+    isInitialized_ = true;
+    numChannels_ = channelNumbers().size();
+  }
+}
 
 void ObsGroupFacade::initialize(size_t numLocations,
                                 const std::optional<std::vector<int>> &channelIndices,
                                 std::shared_ptr<const detail::DataLayoutPolicy> dataLayoutPolicy,
                                 const ContainerOptions &options) {
-  NewDimensionScales_t scales;
-  scales.push_back(NewDimensionScale<int>("Location", numLocations, numLocations, numLocations));
+  switch (FacadeMode_) {
+    case FacadeMode::ReaderMode: {
+      NewDimensionScales_t scales;
+      scales.push_back(
+        NewDimensionScale<int>("Location", numLocations, numLocations, numLocations));
 
-  if (channelIndices) {
-    numChannels_ = channelIndices->size();
-    scales.push_back(NewDimensionScale<int>("Channel", numChannels_, numChannels_, numChannels_));
-  } else {
-    numChannels_ = 0;
+      if (channelIndices) {
+        numChannels_ = channelIndices->size();
+        scales.push_back(
+          NewDimensionScale<int>("Channel", numChannels_, numChannels_, numChannels_));
+      } else {
+        numChannels_ = 0;
+      }
+
+      options_ = options;
+
+      og_ = ObsGroup::generate(group_, scales, dataLayoutPolicy);
+
+      if (channelIndices && numLocations != 0) {
+        ioda::Variable v = og_.vars["Channel"];
+        v.write(*channelIndices);
+      }
+
+      isInitialized_ = true;
+    } break;
+
+    case FacadeMode::WriterMode:
+      // Calling the above initialisation script on an ObsGroupFacade in writerMode will overwrite
+      // the obsGroup og_ which contains the data to be written out, so instead we abort.
+      throw eckit::BadValue(
+        "Attempting to call initialise on an ObsGroupFacade in writerMode. Aborting.",
+        Here());  
+    default:
+      throw eckit::BadValue("Unknown facadeMode in ObsGroupFacade initialisation. Aborting.",
+                            Here());      
   }
-
-  options_ = options;
-
-  og_ = ObsGroup::generate(group_, scales, dataLayoutPolicy);
-
-  if (channelIndices && numLocations != 0) {
-    ioda::Variable v = og_.vars["Channel"];
-    v.write(*channelIndices);
-  }
-
-  isInitialized_ = true;
 }
 
 void ObsGroupFacade::addDateTimeVariableToOptions(std::string dateTimeVariableName) {
   oops::Log::warning() << "Using ObsGroup - dateTimeVariableName not stored." << std::endl;
 };
 
+int ObsGroupFacade::numberOfLocations() const {
+  return og_.vars["Location"].getDimensions().dimsCur[0];
+}
+
 int ObsGroupFacade::numberOfChannels() const {
   return numChannels_;
+}
+
+std::string ObsGroupFacade::variableUnits(const std::string &name) const {
+  return og_.vars[name].atts.open("units").read<std::string>();
+}
+
+std::vector<int> ObsGroupFacade::channelNumbers() const {
+  std::vector<int> Channel;
+  if (!og_.vars.exists("Channel")) {
+    return Channel;
+  }
+
+  const TypeClass type = og_.vars["Channel"].getType().getClass();
+  if (type == TypeClass::Integer) {
+    og_.vars["Channel"].read<int>(Channel);
+  } else {
+    std::vector<float> ChannelFloat;
+    og_.vars["Channel"].read<float>(ChannelFloat);
+    for (size_t i = 0; i < ChannelFloat.size(); ++i)
+      Channel.emplace_back(static_cast<int>(ChannelFloat[i]));
+  }
+  return Channel;
 }
 
 void ObsGroupFacade::addVariable(const std::string &name, const std::vector<int> &values,
@@ -116,6 +163,7 @@ ContainerVariableType ObsGroupFacade::variableType(const std::string &name) cons
     throw eckit::UserError("ObsGroup has not been initialized yet", Here());
 
   const BasicTypes type = og_.vars[name].getBasicType();
+
   switch (type) {
     case BasicTypes::int32_:
       return ContainerVariableType::Int;
@@ -260,6 +308,10 @@ void ObsGroupFacade::addTypedVariable(const std::string &name, const std::vector
   if (hasChannelAxis && numChannels_ == 0)
     throw eckit::UserError("Attempted to add a variable " + name + " with a channel axis "
                            "to an ObsGroup without channels");
+
+  if (hasChannelAxis && numChannels_ == 0)
+    throw eckit::UserError("Attempted to add a variable " + name
+                           + " with a channel axis to an ObsGroup without channels.");
 
   using Matrix = RowMajorMatrix<T>;
   Matrix fallbackRowMajorMatrix;
