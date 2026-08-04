@@ -19,6 +19,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2.nc4"
+      write multiple files: true
 
 - obs space:
     name: "GMI GPM"
@@ -35,6 +36,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi2.nc4"
+      write multiple files: true
 
 - obs space:
     name: "Radiosonde"
@@ -50,6 +52,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2.nc4"
+      write multiple files: true
     io pool:
       max pool size: 2
 
@@ -68,5 +71,6 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/multidim_obs_2018041500_m_time_osdf_mpi2.nc4"
+      write multiple files: true
     io pool:
       max pool size: 2

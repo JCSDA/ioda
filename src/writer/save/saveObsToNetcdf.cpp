@@ -110,9 +110,12 @@ static void createNcDim(netCDF::NcGroup & group, const std::string & dimName,
 /// \param dimVar netcdf dimenion variable object
 /// \param srcOsdf source OSDF container holding Location values
 /// \param osdfMetadata source OSDF metadata holding Channel values
+/// \param nlocsStart row offset for the "Location" dimension variable (0 unless writing
+/// this rank's slice of a single shared file); ignored for every other dimension variable
 static void setNcDimVar(netCDF::NcVar & dimVar,
                        const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                       const osdf::FrameMetadata & osdfMetadata);
+                       const osdf::FrameMetadata & osdfMetadata,
+                       const std::size_t nlocsStart = 0);
 
 /// \brief Create a data structure containing the output (ioda) variable names with their
 /// corresponding creation paramters.
@@ -167,10 +170,14 @@ void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
 /// \param assocColumn column name in srcOsdf corresponding to the netcdf variable
 /// \param srcOsdf source OSDF container holding all columns
 /// \param osdfMetadata source OSDF metadata holding channel description
+/// \param nlocsStart row offset for the "Location" axis (0 unless writing this rank's
+/// slice of a single shared file); has no effect on any slice (eg, Channel) axis, which
+/// is always written in full since that data is identical on every pool rank
 static void setNcVar(netCDF::NcVar & var,
                      const std::string & assocColumn,
                      const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                     const osdf::FrameMetadata & osdfMetadata);
+                     const osdf::FrameMetadata & osdfMetadata,
+                     const std::size_t nlocsStart = 0);
 
 //--------------------------------------------------------------------------------
 // Function definitions for "private" functions
@@ -346,14 +353,15 @@ void createNcDim(netCDF::NcGroup & group, const std::string & dimName,
 //---------------------------------------------------------------------
 void setNcDimVar(netCDF::NcVar & dimVar,
                  const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                 const osdf::FrameMetadata & osdfMetadata) {
+                 const osdf::FrameMetadata & osdfMetadata,
+                 const std::size_t nlocsStart) {
   // The Location values are in the osdf column "sourceLocationIndices". The values for every
   // other (second) dimension are held in the frame metadata dimension registry.
   std::string dimVarName = dimVar.getName();
   if (dimVarName == "Location") {
     std::vector<int> locVals;
     srcOsdf->getColumn("sourceLocationIndices", locVals);
-    dimVar.putVar({0}, {locVals.size()}, locVals.data());
+    dimVar.putVar({nlocsStart}, {locVals.size()}, locVals.data());
   } else if (osdfMetadata.hasDim(dimVarName)) {
     const std::vector<int> & dimVals = osdfMetadata.getDimNums(dimVarName);
     dimVar.putVar(dimVals.data());
@@ -489,7 +497,8 @@ void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
 //--------------------------------------------------------------------------------
 void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
               const std::unique_ptr<osdf::IFrame> & srcOsdf,
-              const osdf::FrameMetadata & osdfMetadata) {
+              const osdf::FrameMetadata & osdfMetadata,
+              const std::size_t nlocsStart) {
   // First determine if this variable has channels. If so, get the list of channels
   // from the osdfMetadata, and use those to read the osdf columns and form those
   // values into data for the 2D variable (or 1D channel metadata variable)
@@ -503,15 +512,17 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
   // to look up the variable's slice dimension.
   const std::string colWithSlices = ioda::removeStringNumericSuffix(assocColumn);
   const std::string sliceDimName = osdfMetadata.varSliceDimName(colWithSlices);
+  const std::size_t numLocs = srcOsdf->numRows();
   if (!sliceDimName.empty()) {
     // Use colWithSlices for the desired column name. Code will attach all of the slice
     // suffixes (the slice dimension's index values) to pull data from the srcOsdf.
+    // Channel/slice-dimensioned data is identical on every pool rank, so it is always
+    // written in full starting at 0; nlocsStart only ever applies to the Location axis.
     // For now assume we are always writing the entire variable data in one putVar call,
     // so the start value is always 0 and the count value is always the size of the varData vector.
     // We can generalize this in the future when we want to write the variable data in chunks.
     const std::vector<int> & sliceNums = osdfMetadata.getDimNums(sliceDimName);
     const std::size_t numSlices = sliceNums.size();
-    const std::size_t numLocs = srcOsdf->numRows();
     if (osdfMetadata.getVarDimNames(colWithSlices).size() == 1) {
       // dimensions: [ <sliceDim> ]
       // The data in srcOsdf is stored in one column per slice. Each of these columns has the
@@ -551,7 +562,7 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
               varVals[ival] = sliceVals[iloc];
             }
           }
-          setNcVarData<T>(var, {0, 0}, {numLocs, numSlices}, varVals);
+          setNcVarData<T>(var, {nlocsStart, 0}, {numLocs, numSlices}, varVals);
           });
     }
   } else {
@@ -562,11 +573,166 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
       srcOsdf->getColumnType(assocColumn),
       [&](auto typeDiscriminator) {
         using T = decltype(typeDiscriminator);
-        std::vector<T> varVals(srcOsdf->numRows());
+        std::vector<T> varVals(numLocs);
         srcOsdf->getColumn(assocColumn, varVals);
-        setNcVarData<T>(var, {0}, {srcOsdf->numRows()}, varVals);
+        setNcVarData<T>(var, {nlocsStart}, {numLocs}, varVals);
         });
   }
+}
+
+//--------------------------------------------------------------------------------
+// Single-file write path: one pool rank writes at a time, in rank order
+//--------------------------------------------------------------------------------
+//
+// Avoids parallel HDF5 entirely. Rank 0 creates the file and its full schema (sized for
+// the pool-wide total row count) using the same plain netCDF::NcFile calls as the
+// per-rank multi-file path above, writes its own slice of data, closes the file, and
+// signals rank 1 via a trivial point-to-point token. Rank 1 reopens that same file,
+// writes its own slice at its own row offset, closes, and signals rank 2 -- and so on
+// through the last pool rank. Every write is an ordinary serial netCDF::NcFile/NcVar
+// call, so real variable-length (NC_STRING) data is written directly -- no fixed-width
+// workaround, no separate restore pass, no parallel-HDF5 API surface at all.
+
+/// \brief compute this rank's row offset and the pool-wide total row count
+/// \details Scoped to only the io pool ranks in ioPoolComm. No "assigned rank" information
+/// needs to be used here since collectObs()/distributeObs() have already
+/// physically relocated every row onto its destination pool rank before this function
+/// is called, and ensured the distribution is non-overlapping.
+static void collectSingleFileNlocsInfo(const eckit::mpi::Comm & ioPoolComm,
+                                       const std::size_t localNlocs,
+                                       std::size_t & totalNlocs,
+                                       std::size_t & nlocsStart) {
+  const std::size_t root = 0;
+  std::vector<std::size_t> allNlocs(ioPoolComm.size());
+  std::vector<std::size_t> allStarts(ioPoolComm.size());
+  ioPoolComm.gather(localNlocs, allNlocs, root);
+  if (ioPoolComm.rank() == root) {
+    totalNlocs = 0;
+    for (std::size_t i = 0; i < allNlocs.size(); ++i) {
+      allStarts[i] = totalNlocs;
+      totalNlocs += allNlocs[i];
+    }
+  }
+  ioPoolComm.broadcast(totalNlocs, root);
+  ioPoolComm.scatter(allStarts, nlocsStart, root);
+}
+
+/// \brief look up an already-created variable (specified as a hierarchical path)
+/// \details Read-only counterpart to createHierNcVar: walks the same group path via
+/// getGroup() (never creating groups) and returns the existing variable via getVar().
+/// Used by every pool rank after the first, which look up the variables the first rank
+/// already created in order to write their own slice of data into them.
+static netCDF::NcVar getHierNcVar(netCDF::NcGroup & topGroup, const std::string & ncVarName) {
+  std::vector<std::string> groupVarList = ioda::splitString(ncVarName, '/');
+  ASSERT(groupVarList.size() > 0);
+  const std::string varName = groupVarList.back();
+  groupVarList.pop_back();
+
+  netCDF::NcGroup group = topGroup;
+  for (const auto & childGroupName : groupVarList) {
+    group = group.getGroup(childGroupName);
+    checkNcObj(group,
+      "ioda::writer::saveOsdfToNetcdf: Failed to open group: " + childGroupName);
+  }
+
+  netCDF::NcVar var = group.getVar(varName);
+  checkNcObj(var, "ioda::writer::saveOsdfToNetcdf: Failed to open variable: " + varName);
+  return var;
+}
+
+/// \brief write the shared output file one pool rank at a time, in rank order
+static void saveOsdfToNetcdfSingleFile(const eckit::mpi::Comm & ioPoolComm,
+                                       std::unique_ptr<osdf::IFrame> & srcOsdf,
+                                       osdf::FrameMetadata & osdfMetadata,
+                                       const std::string & outputFileName) {
+  std::size_t totalNlocs = 0;
+  std::size_t nlocsStart = 0;
+  collectSingleFileNlocsInfo(ioPoolComm, srcOsdf->numRows(), totalNlocs, nlocsStart);
+
+  const std::size_t myRank = ioPoolComm.rank();
+  const std::size_t poolSize = ioPoolComm.size();
+  const int tokenTag = 0;
+
+  // Wait for the previous rank to finish with the file before touching it. Rank 0 has
+  // no predecessor, so it starts immediately.
+  if (myRank > 0) {
+    int token = 0;
+    ioPoolComm.receive(token, myRank - 1, tokenTag);
+  }
+
+  if (srcOsdf->numCols() > 0) {
+    if (myRank == 0) {
+      // First rank: create the file and its full schema, sized for the pool-wide total,
+      // then write this rank's own slice.
+      netCDF::NcFile outFile(outputFileName, netCDF::NcFile::replace);
+      checkNcObj(outFile,
+        "ioda::writer::saveOsdfToNetcdf: Failed to create file: " + outputFileName);
+
+      const DimCreationList dimCreationList = makeDimCreationList(srcOsdf, osdfMetadata);
+      for (auto & dimCreationInfo : dimCreationList) {
+        if (dimCreationInfo.first == "Location") {
+          // Location is sized to the pool-wide total (unlike the multi-file path, which
+          // sizes it per rank) since every rank shares this one file.
+          createNcDim(outFile, "Location", DimCreationParameters(totalNlocs, true));
+        } else {
+          createNcDim(outFile, dimCreationInfo.first, dimCreationInfo.second);
+        }
+      }
+
+      const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+      for (auto & dimVarCreate : dimVarCreationList) {
+        netCDF::NcVar dimVar = createHierNcVar(outFile, dimVarCreate.first, dimVarCreate.second);
+        setNcDimVar(dimVar, srcOsdf, osdfMetadata, nlocsStart);
+      }
+
+      const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+      for (auto & varCreate : varCreationList) {
+        netCDF::NcVar var = createHierNcVar(outFile, varCreate.first, varCreate.second);
+        setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata, nlocsStart);
+      }
+      outFile.close();
+    } else {
+      // Every other rank: reopen the file the previous rank already created/populated,
+      // look up the already-existing variables, and write only this rank's own slice.
+      netCDF::NcFile outFile(outputFileName, netCDF::NcFile::write);
+      checkNcObj(outFile,
+        "ioda::writer::saveOsdfToNetcdf: Failed to open file: " + outputFileName);
+
+      const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+      for (auto & dimVarCreate : dimVarCreationList) {
+        netCDF::NcVar dimVar = getHierNcVar(outFile, dimVarCreate.first);
+        setNcDimVar(dimVar, srcOsdf, osdfMetadata, nlocsStart);
+      }
+
+      const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+      for (auto & varCreate : varCreationList) {
+        netCDF::NcVar var = getHierNcVar(outFile, varCreate.first);
+        setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata, nlocsStart);
+      }
+      outFile.close();
+    }
+  } else if (myRank == 0) {
+    // No schema (no columns) defined on this osdf. Every pool rank is expected to agree
+    // on this, since the schema is shared/replicated across the pool, so only rank 0
+    // needs to write the special empty-file marker that ioda recognizes (Location
+    // dimension of size 0, only the Location variable).
+    netCDF::NcFile outFile(outputFileName, netCDF::NcFile::replace);
+    checkNcObj(outFile,
+      "ioda::writer::saveOsdfToNetcdf: Failed to create file: " + outputFileName);
+    outFile.addDim("Location");
+    const VarCreationParameters locVarCreateParams("Location", {"Location"},
+                                                   netCDF::NcType::nc_INT64, "");
+    createHierNcVar(outFile, "Location", locVarCreateParams);
+    outFile.close();
+  }
+
+  // Signal the next rank that the file is now safe to reopen.
+  if (myRank + 1 < poolSize) {
+    int token = 0;
+    ioPoolComm.send(token, myRank + 1, tokenTag);
+  }
+
+  ioPoolComm.barrier();
 }
 
 //--------------------------------------------------------------------------------
@@ -592,14 +758,15 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
   // the io pool rank to the file name to get the unique file name for
   // this rank. If we are writing a single file, then all ranks will
   // write to the same file name.
-  // todo(SRH): For now we are forcing writeMultipleFiles to be true.
-  // We will decide later on if we need to support single file output.
-  bool writeMultipleFiles = dataOutParams.writeMultipleFiles.value();
-  if (!writeMultipleFiles) {
-    oops::Log::info() << "WARNING: single file output is not currently supported. " <<
-                         "Forcing 'write multiple files' to true." << std::endl;
-    writeMultipleFiles = true;
+  const bool writeMultipleFiles = dataOutParams.writeMultipleFiles.value();
+
+  if (!writeMultipleFiles && ioPoolComm.size() > 1) {
+    // Single shared file, written one pool rank at a time in rank order (see the
+    // "Single-file write path" section above).
+    saveOsdfToNetcdfSingleFile(ioPoolComm, srcOsdf, osdfMetadata, outputFileName);
+    return;
   }
+
   // todo(SRH): For now we are ignoring the time communicator rank number.
   // We eventually need to support this for when we output files on
   // successive time steps. Setting timeCommRank to -1 will cause the output

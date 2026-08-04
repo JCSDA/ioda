@@ -592,7 +592,9 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_clean_files
                           "testoutput/osdf_writer_saveobs_sondes_fcols_mpi1.nc4"
                           "testoutput/osdf_writer_saveobs_sondes_frows_mpi1.nc4"
                           "testoutput/osdf_writer_saveobs_amsua_fcols_mpi1.nc4"
-                          "testoutput/osdf_writer_saveobs_amsua_frows_mpi1.nc4")
+                          "testoutput/osdf_writer_saveobs_amsua_frows_mpi1.nc4"
+                          "testoutput/osdf_writer_saveobs_amsua_chanstr_fcols_mpi1.nc4"
+                          "testoutput/osdf_writer_saveobs_amsua_chanstr_frows_mpi1.nc4")
 
 ecbuild_add_test( TARGET  ioda_writer_saveobs
                   SOURCES mains/writer/TestWriterSave.cc
@@ -605,7 +607,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_fcols
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes"
+                          "echo Checking writer saveobs sondes fcols"
                           osdf_writer_saveobs_sondes_fcols_mpi1.nc4:osdf_writer_saveobs_sondes_mpi1.nc4
                   TEST_DEPENDS ioda_writer_saveobs)
 
@@ -614,8 +616,17 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_fcols
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua"
+                          "echo Checking writer saveobs amsua fcols"
                           osdf_writer_saveobs_amsua_fcols_mpi1.nc4:osdf_writer_saveobs_amsua_mpi1.nc4
+                  TEST_DEPENDS ioda_writer_saveobs)
+
+ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_chanstr_file_fcols
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking writer saveobs chanstr amsua fcols"
+                          osdf_writer_saveobs_amsua_chanstr_fcols_mpi1.nc4:osdf_writer_saveobs_amsua_chanstr.nc4
                   TEST_DEPENDS ioda_writer_saveobs)
 
 ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_frows
@@ -623,7 +634,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_frows
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes"
+                          "echo Checking writer saveobs sondes frows"
                           osdf_writer_saveobs_sondes_frows_mpi1.nc4:osdf_writer_saveobs_sondes_mpi1.nc4
                   TEST_DEPENDS ioda_writer_saveobs)
 
@@ -632,8 +643,17 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_frows
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua"
+                          "echo Checking writer saveobs amsua frows"
                           osdf_writer_saveobs_amsua_frows_mpi1.nc4:osdf_writer_saveobs_amsua_mpi1.nc4
+                  TEST_DEPENDS ioda_writer_saveobs)
+
+ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_chanstr_file_frows
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking writer saveobs chanstr amsua frows"
+                          osdf_writer_saveobs_amsua_chanstr_frows_mpi1.nc4:osdf_writer_saveobs_amsua_chanstr.nc4
                   TEST_DEPENDS ioda_writer_saveobs)
 
 # Run with 2 MPI processes
@@ -647,7 +667,9 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_clean_files_mpi_2
                           "testoutput/osdf_writer_saveobs_amsua_fcols_mpi2_0000.nc4"
                           "testoutput/osdf_writer_saveobs_amsua_frows_mpi2_0000.nc4"
                           "testoutput/osdf_writer_saveobs_amsua_fcols_mpi2_0001.nc4"
-                          "testoutput/osdf_writer_saveobs_amsua_frows_mpi2_0001.nc4")
+                          "testoutput/osdf_writer_saveobs_amsua_frows_mpi2_0001.nc4"
+                          "testoutput/osdf_writer_saveobs_amsua_chanstr_fcols_mpi2.nc4"
+                          "testoutput/osdf_writer_saveobs_amsua_chanstr_frows_mpi2.nc4")
 
 ecbuild_add_test( TARGET  ioda_writer_saveobs_mpi_2
                   MPI     2
@@ -661,7 +683,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_fcols_mpi_2_0000
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes MPI 2, PE 0"
+                          "echo Checking writer saveobs sondes fcols MPI 2, PE 0"
                           osdf_writer_saveobs_sondes_fcols_mpi2_0000.nc4:osdf_writer_saveobs_sondes_mpi2_0000.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -670,7 +692,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_fcols_mpi_2_0001
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes MPI 2, PE 1"
+                          "echo Checking writer saveobs sondes fcols MPI 2, PE 1"
                           osdf_writer_saveobs_sondes_fcols_mpi2_0001.nc4:osdf_writer_saveobs_sondes_mpi2_0001.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -679,7 +701,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_fcols_mpi_2_0000
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua MPI 2, PE 0"
+                          "echo Checking writer saveobs amsua fcols MPI 2, PE 0"
                           osdf_writer_saveobs_amsua_fcols_mpi2_0000.nc4:osdf_writer_saveobs_amsua_mpi2_0000.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -688,16 +710,25 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_fcols_mpi_2_0001
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua MPI 2, PE 1"
+                          "echo Checking writer saveobs amsua fcols MPI 2, PE 1"
                           osdf_writer_saveobs_amsua_fcols_mpi2_0001.nc4:osdf_writer_saveobs_amsua_mpi2_0001.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
+
+ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_chanstr_file_fcols_mpi_2
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking writer saveobs chanstr amsua fcols MPI 2, single file"
+                          osdf_writer_saveobs_amsua_chanstr_fcols_mpi2.nc4:osdf_writer_saveobs_amsua_chanstr.nc4
+                  TEST_DEPENDS ioda_writer_saveobs)
 
 ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_frows_mpi_2_0000
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes MPI 2, PE 0"
+                          "echo Checking writer saveobs sondes frows MPI 2, PE 0"
                           osdf_writer_saveobs_sondes_frows_mpi2_0000.nc4:osdf_writer_saveobs_sondes_mpi2_0000.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -706,7 +737,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_sondes_file_frows_mpi_2_0001
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs sondes MPI 2, PE 1"
+                          "echo Checking writer saveobs sondes frows MPI 2, PE 1"
                           osdf_writer_saveobs_sondes_frows_mpi2_0001.nc4:osdf_writer_saveobs_sondes_mpi2_0001.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -715,7 +746,7 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_frows_mpi_2_0000
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua MPI 2, PE 0"
+                          "echo Checking writer saveobs amsua frows MPI 2, PE 0"
                           osdf_writer_saveobs_amsua_frows_mpi2_0000.nc4:osdf_writer_saveobs_amsua_mpi2_0000.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
 
@@ -724,9 +755,18 @@ ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_file_frows_mpi_2_0001
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
-                          "echo Checking writer saveobs amsua MPI 2, PE 1"
+                          "echo Checking writer saveobs amsua frows MPI 2, PE 1"
                           osdf_writer_saveobs_amsua_frows_mpi2_0001.nc4:osdf_writer_saveobs_amsua_mpi2_0001.nc4:
                   TEST_DEPENDS ioda_writer_saveobs_mpi_2)
+
+ecbuild_add_test( TARGET  ioda_writer_saveobs_cmp_amsua_chanstr_file_frows_mpi_2
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking writer saveobs chanstr amsua frows MPI 2, single file"
+                          osdf_writer_saveobs_amsua_chanstr_frows_mpi2.nc4:osdf_writer_saveobs_amsua_chanstr.nc4
+                  TEST_DEPENDS ioda_writer_saveobs)
 
 # ObsWriter tests — MPI=2 only; io pool max size=1 so all data moves to ioPool rank
 ecbuild_add_test( TARGET  ioda_writer_obswrite_clean_files_mpi_2

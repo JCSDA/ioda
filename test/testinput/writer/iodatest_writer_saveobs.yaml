@@ -288,3 +288,102 @@ obs types:
         - name: "Diagnostics/QcFlags/InflateError/flags"
           type: float
           values: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+
+- name: "AMSUA_ChanStr"
+  obsdataout:
+    engine:
+      type: H5File
+      obsfile: "testoutput/osdf_writer_saveobs_amsua_chanstr.nc4"
+    write multiple files: false
+  io pool:
+    max pool size: 4
+  test data:
+    frame metadata:
+      channel numbers: [1, 3]
+      variable dim names:
+      - name: "ObsValue/brightnessTemperature"
+        dim names: ["Location", "Channel"]
+      - name: "MetaData/channelQcReason"
+        dim names: ["Location", "Channel"]
+      number of variables: 1
+
+    mpi size1:
+      rank0:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [0, 1, 2, 3]
+        - name: "MetaData/dateTime"
+          type: int64
+          values: [1000000000, 2000000000, 3000000000, 4000000000]
+        - name: "MetaData/latitude"
+          type: float
+          values: [10.0, 20.0, 30.0, 40.0]
+        - name: "MetaData/longitude"
+          type: float
+          values: [100.0, 110.0, 120.0, 130.0]
+        - name: "ObsValue/brightnessTemperature_1"
+          type: float
+          values: [270.0, 273.0, 276.0, 279.0]
+        - name: "ObsValue/brightnessTemperature_3"
+          type: float
+          values: [271.0, 274.0, 277.0, 280.0]
+        - name: "MetaData/channelQcReason_1"
+          type: string
+          values: [good, good, suspect, good]
+        - name: "MetaData/channelQcReason_3"
+          type: string
+          values: [good, suspect, good, missing]
+    mpi size2:
+      rank0:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [0, 1]
+        - name: "MetaData/dateTime"
+          type: int64
+          values: [1000000000, 2000000000]
+        - name: "MetaData/latitude"
+          type: float
+          values: [10.0, 20.0]
+        - name: "MetaData/longitude"
+          type: float
+          values: [100.0, 110.0]
+        - name: "ObsValue/brightnessTemperature_1"
+          type: float
+          values: [270.0, 273.0]
+        - name: "ObsValue/brightnessTemperature_3"
+          type: float
+          values: [271.0, 274.0]
+        - name: "MetaData/channelQcReason_1"
+          type: string
+          values: [good, good]
+        - name: "MetaData/channelQcReason_3"
+          type: string
+          values: [good, suspect]
+      rank1:
+        columns:
+        - name: "sourceLocationIndices"
+          type: int
+          values: [2, 3]
+        - name: "MetaData/dateTime"
+          type: int64
+          values: [3000000000, 4000000000]
+        - name: "MetaData/latitude"
+          type: float
+          values: [30.0, 40.0]
+        - name: "MetaData/longitude"
+          type: float
+          values: [120.0, 130.0]
+        - name: "ObsValue/brightnessTemperature_1"
+          type: float
+          values: [276.0, 279.0]
+        - name: "ObsValue/brightnessTemperature_3"
+          type: float
+          values: [277.0, 280.0]
+        - name: "MetaData/channelQcReason_1"
+          type: string
+          values: [suspect, good]
+        - name: "MetaData/channelQcReason_3"
+          type: string
+          values: [good, missing]
