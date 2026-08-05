@@ -23,7 +23,8 @@
 #include <type_traits>
 #include <vector>
 
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/Types/Type.h"
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
@@ -108,7 +109,7 @@ public:
   /// Unpack the data. For POD, nothing special here.
   void deserialize(serialized_type p, gsl::span<DataType> data, const Has_Attributes * = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp) throw Exception("ds != dp", ioda_Here());
+    if (ds != dp) throw eckit::Exception("ds != dp", Here());
     for (size_t i = 0; i < (size_t)data.size(); ++i) {
       data[i] = p->DataPointers[i];
     }
@@ -155,7 +156,7 @@ public:
   /// Unpack the data. For POD, nothing special here.
   void deserialize(serialized_type p, gsl::span<DataType> data, const Has_Attributes * = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp) throw Exception("ds != dp", ioda_Here());
+    if (ds != dp) throw eckit::Exception("ds != dp", Here());
     std::copy_n(reinterpret_cast<char*>(p->DataPointers.data()), data.size_bytes(),
                 reinterpret_cast<char*>(data.data()));
 
@@ -193,7 +194,7 @@ public:
   }
   void deserialize(serialized_type p, gsl::span<DataType> data, const Has_Attributes * = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp) throw Exception("ds != dp", ioda_Here());
+    if (ds != dp) throw eckit::Exception("ds != dp", Here());
     for (size_t i = 0; i < ds; ++i) {
       if (p->DataPointers[i])  // Odd Valgrind detection. Maybe a false positive.
         data[i] = p->DataPointers[i];
@@ -230,7 +231,7 @@ public:
   }
   void deserialize(serialized_type p, gsl::span<DataType> data, const Has_Attributes * = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp) throw Exception("ds != dp", ioda_Here());
+    if (ds != dp) throw eckit::Exception("ds != dp", Here());
     for (size_t i = 0; i < (size_t)data.size(); ++i) {
       data[i] = p->DataPointers[i];
     }
@@ -291,10 +292,11 @@ struct Object_Accessor_Chrono_Time_Point_t {
   }
   void deserialize(serialized_type p, gsl::span<Types::Chrono_Time_Point_t> data, const Has_Attributes * atts = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp / elementsPerObject_)
-      throw Exception("You are reading the wrong amount of data!", ioda_Here())
-        .add("data.size()", ds)
-        .add("p->DataPointers.size()", dp);
+    if (ds != dp / elementsPerObject_) {
+      std::string msg = "You are reading the wrong amount of data! data.size(): "
+                        + std::to_string(ds) + " and DataPointers.size(): " + std::to_string(dp);
+      eckit::Exception(msg, Here());      
+    }
     
     // Convert times from durations with units of *seconds* and cast.
     const auto epoch = getEpoch(atts);

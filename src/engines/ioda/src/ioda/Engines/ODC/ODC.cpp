@@ -27,7 +27,6 @@
 #include "eckit/utils/StringTools.h"
 #include "ioda/Engines/ContainerFacade.h"
 #include "ioda/Engines/ContainerVariableType.h"
-#include "ioda/Exception.h"
 #include "ioda/Misc/UnitConversions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
@@ -1296,11 +1295,11 @@ void convertVariableUnits(ContainerFacade &container, const detail::DataLayoutPo
           } else if (variableToConvertType == ContainerVariableType::Int) {
             convertVariable<int>(container, name, unit.second);
           } else {
-            throw Exception("unit is not of a convertable type.", ioda_Here());
+            throw eckit::Exception("unit is not of a convertable type.", Here());
           }
           container.setVariableUnit(name, getSIUnit(unit.second));
 
-        } catch (const Exception &) {
+        } catch (const eckit::Exception &) {
           out << "The unit specified in ODB mapping file '" << unit.second
               << "' does not have a unit conversion defined in"
               << " UnitConversions.h, and the variable will be stored in"
@@ -1313,7 +1312,7 @@ void convertVariableUnits(ContainerFacade &container, const detail::DataLayoutPo
 
   } catch (...) {
     std::throw_with_nested(
-      Exception("An exception occurred inside ioda (unit conversion).", ioda_Here()));
+      eckit::Exception("An exception occurred inside ioda (unit conversion).", Here()));
   }
 }
 
@@ -1590,7 +1589,7 @@ void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,
                           false /*hasChannelAxis?*/);
 
 #else
-  throw Exception(odcMissingMessage, ioda_Here());
+  throw eckit::Exception(odcMissingMessage, Here());
 #endif
 }
 

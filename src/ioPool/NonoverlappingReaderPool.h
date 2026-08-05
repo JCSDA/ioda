@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "ioda/defs.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/ReaderPoolBase.h"
 

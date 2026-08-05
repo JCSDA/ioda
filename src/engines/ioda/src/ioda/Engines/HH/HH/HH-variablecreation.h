@@ -13,11 +13,7 @@
  * \brief HDF5 engine variable creation parameters.
  */
 
-#include <list>
 #include <memory>
-#include <string>
-#include <tuple>
-#include <utility>
 #include <vector>
 
 #include "./Handles.h"

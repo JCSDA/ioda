@@ -13,10 +13,6 @@
  * \brief HDF5 filters
  */
 
-#include <list>
-#include <memory>
-#include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 

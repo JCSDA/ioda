@@ -53,7 +53,6 @@ int main(int argc, char** argv) {
     Engines::ObsGroupFacade container(f);
     Engines::ODC::openFile(odcparams, container);
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

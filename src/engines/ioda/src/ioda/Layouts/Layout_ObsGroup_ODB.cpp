@@ -15,16 +15,12 @@
 
 #include "./Layout_ObsGroup_ODB.h"
 
-#include <exception>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "./Layout_ObsGroup_ODB_Params.h"
-#include "boost/none_t.hpp"
-#include "boost/optional.hpp"
-#include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -33,8 +29,6 @@
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/StringFuncs.h"
-#include "ioda/defs.h"
-#include "oops/util/parameters/Parameters.h"
 
 namespace ioda {
 namespace detail {
@@ -67,7 +61,7 @@ void DataLayoutPolicy_ObsGroup_ODB::parseNameChanges(const ODBLayoutParameters &
 /// all of the fundamental variables do not falsely throw an exception.
 void DataLayoutPolicy_ObsGroup_ODB::addUnchangedVariableName(const std::string &str) {
   if (isMapped(str) || isMapOutput(str)) {
-    throw Exception("Attempting to re-add existing variable to mapping: " + str, ioda_Here());
+    throw eckit::Exception("Attempting to re-add existing variable to mapping: " + str, Here());
   }
   Mapping[str] = {str, {false, ""}};
 }

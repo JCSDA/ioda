@@ -17,7 +17,6 @@
 #include <unistd.h> // For getpid()
 #include <chrono>   // For high-resolution clock 
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/DimensionScales.h"

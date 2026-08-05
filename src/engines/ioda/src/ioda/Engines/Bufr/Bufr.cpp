@@ -13,11 +13,8 @@
  */
 
 #include <ostream>
-#include <chrono>
 
-#include "eckit/io/MemoryHandle.h"
 #include "ioda/Engines/Bufr.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/config.h"  // Auto-generated. Defines *_FOUND.
 #include "ioda/ObsGroup.h"
@@ -56,19 +53,19 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams,
 
   if (bufrParams.mappingFile.find(".yaml") == std::string::npos)
   {
-    throw Exception("Unknown file type for BUFR mapping file.", ioda_Here());
+    throw eckit::Exception("Unknown file type for BUFR mapping file.", Here());
   }
 
   eckit::YAMLConfiguration yaml(eckit::PathName(bufrParams.mappingFile));
 
   if (!yaml.has("bufr"))
   {
-    throw Exception("No section named \"bufr\"", ioda_Here());
+    throw eckit::Exception("No section named \"bufr\"", Here());
   }
 
   if (!yaml.has("encoder"))
   {
-    throw Exception("No section named \"encoder\"", ioda_Here());
+    throw eckit::Exception("No section named \"encoder\"", Here());
   }
 
   std::shared_ptr<bufr::DataContainer> data;
@@ -78,7 +75,7 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams,
   {
     if (bufrParams.category.empty())
     {
-      throw Exception("Must provide category if BUFR file is split.", ioda_Here());
+      throw eckit::Exception("Must provide category if BUFR file is split.", Here());
     }
 
     oops::Log::debug() << "Using cached data for " << bufrParams.filename << std::endl;
@@ -137,7 +134,7 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams,
       }
 
       errStr << ") was not read by BufrParser.";
-      throw Exception(errStr.str(), ioda_Here());
+      throw eckit::Exception(errStr.str(), Here());
     }
     else
     {
@@ -148,7 +145,7 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams,
   {
     if (dataMap.size() > 1)
     {
-      throw Exception("Must provide category if BUFR file is split.", ioda_Here());
+      throw eckit::Exception("Must provide category if BUFR file is split.", Here());
     }
 
     result = dataMap.begin()->second;
@@ -161,7 +158,7 @@ ObsGroup openFile(const Bufr_Parameters& bufrParams,
 
   return result;
 #else
-  throw Exception(bufrMissingMessage, ioda_Here());
+  throw eckit::Exception(bufrMissingMessage, Here());
 #endif
 }
 }  // namespace Bufr

@@ -5,16 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <array>     // Arrays are fixed-length vectors.
-#include <iomanip>   // std::setw
-#include <iostream>  // We want I/O.
-#include <numeric>   // std::iota
 #include <string>    // We want strings
-#include <valarray>  // Like a vector, but can also do basic element-wise math.
 #include <vector>    // We want vectors
 
+#include "eckit/exception/Exceptions.h"        // Exceptions and debugging
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 #include "ioda/ObsGroup.h"
 
@@ -220,7 +215,6 @@ int main(int argc, char** argv) {
                totalLons, totalTb, totalTbErr);
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

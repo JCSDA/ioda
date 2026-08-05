@@ -9,8 +9,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <set>
 #include <vector>
 
 #include <boost/make_unique.hpp>

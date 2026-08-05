@@ -22,11 +22,9 @@
 #include <iostream>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/MathOps.h"
 #include "ioda/ObsGroup.h"
-#include "ioda/Units.h"
 
 int main(int argc, char** argv) {
   using namespace ioda;

@@ -42,7 +42,6 @@
 
 #include "Eigen/Dense"                     // Eigen Arrays and Matrices
 #include "ioda/Engines/EngineUtils.h"          // Used to kickstart the Group engine.
-#include "ioda/Exception.h"                // Exceptions and debugging
 #include "ioda/Group.h"                    // Groups have attributes.
 #include "unsupported/Eigen/CXX11/Tensor"  // Eigen Tensors
 
@@ -208,14 +207,15 @@ int main(int argc, char** argv) {
     // This is easy. We return a vector instead of a set because one day we might care
     // about ordering.
     std::vector<std::string> varList = g.vars.list();
-    if (varList.size() != 11)
-      throw ioda::Exception("Unexpected variable count.", ioda_Here())
-        .add("Expected", 11)
-        .add("Actual", varList.size());
+    if (varList.size() != 11) {
+      std::string msg = "Unexpected variable count. Expected 11 variables and received: "
+                        + std::to_string(varList.size());
+      throw eckit::Exception(msg, Here());
+    }
 
     // Checking variable existence and removing.
     if (!g.vars.exists("var-2"))
-      throw ioda::Exception("Variable var-2 does not exist.", ioda_Here());
+      throw eckit::Exception("Variable var-2 does not exist.", Here());
     g.vars.create<int>("removable-int-1", {1});
     g.vars.remove("removable-int-1");
 
@@ -309,7 +309,6 @@ int main(int argc, char** argv) {
     }
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

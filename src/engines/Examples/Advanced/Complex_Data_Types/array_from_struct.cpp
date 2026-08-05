@@ -50,10 +50,10 @@
  **/
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 /// \brief An example class that we would like to read and write using IODA.
@@ -179,10 +179,11 @@ struct Object_Accessor_Something_Like_DateTime {
   ///   already exist, thanks to prep_deserialize. The deserialize function fills in data members.
   void deserialize(serialized_type p, gsl::span<Something_Like_DateTime> data, const ioda::Has_Attributes* = nullptr) {
     const size_t ds = data.size(), dp = p->DataPointers.size();
-    if (ds != dp / elementsPerObject_)
-      throw Exception("You are reading the wrong amount of data!", ioda_Here())
-        .add("data.size()", ds)
-        .add("p->DataPointers.size()", dp);
+    if (ds != dp / elementsPerObject_) {
+      std::string msg = "You are reading the wrong amount of data! data.size(): "
+                        + std::to_string(ds) + ", p->DataPointers.size():" + std::to_string(dp);
+      throw eckit::Exception(msg, Here());
+    }
 
     for (size_t i = 0; i < (size_t)data.size(); ++i) {
       data[i].date = p->DataPointers[2 * i + 0];
@@ -226,12 +227,12 @@ int main(int argc, char** argv) {
       Type typ = f.atts["dates"].getType();
 
       // Check that this is an array type.
-      if (typ.getClass() != TypeClass::FixedArray) throw Exception("Wrong type.", ioda_Here());
+      if (typ.getClass() != TypeClass::FixedArray) throw eckit::Exception("Wrong type.", Here());
 
       // Check the array type's dimensions.
       vector<Dimensions_t> type_dims = typ.getDimensions();
-      if (type_dims.size() != 1) throw Exception("Wrong array type rank.", ioda_Here());
-      if (type_dims[0] != 2) throw Exception("Wrong array time dimensions.", ioda_Here());
+      if (type_dims.size() != 1) throw eckit::Exception("Wrong array type rank.", Here());
+      if (type_dims[0] != 2) throw eckit::Exception("Wrong array time dimensions.", Here());
 
       // Check that the array type's _components_ are unsigned 64-bit ints.
       {
@@ -240,15 +241,15 @@ int main(int argc, char** argv) {
 
         // Check that the base type is an integer.
         if (typ_inner.getClass() != TypeClass::Integer)
-          throw Exception("Wrong base type (not an integer).", ioda_Here());
+          throw eckit::Exception("Wrong base type (not an integer).", Here());
 
         // Verify that the base type is 64 bits (8 bytes) long.
         if (typ_inner.getSize() != 8)
-          throw Exception("Base type is not a 64-bit integer.", ioda_Here());
+          throw eckit::Exception("Base type is not a 64-bit integer.", Here());
 
         // Verify that the base type is unsigned.
         if (typ_inner.isTypeSigned())
-          throw Exception("Base type is not an unsigned 64-bit integer.", ioda_Here());
+          throw eckit::Exception("Base type is not an unsigned 64-bit integer.", Here());
       }
 
       // For debugging, write the type to the file.
@@ -268,13 +269,14 @@ int main(int argc, char** argv) {
     {  // Read and check an attribute
       std::vector<Something_Like_DateTime> check_datetimes;
       f.atts["dates"].read(check_datetimes);
-      if (check_datetimes.size() != 3)
-        throw Exception("We read the wrong amount of data!", ioda_Here())
-          .add("Read #", check_datetimes.size())
-          .add<size_t>("Expected #", 3);
+      if (check_datetimes.size() != 3) {
+        std::string msg = "We read the wrong amount of data! Read #: "
+                          + to_string(check_datetimes.size()) + ", Expected #: " + to_string(3);
+        throw eckit::Exception(msg, Here());
+      }
       for (size_t i = 0; i < check_datetimes.size(); ++i)
         if (datetimes[i] != check_datetimes[i])
-          throw Exception("Attribute equality check failed", ioda_Here());
+          throw eckit::Exception("Attribute equality check failed", Here());
     }
 
     {  // Write a variable
@@ -287,17 +289,18 @@ int main(int argc, char** argv) {
     {  // Read and check a variable
       std::vector<Something_Like_DateTime> check_datetimes;
       f.vars["datetime"].read(check_datetimes);
-      if (check_datetimes.size() != 3)
-        throw Exception("We read the wrong amount of data!", ioda_Here())
-          .add("Read #", check_datetimes.size())
-          .add<size_t>("Expected #", 3);
+      if (check_datetimes.size() != 3) {
+        std::string msg
+          = "We read the wrong amount of data! Read #: " + std::to_string(check_datetimes.size())
+            + " Expected #: " + std::to_string(3);
+        throw eckit::Exception(msg, Here());
+      }
       for (size_t i = 0; i < check_datetimes.size(); ++i)
         if (datetimes[i] != check_datetimes[i])
-          throw Exception("Attribute equality check failed", ioda_Here());
+          throw eckit::Exception("Attribute equality check failed", Here());
     }
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

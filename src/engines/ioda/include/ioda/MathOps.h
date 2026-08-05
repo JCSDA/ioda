@@ -11,11 +11,11 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <exception>
 #include <iostream>
 #include <type_traits>
 
-#include "Units.h"
+#include "eckit/exception/Exceptions.h"
+#include "ioda/Units.h"
 
 namespace ioda {
 
@@ -94,7 +94,7 @@ public:
 
         return EigenMath<decltype(res)>(res, lhs.units, lhs.missingValue);
       } else
-        throw Exception("Nonequal units are being compared.", ioda_Here());
+        throw eckit::Exception("Nonequal units are being compared.", Here());
     }
 
     template <typename F, typename WE1, typename WE2>
@@ -136,7 +136,7 @@ public:
 
         return EigenMath<decltype(res)>(res, udunits::RegularUnits("1"), false);
       } else
-        throw Exception("Nonequal units are being compared.", ioda_Here());
+        throw eckit::Exception("Nonequal units are being compared.", Here());
     }
   };
 
@@ -283,7 +283,7 @@ public:
   auto select(const EigenMath<TrueVal> &val_if_true,
               const EigenMath<FalseVal> &val_if_false) const {
     if (val_if_true.units != val_if_false.units)
-      throw Exception("Incompatible units for select case.", ioda_Here());
+      throw eckit::Exception("Incompatible units for select case.", Here());
 
     auto res = data
                  .select(val_if_true.data, (val_if_false.data != val_if_false.missingValue)

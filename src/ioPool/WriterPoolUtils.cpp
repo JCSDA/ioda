@@ -16,7 +16,6 @@
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/Copying.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ioPool/WriterPoolBase.h"
 #include "ioda/Misc/DimensionScales.h"
@@ -225,8 +224,8 @@ void transferVarDataMPI<std::string>(const WriterPoolBase & ioPool, const Variab
                     std::size_t offset = j * maxStringLength;
                     auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
                     if (strEnd == strBuffer.end()) {
-                        throw Exception("End of string not found during MPI transfer",
-                                         ioda_Here());
+                        throw eckit::Exception("End of string not found during MPI transfer",
+                                         Here());
                     }
                     std::string str(strBuffer.begin() + offset, strEnd);
                     varData[varStarts[i] + j] = str;

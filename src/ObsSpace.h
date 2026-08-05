@@ -19,13 +19,8 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <numeric>
 #include <ostream>
-#include <set>
 #include <string>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -34,7 +29,6 @@
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
 
 #include "ioda/containers/IFrame.h"
@@ -47,7 +41,6 @@
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsIterator.h"
 #include "ioda/ObsSpaceParameters.h"
-#include "ioda/Variables/Fill.h"
 #include "ioda/Variables/VarUtils.h"
 #include "oops/util/missingValues.h"
 

@@ -6,9 +6,8 @@
  * For details, see the LICENSE file.
  */
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Misc/StringFuncs.h"
-
-#include "ioda/Exception.h"
 
 namespace ioda {
 std::vector<std::string> splitPaths(const std::string& p) {
@@ -32,9 +31,8 @@ std::vector<std::string> splitPaths(const std::string& p) {
 
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while performing path expansion.", ioda_Here())
-      .add("path", p));
+    std::string msg = "An exception occurred inside ioda while performing path expansion of: " + p;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
@@ -50,7 +48,7 @@ std::string condensePaths(const std::vector<std::string>& p, size_t start, size_
 
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda when condensing paths.", Here()));
   }
 }
 
@@ -60,7 +58,7 @@ std::vector<std::string> concatenateStringVectors(const std::vector<std::vector<
     std::vector<std::string> derivedVector = stringVectors.at(0);
     for (size_t vectorIndex = 1; vectorIndex < stringVectors.size(); vectorIndex++) {
       if (stringVectors[vectorIndex].size() != derivedVector.size())
-        throw Exception("string vectors are of unequal lengths", ioda_Here());
+        throw eckit::Exception("string vectors are of unequal lengths", Here());
       for (size_t entry = 0; entry < stringVectors[vectorIndex].size(); entry++) {
         derivedVector.at(entry) += stringVectors[vectorIndex].at(entry);
       }
@@ -76,7 +74,7 @@ std::vector<std::string> concatenateStringVectors(const std::vector<std::vector<
     }
     return derivedVector;
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda while concatonating string vectors.", Here()));
   }
 
   
@@ -107,9 +105,8 @@ std::string convertV1PathToV2Path(const std::string & path) {
     }
     return out;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while converting a path to v2 format.", ioda_Here())
-      .add("path", path));
+    std::string msg = "An exception occurred inside ioda while converting a path to v2 format: " + path;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 

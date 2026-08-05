@@ -11,7 +11,6 @@
 #include "ioda/Engines/ODC/OdbColumnUtils.h"
 #include "ioda/Engines/ODC/OdbQueryParameters.h"
 #include "ioda/Engines/ODC/ParsedColumnExpression.h"
-#include "ioda/Misc/StringFuncs.h"
 
 namespace ioda {
 namespace Engines {

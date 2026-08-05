@@ -17,8 +17,6 @@
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-types.h"
 #include "./HH/HH-util.h"
-#include "ioda/Exception.h"
-#include "ioda/Misc/Dimensions.h"
 
 namespace ioda {
 namespace detail {
@@ -62,21 +60,21 @@ bool HH_HasAttributes::exists(const std::string& attname) const {
   H5O_info_t info;
   herr_t err = H5Oget_info(base_(), &info);  // H5P_DEFAULT only, per docs.
 #endif
-  if (err < 0) throw Exception("H5Oget_info failed.", ioda_Here());
+  if (err < 0) throw eckit::Exception("H5Oget_info failed.", Here());
   if (info.num_attrs < thresholdLinear) {
     auto ret = iterativeAttributeSearch(base_(), attname.c_str(), getAttrCreationOrder(base_(), info.type));
     bool success = ret.first;
     return success;
   } else {
     auto ret = H5Aexists(base_(), attname.c_str());
-    if (ret < 0) throw Exception("H5Aexists failed.", ioda_Here());
+    if (ret < 0) throw eckit::Exception("H5Aexists failed.", Here());
     return (ret > 0);
   }
 }
 
 void HH_HasAttributes::remove(const std::string& attname) {
   herr_t err = H5Adelete(base_(), attname.c_str());
-  if (err < 0) throw Exception("H5Adelete failed.", ioda_Here());
+  if (err < 0) throw eckit::Exception("H5Adelete failed.",Here());
 }
 
 Attribute HH_HasAttributes::open(const std::string& name) const {
@@ -87,17 +85,16 @@ Attribute HH_HasAttributes::open(const std::string& name) const {
   H5O_info_t info;
   herr_t err = H5Oget_info(base_(), &info);  // H5P_DEFAULT only, per docs.
 #endif
-  if (err < 0) throw Exception("H5Oget_info failed.", ioda_Here());
+  if (err < 0) throw eckit::Exception("H5Oget_info failed.", Here());
   if (info.num_attrs < thresholdLinear) {
     HH_Attribute a = iterativeAttributeSearchAndOpen(base_(), info.type, name.c_str());
-    if (!a.get().isValid()) throw Exception("iterativeAttributeSearchAndOpen failed.",
-      ioda_Here());
+    if (!a.get().isValid()) throw eckit::Exception("iterativeAttributeSearchAndOpen failed.", Here());
     auto b = std::make_shared<HH_Attribute>(a);
     Attribute att{b};
     return att;
   } else {
     hid_t ret = H5Aopen(base_(), name.c_str(), H5P_DEFAULT);
-    if (ret < 0) throw Exception("H5Aopen failed", ioda_Here());
+    if (ret < 0) throw eckit::Exception("H5Aopen failed", Here());
     auto b = std::make_shared<HH_Attribute>(
                 HH_hid_t(std::move(ret), Handles::Closers::CloseHDF5Attribute::CloseP));
     Attribute att{b};
@@ -120,19 +117,19 @@ Attribute HH_HasAttributes::create(const std::string& attrname, const Type& in_m
     auto attI = HH_hid_t(H5Acreate(base_(), attrname.c_str(), typeBackend->handle(), dspace(),
                                    H5P_DEFAULT, H5P_DEFAULT),
                          Handles::Closers::CloseHDF5Attribute::CloseP);
-    if (H5Iis_valid(attI()) <= 0) throw Exception("H5Acreate failed.", ioda_Here());
+    if (H5Iis_valid(attI()) <= 0) throw eckit::Exception("H5Acreate failed.", Here());
 
     auto b = std::make_shared<HH_Attribute>(attI);
     Attribute att{b};
     return att;
   } catch (const std::bad_cast&) {
-    std::throw_with_nested(Exception("typeBackend is the wrong type. Expected HH_Type.",
-      ioda_Here()));
+    std::throw_with_nested(
+      eckit::Exception("typeBackend is the wrong type. Expected HH_Type.", Here()));
   }
 }
 void HH_HasAttributes::rename(const std::string& oldName, const std::string& newName) {
   auto ret = H5Arename(base_(), oldName.c_str(), newName.c_str());
-  if (ret < 0) throw Exception("H5Arename failed.", ioda_Here());
+  if (ret < 0) throw eckit::Exception("H5Arename failed.", Here());
 }
 
 }  // namespace HH

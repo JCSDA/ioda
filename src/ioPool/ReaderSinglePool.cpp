@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <cstdio>
 #include <memory>
-#include <numeric>
 #include <sstream>
 #include <utility>
 
@@ -22,12 +21,11 @@
 #include "ioda/Copying.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
 
 namespace ioda {
 namespace IoPool {
@@ -48,7 +46,7 @@ ReaderSinglePool::ReaderSinglePool(
         const std::string errMsg = std::string("Unrecognized file preparation type: '") +
             createParams.inputFilePrepType +
             std::string("', must be one of: 'internal' or 'external'");
-        throw Exception(errMsg, ioda_Here());
+        throw eckit::Exception(errMsg, Here());
     }
 
     // Check to make sure the work directory parameter has been specified. Only the
@@ -61,7 +59,7 @@ ReaderSinglePool::ReaderSinglePool(
         const std::string errMsg =
             std::string("ReaderSinglePool: Must specify a work directory in the ") +
             std::string(" YAML configuration ('obs space.io pool.work directory' spec");
-        throw Exception(errMsg, ioda_Here());
+        throw eckit::Exception(errMsg, Here());
     }
 }
 
@@ -368,7 +366,7 @@ void ReaderSinglePool::initialize() {
         if (!ioda::Engines::haveDirRwxAccess(this->workDir())) {
             const std::string errMsg =
                 std::string("Reader work directory is not accesible: ") + this->workDir();
-            throw Exception(errMsg, ioda_Here());
+            throw eckit::Exception(errMsg, Here());
         }
         oops::Log::info() << "ReaderSinglePool: reader work directory: "
                           << this->workDir() << std::endl;

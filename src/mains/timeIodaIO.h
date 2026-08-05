@@ -9,19 +9,14 @@
 #define MAINS_TIMEIODAIO_H_
 
 #include <string>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpace.h"
 
 // This application initially served the purpose of being able to do a simple and easy

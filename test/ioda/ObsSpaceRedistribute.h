@@ -24,7 +24,6 @@
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
-#include "ioda/Exception.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 

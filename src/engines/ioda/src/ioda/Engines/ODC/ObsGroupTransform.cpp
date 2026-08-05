@@ -41,7 +41,7 @@ util::DateTime getEpochAsDtime(std::string epochString) {
     std::string errorMsg =
         std::string("For now, only supporting 'seconds since' form of ") +
         std::string("units for MetaData/dateTime variable");
-    Exception(errorMsg.c_str(), ioda_Here());
+    eckit::Exception(errorMsg.c_str(), Here());
   }
   epochString.replace(pos, pos+14, "");
 

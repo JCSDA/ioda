@@ -8,12 +8,6 @@
 /// \file WriterUtils.h
 /// \brief Utilities for a ioda io writer backend
 
-#include <algorithm>
-#include <memory>
-#include <set>
-#include <utility>
-#include <vector>
-
 #include "ioda/defs.h"
 
 #include <gsl/gsl-lite.hpp>

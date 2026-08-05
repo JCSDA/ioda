@@ -7,7 +7,6 @@
 #include "ioda/ObsGroup.h"
 
 #include "ioda/Engines/HH.h"
-#include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/Variables/VarUtils.h"
 
@@ -26,8 +25,8 @@ ObsGroup::ObsGroup(Group g, std::shared_ptr<const detail::DataLayoutPolicy> layo
       this->setLayout(
         detail::DataLayoutPolicy::generate(detail::DataLayoutPolicy::Policies::ObsGroup));
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while constructing an ObsGroup.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while constructing an ObsGroup.", Here()));
   }
 }
 
@@ -36,8 +35,8 @@ void ObsGroup::setLayout(std::shared_ptr<const detail::DataLayoutPolicy> policy)
     layout_ = policy;
     this->vars.setLayout(policy);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while setting a layout policy.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while setting a layout policy.", Here()));
   }
 }
 
@@ -65,8 +64,8 @@ void ObsGroup::setup(const NewDimensionScales_t& fundamentalDims,
       f->writeInitialData(newvar);
     }
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while building a new ObsGroup.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while building a new ObsGroup.", Here()));
   }
 }
 
@@ -78,8 +77,8 @@ ObsGroup ObsGroup::generate(Group& emptyGroup, const NewDimensionScales_t& funda
 
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while building a new ObsGroup.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while building a new ObsGroup.", Here()));
   }
 }
 
@@ -94,8 +93,8 @@ void ObsGroup::resize(const std::vector<std::pair<Variable, ioda::Dimensions_t>>
     // the given dimensions.
     resizeVars(*this, newDims);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while resizing an ObsGroup.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while resizing an ObsGroup.", Here()));
   }
 }
 
@@ -133,8 +132,8 @@ void ObsGroup::resizeVars(Group& g,
       }
     }
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while resizing an ObsGroup.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while resizing an ObsGroup.", Here()));
   }
 }
 

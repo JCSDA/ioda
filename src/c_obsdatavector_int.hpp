@@ -6,14 +6,10 @@
  */
 #pragma once
 #include <cstdlib>
-#include <iostream>
-#include <stdexcept>
-#include <string>
 
-#include "ioda/C/ioda_c_utils.hpp"
 #include "ioda/C/ioda_decls.hpp"
 #include "ioda/C/cxx_string.hpp"
-#include "ioda/ObsDataVector.h"
+
 DECL_TYPE(obsdatavector_int_t)
 extern "C" {
 const int * obsdatavector_int_c_get_row_i(obsdatavector_int_t p, size_t i);

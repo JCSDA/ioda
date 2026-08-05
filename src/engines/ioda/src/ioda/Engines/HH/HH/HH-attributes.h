@@ -14,7 +14,6 @@
  */
 
 #include <string>
-#include <vector>
 
 #include "./Handles.h"
 #include "ioda/Group.h"

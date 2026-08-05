@@ -131,7 +131,7 @@ void collectVarDimInfo(const ioda::Group& obsGroup, Vec_Named_Variable& varList,
     dimVars.reserve(dims.dimensionality);
     for (const auto& dim_scales_along_axis : attached_dimensions) {
       if (dim_scales_along_axis.empty()) {
-        throw Exception("Unexpected size of dim_scales_along_axis", ioda_Here());
+        throw eckit::Exception("Unexpected size of dim_scales_along_axis", Here());
       }
       dimVars.push_back(dim_scales_along_axis[0]);
     }

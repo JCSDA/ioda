@@ -12,11 +12,9 @@
  */
 #include "./Group.hpp"
 
-#include <stdexcept>
-
 #include "./Variables.hpp"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -116,7 +114,7 @@ std::shared_ptr<Group> Group::open(const std::string& name, const bool throwIfNo
   }
 
   if (throwIfNotFound && (childGroup == nullptr)) {
-    throw Exception("Child group not found", ioda_Here());
+    throw eckit::Exception("Child group not found", Here());
   }
 
   return childGroup;

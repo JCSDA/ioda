@@ -14,9 +14,6 @@
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
 #include <memory>
-#include <string>
-#include <typeindex>
-#include <typeinfo>
 #include <vector>
 
 #include "ioda/defs.h"

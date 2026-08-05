@@ -5,13 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <algorithm>
 #include <numeric>
 #include <Eigen/Core>
 
 #include "eckit/exception/Exceptions.h"
-#include "eckit/io/FileHandle.h"
-#include "eckit/io/PartFileHandle.h"
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/Engines/ODC/OdbConstants.h"

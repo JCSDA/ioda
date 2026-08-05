@@ -7,9 +7,9 @@
 #include <chrono>
 #include <ctime>    // tzset
 #include <iomanip>  // std::put_time
-#include <iostream>
 #include <sstream>
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Types/Marshalling.h"
 #include "ioda/Attributes/Has_Attributes.h"
 
@@ -65,7 +65,7 @@ ioda::Types::Chrono_Time_Point_t getEpoch(const Has_Attributes *atts)
         std::istringstream isEpoch(sEpoch);
         struct std::tm tm{};
         isEpoch >> std::get_time(&tm, Types::Chrono_Time_Format);
-        if (isEpoch.fail()) throw Exception("Parse failed.", ioda_Here());
+        if (isEpoch.fail()) throw eckit::Exception("Parse failed.", Here());
 
         // Always needs to be set, per mktime's interaction with get_time.
         // See https://en.cppreference.com/w/cpp/chrono/c/mktime

@@ -13,8 +13,6 @@
 
 #include "ioda/Engines/ODC/OdbQueryParameters.h"
 
-#include <utility>
-
 namespace ioda {
 namespace Engines {
 namespace ODC {

@@ -19,7 +19,6 @@
 
 #include "./Selection.hpp"
 #include "./Type.hpp"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {

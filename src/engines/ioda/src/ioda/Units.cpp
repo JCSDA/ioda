@@ -12,13 +12,13 @@
 
 #include <udunits2.h>
 
-#include <exception>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
+
 
 namespace ioda {
 namespace udunits {
@@ -125,7 +125,9 @@ UnitsInterface::UnitsInterface(const std::string& xmlpath) {
   detail::udunits_interface_impl::_static_init();
   const char* path = (xmlpath.size()) ? xmlpath.c_str() : nullptr;
   std::shared_ptr<ut_system> utsys(ut_read_xml(path), ut_free_system);
-  if (!utsys) throw Exception("Cannot open the unit system.", ioda_Here());
+  if (!utsys) {
+    throw eckit::Exception("Cannot open the unit system.", Here());
+  }
   impl_ = std::make_unique<detail::udunits_interface_impl>(utsys);
 }
 UnitsInterface::~UnitsInterface() = default;

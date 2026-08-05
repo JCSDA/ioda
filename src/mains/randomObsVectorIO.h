@@ -10,17 +10,13 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
-#include <vector>
 #include <chrono>
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 #include "ioda/ObsSpace.h"

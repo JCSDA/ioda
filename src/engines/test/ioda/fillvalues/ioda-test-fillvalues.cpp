@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 template <typename T>
@@ -120,7 +119,6 @@ int main(int argc, char** argv) {
     std::cout << "\n\nSuccesses: " << good << "\nFailures: " << bad << std::endl;
     return (bad) ? 1 : 0;
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e, cout);
     return 1;
   }
 }

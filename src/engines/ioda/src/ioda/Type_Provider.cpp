@@ -6,27 +6,25 @@
  */
 #include "ioda/Types/Type_Provider.h"
 
-#include <stdexcept>
-
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Types/Type.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
 Type_Provider::~Type_Provider() = default;
 
 Type Type_Provider::makeFundamentalType(std::type_index) const {
-  throw Exception("Backend does not implement fundamental types.", ioda_Here());
+  throw eckit::Exception("Backend does not implement fundamental types.", Here());
 }
 
 Type Type_Provider::makeArrayType(std::initializer_list<Dimensions_t>, std::type_index,
                                   std::type_index) const {
-  throw Exception("Backend does not implement array types.", ioda_Here());
+  throw eckit::Exception("Backend does not implement array types.", Here());
 }
 
 Type Type_Provider::makeStringType(std::type_index, size_t, StringCSet) const {
-  throw Exception("Backend does not implement string types.", ioda_Here());
+  throw eckit::Exception("Backend does not implement string types.", Here());
 }
 
 Type Type_Provider::_py_makeStringType(size_t stringLength, StringCSet cset) const

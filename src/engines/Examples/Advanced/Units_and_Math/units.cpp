@@ -21,11 +21,10 @@
 
 #include "ioda/Units.h"
 
-#include <exception>
+#include "eckit/exception/Exceptions.h"
+
 #include <iostream>
 #include <vector>
-
-#include "ioda/Exception.h"
 
 int main(int, char **) {
   using std::cerr;
@@ -57,10 +56,10 @@ int main(int, char **) {
     // The library can be a bit picky about spacing.
     // Ex: "kg m / (s^2)" and "kg*m/(s^2)" are valid but "kg * m / (s^2)" is not.
     // To check if your units were successfully parsed or not, use the isValid function.
-    if (!kg.isValid()) throw Exception("Could not parse kg.", ioda_Here());
-    if (!N_v2.isValid()) throw Exception("Could not parse Newtons v2.", ioda_Here());
-    if (!N_v3.isValid()) throw Exception("Could not parse Newtons v3.", ioda_Here());
-    if (!N_v4.isValid()) throw Exception("Could not parse Newtons v4.", ioda_Here());
+    if (!kg.isValid()) throw eckit::Exception("Could not parse kg.", Here());
+    if (!N_v2.isValid()) throw eckit::Exception("Could not parse Newtons v2.", Here());
+    if (!N_v3.isValid()) throw eckit::Exception("Could not parse Newtons v3.", Here());
+    if (!N_v4.isValid()) throw eckit::Exception("Could not parse Newtons v4.", Here());
 
     // Units may be easily printed.
     cout << "1 Newton is internally represented as: " << N << endl;
@@ -77,7 +76,7 @@ int main(int, char **) {
     auto sqrt_s2  = s2.root(2);
     auto derivedN = kg * m / (s * s);
 
-    if (!s2.isValid()) throw Exception("Failed to multiply units.", ioda_Here());
+    if (!s2.isValid()) throw eckit::Exception("Failed to multiply units.", Here());
 
     cout << "m * m is " << m2 << endl;
     cout << "m * m * m is " << m3 << endl;
@@ -86,19 +85,19 @@ int main(int, char **) {
     cout << "kg * m / (s * s) is " << derivedN << endl;
 
     // To check if two units are equal or nonequal, use the == and != operators.
-    if (derivedN != N) throw Exception("1 N is 1 kg * m / s^2.", ioda_Here());
-    if (m == s) throw Exception("1 meter is not equal to 1 second.", ioda_Here());
-    if (N_v4 != N_v3) throw Exception("Units mismatch N_v4, N_v3.", ioda_Here());
-    if (N_v4 != N_v2) throw Exception("Units mismatch N_v4, N_v2.", ioda_Here());
-    if (N_v4 != N) throw Exception("Units mismatch N_v4, N.", ioda_Here());
-    if (N_v4 != derivedN) throw Exception("Units mismatch N_v4, derivedN.", ioda_Here());
+    if (derivedN != N) throw eckit::Exception("1 N is 1 kg * m / s^2.", Here());
+    if (m == s) throw eckit::Exception("1 meter is not equal to 1 second.", Here());
+    if (N_v4 != N_v3) throw eckit::Exception("Units mismatch N_v4, N_v3.", Here());
+    if (N_v4 != N_v2) throw eckit::Exception("Units mismatch N_v4, N_v2.", Here());
+    if (N_v4 != N) throw eckit::Exception("Units mismatch N_v4, N.", Here());
+    if (N_v4 != derivedN) throw eckit::Exception("Units mismatch N_v4, derivedN.", Here());
 
     // Units with prefixes work.
     auto cm = Units("cm");
 
     // To check if units are convertible, use the isConvertibleWith function.
     if (!cm.isConvertibleWith(m))
-      throw Exception("cm should be convertible with m.", ioda_Here());
+      throw eckit::Exception("cm should be convertible with m.", Here());
     else
       cout << cm << " is convertible with " << m << endl;
 

@@ -7,9 +7,7 @@
  */
 
 #include <map>
-#include <set>
 #include <string>
-#include <vector>
 
 #include "OdbConstants.h"  // for OdbColumnType
 

@@ -13,7 +13,6 @@
  */
 
 #include <cstdint>  // uint64_t
-#include <memory>   // weak_ptr
 #include <string>
 
 #include "ioda/defs.h"

@@ -5,12 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include <cstdlib>
-#include <iostream>
-#include <numeric>
 
 #include "Eigen/Dense"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/defs.h"
 #include "unsupported/Eigen/CXX11/Tensor"
@@ -151,7 +148,6 @@ int main(int argc, char** argv) {
     Expects(og.vars["ObsValue/Inst_brightnessTemperature_Uncorrected"].isDimensionScaleAttached(
       0, og.vars["ScanLine"]));
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -11,7 +11,6 @@
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 #include "oops/util/Logger.h"
@@ -95,7 +94,7 @@ namespace details {
           }
           catch (...)
           {
-            throw Exception("Can't convert \"" + arg.type + "\" to acceptible type.", ioda_Here());
+            throw eckit::Exception("Can't convert \"" + arg.type + "\" to acceptible type.", Here());
           }
         }
 
@@ -194,8 +193,8 @@ namespace details {
       }
       else
       {
-        throw Exception("Missing required argument \"" + scriptArg.name + "\" from configuration.",
-                        ioda_Here());
+        throw eckit::Exception("Missing required argument \"" + scriptArg.name + "\" from configuration.",
+                        Here());
       }
     }
     return kwargs;
@@ -240,8 +239,8 @@ namespace details {
 
     if (scriptParams.scriptFile.find(".py") == std::string::npos)
     {
-      throw Exception("Unknown of script file type. Script file must be python (end in .py).",
-                      ioda_Here());
+      throw eckit::Exception("Unknown of script file type. Script file must be python (end in .py).",
+                      Here());
     }
 
     const char* funcName = "create_obs_group";
@@ -296,14 +295,14 @@ namespace details {
         // Call the python function
         result = func(**kwargs);
     } catch (const py::error_already_set& e) {
-        throw Exception("Python error: " + std::string(e.what()), ioda_Here());
+        throw eckit::Exception("Python error: " + std::string(e.what()), Here());
     }
 
     // Check that the python function returned an ObsGroup object
     obsGroup = py::cast<ObsGroup*>(result);
     if (obsGroup == nullptr) {
-        throw Exception("Function \"create_obs_group\" did not return an ObsGroup object.",
-                        ioda_Here());
+        throw eckit::Exception("Function \"create_obs_group\" did not return an ObsGroup object.",
+                        Here());
     }
 
     // Return the interpreter back to its initial state

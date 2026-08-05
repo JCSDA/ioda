@@ -23,8 +23,9 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/Attributes/Has_Attributes.h"
-#include "ioda/Exception.h"
 #include "ioda/MathOps.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Var_ext.h"
@@ -97,7 +98,7 @@ public:
   /// \param DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
-  /// \throws ioda::Exception if an error occurred.
+  /// \throws eckit::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
     Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
@@ -295,7 +296,7 @@ public:
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
@@ -311,7 +312,7 @@ public:
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -341,7 +342,7 @@ public:
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
@@ -357,7 +358,7 @@ public:
                      d->DataPointers.size() * Marshaller::bytesPerElement_),
                    TypeWrapper::GetType(getTypeProvider()), mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -382,7 +383,7 @@ public:
       return this->write<DataType, Marshaller, TypeWrapper>(gsl::make_span(data), mem_selection,
                                                             file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
   template <class DataType, class Marshaller = Object_Accessor<DataType>,
@@ -394,7 +395,7 @@ public:
       return this->parallelWrite<DataType, Marshaller, TypeWrapper>(gsl::make_span(data),
                                  mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -423,7 +424,7 @@ public:
 
       return write<ScalarType>(sp, mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -477,7 +478,7 @@ public:
       auto res = write(sp, mem_selection, file_selection);
       return res;
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(
@@ -536,7 +537,7 @@ public:
 
       return Variable_Implementation{backend_};
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -640,8 +641,8 @@ public:
       // Check that the dimensionality is 1 or 2.
       const auto dims = getDimensions();
       if (dims.dimensionality > 2)
-        throw Exception("Dimensionality too high for a regular Eigen read. Use "
-          "Eigen::Tensor reads instead.", ioda_Here());
+        throw eckit::Exception("Dimensionality too high for a regular Eigen read. Use "
+          "Eigen::Tensor reads instead.", Here());
 
       int nDims[2] = {1, 1};
       if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
@@ -652,7 +653,7 @@ public:
         detail::EigenCompat::DoEigenResize(res, nDims[0],
                                            nDims[1]);  // nullop if the size is already correct.
       else if (dims.numElements != (size_t)(res.rows() * res.cols()))
-        throw Exception("Size mismatch", ioda_Here());
+        throw eckit::Exception("Size mismatch", Here());
 
       // Array copy to preserve row vs column major format.
       // Should be optimized away by the compiler if unneeded.
@@ -668,7 +669,7 @@ public:
       res      = data_in;
       return ret;
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -706,7 +707,7 @@ public:
   /// \param file_selection is the backend's memory layout representing the
   ///   location where the data are written to.
   /// \returns Another instance of this Variable. Used for operation chaining.
-  /// \throws ioda::Exception if there is a size mismatch.
+  /// \throws eckit::Exception if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass>
   Variable_Implementation readWithEigenTensor(EigenClass& res,
@@ -719,12 +720,12 @@ public:
       const auto ioda_dims  = getDimensions();
       const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
       if (ioda_dims.numElements != eigen_dims.numElements)
-        throw Exception("Size mismatch for Eigen Tensor-like read.", ioda_Here());
+        throw eckit::Exception("Size mismatch for Eigen Tensor-like read.", Here());
 
       auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
       return read(sp, mem_selection, file_selection);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(
@@ -828,7 +829,7 @@ private:
       unsigned char typeMe{};
       return action(typeMe);
     } else {
-      std::throw_with_nested(Exception("Unsupported variable data type", ioda_Here()));
+      std::throw_with_nested(eckit::Exception("Unsupported variable data type", Here()));
     }
   }
 

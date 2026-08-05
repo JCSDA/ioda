@@ -27,7 +27,6 @@
 #include "oops/test/TestEnvironment.h"
 
 #include "ioda/distribution/Accumulator.h"
-#include "ioda/Exception.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 
@@ -183,7 +182,7 @@ void testReduce() {
         std::string errMsg = std::string("Unrecognized reduce action: ") + reduceActionString +
             std::string("\nMust use one of: 'equal', 'greater than', 'less than', ") +
             std::string("'greater than or equal' or 'less than or equal'");
-        throw ioda::Exception(errMsg.c_str(), ioda_Here());
+        throw eckit::Exception(errMsg.c_str(), Here());
     }
     const int reduceThreshold = testConfig.getInt(MyPath + ".reduce.threshold");
     const std::vector<int> reduceCheckVector =

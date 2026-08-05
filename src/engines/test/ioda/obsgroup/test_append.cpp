@@ -21,7 +21,6 @@
 #include "Eigen/Dense"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/WriterFactory.h"
-#include "ioda/Exception.h"
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 
@@ -99,8 +98,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
     Engines::BackendCreationParameters backendParams;
     backend = constructBackend(backendName, backendParams);
   } else {
-    throw Exception("Unrecognized backend type", ioda_Here())
-            .add("backendType", backendType);
+    throw eckit::Exception("Unrecognized backend type: " + backendType, Here());
   }
 
   // Create an ObsGroup object and attach the backend
@@ -150,11 +148,11 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
     bool unspecifiedVariableThrows = false;
     try {
       og.vars.createWithScales<float>("Foo/bar", {Location_var}, float_params);
-    } catch (const Exception&) {
+    } catch (const eckit::Exception&) {
       unspecifiedVariableThrows = true;
     }
     if (!unspecifiedVariableThrows) {
-      throw Exception("Foo/bar did not throw an exception");
+      throw eckit::Exception("Foo/bar did not throw an exception");
     }
   } else {
     obs_var = og.vars.createWithScales<float>("ObsValue/myObs", {Location_var, Channel_var}, float_params);
@@ -219,7 +217,7 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
   Eigen::ArrayXXf myData(locationsX2, channels);
   obs_var.readWithEigenRegular(myData);
   if (!myData.isApprox(myDataExpected)) {
-    throw Exception("Test obs data mismatch", ioda_Here());
+    throw eckit::Exception("Test obs data mismatch", Here());
   }
 
   std::vector<float> myLats(locationsX2, 0.0);
@@ -233,10 +231,10 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
       check = fabs((myLats[i] / myLatExpected[i]) - 1.0);
     }
     if (check > 1.0e-3) {
-      throw Exception("Test lats mismatch outside tolerence (1e-3)", ioda_Here())
-              .add("  i", i)
-              .add("  myLatExpected[i]", myLatExpected[i])
-              .add("  myLats[i]", myLats[i]);
+      std::string msg = "Test lats mismatch outside tolerance. Details: i=" + std::to_string(i)
+                        + " myLatExpected[i]=" + std::to_string(myLatExpected[i])
+                        + "myLats[i]=" + std::to_string(myLats[i]);
+      throw eckit::Exception(msg, Here());
     }
   }
 
@@ -251,10 +249,10 @@ void test_obsgroup_helper_funcs(std::string backendType, std::string fileName,
       check = fabs((myLons[i] / myLonExpected[i]) - 1.0);
     }
     if (check > 1.0e-3) {
-      throw Exception("Test lons mismatch outside tolerence (1e-3)", ioda_Here())
-              .add("  i", i)
-              .add("  myLonExpected[i]", myLonExpected[i])
-              .add("  myLons[i]", myLons[i]);
+      std::string msg = "Test lons mismatch outside tolerance. Details: i=" + std::to_string(i)
+                        + " myLonExpected[i]=" + std::to_string(myLonExpected[i])
+                        + "myLons[i]=" + std::to_string(myLons[i]);
+      throw eckit::Exception(msg, Here());
     }
   }
 
@@ -300,11 +298,9 @@ int runTest(const std::string & backendType, const std::string & defaultMappingF
       }
       ASSERT(odbGroupFailedWithoutMapping && failedWhenNotAllVarsRemapped);
     } else {
-      throw ioda::Exception("Unrecognized backend type:", ioda_Here())
-              .add("Backend type", backendType);
+      throw eckit::Exception("Unrecognized backend type: " + backendType, Here());
     }
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -14,17 +14,14 @@
 
 #include <cstring>
 #include <gsl/gsl-lite.hpp>
-#include <iostream>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Attributes/Attribute_Creator.h"
-#include "ioda/Exception.h"
 #include "ioda/Layout.h"
-#include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Types/Type.h"
 #include "ioda/Variables/FillPolicy.h"
 #include "ioda/Variables/Variable.h"
@@ -93,7 +90,7 @@ public:
     if (chunks.size()) return chunks;
     std::vector<Dimensions_t> res;
     if (fChunkingStrategy(cur_dims, res)) return res;
-    throw Exception("Cannot figure out an appropriate chunking size.", ioda_Here());
+    throw eckit::Exception("Cannot figure out an appropriate chunking size.", Here());
   }
   /// \brief Set chunks to specified size.
   /// \param chunk_dims holds the chunk sizes for each dimension.
@@ -235,7 +232,7 @@ public:
   virtual bool exists(const std::string& name) const;
   /// \brief Delete an Attribute with the specified name.
   /// \param attname is the name of the Variable that we are deleting.
-  /// \throws ioda::Exception if no such attribute exists.
+  /// \throws eckit::Exception if no such attribute exists.
   virtual void remove(const std::string& name);
   /// \brief Open a Variable by name
   /// \param name is the name of the Variable to be opened.
@@ -299,7 +296,7 @@ public:
       auto var = create(name, in_memory_dataType, dimensions, max_dimensions, params2);
       return var;
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -312,7 +309,7 @@ public:
       FillValuePolicies::applyFillValuePolicy<DataType>(getFillValuePolicy(), params2.fillValue_);
       return create<DataType>(name, dims.dimsCur, dims.dimsMax, params2);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -333,7 +330,7 @@ public:
       createWithScales(newvars);
       return open(name);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -382,7 +379,7 @@ public:
 ///
 /// \note It should only be constructed inside of a Group. It has no meaning elsewhere.
 /// \see ioda::Variable for the class that represents individual variables.
-/// \throws ioda::Exception on all exceptions.
+/// \throws eckit::Exception on all exceptions.
 class IODA_DL Has_Variables : public detail::Has_Variables_Base {
 public:
   virtual ~Has_Variables();

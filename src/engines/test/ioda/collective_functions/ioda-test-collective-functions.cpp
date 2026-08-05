@@ -6,10 +6,8 @@
  */
 #include <iostream>
 #include <sstream>
-#include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/ObsGroup.h"
 
 int main(int argc, char** argv) {
@@ -55,7 +53,6 @@ int main(int argc, char** argv) {
     og.vars.createWithScales(newvars);
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
 }

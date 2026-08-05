@@ -12,7 +12,6 @@
  * \brief Dataspace selections for reading and writing ioda::Variable data.
  */
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "ioda/defs.h"

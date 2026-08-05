@@ -14,7 +14,6 @@
  * \brief Contains definitions for how data are arranged in ioda internally.
  */
 
-#include <memory>
 #include <string>
 
 #include "ioda/Layout.h"

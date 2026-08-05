@@ -14,25 +14,13 @@
  * \brief Interfaces for ioda::WriterSinglePool and related classes.
  */
 
-#include <map>
 #include <string>
-#include <utility>
-#include <vector>
-
-#include "eckit/mpi/Comm.h"
 
 #include "ioda/defs.h"
 #include "ioda/Engines/WriterBase.h"
-#include "ioda/Engines/WriterFactory.h"
 #include "ioda/Group.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/WriterPoolBase.h"
-
-#include "oops/util/DateTime.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/RequiredPolymorphicParameter.h"
-#include "oops/util/Printable.h"
 
 namespace ioda {
 namespace IoPool {

@@ -4,10 +4,9 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
-#include "ioda/Types/Has_Types.h"
-#include "ioda/Exception.h"
 
-#include <stdexcept>
+#include "eckit/exception/Exceptions.h"
+#include "ioda/Types/Has_Types.h"
 
 namespace ioda {
 namespace detail {
@@ -24,48 +23,45 @@ Has_Types_Backend::Has_Types_Backend() : Has_Types_Base(nullptr) {}
 Type_Provider* Has_Types_Base::getTypeProvider() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getTypeProvider();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred in ioda while getting a backend's type provider interface.",
-      ioda_Here()));
+      Here()));
   }
 }
 
 bool Has_Types_Base::exists(const std::string& name) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->exists(name);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while checking named type existence.", ioda_Here())
-      .add("name", name));
+    std::string msg = "An exception occurred inside ioda while checking named type existence: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 void Has_Types_Base::remove(const std::string& name) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     backend_->remove(name);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while removing a named type.", ioda_Here())
-      .add("name", name));
+    std::string msg = "An exception occurred inside ioda while removing a named type: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 Type Has_Types_Base::open(const std::string& name) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->open(name);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while opening a named type.", ioda_Here())
-      .add("name", name));
+    std::string msg = "An exception occurred inside ioda while opening a named type: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
@@ -74,12 +70,12 @@ Type Has_Types_Base::open(const std::string& name) const {
 std::vector<std::string> Has_Types_Base::list() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->list();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while listing one-level child variables of a group.",
-      ioda_Here()));
+      Here()));
   }
 }
 

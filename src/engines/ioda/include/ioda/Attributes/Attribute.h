@@ -13,15 +13,13 @@
  * \file Attribute.h
  * \brief @link ioda_cxx_attribute Interfaces @endlink for ioda::Attribute and related classes.
  */
-#include <functional>
 #include <gsl/gsl-lite.hpp>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <valarray>
 #include <vector>
 
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/Misc/Eigen_Compat.h"
 #include "ioda/Python/Att_ext.h"
@@ -81,7 +79,7 @@ public:
   /// \param data is a span of data.
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
   ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws ioda::Exception if data has the wrong size.
+  /// \throws eckit::Exception if data has the wrong size.
   /// \returns The attribute (for chaining).
   virtual Attribute_Implementation write(gsl::span<const char> data, const Type& type);
 
@@ -93,7 +91,7 @@ public:
   /// \param data is a gsl::span (a pointer-length pair) that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
+  /// \throws eckit::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   /// \see gsl::make_span
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
@@ -107,7 +105,7 @@ public:
       write(spn, TypeWrapper::GetType(getTypeProvider()));
       return Attribute_Implementation{backend_};
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -120,7 +118,7 @@ public:
   /// \param data is a std::vector that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
+  /// \throws eckit::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   /// \see gsl::make_span for details on how to make a span.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
@@ -135,7 +133,7 @@ public:
   /// \param data is an initializer list that contains the data to be written.
   /// \param in_memory_dataType is the memory layout needed to parse data's type.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if data.size() does not match getDimensions().numElements.
+  /// \throws eckit::Exception if data.size() does not match getDimensions().numElements.
   /// \see gsl::span for details of how to make a span.
   template <class DataType>
   Attribute_Implementation write(std::initializer_list<DataType> data) {
@@ -147,22 +145,22 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is the data to be written.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if the Attribute dimensions are larger than a single point.
+  /// \throws eckit::Exception if the Attribute dimensions are larger than a single point.
   template <class DataType>  //, class Marshaller = HH::Types::Object_Accessor<DataType> >
   Attribute_Implementation write(DataType data) {
     try {
       if (getDimensions().numElements != 1)
-        throw Exception("Wrong number of elements. Use a different write() method.", ioda_Here());
+        throw eckit::Exception("Wrong number of elements. Use a different write() method.", Here());
       return write<DataType>(gsl::make_span<DataType>(&data, 1));
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
   /// \brief Write an Eigen object (a Matrix, an Array, a Block, a Map).
   /// \tparam EigenClass is the Eigen object to write.
   /// \param d is the data to be written.
-  /// \throws ioda::Exception on a dimension mismatch.
+  /// \throws eckit::Exception on a dimension mismatch.
   /// \returns the attribute
   template <class EigenClass>
   Attribute_Implementation writeWithEigenRegular(const EigenClass& d) {
@@ -178,7 +176,7 @@ public:
 
       return write<ScalarType>(sp);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -188,7 +186,7 @@ public:
   /// \brief Write an Eigen Tensor-like object
   /// \tparam EigenClass is the Eigen tensor to write.
   /// \param d is the data to be written.
-  /// \throws ioda::Exception on a dimension mismatch.
+  /// \throws eckit::Exception on a dimension mismatch.
   /// \returns the attribute
   template <class EigenClass>
   Attribute_Implementation writeWithEigenTensor(const EigenClass& d) {
@@ -200,7 +198,7 @@ public:
       auto res = write(sp);
       return res;
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(
@@ -222,7 +220,7 @@ public:
   /// \param data is a span of data that has length of getStorageSize().
   /// \param in_memory_datatype is an opaque (backend-level) object that describes the placement of
   ///   the data in memory. Usually ignorable - needed for complex data structures.
-  /// \throws ioda::Exception if data has the wrong size.
+  /// \throws eckit::Exception if data has the wrong size.
   /// \returns The attribute (for chaining).
   virtual Attribute_Implementation read(gsl::span<char> data, const Type& in_memory_dataType) const;
 
@@ -243,7 +241,7 @@ public:
   ///   the data in memory. Usually this does not need to be set to anything other than its default
   ///   value. Kept as a parameter for debugging purposes.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if data.size() != getDimensions().numElements.
+  /// \throws eckit::Exception if data.size() != getDimensions().numElements.
   /// \see getDimensions for buffer size information.
   template <class DataType, class Marshaller = ioda::Object_Accessor<DataType>,
             class TypeWrapper = Types::GetType_Wrapper<DataType>>
@@ -251,8 +249,8 @@ public:
     try {
       const size_t numObjects = data.size();
       if (getDimensions().numElements != gsl::narrow<ioda::Dimensions_t>(numObjects))
-        throw Exception("Size mismatch between underlying object and user-provided data range.",
-                        ioda_Here());
+        throw eckit::Exception("Size mismatch between underlying object and user-provided data range.",
+                        Here());
 
       detail::PointerOwner pointerOwner = getTypeProvider()->getReturnedPointerOwner();
       Marshaller m(pointerOwner);
@@ -264,7 +262,7 @@ public:
 
       return Attribute_Implementation{backend_};
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
@@ -296,22 +294,22 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \param data is where the datum is read to.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if the underlying data have multiple elements.
+  /// \throws eckit::Exception if the underlying data have multiple elements.
   template <class DataType>
   Attribute_Implementation read(DataType& data) const {
     try {
       if (getDimensions().numElements != 1)
-        throw Exception("Wrong number of elements. Use a different read() method.", ioda_Here());
+        throw eckit::Exception("Wrong number of elements. Use a different read() method.", Here());
       return read<DataType>(gsl::make_span<DataType>(&data, 1));
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
   }
 
   /// \brief Read a single value (convenience function).
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns A datum of type DataType.
-  /// \throws ioda::Exception if the underlying data have size greater than 1.
+  /// \throws eckit::Exception if the underlying data have size greater than 1.
   /// \note The Python function is read_datum_*
   template <class DataType>
   DataType read() const {
@@ -337,9 +335,9 @@ public:
   ///   if there is a dimension mismatch. Not all Eigen objects can be resized.
   /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if the attribute's dimensionality is
+  /// \throws eckit::Exception if the attribute's dimensionality is
   ///   too high.
-  /// \throws ioda::Exception if resize = false and there is a dimension mismatch.
+  /// \throws eckit::Exception if resize = false and there is a dimension mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass, bool Resize = detail::EigenCompat::CanResize<EigenClass>::value>
   Attribute_Implementation readWithEigenRegular(EigenClass& res) const {
@@ -354,10 +352,10 @@ public:
       // Check that the dimensionality is 1 or 2.
       const auto dims = getDimensions();
       if (dims.dimensionality > 2)
-        throw Exception(
+        throw eckit::Exception(
           "Dimensionality too high for a regular Eigen read. Use "
           "Eigen::Tensor reads instead.",
-          ioda_Here());
+        Here());
 
       int nDims[2] = {1, 1};
       if (dims.dimsCur.size() >= 1) nDims[0] = gsl::narrow<int>(dims.dimsCur[0]);
@@ -368,7 +366,7 @@ public:
         detail::EigenCompat::DoEigenResize(res, nDims[0],
                                            nDims[1]);  // nullop if the size is already correct.
       else if (dims.numElements != (size_t)(res.rows() * res.cols()))
-        throw Exception("Size mismatch", ioda_Here());
+        throw eckit::Exception("Size mismatch", Here());
 
       // Array copy to preserve row vs column major format.
       // Should be optimized away by the compiler if unneeded.
@@ -383,7 +381,7 @@ public:
       res      = data_in;
       return ret;
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(false, "The Eigen headers cannot be found, so this function cannot be used.");
@@ -395,7 +393,7 @@ public:
   ///   This template must provide the EigenClass::Scalar typedef.
   /// \param res is the Eigen object.
   /// \returns Another instance of this Attribute. Used for operation chaining.
-  /// \throws ioda::Exception if there is a size mismatch.
+  /// \throws eckit::Exception if there is a size mismatch.
   /// \note When reading in a 1-D object, the data are read as a column vector.
   template <class EigenClass>
   Attribute_Implementation readWithEigenTensor(EigenClass& res) const {
@@ -405,12 +403,12 @@ public:
       const auto ioda_dims  = getDimensions();
       const auto eigen_dims = ioda::detail::EigenCompat::getTensorDimensions(res);
       if (ioda_dims.numElements != eigen_dims.numElements)
-        throw Exception("Size mismatch for Eigen Tensor-like read.", ioda_Here());
+        throw eckit::Exception("Size mismatch for Eigen Tensor-like read.", Here());
 
       auto sp = (gsl::make_span(res.data(), eigen_dims.numElements));
       return read(sp);
     } catch (...) {
-      std::throw_with_nested(Exception(ioda_Here()));
+      std::throw_with_nested(eckit::Exception(Here()));
     }
 #else
     static_assert(
@@ -442,7 +440,7 @@ public:
   /// \tparam DataType is the type of the data. I.e. float, int, int32_t, uint16_t, std::string, etc.
   /// \returns True if the type matches
   /// \returns False (0) if the type does not match
-  /// \throws ioda::Exception if an error occurred.
+  /// \throws eckit::Exception if an error occurred.
   template <class DataType>
   bool isA() const {
     Type templateType = Types::GetType_Wrapper<DataType>::GetType(getTypeProvider());
@@ -488,7 +486,7 @@ public:
  * \note Multidimensional attributes are supported by some of the underlying backends,
  * like HDF5, but are incompatible with the NetCDF file format.
  * \see Has_Attribute for the class that can create and open new Attribute objects.
- * \throws ioda::Exception on all exceptions.
+ * \throws eckit::Exception on all exceptions.
  **/
 class IODA_DL Attribute : public detail::Attribute_Base<> {
 public:

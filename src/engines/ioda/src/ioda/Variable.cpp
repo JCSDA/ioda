@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "ioda/Variables/Variable.h"
+#include <string>
 #include "ioda/Variables/Has_Variables.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -26,22 +26,22 @@ template <>
 bool Variable_Base<>::isA(Type lhs) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->isA(lhs);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while checking variable type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while checking variable type.", Here()));
   }
 }
 template <>
 detail::Type_Provider* Variable_Base<>::getTypeProvider() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getTypeProvider();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while getting a backend type provider.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while getting a backend type provider.", Here()));
   }
 }
 
@@ -49,11 +49,11 @@ template <>
 Type Variable_Base<>::getType() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getType();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while determining variable type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while determining variable type.", Here()));
   }
 }
 
@@ -76,8 +76,8 @@ BasicTypes Variable_Base<>::getBasicType() const {
 
     return BasicTypes::undefined_;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while determining variable type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while determining variable type.", Here()));
   }
 }
 
@@ -85,15 +85,15 @@ template <>
 bool Variable_Base<>::hasFillValue() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     // In the case of the HH backend, calling the backend hasFillValue() routine will
     // consider only the hdf5 fill value property. We want to also consider the existence
     // of the netcdf _FillValue attribute.
     return (backend_->hasFillValue() || atts.exists("_FillValue"));
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining if a variable has a fill value.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -150,7 +150,7 @@ template <>
 Variable_Base<>::FillValueData_t Variable_Base<>::getFillValue() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     // Need to check both the hdf5 fill value property and the netcdf _FillValue var
     // attribute. The precedence is given to the netcdf _FillValue property.
     // Issue a warning if you received fill values from both the property and attribute
@@ -166,8 +166,8 @@ Variable_Base<>::FillValueData_t Variable_Base<>::getFillValue() const {
     
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while reading a variable's fill value.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while reading a variable's fill value.", Here()));
   }
 }
 
@@ -175,7 +175,7 @@ template <>
 VariableCreationParameters Variable_Base<>::getCreationParameters(bool doAtts, bool doDims) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     // If the backend is HH, then it's possible that the hdf5 fill value property is
     // not set (which results in using the netcdf defalut fill value) and we want to check
     // if the netcdf _FillValue variable attribute is being used and if so have that value
@@ -184,9 +184,9 @@ VariableCreationParameters Variable_Base<>::getCreationParameters(bool doAtts, b
     res.fillValue_ = getFillValue();
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while getting creation-time metadata of a variable.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -194,12 +194,12 @@ template <>
 std::vector<Dimensions_t> Variable_Base<>::getChunkSizes() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getChunkSizes();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining a variable's chunking options.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -207,11 +207,11 @@ template <>
 std::pair<bool, int> Variable_Base<>::getGZIPCompression() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getGZIPCompression();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while reading GZIP compression options.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while reading GZIP compression options.", Here()));
   }
 }
 
@@ -219,11 +219,11 @@ template <>
 std::tuple<bool, unsigned, unsigned> Variable_Base<>::getSZIPCompression() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getSZIPCompression();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while reading SZIP compression options.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while reading SZIP compression options.", Here()));
   }
 }
 
@@ -231,11 +231,11 @@ template <>
 Dimensions Variable_Base<>::getDimensions() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getDimensions();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while reading a variable's dimensions.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while reading a variable's dimensions.", Here()));
   }
 }
 
@@ -243,11 +243,11 @@ template <>
 Variable Variable_Base<>::resize(const std::vector<Dimensions_t>& newDims) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->resize(newDims);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while resizing a variable.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while resizing a variable.", Here()));
   }
 }
 
@@ -256,12 +256,12 @@ Variable Variable_Base<>::attachDimensionScale(unsigned int DimensionNumber,
                                                const Variable& scale) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->attachDimensionScale(DimensionNumber, scale);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while attaching a dimension scale to a variable.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -270,12 +270,12 @@ Variable Variable_Base<>::detachDimensionScale(unsigned int DimensionNumber,
                                                const Variable& scale) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->detachDimensionScale(DimensionNumber, scale);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while detaching a dimension "
-      "scale from a variable.", ioda_Here()));
+      "scale from a variable.", Here()));
   }
 }
 
@@ -286,9 +286,9 @@ Variable Variable_Base<>::setDimScale(const std::vector<Variable>& vdims) {
       attachDimensionScale(i, vdims[i]);
     return Variable{backend_};
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while setting dimension scales on a variable.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -299,8 +299,8 @@ Variable Variable_Base<>::setDimScale(const std::vector<Named_Variable>& vdims) 
     return Variable{backend_};
   } catch (...) {
     std::throw_with_nested(
-      Exception("An exception occurred inside ioda while setting dimension scales on a variable.",
-                ioda_Here()));
+      eckit::Exception("An exception occurred inside ioda while setting dimension scales on a variable.",
+                Here()));
   }
   
 }
@@ -322,12 +322,12 @@ template <>
 bool Variable_Base<>::isDimensionScale() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->isDimensionScale();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while checking if a variable is a dimension scale.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -335,24 +335,24 @@ template <>
 Variable Variable_Base<>::setIsDimensionScale(const std::string& dimensionScaleName) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->setIsDimensionScale(dimensionScaleName);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while making a variable a dimension scale.",
-      ioda_Here()));
+      Here()));
   }
 }
 template <>
 Variable Variable_Base<>::getDimensionScaleName(std::string& res) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getDimensionScaleName(res);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining the human-readable "
-      "name of a dimension scale.", ioda_Here()));
+      "name of a dimension scale.", Here()));
   }
 }
 template <>
@@ -360,13 +360,12 @@ bool Variable_Base<>::isDimensionScaleAttached(unsigned int DimensionNumber,
                                                const Variable& scale) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->isDimensionScaleAttached(DimensionNumber, scale);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining if a dimension scale is "
-      "attached to a variable at a specified dimension.", ioda_Here())
-      .add("DimensionNumber", DimensionNumber));
+      "attached to a variable at a DimensionNumber " + std::to_string(DimensionNumber) , Here()));
   }
 }
 
@@ -375,12 +374,12 @@ std::vector<std::vector<Named_Variable>> Variable_Base<>::getDimensionScaleMappi
   const std::list<Named_Variable>& scalesToQueryAgainst, bool firstOnly) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getDimensionScaleMappings(scalesToQueryAgainst, firstOnly);
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining which scales are attached to "
-      "which dimensions of a variable.", ioda_Here()));
+      "which dimensions of a variable.", Here()));
   }
 }
 
@@ -389,11 +388,11 @@ Variable Variable_Base<>::write(gsl::span<const char> data, const Type& in_memor
                           const Selection& mem_selection, const Selection& file_selection) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->write(data, in_memory_dataType, mem_selection, file_selection);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while writing data to a variable.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while writing data to a variable.", Here()));
   }
 }
 
@@ -403,11 +402,11 @@ Variable Variable_Base<>::parallelWrite(gsl::span<const char> data,
                           const Selection& mem_selection, const Selection& file_selection) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->parallelWrite(data, in_memory_dataType, mem_selection, file_selection);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while writing data to a variable.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while writing data to a variable.", Here()));
   }
 }
 
@@ -417,11 +416,11 @@ Variable Variable_Base<>::read(gsl::span<char> data, const Type& in_memory_dataT
                                const Selection& file_selection) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->read(data, in_memory_dataType, mem_selection, file_selection);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while reading data from a variable.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while reading data from a variable.", Here()));
   }
 }
 
@@ -429,11 +428,11 @@ template <>
 Selections::SelectionBackend_t Variable_Base<>::instantiateSelection(const Selection& sel) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->instantiateSelection(sel);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda.", Here()));
   }
 }
 
@@ -458,8 +457,8 @@ std::vector<std::vector<Named_Variable>> Variable_Backend::getDimensionScaleMapp
 
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda.", Here()));
   }
 }
 
@@ -482,18 +481,18 @@ VariableCreationParameters Variable_Backend::getCreationParameters(bool doAtts, 
     res.fillValue_ = getFillValue();
     // Attributes (optional)
     if (doAtts) {
-      throw Exception("Unimplemented doAtts option.", ioda_Here());
+      throw eckit::Exception("Unimplemented doAtts option.", Here());
     }
     // Dimensions (optional)
     if (doDims) {
-      throw Exception("Unimplemented doDims option.", ioda_Here());
+      throw eckit::Exception("Unimplemented doDims option.", Here());
     }
 
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining creation-time parameters of a "
-      "variable .", ioda_Here()));
+      "variable .", Here()));
   }
 }
 

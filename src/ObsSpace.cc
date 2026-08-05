@@ -26,7 +26,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/Variables/VarUtils.h"
 #include "ioda/Variables/Variable.h"
@@ -558,7 +557,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                             // int64_t offset times with its epoch datetime representation.
                             const util::DateTime epoch = ioda::getEpochAsDtime(var);
                             VarType = ObsDtype::DateTime;
-                        } catch (ioda::Exception&) {
+                        } catch (eckit::Exception&) {
                             VarType = ObsDtype::Integer_64;
                         }
                     },
@@ -982,7 +981,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
     std::string errMsg = std::string("ObsSpace::append: Distribution '") + dist_->name() +
                          std::string("' is not yet supported.\n") +
                          std::string("    Must use a non-overlapping distribution for now");
-    throw Exception(errMsg, ioda_Here());
+    throw eckit::Exception(errMsg, Here());
   }
     if (obs_params_.top_level_.obsDataIn.value().isFileBackend()) {
         // Grab the file name from the ObsSpace parameters and combine it with the appendDir
@@ -991,7 +990,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
         if (origFileName == "") {
         std::string errMsg =
             std::string("ObsSpace::append: file backend is missing a file name specification");
-        throw Exception(errMsg, ioda_Here());
+        throw eckit::Exception(errMsg, Here());
         }
         std::string newFileName = appendDir;
         auto pos = origFileName.find_last_of("/");
@@ -1246,7 +1245,7 @@ void ObsSpace::assignLocationValues() {
                 }
                 locVar.write<int64_t>(locValues);
             } else {
-                throw Exception("Location variable has unexpected data type", ioda_Here());
+                throw eckit::Exception("Location variable has unexpected data type", Here());
             }
         }
     }
@@ -1465,13 +1464,13 @@ std::vector<eckit::LocalConfiguration> ObsSpace::expandInputFileConfigs(
           std::string errMsg =
               std::string("Must specify at least one of 'obsfile' or 'obsfiles' ") +
               std::string("with the 'obsdatain' configuration");
-          throw(ioda::Exception(errMsg, ioda_Here()));
+          throw(eckit::Exception(errMsg, Here()));
       } else if (haveObsFile && haveObsFiles) {
           // both were specfied
           std::string errMsg =
               std::string("Must specify one and only one of 'obsfile' or 'obsfiles' ") +
               std::string("with the 'obsdatain' configuration");
-          throw(ioda::Exception(errMsg, ioda_Here()));
+          throw(eckit::Exception(errMsg, Here()));
       }
 
       // We have either obsfile or obsfiles specified at this point

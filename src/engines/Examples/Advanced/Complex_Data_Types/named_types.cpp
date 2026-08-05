@@ -27,8 +27,9 @@
 #include <string>  // We want strings
 #include <vector>  // We want vectors
 
+#include "eckit/exception/Exceptions.h"        // Exceptions and debugging
+
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 
 int main(int argc, char** argv) {
@@ -74,14 +75,14 @@ int main(int argc, char** argv) {
 
     // List all types
     vector<string> named_types = g.types.list();
-    if (named_types.size() != 4) throw Exception("Expected 4 named types.", ioda_Here());
+    if (named_types.size() != 4) throw eckit::Exception("Expected 4 named types.", Here());
 
     // Check type existence
-    if (!g.types.exists("type_array_4d")) throw Exception("type_array_4d not found.", ioda_Here());
+    if (!g.types.exists("type_array_4d")) throw eckit::Exception("type_array_4d not found.", Here());
 
     // Open a type
     Type varstr2 = g.types["type_var_str_utf8"];
-    if (varstr2.getClass() != TypeClass::String) throw Exception("Wrong data type.", ioda_Here());
+    if (varstr2.getClass() != TypeClass::String) throw eckit::Exception("Wrong data type.", Here());
 
     // Remove a named type. Any variables or attributes are untouched. The linked name
     // is simply removed.
@@ -91,7 +92,6 @@ int main(int argc, char** argv) {
 
     // Done!
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

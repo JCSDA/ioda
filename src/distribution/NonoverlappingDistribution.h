@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "eckit/mpi/Comm.h"
-#include "oops/util/Logger.h"
 
 #include "ioda/distribution/Distribution.h"
 

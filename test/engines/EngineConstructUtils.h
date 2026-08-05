@@ -18,7 +18,6 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/WriterFactory.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 

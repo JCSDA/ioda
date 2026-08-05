@@ -8,8 +8,8 @@
 
 #include <map>
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -23,7 +23,9 @@ namespace detail {
   \deprecated This function is old and should not be used!
   **/
 size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz) {
-  if (!dest || !src) throw Exception("Null pointer passed to function.", ioda_Here());
+  if (!dest || !src) {
+    throw eckit::Exception("Null pointer passed to function.", Here());
+  }
 #ifdef JEDI_USING_SECURE_STRINGS
   strncpy_s(dest, destSz, src, srcSz);
   return strnlen_s(dest, destSz);
@@ -34,7 +36,9 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
   // manner. This is why we want to use the secure string functions if at all possible.
   if (srcSz <= destSz) {
     strncpy(dest, src, srcSz);
-    if (dest[srcSz - 1] != '\0') throw Exception("Non-terminated null copy.", ioda_Here());
+    if (dest[srcSz - 1] != '\0') {
+      throw eckit::Exception("Non-terminated null copy.", Here());
+    }
   } else {
     strncpy(dest, src, destSz);
     // Additionally, throw on null-string truncation.
@@ -43,10 +47,11 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
     for (size_t i = 0; i < destSz - 1; ++i) {
       if (i < srcSz) {
         if (dest[i] == '\0' && src[i] == '\0') break;  // First null hit. Success.
-        if (dest[i] == '\0' && src[i] != '\0')
-          throw Exception("Truncated array copy error.", ioda_Here());
+        if (dest[i] == '\0' && src[i] != '\0'){
+          throw eckit::Exception("Truncated array copy error.", Here());
+        }
       } else
-        throw Exception("Null not reached by end of source!", ioda_Here());
+        throw eckit::Exception("Null not reached by end of source!", Here());
     }
   }
 
@@ -54,7 +59,7 @@ size_t COMPAT_strncpy_s(char* dest, size_t destSz, const char* src, size_t srcSz
   for (size_t i = 0; i < destSz; ++i) {
     if (dest[i] == '\0') return i;
   }
-  throw Exception("Truncated array copy error.", ioda_Here());
+  throw eckit::Exception("Truncated array copy error.", Here());
 #endif
 }
 
@@ -67,11 +72,11 @@ template <>
 size_t Type_Base<>::getSize() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getSize();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while getting the size of a data type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while getting the size of a data type.", Here()));
   }
 }
 
@@ -79,11 +84,11 @@ template <>
 TypeClass Type_Base<>::getClass() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getClass();
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while getting the class of a data type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while getting the class of a data type.", Here()));
   }
 }
 
@@ -91,11 +96,11 @@ template <>
 void Type_Base<>::commitToBackend(Group &d, const std::string &name) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     backend_->commitToBackend(d, name);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while committing a datatype to a backend.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while committing a datatype to a backend.", Here()));
   }
 }
 
@@ -103,12 +108,12 @@ template <>
 bool Type_Base<>::isTypeSigned() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->isTypeSigned();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while checking if a "
-      "numeric type is signed or unsigned.", ioda_Here()));
+      "numeric type is signed or unsigned.", Here()));
   }
 }
 
@@ -116,12 +121,12 @@ template <>
 bool Type_Base<>::isVariableLengthStringType() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->isVariableLengthStringType();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while checking if a "
-      "string type is of variable length.", ioda_Here()));
+      "string type is of variable length.", Here()));
   }
 }
 
@@ -129,12 +134,12 @@ template <>
 StringCSet Type_Base<>::getStringCSet() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getStringCSet();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining the "
-      "character set used in a string type.", ioda_Here()));
+      "character set used in a string type.", Here()));
   }
 }
 
@@ -142,12 +147,12 @@ template <>
 Type Type_Base<>::getBaseType() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getBaseType();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining the "
-      "base type used in an array or enumeration type.", ioda_Here()));
+      "base type used in an array or enumeration type.", Here()));
   }
 }
 
@@ -155,12 +160,12 @@ template <>
 std::vector<Dimensions_t> Type_Base<>::getDimensions() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getDimensions();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while determining the "
-      "array dimensions of a type.", ioda_Here()));
+      "array dimensions of a type.", Here()));
   }
 }
 
@@ -204,7 +209,7 @@ Type::Type(BasicTypes typ, gsl::not_null<::ioda::detail::Type_Provider*> t)
        {BasicTypes::str_, typeid(std::string)}};
   as_type_index_ = workable_types.at(typ);
 
-  if (typ == BasicTypes::undefined_) throw Exception("Bad input", ioda_Here());
+  if (typ == BasicTypes::undefined_) throw eckit::Exception("Bad input", Here());
   if (typ == BasicTypes::str_)
     *this = t->makeStringType(typeid(std::string), Types::constants::_Variable_Length);
   else

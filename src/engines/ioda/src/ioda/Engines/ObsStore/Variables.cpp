@@ -14,15 +14,15 @@
 #include "./Variables.hpp"
 
 #include <algorithm>
-#include <exception>
 #include <functional>
 #include <numeric>
+#include <string>
 
 #include <hdf5.h>  // Type conversion support
 
+#include "eckit/exception/Exceptions.h"
 #include "./Group.hpp"
 #include "../HH/HH/HH-util.h"  // Error catching in H5T_convert
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -70,10 +70,11 @@ void Variable::resize(const std::vector<Dimensions_t>& new_dim_sizes) {
   for (std::size_t i = 0; i < max_dimensions_.size(); ++i) {
     if (max_dimensions_[i] >= 0) {
       if (new_dim_sizes[i] > max_dimensions_[i]) {
-        throw Exception("new_dim_sizes exceeds max_dimensions_", ioda_Here())
-          .add("dimension index", i)
-          .add("max_dims[i]", max_dimensions_[i])
-          .add("new_dim_sizes[i]", new_dim_sizes[i]);
+        std::string msg = std::string("new_dim_sizes exceeds max_dimensions_ with ")
+                          + std::string("dimension index:") + std::to_string(i)
+                          + std::string(", max_dims[i]:") + std::to_string(max_dimensions_[i])
+                          + std::string(", new_dim_sizes[i]:") + std::to_string(new_dim_sizes[i]);   
+        throw eckit::Exception(msg, Here());
       }
     }
   }
@@ -115,8 +116,10 @@ void Variable::detachDimensionScale(const std::size_t dim_number,
                                     const std::shared_ptr<Variable> scale) {
   if (dim_scales_[dim_number] == scale) {
     dim_scales_[dim_number] = nullptr;
-  } else
-    throw Exception("specified scale is not found", ioda_Here()).add("dim_number", dim_number);
+  } else {
+    std::string msg = std::string("specified scale is not found for dim_number ") + std::to_string(dim_number);
+    throw eckit::Exception(msg, Here());
+  }
 }
 
 bool Variable::isDimensionScale() const { return is_scale_; }
@@ -230,8 +233,10 @@ std::shared_ptr<Variable> Has_Variables::open(const std::string& name) const {
     var                                = group->vars->open(splitPaths[1]);
   } else {
     auto ivar = variables_.find(name);
-    if (ivar == variables_.end())
-      throw Exception("Variable not found.", ioda_Here()).add("name", name);
+    if (ivar == variables_.end()) {
+      std::string msg = "Variable not found: " + name;
+      throw eckit::Exception(msg, Here());
+    }
     var = ivar->second;
   }
   return var;

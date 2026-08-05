@@ -16,11 +16,7 @@
 
 #include <string>
 
-#include "../defs.h"
-
 #include "eckit/config/LocalConfiguration.h"
-
-#include "ioda/Exception.h"
 #include "ioda/Attributes/Attribute.h"
 #include "ioda/Attributes/Has_Attributes.h"
 
@@ -38,10 +34,10 @@ class ThrowIfAttributeIsOfUnsupportedType {
   explicit ThrowIfAttributeIsOfUnsupportedType(
       const std::string &attrName) : attrName_(attrName) {}
 
-  void operator()(const ioda::source_location & codeLocation) const {
+  void operator()() const {
     std::string ErrorMsg = std::string("Attribute '") + attrName_ +
                            std::string("' is not of any supported type");
-    throw ioda::Exception(ErrorMsg.c_str(), codeLocation);
+    throw eckit::Exception(ErrorMsg.c_str(), Here());
   }
 
  private:
@@ -90,7 +86,7 @@ auto forAnySupportedAttributeType(const ioda::Attribute &attr, const Action &act
     return action(std::string());
   if (attr.isA<char>())
     return action(char());
-  typeErrorHandler(ioda_Here());
+  typeErrorHandler();
 }
 
 /// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
@@ -142,7 +138,7 @@ auto switchOnSupportedAttributeType(const ioda::Attribute &attr,
     return stringAction(std::string());
   if (attr.isA<char>())
     return charAction(char());
-  typeErrorHandler(ioda_Here());
+  typeErrorHandler();
 }
 
 /// \brief true if attribute belongs to a known set of attributes that need to be ignored

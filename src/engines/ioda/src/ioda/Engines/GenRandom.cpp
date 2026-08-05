@@ -7,7 +7,6 @@
 
 #include "ioda/Engines/GenRandom.h"
 
-#include "ioda/Misc/Dimensions.h"
 
 #include "oops/util/Logger.h"
 

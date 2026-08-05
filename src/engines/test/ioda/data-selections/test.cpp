@@ -7,11 +7,9 @@
 /// This program tests that Variable read and write selections work as expected for certain engines.
 
 #include <Eigen/Dense>
-#include <iostream>
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 void test_group_backend_engine(ioda::Group g) {
@@ -100,7 +98,6 @@ int main(int argc, char** argv) {
     auto f = Engines::constructFromCmdLine(argc, argv, "test-data-selections.hdf5");
     test_group_backend_engine(f);
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

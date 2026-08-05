@@ -162,7 +162,7 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     // Rename the output file, then copy back to the original name while changing the
     // strings back to variable length strings.
     if (std::rename(finalFileName.c_str(), tempFileName.c_str()) != 0) {
-        throw Exception("Unable to rename output file.", ioda_Here());
+        throw eckit::Exception("Unable to rename output file.", Here());
     }
 
     // Create backends for reading the temp file and writing the final file.

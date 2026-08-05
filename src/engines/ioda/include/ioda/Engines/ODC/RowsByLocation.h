@@ -14,7 +14,7 @@ namespace ODC {
 
 /// \brief A container whose ith element is the set of indices of ODB rows associated with the ith
 /// location.
-using RowsByLocation = std::vector<std::vector<size_t>>;
+using RowsByLocation = std::vector<std::vector<std::size_t>>;
 
 }  // namespace ODC
 }  // namespace Engines

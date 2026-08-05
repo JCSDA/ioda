@@ -11,7 +11,7 @@
  * \brief Functions for ioda::Variable and ioda::Has_Variables backed by ObsStore
  */
 #include "./ObsStore-variables.h"
-#include "ioda/Exception.h"
+#include <string>
 
 namespace ioda {
 namespace Engines {
@@ -47,7 +47,7 @@ bool ObsStore_Variable_Backend::hasFillValue() const {
   try {
     return backend_->hasFillValue();
   } catch (const std::bad_cast&) {
-    std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("Bad cast.", Here()));
   }
 }
 
@@ -55,7 +55,7 @@ ObsStore_Variable_Backend::FillValueData_t ObsStore_Variable_Backend::getFillVal
   try {
     return backend_->getFillValue();
   } catch (const std::bad_cast&) {
-    std::throw_with_nested(Exception("Bad cast.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("Bad cast.", Here()));
   }
 }
 
@@ -178,10 +178,11 @@ Variable ObsStore_Variable_Backend::write(gsl::span<const char> data,
   // than the file npoints.
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
-  if (m_npts > f_npts)
-    throw Exception("Number of points from memory is greater than that of file", ioda_Here())
-      .add("m_select.npoints()", m_npts)
-      .add("f_select.npoints()", f_npts);
+  if (m_npts > f_npts) {
+    std::string msg = "Number of points from memory is greater than that of file. In memory: "
+                      + std::to_string(m_npts) + " In file: " + std::to_string(f_npts);
+    throw eckit::Exception(msg, Here());
+  }
 
   backend_->write(data, dtype, m_select, f_select);
   return Variable{shared_from_this()};
@@ -226,10 +227,11 @@ Variable ObsStore_Variable_Backend::read(gsl::span<char> data, const Type& in_me
   // than the memory npoints.
   std::size_t m_npts = m_select.npoints();
   std::size_t f_npts = f_select.npoints();
-  if (m_npts > f_npts)
-    throw Exception("Number of points from file is greater than that of memory", ioda_Here())
-      .add("m_select.npoints()", m_npts)
-      .add("f_select.npoints()", f_npts);
+  if (m_npts > f_npts) {
+    std::string msg = "Number of points from file (" + std::to_string(f_npts)
+                      + ") is greater than that of memory (" + std::to_string(m_npts) + ")";
+    eckit::Exception(msg, Here());
+  }
 
   backend_->read(data, dtype, m_select, f_select);
   // Need to construct a shared_ptr to "this", instead of using

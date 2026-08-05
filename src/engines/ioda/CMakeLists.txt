@@ -78,7 +78,6 @@ list(APPEND SRCS_MATH
 list(APPEND SRCS_MISC
 	include/ioda/defs.h
 	include/ioda/Copying.h
-	include/ioda/Exception.h
 	include/ioda/iodaNamespaceDoc.h
 	include/ioda/Misc/compat/std/source_location_compat.h
 	include/ioda/Misc/Dimensions.h
@@ -88,7 +87,6 @@ list(APPEND SRCS_MISC
 	include/ioda/Misc/StringFuncs.h
 	src/ioda/Copying.cpp
 	src/ioda/DimensionScales.cpp
-	src/ioda/Exception.cpp
 	src/ioda/StringFuncs.cpp
 	)
 list(APPEND SRCS_TYPES

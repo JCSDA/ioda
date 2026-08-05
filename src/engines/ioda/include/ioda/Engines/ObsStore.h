@@ -13,7 +13,6 @@
  * \brief ObsStore engine
  */
 #pragma once
-#include <string>
 
 #include "../defs.h"
 #include "Capabilities.h"

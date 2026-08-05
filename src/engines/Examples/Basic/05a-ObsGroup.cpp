@@ -70,15 +70,12 @@
  * \author Stephen Herbener (stephenh@ucar.edu), Ryan Honeyager (honeyage@ucar.edu)
  **/
 
-#include <array>     // Arrays are fixed-length vectors.
 #include <iostream>  // We want I/O.
 #include <string>    // We want strings
-#include <valarray>  // Like a vector, but can also do basic element-wise math.
 #include <vector>    // We want vectors
 
 #include "Eigen/Dense"             // Eigen Arrays and Matrices
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 #include "ioda/ObsGroup.h"
 #include "unsupported/Eigen/CXX11/Tensor"  // Eigen Tensors
@@ -199,7 +196,6 @@ int main(int argc, char** argv) {
 
     // Done!
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

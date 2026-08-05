@@ -14,7 +14,6 @@
 
 #include "eckit/geometry/Sphere.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/RequiredParameter.h"

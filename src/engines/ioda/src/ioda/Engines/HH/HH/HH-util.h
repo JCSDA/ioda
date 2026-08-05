@@ -21,7 +21,6 @@
 
 #include "./Handles.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 #include "ioda/Types/Marshalling.h"
 
 namespace ioda {
@@ -141,19 +140,22 @@ struct IODA_HIDDEN View_hvl_t {
     if (newlen) {
       obj.p = (obj.p) ? H5resize_memory(obj.p, newlen * sizeof(Inner))
         : H5allocate_memory(newlen * sizeof(Inner), false);
-      if (!obj.p) throw Exception("Failed to allocate memory", ioda_Here());
+      if (!obj.p) throw eckit::Exception("Failed to allocate memory", Here());
     }
     else {
       if (obj.p)
-        if (H5free_memory(obj.p) < 0) throw Exception("Failed to free memory", ioda_Here());
+        if (H5free_memory(obj.p) < 0) throw eckit::Exception("Failed to free memory", Here());
       obj.p = nullptr;
     }
     obj.len = newlen;
   }
   void clear() { resize(0); }
   Inner* at(size_t i) {
-    if (i >= obj.len) throw Exception("Out-of-bounds access", ioda_Here())
-      .add("i", i).add("obj.len", obj.len);
+    if (i >= obj.len) {
+      std::string msg = "Out-of-bounds access at index: " + std::to_string(i)
+                        + " of object with length: " + std::to_string(obj.len);
+      throw eckit::Exception(msg, Here());
+    }
     return operator[](i);
   }
   Inner* operator[](size_t i) {
@@ -172,7 +174,7 @@ struct IODA_HIDDEN Vlen_data {
   size_t sz;
   Vlen_data(size_t sz, HH_hid_t typ, HH_hid_t space)
       : buf(new hvl_t[sz]), typ{typ}, space{space}, sz{sz} {
-    if (!buf) throw Exception("Failed to allocate buf", ioda_Here());
+    if (!buf) throw eckit::Exception("Failed to allocate buf", Here());
     for (size_t i = 0; i < sz; i++) {
       buf[i].len = 0;
       buf[i].p   = nullptr;
@@ -200,14 +202,14 @@ struct IODA_HIDDEN Vlen_data {
 };
 
 /// @brief Check for any HDF5-related errors and encapsulate these errors as an exception.
-/// @throws ioda::Exception if any exception was detected. The contents of the exception will
+/// @throws eckit::Exception if any exception was detected. The contents of the exception will
 ///   contain the HDF5 error stack.
 IODA_HIDDEN void hdf5_error_check();
 
 /// @brief Gets a variable / group / link name from an id. Useful for debugging.
 /// @param obj_id is the object.
 /// @return One of the possible object names.
-/// @throws ioda::Exception if obj_id is invalid.
+/// @throws eckit::Exception if obj_id is invalid.
 IODA_HIDDEN std::string getNameFromIdentifier(hid_t obj_id);
 
 /// @brief Convert from variable-length data to fixed-length data.

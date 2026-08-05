@@ -16,8 +16,9 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 
 namespace ioda {
 namespace detail {
@@ -139,7 +140,7 @@ struct CloseHDF5Attribute {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Aclose(h);
-    if (err != 0) throw Exception(std::string("H5Aclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Aclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Aclose(*h);
@@ -150,11 +151,11 @@ struct CloseHDF5File {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Fclose(h);
-    if (err != 0) throw Exception(std::string("H5Fclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Fclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) {
-      if (H5Fclose(*h) < 0) throw Exception("H5Fclose failed", ioda_Here());
+      if (H5Fclose(*h) < 0) throw eckit::Exception("H5Fclose failed", Here());
     }
     delete h;
   }
@@ -163,7 +164,7 @@ struct CloseHDF5Dataset {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Dclose(h);
-    if (err != 0) throw Exception(std::string("H5Dclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Dclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Dclose(*h);
@@ -174,7 +175,7 @@ struct CloseHDF5Dataspace {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Sclose(h);
-    if (err != 0) throw Exception(std::string("H5Sclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Sclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Sclose(*h);
@@ -185,7 +186,7 @@ struct CloseHDF5Datatype {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Tclose(h);
-    if (err != 0) throw Exception(std::string("H5Tclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Tclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Tclose(*h);
@@ -196,7 +197,7 @@ struct CloseHDF5Group {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Gclose(h);
-    if (err != 0) throw Exception(std::string("H5Gclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Gclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Gclose(*h);
@@ -207,7 +208,7 @@ struct CloseHDF5PropertyList {
   static inline void Close(hid_t h) {
     if (H5Iis_valid(h) > 0) return;
     herr_t err = H5Pclose(h);
-    if (err != 0) throw Exception(std::string("H5Pclose failed, error code = ") + std::to_string(err), ioda_Here());
+    if (err != 0) throw eckit::Exception(std::string("H5Pclose failed, error code = ") + std::to_string(err), Here());
   }
   static inline void CloseP(hid_t* h) {
     if (*h >= 0) H5Pclose(*h);

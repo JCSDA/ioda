@@ -22,7 +22,6 @@
 
 #include "./HH-attributes.h"
 #include "./Handles.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Variables/Selection.h"
 #include "ioda/Types/Type.h"
@@ -89,7 +88,7 @@ public:
     auto ttype     = Types::GetType<DataType>(getTypeProvider());
     HH_hid_t otype = internalType();
     auto ret       = H5Tequal(ttype(), otype());
-    if (ret < 0) throw Exception("Cannot check type equality. General failure.", ioda_Here());
+    if (ret < 0) throw eckit::Exception("Cannot check type equality. General failure.", Here());
     return (ret > 0) ? true : false;
   }
 

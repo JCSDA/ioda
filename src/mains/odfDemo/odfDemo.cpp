@@ -11,7 +11,6 @@
 
 #include "oops/util/Logger.h"
 
-#include "ioda/containers/ColumnMetadatum.h"
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameRows.h"

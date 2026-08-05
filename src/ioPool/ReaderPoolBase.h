@@ -19,24 +19,17 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "eckit/mpi/Comm.h"
 
-#include "ioda/defs.h"
 #include "ioda/Engines/ReaderBase.h"
 #include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Group.h"
 #include "ioda/ioPool/IoPoolBase.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 
-#include "oops/mpi/mpi.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
-#include "oops/util/Printable.h"
 #include "oops/util/TimeWindow.h"
 
 namespace ioda {

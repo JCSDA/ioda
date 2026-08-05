@@ -23,7 +23,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "ioda/Exception.h"
 #include "ioda/Variables/Has_Variables.h"
 #include "ioda/Variables/Variable.h"
 
@@ -75,10 +74,10 @@ class ThrowIfVariableIsOfUnsupportedType {
   explicit ThrowIfVariableIsOfUnsupportedType(
       const std::string &varName) : varName_(varName) {}
 
-  void operator()(const ioda::source_location & codeLocation) const {
+  void operator()(eckit::CodeLocation) const {
     std::string ErrorMsg = std::string("Variable '") + varName_ +
                            std::string("' is not of any supported type");
-    throw ioda::Exception(ErrorMsg.c_str(), codeLocation);
+    throw eckit::Exception(ErrorMsg.c_str(), Here());
   }
 
  private:
@@ -125,7 +124,7 @@ auto forAnySupportedVariableType(const ioda::Variable &var, const Action &action
     return action(std::string());
   if (var.isA<char>())
     return action(char());
-  typeErrorHandler(ioda_Here());
+  typeErrorHandler(Here());
 }
 
 /// \brief Perform an action dependent on the type of an ObsSpace variable \p var.
@@ -170,7 +169,7 @@ auto switchOnSupportedVariableType(const ioda::Variable &var,
     return stringAction(std::string());
   if (var.isA<char>())
     return charAction(char());
-  typeErrorHandler(ioda_Here());
+  typeErrorHandler(Here());
 }
 
 /// \brief Perform a variable-type-dependent action for all types that can be stored in an

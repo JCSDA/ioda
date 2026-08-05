@@ -18,7 +18,6 @@
 #include "ioda/Group.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/StringFuncs.h"
-#include "ioda/defs.h"
 
 namespace ioda {
 namespace detail {

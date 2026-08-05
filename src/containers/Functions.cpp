@@ -6,7 +6,6 @@
  */
 
 #include "ioda/containers/Functions.h"
-#include "ioda/Exception.h"
 
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
@@ -125,7 +124,8 @@ const bool osdf::Functions::compareToThreshold(const consts::eComparisons compar
     case consts::eGreaterThan: return value > threshold;
     case consts::eGreaterThanOrEqualTo: return value >= threshold;
     default:
-      throw ioda::Exception("ERROR: Invalid comparison operator specification.", ioda_Here());
+      std::string msg = "ERROR: Invalid comparison operator specification.";
+      throw eckit::Exception(msg, Here());
   }
 }
 

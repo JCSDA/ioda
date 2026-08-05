@@ -6,13 +6,9 @@
  */
 #include "ioda/Variables/Has_Variables.h"
 
-#include <stdexcept>
-
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Layout.h"
 #include "ioda/Misc/DimensionScales.h"
-#include "ioda/Misc/StringFuncs.h"
-#include "ioda/Misc/UnitConversions.h"
 
 namespace ioda {
 namespace detail {
@@ -26,7 +22,7 @@ Has_Variables_Base::Has_Variables_Base(std::shared_ptr<Has_Variables_Backend> b,
     if (!layout_) layout_ = DataLayoutPolicy::generate(DataLayoutPolicy::Policies::None);
   } catch (...) {
     std::throw_with_nested(
-      Exception("An exception occurred in ioda in Has_Variables_Base's constructor.", ioda_Here()));
+      eckit::Exception("An exception occurred in ioda in Has_Variables_Base's constructor.", Here()));
   }
 }
 
@@ -41,12 +37,12 @@ void Has_Variables_Base::setLayout(std::shared_ptr<const detail::DataLayoutPolic
 FillValuePolicy Has_Variables_Base::getFillValuePolicy() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getFillValuePolicy();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred in ioda while determining the fill value policy of a backend.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -57,51 +53,48 @@ FillValuePolicy Has_Variables_Backend::getFillValuePolicy() const {
 Type_Provider* Has_Variables_Base::getTypeProvider() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->getTypeProvider();
   } catch (...) {
     std::throw_with_nested(
-      Exception("An exception occurred in ioda while getting a backend's type provider interface.",
-                ioda_Here()));
+      eckit::Exception("An exception occurred in ioda while getting a backend's type provider interface.",
+                Here()));
   }
 }
 
 bool Has_Variables_Base::exists(const std::string& name) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
+    if (layout_ == nullptr) throw eckit::Exception("Missing layout.", Here());
     return backend_->exists(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(
-      Exception("An exception occurred inside ioda while checking variable existence.", ioda_Here())
-        .add("name", name));
+    std::string msg = "An exception occurred inside ioda while checking variable existence: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 void Has_Variables_Base::remove(const std::string& name) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
+    if (layout_ == nullptr) throw eckit::Exception("Missing layout.", Here());
     backend_->remove(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(
-      Exception("An exception occurred inside ioda while removing a variable.", ioda_Here())
-        .add("name", name));
+    std::string msg = "An exception occurred inside ioda while removing a variable: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 Variable Has_Variables_Base::open(const std::string& name) const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
+    if (layout_ == nullptr) throw eckit::Exception("Missing layout.", Here());
     return backend_->open(layout_->doMap(name));
   } catch (...) {
-    std::throw_with_nested(
-      Exception("An exception occurred inside ioda while opening a variable.", ioda_Here())
-        .add("name", name));
+    std::string msg = "An exception occurred inside ioda while opening a variable: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
@@ -110,12 +103,12 @@ Variable Has_Variables_Base::open(const std::string& name) const {
 std::vector<std::string> Has_Variables_Base::list() const {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     return backend_->list();
   } catch (...) {
-    std::throw_with_nested(Exception(
+    std::throw_with_nested(eckit::Exception(
       "An exception occurred inside ioda while listing one-level child variables of a group.",
-      ioda_Here()));
+      Here()));
   }
 }
 
@@ -154,7 +147,7 @@ Variable Has_Variables_Base::_create_py(const std::string& name, BasicTypes data
     } else
       return create(name, typ, cur_dimensions, max_dimensions, params);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
@@ -188,9 +181,9 @@ void Has_Variables_Base::_py_fvp_helper(BasicTypes dataType, FillValuePolicy& fv
     if (fvp_map.count(dataType))
       fvp_map.at(dataType)(fvp, params.fillValue_);
     else
-      throw Exception("Unimplemented map entry.", ioda_Here());
+      throw eckit::Exception("Unimplemented map entry.", Here());
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
@@ -198,11 +191,11 @@ void Has_Variables_Base::attachDimensionScales(
   const std::vector<std::pair<Variable, std::vector<Variable>>>& mapping) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
     backend_->attachDimensionScales(mapping);
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while attaching dimension scales.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while attaching dimension scales.", Here()));
   }
 }
 
@@ -216,8 +209,8 @@ void Has_Variables_Backend::attachDimensionScales(
       Variable(m.first).setDimScale(m.second);
     }
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while attaching dimension scales.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while attaching dimension scales.", Here()));
   }
 }
 
@@ -227,8 +220,8 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
                                     const VariableCreationParameters& params) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
-    if (layout_ == nullptr) throw Exception("Missing layout.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
+    if (layout_ == nullptr) throw eckit::Exception("Missing layout.", Here());
 
     std::vector<Dimensions_t> fixed_max_dimensions
       = (max_dimensions.size()) ? max_dimensions : dimensions;
@@ -242,20 +235,19 @@ Variable Has_Variables_Base::create(const std::string& name, const Type& in_memo
       std::string eMessage
         = "The following variable was not remapped in the YAML file: '" + name
           + "'. Ensure that the fundamental dimensions are declared in 'generate'.";
-      throw Exception(eMessage.c_str());
+      throw eckit::Exception(eMessage.c_str(), Here());
     }
     return newVar;
   } catch (...) {
-    std::throw_with_nested(
-      Exception("An exception occurred inside ioda while creating a variable.", ioda_Here())
-        .add("name", name));
+    std::string msg = "An exception occurred inside ioda while creating the variable: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 void Has_Variables_Base::createWithScales(const NewVariables_t& newvars) {
   try {
     if (backend_ == nullptr)
-      throw Exception("Missing backend or unimplemented backend function.", ioda_Here());
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
 
     using std::pair;
     using std::vector;
@@ -300,7 +292,7 @@ void Has_Variables_Base::createWithScales(const NewVariables_t& newvars) {
     attachDimensionScales(scaleMappings);
   } catch (...) {
     std::throw_with_nested(
-      Exception("An exception occurred inside ioda while creating variable(s).", ioda_Here()));
+      eckit::Exception("An exception occurred inside ioda while creating variable(s).", Here()));
   }
 }
 
@@ -363,8 +355,8 @@ Variable VariableCreationParameters::applyImmediatelyAfterVariableCreation(Varia
 
     return h;
   } catch (...) {
-    std::throw_with_nested(Exception(
-      "An exception occurred inside ioda while adding attributes to an object.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception(
+      "An exception occurred inside ioda while adding attributes to an object.", Here()));
   }
 }
 }  // namespace ioda

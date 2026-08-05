@@ -6,7 +6,6 @@
 */
 
 #include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
 
 #include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/ReadScriptFile.h"

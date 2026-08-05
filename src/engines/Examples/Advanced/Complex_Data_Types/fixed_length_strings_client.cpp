@@ -25,14 +25,13 @@
  * \author Ryan Honeyager (honeyage@ucar.edu)
  **/
 
-#include <array>     // Arrays are fixed-length vectors.
 #include <iostream>  // We want I/O.
 #include <string>    // We want strings
-#include <valarray>  // Like a vector, but can also do basic element-wise math.
 #include <vector>    // We want vectors
 
+#include "eckit/exception/Exceptions.h"        // Exceptions and debugging
+
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 
 int main(int argc, char** argv) {
@@ -70,14 +69,18 @@ int main(int argc, char** argv) {
         std::vector<char> chk(data.size());
         att_vlen_str.read(chk, type_fixed_str_6);
 
-        if (chk.size() != data.size()) throw Exception("Bad read. Size mismatch.", ioda_Here())
-            .add("chk.size()", chk.size()).add("data.size()", data.size());
+        if (chk.size() != data.size()) {
+          std::string msg
+            = "Bad read. Size mismatch between chk.size(): " + std::to_string(chk.size())
+              + "and data.size(): " + std::to_string(data.size());
+          throw eckit::Exception(msg, Here());
+        }
 
         string str_chk(chk.begin(), chk.end());
-        if (str_chk != data) throw Exception("String mismatch.", ioda_Here())
-            .add("data", data).add("str_chk", str_chk);
-
-
+        if (str_chk != data) {
+          std::string msg = "String mismatch between data: " + data + " and str_chk: " + str_chk;
+          throw eckit::Exception(msg, Here());
+        }
 
         // Another test. Fixed-length string on both ends.
 
@@ -85,11 +88,17 @@ int main(int argc, char** argv) {
         Attribute att_flen_str = g.atts.create("att_flen_str", type_fixed_str_6, {4});
         att_flen_str.write(data, type_fixed_str_6);
         att_flen_str.read(chk, type_fixed_str_6);
-        if (chk.size() != data.size()) throw Exception("Bad read. Size mismatch.", ioda_Here())
-            .add("chk.size()", chk.size()).add("data.size()", data.size());
+        if (chk.size() != data.size()) {
+          std::string msg
+            = "Bad read. Size mismatch between chk.size(): " + std::to_string(chk.size())
+              + " data.size() " + std::to_string(data.size());
+          throw eckit::Exception(msg, Here());
+        }
         string str_chk2(chk.begin(), chk.end());
-        if (str_chk2 != data) throw Exception("String mismatch.", ioda_Here())
-            .add("data", data).add("str_chk2", str_chk2);
+        if (str_chk2 != data) {
+          std::string msg = "String mismatch between data: " + data + " and str_chk2: " + str_chk2;
+          throw eckit::Exception(msg, Here());
+        }
     }
 
     // Variable tests
@@ -106,15 +115,18 @@ int main(int argc, char** argv) {
         std::vector<char> chk(data.size());
         var_vlen_str.read(chk, type_fixed_str_6);
 
-        if (chk.size() != data.size()) throw Exception("Bad read. Size mismatch.", ioda_Here())
-            .add("chk.size()", chk.size()).add("data.size()", data.size());
+        if (chk.size() != data.size()) {
+          std::string msg
+            = "Bad read. Size mismatch between chk.size(): " + std::to_string(chk.size())
+              + " and data.size() " + std::to_string(data.size());
+          throw eckit::Exception(msg, Here());
+        }
 
         string str_chk(chk.begin(), chk.end());
-        if (str_chk != data) throw Exception("String mismatch.", ioda_Here())
-            .add("data", data).add("str_chk", str_chk);
-
-
-
+        if (str_chk != data) {
+          std::string msg = "String mismatch between data: " + data + " and str_chk: " + str_chk;
+          throw eckit::Exception(msg, Here());
+        }
 
         // Another test. Fixed-length string on both ends.
         
@@ -122,17 +134,23 @@ int main(int argc, char** argv) {
         Variable var_flen_str = g.vars.create("var_flen_str", type_fixed_str_6, {4});
         var_flen_str.write(data, type_fixed_str_6);
         var_flen_str.read(chk, type_fixed_str_6);
-        if (chk.size() != data.size()) throw Exception("Bad read. Size mismatch.", ioda_Here())
-            .add("chk.size()", chk.size()).add("data.size()", data.size());
+        if (chk.size() != data.size()) {
+          std::string msg
+            = "Bad read. Size mismatch between chk.size(): " + std::to_string(chk.size())
+              + " and data.size() " + std::to_string(data.size());
+          throw eckit::Exception(msg, Here());
+        }
+        
         string str_chk2(chk.begin(), chk.end());
-        if (str_chk2 != data) throw Exception("String mismatch.", ioda_Here())
-            .add("data", data).add("str_chk2", str_chk2);
+        if (str_chk2 != data) {
+          std::string msg = "String mismatch between data: " + data + " adn str_chk2 " + str_chk2;
+          throw eckit::Exception(msg, Here());
+        }
     }
 
     // Done!
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

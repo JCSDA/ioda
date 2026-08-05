@@ -13,8 +13,6 @@
 
 #include "ioda/ioPool/IoPoolParameters.h"
 
-#include "oops/mpi/mpi.h"
-
 namespace ioda {
 namespace ObsIoPool {
 

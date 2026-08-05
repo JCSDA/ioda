@@ -14,7 +14,6 @@
  */
 #pragma once
 
-#include <exception>
 #include <list>
 #include <map>
 #include <memory>

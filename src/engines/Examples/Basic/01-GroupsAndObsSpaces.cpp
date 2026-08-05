@@ -64,7 +64,6 @@
 #include <vector>    // We want vectors
 
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // We are manipulating ioda::Groups.
 
 int main(int argc, char** argv) {
@@ -178,7 +177,6 @@ int main(int argc, char** argv) {
 
     // Thanks for reading!
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -15,8 +15,8 @@
 #include <numeric>
 #include <set>
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace Engines {
@@ -61,7 +61,7 @@ ioda::ObsStore::Selection createObsStoreSelection(const ioda::Selection& selecti
       mode = ioda::ObsStore::SelectionModes::INTERSECT;
       genDimSelects(selection.getActions(), dim_sizes, dim_selects);
     } else {
-      throw Exception("Unrecongnized selection mode", ioda_Here());
+      throw eckit::Exception("Unrecongnized selection mode", Here());
     }
   }
 

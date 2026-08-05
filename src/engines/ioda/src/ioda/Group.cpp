@@ -5,9 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "ioda/Group.h"
+#include <string>
 
 #include "ioda/Engines/Capabilities.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 Group::Group() : Group_Base(nullptr) {}
@@ -32,12 +32,13 @@ Group_Backend::~Group_Backend() = default;
 
 Engines::Capabilities Group_Base::getCapabilities() const { 
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) {
+      throw eckit::Exception("Missing backend or unimplemented backend function.", Here());
+    }
       return backend_->getCapabilities();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while "
-      "determining backend engine capabilities.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda while "
+      "determining backend engine capabilities.", Here()));
   }
 }
 
@@ -46,64 +47,67 @@ std::vector<std::string> Group_Base::list() const {
     // Not backend_->... deliberately because we might call this from a backend directly.
     return listObjects(ObjectType::Group, false)[ObjectType::Group];
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while "
-      "listing one-level child groups.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda while "
+      "listing one-level child groups.", Here()));
   }
 }
 
 std::map<ObjectType, std::vector<std::string>> Group_Base::listObjects(ObjectType filter,
                                                                        bool recurse) const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend or unimplemented backend function.",
+      Here());
     return backend_->listObjects(filter, recurse);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while listing objects.",
-      ioda_Here()).add("recurse", recurse));
+    std::string msg
+      = "An exception occurred inside ioda while listing objects with recursion set to: "
+        + std::to_string(recurse);
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 bool Group_Base::exists(const std::string& name) const { 
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend or unimplemented backend function.",
+      Here());
     return backend_->exists(name);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while checking "
-      "to see whether a group exists.", ioda_Here()).add("name", name));
+    std::string msg = "An exception occurred inside ioda while checking "
+      "to see whether a group exists: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 Group Group_Base::create(const std::string& name) { 
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend or unimplemented backend function.",
+      Here());
     return backend_->create(name);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while creating a group.",
-      ioda_Here()).add("name", name));
+    std::string msg = "An exception occurred inside ioda while creating group: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 Group Group_Base::open(const std::string& name) const { 
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend or unimplemented backend function.",
+      Here());
     return backend_->open(name);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while opening a group.",
-      ioda_Here()).add("name", name));
+    std::string msg = "An exception occurred inside ioda while opening group: " + name;
+    std::throw_with_nested(eckit::Exception(msg, Here()));
   }
 }
 
 FillValuePolicy Group_Base::getFillValuePolicy() const { 
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend or unimplemented backend function.",
-      ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend or unimplemented backend function.",
+      Here());
     return backend_->getFillValuePolicy();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while determining "
-      "the fill value policy.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda while determining "
+      "the fill value policy.", Here()));
   }
 }
 
@@ -111,8 +115,8 @@ FillValuePolicy Group_Backend::getFillValuePolicy() const {
   try {
     return vars.getFillValuePolicy();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda while determining "
-      "the fill value policy.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda while determining "
+      "the fill value policy.", Here()));
   }
 }
 

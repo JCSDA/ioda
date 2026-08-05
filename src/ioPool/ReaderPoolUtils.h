@@ -16,8 +16,6 @@
 
 #include "ioda/ioPool/ReaderPoolBase.h"
 
-#include "oops/mpi/mpi.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/TimeWindow.h"
 
 namespace ioda {

@@ -7,8 +7,6 @@
 
 #include "ioda/obsIoPool/ObsIoPool.hpp"
 
-#include "oops/util/Logger.h"
-
 namespace ioda {
 namespace ObsIoPool {
 

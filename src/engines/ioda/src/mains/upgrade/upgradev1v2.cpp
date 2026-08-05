@@ -23,7 +23,6 @@
 
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Misc/DimensionScales.h"

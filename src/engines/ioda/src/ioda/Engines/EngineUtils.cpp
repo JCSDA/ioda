@@ -16,20 +16,16 @@
 
 #include "eckit/exception/Exceptions.h"
 
-#include "ioda/defs.h"
 #include "ioda/Engines/GenList.h"
 #include "ioda/Engines/GenRandom.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Engines/ObsStore.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
-#include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 #include "oops/util/TimeWindow.h"
@@ -409,8 +405,8 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
   } else {
     ++it;
     if (it == opts.cend()) {
-      throw Exception("Bad option --ioda-engine-options. Got the "
-        "--ioda-engine-options token but nothing else.", ioda_Here());
+      throw eckit::Exception("Bad option --ioda-engine-options. Got the "
+        "--ioda-engine-options token but nothing else.", Here());
     }
 
     // convert array of c-string options into vector of strings
@@ -418,9 +414,10 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
       std::vector<string> res(n);
       for (size_t i = 0; i < n; ++i) {
         ++it;
-        if (it == opts.cend())
-          throw Exception("Bad option --ioda-engine-options. "
-            "Wrong number of elements.", ioda_Here()).add("Expected", n);
+        if (it == opts.cend()) {
+          std::string msg = "Bad option --ioda-engine-options. Wrong number of elements, expected: " + std::to_string(n);
+          throw eckit::Exception(msg, Here());
+        }
         res[i] = std::string(*it);
       }
       return res;
@@ -468,8 +465,10 @@ Group constructFromCmdLine(int argc, char** argv, const std::string& defaultFile
     } else if (sEngine == "obs-store") {
       backendName = BackendNames::ObsStore;
     } else {
-      throw Exception("Bad option --ioda-engine-options. "
-              "Unknown engine.", ioda_Here()).add("Engine", sEngine);
+      std::string msg
+        = "Bad option --ioda-engine-options. "
+          "Unknown engine: " + sEngine;
+      throw eckit::Exception(msg, Here());
     }
   }
   return constructBackend(backendName, params);
@@ -503,7 +502,7 @@ eckit::LocalConfiguration constructFileBackendConfig(const std::string & fileTyp
         engineConfig.set("engine.mapping file", mapFileName);
         engineConfig.set("engine.query file", queryFileName);
     } else {
-        throw Exception("Unknown file type: " + fileType, ioda_Here());
+        throw eckit::Exception("Unknown file type: " + fileType, Here());
     }
 
     return engineConfig;
@@ -523,7 +522,7 @@ Group constructBackend(BackendNames name, const BackendCreationParameters& param
       return HH::createParallelFile(params.fileName, params.createMode, params.comm,
                  HH::HDF5_Version_Range(HH::HDF5_Version::V18, HH::HDF5_Version::V110));
     }
-    throw Exception("Unknown BackendFileActions value", ioda_Here());
+    throw eckit::Exception("Unknown BackendFileActions value", Here());
   }
   if (name == BackendNames::Hdf5Mem) {
     if (params.action == BackendFileActions::Open) {
@@ -534,7 +533,7 @@ Group constructBackend(BackendNames name, const BackendCreationParameters& param
       return HH::createMemoryFile(params.fileName, params.createMode, params.flush,
                                   params.allocBytes);
     }
-    throw Exception("Unknown BackendFileActions value", ioda_Here());
+    throw eckit::Exception("Unknown BackendFileActions value", Here());
   }
   if (name == BackendNames::ObsStore) {
     return ObsStore::createRootGroup();
@@ -542,7 +541,7 @@ Group constructBackend(BackendNames name, const BackendCreationParameters& param
 
   // If we get to here, then we have a backend name that is
   // not implemented yet.
-  throw Exception("Backend not implemented yet", ioda_Here());
+  throw eckit::Exception("Backend not implemented yet", Here());
 }
 
 bool haveFileReadAccess(const std::string & fileName) {
@@ -594,7 +593,7 @@ std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendCreateMod
     {BackendCreateModes::Fail_If_Exists, "Fail_If_Exists"}
   };
 
-  if (names.count(mode) == 0) throw Exception("Unhandled backend creation mode", ioda_Here());
+  if (names.count(mode) == 0) throw eckit::Exception("Unhandled backend creation mode", Here());
   os << "ioda::Engines::BackendCreateModes::" << names.at(mode);
   return os;
 }
@@ -607,7 +606,7 @@ std::ostream& operator<<(std::ostream& os, const ioda::Engines::BackendOpenModes
     {BackendOpenModes::Read_Only, "Read_Only"},
     {BackendOpenModes::Read_Write, "Read_Write"}
   };
-  if (names.count(mode) == 0) throw Exception("Unhandled backend open mode", ioda_Here());
+  if (names.count(mode) == 0) throw eckit::Exception("Unhandled backend open mode", Here());
   os << "ioda::Engines::BackendOpenModes::" << names.at(mode);
   return os;
 }

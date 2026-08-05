@@ -15,7 +15,6 @@
 
 #include "ioda/Engines/ContainerFacade.h"
 #include "ioda/Engines/ODC/OdbConstants.h"
-#include "ioda/Exception.h"
 #include "ioda/Variables/Variable.h"
 #include "ioda/defs.h"
 
@@ -60,8 +59,7 @@ IODA_DL void convertVariable(Engines::ContainerFacade &container,
       }
     }
   } catch (const std::out_of_range &) {
-    throw Exception("unit does not have a defined unit conversion equation", ioda_Here())
-      .add("unit", unit);
+    throw eckit::Exception("unit: " + unit + " does not have a defined unit conversion equation", Here());
   }
   container.setVariableValues(name, dataToConvert, Engines::MemoryLayout::Native);
 }

@@ -4,8 +4,8 @@
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Attributes/Attribute_Creator.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -22,7 +22,7 @@ void Attribute_Creator_Store::apply(Has_Attributes& obj) const {
   try {
     for (const auto& a : atts_) a->apply(obj);
   } catch (...) {
-    std::throw_with_nested(Exception(ioda_Here()));
+    std::throw_with_nested(eckit::Exception(Here()));
   }
 }
 

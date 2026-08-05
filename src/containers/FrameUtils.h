@@ -6,17 +6,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include <algorithm>
 #include <string>
 #include <type_traits>
-#include <vector>
-
-#include "ioda/containers/Constants.h"
-
-#include "ioda/Exception.h"
 
 #include "eckit/exception/Exceptions.h"
-
+#include "ioda/containers/Constants.h"
 #include "oops/util/missingValues.h"
 
 namespace osdf {
@@ -56,7 +50,8 @@ auto callWithSupportedType(const consts::eDataTypes dtype, const Action &action)
     case consts::eString:
       return action(std::string());
     default:
-      throw ioda::Exception("ERROR: Data type misconfiguration...", ioda_Here());
+      std::string msg = "ERROR: Data type misconfiguration...";
+      throw eckit::Exception(msg, Here());
   }
 }
 

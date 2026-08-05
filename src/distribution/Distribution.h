@@ -11,11 +11,9 @@
 #include <memory>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/util/missingValues.h"
 #include "oops/util/TypeTraits.h"
 
 namespace util {

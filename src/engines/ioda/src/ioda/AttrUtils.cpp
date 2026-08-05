@@ -10,8 +10,6 @@
 
 #include "ioda/Attributes/Has_Attributes.h"
 
-#include "oops/util/Logger.h"
-
 namespace ioda {
 namespace AttrUtils {
 

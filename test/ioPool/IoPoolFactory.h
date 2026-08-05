@@ -14,7 +14,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 
-#include "ioda/Exception.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/ioPool/ReaderPoolBase.h"
 #include "ioda/ioPool/ReaderPoolFactory.h"

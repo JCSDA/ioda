@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 // These tests really need a better check system.
@@ -301,7 +300,6 @@ int main(int argc, char** argv) {
     test_group_backend_engine(f);
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e, cout);
     return 1;
   }
   return 0;

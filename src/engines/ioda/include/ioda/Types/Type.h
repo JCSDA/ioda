@@ -24,7 +24,8 @@
 #include <typeinfo>
 #include <vector>
 
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/Types/Type_Provider.h"
 #include "ioda/defs.h"
 
@@ -152,7 +153,7 @@ public:
 
   /// \brief Get the character set of this string type.
   /// \returns Ascii or Unicode.
-  /// \throws ioda::Exception on error, or if the type is not a string type.
+  /// \throws eckit::Exception on error, or if the type is not a string type.
   /// \note Currently, there is no way to set the character set. Everything is
   ///   assumed to be a UTF-8 string in IODA.
   virtual StringCSet getStringCSet() const;
@@ -250,10 +251,10 @@ Type GetType(gsl::not_null<const ::ioda::detail::Type_Provider*> t,
              std::initializer_list<Dimensions_t> Adims                   = {},
              typename std::enable_if<!is_string<DataType>::value>::type* = 0) {
   if (Array_Type_Dimensionality <= 0)
-    throw Exception(
+    throw eckit::Exception(
       "Bad assertion / unsupported type at the frontend side "
       "of the ioda type system.",
-      ioda_Here());
+      Here());
   else
     return t->makeArrayType(Adims, typeid(DataType[]), typeid(DataType));
 }

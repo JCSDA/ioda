@@ -15,10 +15,8 @@
 #include <functional>
 #include <map>
 #include <numeric>
-#include <stdexcept>
 
-#include "ioda/defs.h"
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -116,7 +114,7 @@ detail::Engines::HH::HH_Type Type::getHDF5Type() const {
     // for the type conversion.
     {ObsTypes::STRING, *HH_default_string_type.get()}
   };
-  if (!mappings.count(getType())) throw Exception("Unimplemented mapping", ioda_Here());
+  if (!mappings.count(getType())) throw eckit::Exception("Unimplemented mapping", Here());
   return mappings.at(getType());
 }
 

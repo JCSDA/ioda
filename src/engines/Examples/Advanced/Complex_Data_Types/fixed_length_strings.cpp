@@ -24,14 +24,13 @@
  * \author Ryan Honeyager (honeyage@ucar.edu)
  **/
 
-#include <array>     // Arrays are fixed-length vectors.
 #include <iostream>  // We want I/O.
 #include <string>    // We want strings
-#include <valarray>  // Like a vector, but can also do basic element-wise math.
 #include <vector>    // We want vectors
 
+#include "eckit/exception/Exceptions.h"        // Exceptions and debugging
+
 #include "ioda/Engines/EngineUtils.h"  // Used to kickstart the Group engine.
-#include "ioda/Exception.h"        // Exceptions and debugging
 #include "ioda/Group.h"            // Groups have attributes.
 
 int main(int argc, char** argv) {
@@ -72,16 +71,19 @@ int main(int argc, char** argv) {
       // Read the attribute
       vector<string> chk_vsTest;
       fs1.read(chk_vsTest);
-      if (chk_vsTest.size() != vsTest.size())
-        throw Exception("Size mismatch.", ioda_Here())
-          .add("chk_vsTest.size()", chk_vsTest.size())
-          .add("vsTest.size()", vsTest.size());
+      if (chk_vsTest.size() != vsTest.size()) {
+        std::string msg
+          = "Size mismatch between chk_vsTest.size(): " + std::to_string(chk_vsTest.size())
+            + " and vsTest.size(): " + std::to_string(vsTest.size());
+        throw eckit::Exception(msg, Here());
+      }
       for (size_t i = 0; i < vsTest.size(); ++i)
-        if (vsTest[i] != chk_vsTest[i])
-          throw Exception("Element mismatch.", ioda_Here())
-            .add("i", i)
-            .add("vsTest[i]", vsTest[i])
-            .add("chk_vsTest[i]", chk_vsTest[i]);
+        if (vsTest[i] != chk_vsTest[i]) {
+          std::string msg = "Element mismatch at index " + std::to_string(i)
+                            + " between vsTest[i]: " + vsTest[i] + " and chk_vsTest[i]"
+                            + chk_vsTest[i];
+          throw eckit::Exception(msg, Here());
+        }
     }
 
     // Variable tests
@@ -97,16 +99,19 @@ int main(int argc, char** argv) {
       // Read the variable
       vector<string> chk_vsTest;
       fs2.read(chk_vsTest);
-      if (chk_vsTest.size() != vsTest.size())
-        throw Exception("Size mismatch.", ioda_Here())
-          .add("chk_vsTest.size()", chk_vsTest.size())
-          .add("vsTest.size()", vsTest.size());
+      if (chk_vsTest.size() != vsTest.size()) {
+        std::string msg
+          = "Size mismatch between chk_vsTest.size(): " + std::to_string(chk_vsTest.size())
+            + " and vsTest.size(): " + std::to_string(vsTest.size());
+        throw eckit::Exception(msg, Here());
+      }
       for (size_t i = 0; i < vsTest.size(); ++i)
-        if (vsTest[i] != chk_vsTest[i])
-          throw Exception("Element mismatch.", ioda_Here())
-            .add("i", i)
-            .add("vsTest[i]", vsTest[i])
-            .add("chk_vsTest[i]", chk_vsTest[i]);
+        if (vsTest[i] != chk_vsTest[i]) {
+          std::string msg = "Element mismatch at index " + std::to_string(i)
+                            + " between vsTest[i]: " + vsTest[i] + " and chk_vsTest[i]"
+                            + chk_vsTest[i];
+          throw eckit::Exception(msg, Here());
+        }
     }
 
     // Type system tests
@@ -117,21 +122,21 @@ int main(int argc, char** argv) {
       // Check that an object is a string (either a fixed-length or variable-length type).
       // Method 1
       if (!test_fixed_length_att.isA<std::string>())
-        throw Exception("test_fixed_length_att is somehow not a string.", ioda_Here());
+        throw eckit::Exception("test_fixed_length_att is somehow not a string.", Here());
       if (!test_variable_length_att.isA<std::string>())
-        throw Exception("test_variable_length_att is somehow not a string.", ioda_Here());
+        throw eckit::Exception("test_variable_length_att is somehow not a string.", Here());
       // Method 2
       if (type_fixed_str_6.getClass() != TypeClass::String)
-        throw Exception("type_fixed_str_6 is somehow not a string type.", ioda_Here());
+        throw eckit::Exception("type_fixed_str_6 is somehow not a string type.", Here());
 
       // To get a type of an attribute or a variable
       Type t = test_variable_length_att.getType();
 
       // Check that a type represents a fixed-length or a variable-length string.
       if (type_fixed_str_6.isVariableLengthStringType())
-        throw Exception("type_fixed_str_6 should be a fixed-length string type.", ioda_Here());
+        throw eckit::Exception("type_fixed_str_6 should be a fixed-length string type.", Here());
       if (t.isVariableLengthStringType() == false)
-        throw Exception("t should be a variable-length string type.", ioda_Here());
+        throw eckit::Exception("t should be a variable-length string type.", Here());
 
       // To get the size of a fixed-length string type.
       // This represents the size allocated for a string, in bytes. This does **not** always
@@ -142,20 +147,19 @@ int main(int argc, char** argv) {
       // Note also that this size does not account for any NULL byte used to denote the
       // end of a C-style string.
       size_t sz = type_fixed_str_6.getSize();
-      if (sz != 6) throw Exception("Bad size. Should be 6 bytes.", ioda_Here());
+      if (sz != 6) throw eckit::Exception("Bad size. Should be 6 bytes.", Here());
 
       // Get the character set of a string type.
       // This can be either ASCII or UTF-8.
       // For now in IODA, all strings are forcibly assumed to be UTF-8. Reads between
       // actual ASCII / UTF-8 data are handled transparently.
       if (type_fixed_str_6.getStringCSet() != StringCSet::UTF8)
-        throw Exception("Unexpected character set.", ioda_Here());
+        throw eckit::Exception("Unexpected character set.", Here());
     }
 
     // Done!
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

@@ -13,12 +13,9 @@
  */
 
 #include <gsl/gsl-lite.hpp>
-#include <memory>
-#include <string>
 
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Variables/Fill.h"
-#include "ioda/Exception.h"
-#include "ioda/defs.h"
 
 namespace ioda {
 
@@ -106,7 +103,7 @@ void applyFillValuePolicy(FillValuePolicy pol, detail::FillValueData_t& fvd) {
   else if (pol == FillValuePolicy::NETCDF4)
     detail::assignFillValue(fvd, netCDF4_default<T>());
   else
-    throw Exception("Unsupported fill value policy.", ioda_Here());
+    throw eckit::Exception("Unsupported fill value policy.", Here());
 }
 
 

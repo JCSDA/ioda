@@ -7,12 +7,10 @@
 
 #include "ioda/writer/collect/collectObs.hpp"
 
-#include "eckit/mpi/Comm.h"
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/containers/IFrame.h"
 #include "ioda/distribution/Distribution.h"
-#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/SelectedRanks.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
 #include "ioda/reader/distribute/distributeObs.hpp"

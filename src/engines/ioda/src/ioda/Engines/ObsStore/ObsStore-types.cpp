@@ -11,14 +11,12 @@
  * \brief Functions for translating ioda::Types to ObsStore Types
  */
 
-#include <functional>
 #include <map>
-#include <numeric>
 
 #include "./ObsStore-types.h"
 #include "./Type.hpp"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/defs.h"
-#include "ioda/Exception.h"
 #include "ioda/Types/Type.h"
 
 namespace ioda {
@@ -69,7 +67,7 @@ TypeClass ObsStore_Type::getClass() const {
       res = TypeClass::FixedArray;
       break;
     default :
-      throw Exception("Cannot get class. Unknown ObsStore type.", ioda_Here());
+      throw eckit::Exception("Cannot get class. Unknown ObsStore type.", Here());
   }
   return res;
 }
@@ -77,7 +75,7 @@ TypeClass ObsStore_Type::getClass() const {
 Type ObsStore_Type::getBaseType() const {
   std::shared_ptr<ioda::ObsStore::Type> baseType = type_->getBaseType();
   if (baseType == nullptr) {
-    throw Exception("ObsStore base type does not exist.", ioda_Here());
+    throw eckit::Exception("ObsStore base type does not exist.", Here());
   }
   return Type{std::make_shared<ObsStore_Type>(baseType), typeid(void)};
 }
@@ -162,7 +160,7 @@ ObsStore_Type_Provider::getFundamentalObsStoreType(std::type_index type) {
                            sizeof(char32_t), false}}};
 
   if (!fundamental_types.count(type)) {
-    throw Exception("ObsStore does not recognize this type.", ioda_Here());
+    throw eckit::Exception("ObsStore does not recognize this type.", Here());
   }
   return fundamental_types.at(type);
 }

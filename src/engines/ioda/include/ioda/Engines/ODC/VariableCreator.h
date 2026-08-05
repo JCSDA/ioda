@@ -6,10 +6,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+
 #include <memory>
 #include <string>
-#include <vector>
-
 #include "RowsByLocation.h"
 #include "VariableReaderBase.h"
 

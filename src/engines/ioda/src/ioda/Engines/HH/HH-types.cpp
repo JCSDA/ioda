@@ -18,7 +18,6 @@
 #include "./HH/Handles.h"
 #include "./HH/HH-groups.h"
 #include "ioda/Types/Type.h"
-#include "ioda/Exception.h"
 #include "ioda/defs.h"
 
 namespace ioda {
@@ -30,7 +29,7 @@ HH_Type::HH_Type(HH_hid_t h) : handle(h) {}
 
 size_t HH_Type::getSize() const {
   size_t res = H5Tget_size(handle.get());
-  if (res == 0) throw Exception("H5Tget_size failed.", ioda_Here());
+  if (res == 0) throw eckit::Exception("H5Tget_size failed.", Here());
   return res;
 }
 
@@ -52,7 +51,7 @@ TypeClass HH_Type::getClass() const {
     TypeClass::FixedArray
   };
   if (cls < 0 || cls >= H5T_NCLASSES)
-    throw Exception("Cannot get class. Unknown HDF5 type.", ioda_Here());
+    throw eckit::Exception("Cannot get class. Unknown HDF5 type.", Here());
   return typemap.at(cls);
 }
 
@@ -66,20 +65,20 @@ void HH_Type::commitToBackend(Group &g, const std::string &name) const {
                             H5P_DEFAULT,
                             H5P_DEFAULT,
                             H5P_DEFAULT);
-    if (res < 0) throw Exception("H5Tcommit2 failed.", ioda_Here());
+    if (res < 0) throw eckit::Exception("H5Tcommit2 failed.", Here());
   } catch (const std::bad_cast&) {
-    throw Exception("Group passed to function is not an HDF5 group.", ioda_Here());
+    throw eckit::Exception("Group passed to function is not an HDF5 group.", Here());
   }
 }
 
 bool HH_Type::isTypeSigned() const {
-  if (getClass() != TypeClass::Integer) throw Exception("Non-integer data type.", ioda_Here());
+  if (getClass() != TypeClass::Integer) throw eckit::Exception("Non-integer data type.", Here());
   return H5Tget_sign(handle.get()) == H5T_SGN_2;
 }
 
 bool HH_Type::isVariableLengthStringType() const {
   htri_t res = H5Tis_variable_str(handle.get());
-  if (res < 0) throw Exception("HDF5 type is not a string type, or another error has occurred.", ioda_Here());
+  if (res < 0) throw eckit::Exception("HDF5 type is not a string type, or another error has occurred.", Here());
   return (res > 0);
 }
 
@@ -89,14 +88,14 @@ StringCSet HH_Type::getStringCSet() const {
     {H5T_CSET_ASCII, StringCSet::ASCII},
     {H5T_CSET_UTF8, StringCSet::UTF8}
   };
-  if (!csmap.count(res)) throw Exception("Error in H5Tget_cset. Likely bad HDF5 type.", ioda_Here());
+  if (!csmap.count(res)) throw eckit::Exception("Error in H5Tget_cset. Likely bad HDF5 type.", Here());
   return csmap.at(res);
 }
 
 Type HH_Type::getBaseType() const {
   hid_t h = H5Tget_super(handle.get());
   if (h < 0)
-    throw Exception("Error in H5Tget_super. Likely not an enumeration or array type.", ioda_Here());
+    throw eckit::Exception("Error in H5Tget_super. Likely not an enumeration or array type.", Here());
   auto hnd = HH_hid_t(h, Handles::Closers::CloseHDF5Datatype::CloseP);
 
   return Type{std::make_shared<HH_Type>(hnd), typeid(void)};
@@ -104,10 +103,10 @@ Type HH_Type::getBaseType() const {
 
 std::vector<Dimensions_t> HH_Type::getDimensions() const {
   int ndims = H5Tget_array_ndims(handle.get());
-  if (ndims < 0) throw Exception("Error in H5Tget_array_ndims. Likely bad HDF5 type.", ioda_Here());
+  if (ndims < 0) throw eckit::Exception("Error in H5Tget_array_ndims. Likely bad HDF5 type.", Here());
   std::vector<hsize_t> hdims(static_cast<size_t>(ndims));
   if (H5Tget_array_dims2(handle.get(), hdims.data()) < 0)
-    throw Exception("Error in H5Tget_array_dims2.", ioda_Here());
+    throw eckit::Exception("Error in H5Tget_array_dims2.", Here());
 
   std::vector<Dimensions_t> res(hdims.size());
   for (size_t i=0; i < hdims.size(); ++i)
@@ -143,7 +142,7 @@ HH_hid_t HH_Type_Provider::getFundamentalHHType(std::type_index type) {
        {typeid(double), {H5T_NATIVE_DOUBLE}},
        {typeid(long double), {H5T_NATIVE_LDOUBLE}}};
 
-  if (!fundamental_types.count(type)) throw Exception("HDF5 does not implement this type as a fundamental type.", ioda_Here());
+  if (!fundamental_types.count(type)) throw eckit::Exception("HDF5 does not implement this type as a fundamental type.", Here());
   return fundamental_types.at(type);
 }
 
@@ -162,7 +161,7 @@ Type HH_Type_Provider::makeArrayType(std::initializer_list<Dimensions_t> dimensi
   for (const auto& d : dimensions) hdims.push_back(gsl::narrow<hsize_t>(d));
   hid_t t = H5Tarray_create2(fundamental_type(), gsl::narrow<unsigned int>(dimensions.size()),
                              hdims.data());
-  if (t < 0) throw Exception("Failed call to H5Tarray_create2.", ioda_Here());
+  if (t < 0) throw eckit::Exception("Failed call to H5Tarray_create2.", Here());
   auto hnd = HH_hid_t(t, Handles::Closers::CloseHDF5Datatype::CloseP);
 
   return Type{std::make_shared<HH_Type>(hnd), typeOuter};
@@ -175,10 +174,10 @@ Type HH_Type_Provider::makeStringType(
 {
   if (string_length == Types::constants::_Variable_Length) string_length = H5T_VARIABLE;
   hid_t t = H5Tcreate(H5T_STRING, string_length);
-  if (t < 0) throw Exception("Failed call to H5Tcreate.", ioda_Here());
+  if (t < 0) throw eckit::Exception("Failed call to H5Tcreate.", Here());
   if (cset == StringCSet::UTF8) {
     if (H5Tset_cset(t, H5T_CSET_UTF8) < 0)
-      throw Exception("Failed call to H5Tset_cset.", ioda_Here());
+      throw eckit::Exception("Failed call to H5Tset_cset.", Here());
   }
   auto hnd = HH_hid_t(t, Handles::Closers::CloseHDF5Datatype::CloseP);
 

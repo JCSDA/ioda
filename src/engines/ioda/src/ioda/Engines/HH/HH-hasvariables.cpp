@@ -16,10 +16,6 @@
 
 #include <hdf5_hl.h>
 
-#include <algorithm>
-#include <numeric>
-#include <set>
-
 #include "./HH/HH-Filters.h"
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-hasattributes.h"
@@ -28,7 +24,6 @@
 #include "./HH/HH-variablecreation.h"
 #include "./HH/HH-variables.h"
 #include "./HH/Handles.h"
-#include "ioda/Exception.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
 #include "ioda/Misc/StringFuncs.h"
@@ -65,9 +60,11 @@ bool HH_HasVariables::exists(const std::string& dsetname) const {
   for (size_t i = 0; i < paths.size(); ++i) {
     auto p            = condensePaths(paths, 0, i + 1);
     htri_t linkExists = H5Lexists(base_(), p.c_str(), H5P_DEFAULT);
-    if (linkExists < 0) throw Exception("H5Lexists failed.", ioda_Here())
-      .add("here", getNameFromIdentifier(base_()))
-      .add("dsetname", dsetname);
+    if (linkExists < 0) {
+      std::string msg = "H5Lexists failed. Base name: " + getNameFromIdentifier(base_())
+                        + " dsetname: " + dsetname;
+      eckit::Exception(msg, Here());
+    }
     if (linkExists == 0) return false;
   }
 #if H5_VERSION_GE(1, 12, 0)
@@ -79,7 +76,7 @@ bool HH_HasVariables::exists(const std::string& dsetname) const {
   herr_t err = H5Oget_info_by_name(base_(), dsetname.c_str(), &oinfo,
                                    H5P_DEFAULT);  // H5P_DEFAULT only, per docs.
 #endif
-  if (err < 0) throw Exception("H5Oget_info_by_name failed.", ioda_Here());
+  if (err < 0) throw eckit::Exception("H5Oget_info_by_name failed.", Here());
   return (oinfo.type == H5O_type_t::H5O_TYPE_DATASET);
 }
 
@@ -101,13 +98,13 @@ void HH_HasVariables::remove(const std::string& name) {
   }
 
   auto ret = H5Ldelete(base_(), name.c_str(), H5P_DEFAULT);
-  if (ret < 0) throw Exception("Failed to remove link to dataset.", ioda_Here()).add("name", name);
+  if (ret < 0) throw eckit::Exception("Failed to remove link to dataset with name: " + name, Here());
 }
 
 Variable HH_HasVariables::open(const std::string& name) const {
   hid_t dsetid = H5Dopen(base_(), name.c_str(), H5P_DEFAULT);
   if (dsetid < 0)
-    throw Exception("Cannot open dataset", ioda_Here()).add("name", name);
+    throw eckit::Exception("Cannot open dataset with name: " + name, Here());
 
   auto b = std::make_shared<HH_Variable>(
     HH_hid_t(dsetid, Handles::Closers::CloseHDF5Dataset::CloseP), shared_from_this());
@@ -119,17 +116,17 @@ std::vector<std::string> HH_HasVariables::list() const {
   std::vector<std::string> res;
   H5G_info_t info;
   herr_t e = H5Gget_info(base_(), &info);
-  if (e < 0) throw Exception("H5Gget_info failed.", ioda_Here());
+  if (e < 0) throw eckit::Exception("H5Gget_info failed.", Here());
   res.reserve(gsl::narrow<size_t>(info.nlinks));
   for (hsize_t i = 0; i < info.nlinks; ++i) {
     // Get the name
     ssize_t szName
       = H5Lget_name_by_idx(base_(), ".", H5_INDEX_NAME, H5_ITER_NATIVE, i, NULL, 0, H5P_DEFAULT);
-    if (szName < 0) throw Exception("H5Lget_name_by_idx failed.", ioda_Here());
+    if (szName < 0) throw eckit::Exception("H5Lget_name_by_idx failed.", Here());
     std::vector<char> vName(szName + 1, '\0');
     if (H5Lget_name_by_idx(base_(), ".", H5_INDEX_NAME, H5_ITER_NATIVE,
       i, vName.data(), szName + 1,H5P_DEFAULT) < 0)
-      throw Exception("H5Lget_name_by_idx failed.", ioda_Here());
+      throw eckit::Exception("H5Lget_name_by_idx failed.", Here());
 
     // Get the object and check the type
 #if H5_VERSION_GE(1, 12, 0)
@@ -170,8 +167,7 @@ Variable HH_HasVariables::create(const std::string& name, const Type& in_memory_
                                            // (compression, chunking, fill value)
         hParams.datasetAccessPlist()()  // The dataset access property list (H5P_DEFAULT)
       );
-    if (dsetid < 0) throw Exception("Variable creation failed.", ioda_Here())
-      .add("name", name);
+    if (dsetid < 0) throw eckit::Exception("Variable creation failed. Variable name: " + name, Here());
     HH_hid_t res(dsetid, Handles::Closers::CloseHDF5Dataset::CloseP);
     // Note: this new variable gets handed back to Has_Variables_Base::create,
     // which then calls params.applyImmediatelyAfterVariableCreation to link up
@@ -193,7 +189,7 @@ Variable HH_HasVariables::create(const std::string& name, const Type& in_memory_
     return var;
   }
   catch (std::bad_cast&) {
-    std::throw_with_nested(Exception("in_memory_dataType was constructed using the wrong backend.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("in_memory_dataType was constructed using the wrong backend.", Here()));
   }
 }
 
@@ -232,7 +228,7 @@ void HH_HasVariables::attachDimensionScales(
   auto EmplaceVarRef = [&HIDtoVarRef](const shared_ptr<HH_Variable> &v) -> void {
     hobj_ref_t ref;
     herr_t err = H5Rcreate(&ref, v->get()(), ".", H5R_OBJECT, -1);
-    if (err < 0) throw Exception("H5Rcreate failed.", ioda_Here());
+    if (err < 0) throw eckit::Exception("H5Rcreate failed.", Here());
     HIDtoVarRef[v->get()()] = ref;
   };
   for (const auto& m : hmapping) {
@@ -260,7 +256,7 @@ void HH_HasVariables::attachDimensionScales(
     for (unsigned i = 0; i < gsl::narrow<unsigned>(scales.size()); ++i) {
       if (i >= refScalesForVar.size()) {
         // Indicates that there are more scales than variable dimensions, so user error.
-        throw Exception("There are more scales than variable dimensions.", ioda_Here());
+        throw eckit::Exception("There are more scales than variable dimensions.", Here());
       }
       hid_t scale_ht = scales[i]->get()();
 #if H5_VERSION_GE(1, 12, 0)
@@ -268,7 +264,7 @@ void HH_HasVariables::attachDimensionScales(
 #else
       H5O_info_t info;
 #endif
-      if (H5Oget_info1(scale_ht, &info) < 0) throw Exception("H5Oget_info failed.", ioda_Here());
+      if (H5Oget_info1(scale_ht, &info) < 0) throw eckit::Exception("H5Oget_info failed.", Here());
 
       // Forward mapping
       refScalesForVar[i].emplace_back(HIDtoVarRef.at(scale_ht));

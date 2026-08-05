@@ -18,13 +18,10 @@
 #include <hdf5_hl.h>
 
 #include <algorithm>
-#include <numeric>
-#include <set>
 
 #include "./HH/HH-types.h"
 #include "./HH/HH-variables.h"
 #include "./HH/Handles.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -35,7 +32,7 @@ std::pair<bool, bool> isFilteravailable(H5Z_filter_t filt) {
   htri_t avl                 = H5Zfilter_avail(filt);
   if (avl <= 0) return std::make_pair(false, false);
   herr_t err = H5Zget_filter_info(filt, &filter_config);
-  if (err < 0) throw Exception("H5Zget_filter_info failed.", ioda_Here());
+  if (err < 0) throw eckit::Exception("H5Zget_filter_info failed.", Here());
   bool compress   = false;
   bool decompress = false;
   if (filter_config & H5Z_FILTER_CONFIG_ENCODE_ENABLED)
@@ -69,7 +66,7 @@ Filters::~Filters() = default;
 
 std::vector<Filters::filter_info> Filters::get() const {
   int nfilts = H5Pget_nfilters(pl());
-  if (nfilts < 0) throw Exception("H5Pget_nfilters failed.", ioda_Here());
+  if (nfilts < 0) throw eckit::Exception("H5Pget_nfilters failed.", Here());
   std::vector<filter_info> res;
   for (int i = 0; i < nfilts; ++i) {
     filter_info obj;
@@ -86,19 +83,19 @@ std::vector<Filters::filter_info> Filters::get() const {
 void Filters::append(const std::vector<filter_info>& filters) {
   for (const auto& f : filters) {
     herr_t res = H5Pset_filter(pl(), f.id, f.flags, f.cd_values.size(), f.cd_values.data());
-    if (res < 0) throw Exception("H5Pset_filter failed.", ioda_Here());
+    if (res < 0) throw eckit::Exception("H5Pset_filter failed.", Here());
   }
 }
 
 void Filters::set(const std::vector<filter_info>& filters) {
   if (H5Premove_filter(pl(), H5Z_FILTER_ALL) < 0)
-    throw Exception("H5Premove_filter failed.", ioda_Here());
+    throw eckit::Exception("H5Premove_filter failed.",Here());
   append(filters);
 }
 
 void Filters::clear() {
   if (H5Premove_filter(pl(), H5Z_FILTER_ALL) < 0)
-    throw Exception("H5Premove_filter failed.", ioda_Here());
+    throw eckit::Exception("H5Premove_filter failed.", Here());
 }
 
 bool Filters::has(H5Z_filter_t id) const {
@@ -127,7 +124,7 @@ void Filters::appendOfType(const std::vector<filter_info>& filters, FILTER_T typ
     if (isA(*it, typ)) {
       herr_t res
         = H5Pset_filter(pl(), it->id, it->flags, it->cd_values.size(), it->cd_values.data());
-      if (res < 0) throw Exception("H5Pset_filter failed.", ioda_Here());
+      if (res < 0) throw eckit::Exception("H5Pset_filter failed.", Here());
     }
   }
 }
@@ -139,7 +136,7 @@ void Filters::removeOfType(FILTER_T typ) {
     if (!isA(*it, typ)) {
       herr_t res
         = H5Pset_filter(pl(), it->id, it->flags, it->cd_values.size(), it->cd_values.data());
-      if (res < 0) throw Exception("H5Pset_filter failed.", ioda_Here());
+      if (res < 0) throw eckit::Exception("H5Pset_filter failed.", Here());
     }
   }
 }
@@ -149,7 +146,7 @@ void Filters::setShuffle() {
   auto fils = get();
   clear();
   appendOfType(fils, FILTER_T::SCALE);
-  if (0 > H5Pset_shuffle(pl())) throw Exception("H5Pset_shuffle failed.", ioda_Here());
+  if (0 > H5Pset_shuffle(pl())) throw eckit::Exception("H5Pset_shuffle failed.", Here());
   appendOfType(fils, FILTER_T::COMPRESSION);
   appendOfType(fils, FILTER_T::OTHER);
 }
@@ -165,7 +162,9 @@ void Filters::setSZIP(unsigned int optm, unsigned int ppb) {
   // unsigned int ppb = 16;
   // if (pixels_per_block.has_value()) ppb = pixels_per_block.value();
 
-  if (0 > H5Pset_szip(pl(), optm, ppb)) throw Exception("H5Pset_szip failed.", ioda_Here());
+  if (0 > H5Pset_szip(pl(), optm, ppb)) {
+    throw eckit::Exception("H5Pset_szip failed.", Here());
+  }
   appendOfType(fils, FILTER_T::OTHER);
 }
 
@@ -174,7 +173,9 @@ void Filters::setGZIP(unsigned int level) {
   clear();
   appendOfType(fils, FILTER_T::SCALE);
   appendOfType(fils, FILTER_T::SHUFFLE);
-  if (0 > H5Pset_deflate(pl(), level)) throw Exception("H5Pset_deflate failed.", ioda_Here());
+  if (0 > H5Pset_deflate(pl(), level)) {
+    throw eckit::Exception("H5Pset_deflate failed.", Here());
+  }
   appendOfType(fils, FILTER_T::OTHER);
 }
 
@@ -182,7 +183,7 @@ void Filters::setScaleOffset(H5Z_SO_scale_type_t scale_type, int scale_factor) {
   auto fils = get();
   clear();
   if (0 > H5Pset_scaleoffset(pl(), scale_type, scale_factor))
-    throw Exception("H5Pset_scaleoffset failed.", ioda_Here());
+    throw eckit::Exception("H5Pset_scaleoffset failed.", Here());
   appendOfType(fils, FILTER_T::SHUFFLE);
   appendOfType(fils, FILTER_T::COMPRESSION);
   appendOfType(fils, FILTER_T::OTHER);

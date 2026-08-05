@@ -12,7 +12,6 @@
 #include <vector>
 #include <memory>
 
-#include "eckit/config/Configuration.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionParametersBase.h"
 #include "oops/util/AssociativeContainers.h"

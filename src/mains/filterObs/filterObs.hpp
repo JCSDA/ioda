@@ -14,10 +14,9 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/exception/Exceptions.h"
+#  include "eckit/exception/Exceptions.h"
 
-#include "oops/base/Observations.h"
-#include "oops/base/ObsSpaces.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -25,7 +24,6 @@
 #include "oops/util/Logger.h"
 #include "oops/util/TimeWindow.h"
 
-#include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpace.h"
 
 // This application can be run standalone and will perform simple

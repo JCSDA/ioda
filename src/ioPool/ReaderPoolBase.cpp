@@ -9,23 +9,13 @@
 
 #include <mpi.h>
 
-#include <algorithm>
 #include <cstdio>
 #include <memory>
-#include <numeric>
-#include <sstream>
-#include <utility>
 
-#include "eckit/config/LocalConfiguration.h"
-#include "eckit/exception/Exceptions.h"
-
-#include "ioda/Copying.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
-
-#include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/mpi/mpi.h"
 
 namespace ioda {
 namespace IoPool {

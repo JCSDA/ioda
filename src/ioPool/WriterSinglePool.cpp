@@ -12,15 +12,10 @@
 #include <algorithm>
 #include <cstdio>
 #include <memory>
-#include <numeric>
 #include <sstream>
-#include <utility>
-
-#include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/ioPool/WriterPoolFactory.h"
 #include "ioda/ioPool/WriterPoolUtils.h"
 

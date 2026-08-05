@@ -15,10 +15,6 @@
  */
 
 #include <string>
-#include <vector>
-
-#include "eckit/exception/Exceptions.h"
-#include "eckit/mpi/Comm.h"
 
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"

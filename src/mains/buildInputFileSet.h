@@ -9,7 +9,6 @@
 #define MAINS_TIMEIODAIO_H_
 
 #include <string>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"

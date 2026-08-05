@@ -17,21 +17,21 @@
 #include <hdf5_hl.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <exception>
 #include <numeric>
 #include <set>
+#include <string>
 
-#include "./HH/HH-Filters.h"
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-hasattributes.h"
 #include "./HH/HH-hasvariables.h"
 #include "./HH/HH-types.h"
 #include "./HH/HH-util.h"
 #include "./HH/Handles.h"
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 #include "ioda/Misc/DimensionScales.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/Misc/StringFuncs.h"
 
 namespace ioda {
 namespace detail {
@@ -61,7 +61,7 @@ HH_hid_t HH_Variable::get() const { return var_; }
 
 bool HH_Variable::isVariable() const {
   H5I_type_t typ = H5Iget_type(var_());
-  if (typ == H5I_BADID) throw Exception("Cannot determine object type", ioda_Here());
+  if (typ == H5I_BADID) throw eckit::Exception("Cannot determine object type", Here());
   return (typ == H5I_DATASET);
 }
 
@@ -81,27 +81,33 @@ HH_hid_t HH_Variable::space() const {
 
 Dimensions HH_Variable::getDimensions() const {
   Dimensions ret;
-  Options errOpts; // Used for tracking parameters that can show up in the error message.
-  errOpts.add("variable", getNameFromIdentifier(var_()));
+  std::string errOptString = "Variable: " + getNameFromIdentifier(var_());
 
   std::vector<hsize_t> dims, dimsmax;
   htri_t isSimple = H5Sis_simple(space()());
-  if (isSimple < 0) throw Exception("Dimension space parameter is invalid.", ioda_Here(), errOpts);
-  if (isSimple == 0) throw Exception("Dataspace is not simple. Unsupported case in code. "
-    "Complex dataspace support was not available in HDF5 when this function was written.",
-      ioda_Here(), errOpts);
+  if (isSimple < 0)
+    throw eckit::Exception(
+      "Dimension space parameter is invalid. Variable: " + errOptString, Here());
+  if (isSimple == 0)
+    throw eckit::Exception(
+      "Dataspace is not simple. Unsupported case in code. Complex dataspace support was not "
+      "available in HDF5 when this function was written: "
+        + errOptString,
+      Here());
   hssize_t numPoints = H5Sget_simple_extent_npoints(space()());
-  errOpts.add("numPoints", numPoints);
-  if (numPoints < 0)
-    throw Exception("H5Sget_simple_extent_npoints error.", ioda_Here(), errOpts);
+  errOptString += " numPoints: " + std::to_string(numPoints);
+  if (numPoints < 0) {
+    std::string msg = "H5Sget_simple_extent_npoints error. " + errOptString;
+    throw eckit::Exception(msg, Here());
+  }
   int dimensionality = H5Sget_simple_extent_ndims(space()());
-  errOpts.add("dimensionality", dimensionality);
+  errOptString += "Dimensionality: " + std::to_string(dimensionality);
   if (dimensionality < 0)
-    throw Exception("H5Sget_simple_extent_ndims error.", ioda_Here(), errOpts);
+    throw eckit::Exception("H5Sget_simple_extent_ndims error. " + errOptString, Here());
   dims.resize(dimensionality);
   dimsmax.resize(dimensionality);
   if (H5Sget_simple_extent_dims(space()(), dims.data(), dimsmax.data()) < 0)
-    throw Exception("H5Sget_simple_extent_dims error.", ioda_Here(), errOpts);
+    throw eckit::Exception("H5Sget_simple_extent_dims error. " + errOptString, Here());
 
   ret.numElements    = gsl::narrow<decltype(Dimensions::numElements)>(numPoints);
   ret.dimensionality = gsl::narrow<decltype(Dimensions::dimensionality)>(dimensionality);
@@ -115,18 +121,17 @@ Dimensions HH_Variable::getDimensions() const {
 Variable HH_Variable::resize(const std::vector<Dimensions_t>& newDims) {
   std::vector<hsize_t> hdims = convertToH5Length<hsize_t>(newDims);
 
-  if (H5Dset_extent(var_(), hdims.data()) < 0)
-    throw Exception("Failure to resize a Variable with the HDF5 backend.", ioda_Here())
-    .add("variable", getNameFromIdentifier(var_()))
-    .add("dimensionality", hdims.size());
+  if (H5Dset_extent(var_(), hdims.data()) < 0) {
+    std::string msg = "Failure to resize variable: " + getNameFromIdentifier(var_())
+                      + " with HDF5 backend and dimensionality: " + std::to_string(hdims.size());
+    throw eckit::Exception(msg, Here());
+  }
 
   return Variable{shared_from_this()};
 }
 
 Variable HH_Variable::attachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
-  Options errOpts;
-  errOpts.add("variable", getNameFromIdentifier(var_()));
-  errOpts.add("DimensionNumber", DimensionNumber);
+  std::string errOptsString =  "Details: variable=" + getNameFromIdentifier(var_()) + " DimensionNumber=" + std::to_string(DimensionNumber);
 
   try {
     // We are extracting the backend object.
@@ -135,22 +140,20 @@ Variable HH_Variable::attachDimensionScale(unsigned int DimensionNumber, const V
     // Otherwise, throw an error because you can't mix Variables from different
     // backends.
     auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
-    errOpts.add("scale", getNameFromIdentifier(scaleBackendDerived->var_()));
+    errOptsString += (" scale=" + getNameFromIdentifier(scaleBackendDerived->var_()));
 
     const herr_t res = H5DSattach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
-    if (res != 0) throw Exception("Dimension scale attachment failed.", ioda_Here(), errOpts);
+    if (res != 0) throw eckit::Exception("Dimension scale attachment failed." + errOptsString, Here());
 
     return Variable{shared_from_this()};
   } catch (const std::bad_cast&) {
-    throw Exception("Cannot attach dimension scales across incompatible backends.",
-      ioda_Here(), errOpts);
+    throw eckit::Exception("Cannot attach dimension scales across incompatible backends." + errOptsString, Here());
   }
 }
 
 Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const Variable& scale) {
-  Options errOpts;
-  errOpts.add("variable", getNameFromIdentifier(var_()));
-  errOpts.add("DimensionNumber", DimensionNumber);
+  std::string errOpstsString = "Details: variable=" + getNameFromIdentifier(var_())
+                               + " DimensionNumber=" + std::to_string(DimensionNumber);
 
   try {
     // We are extracting the backend object.
@@ -159,29 +162,29 @@ Variable HH_Variable::detachDimensionScale(unsigned int DimensionNumber, const V
     // Otherwise, throw an error because you can't mix Variables from different
     // backends.
     auto scaleBackendDerived = std::dynamic_pointer_cast<HH_Variable>(scaleBackendBase);
-    errOpts.add("scale", getNameFromIdentifier(scaleBackendDerived->var_()));
+    errOpstsString += (" scale=" + getNameFromIdentifier(scaleBackendDerived->var_()));
 
     const herr_t res = H5DSdetach_scale(var_(), scaleBackendDerived->var_(), DimensionNumber);
-    if (res != 0) throw Exception("Dimension scale detachment failed", ioda_Here(), errOpts);
+    if (res != 0) throw eckit::Exception("Dimension scale detachment failed. " + errOpstsString, Here());
 
     return Variable{shared_from_this()};
   } catch (const std::bad_cast&) {
-    throw Exception("Cannot detach dimension scales across incompatible backends.",
-      ioda_Here(), errOpts);
+    throw eckit::Exception("Cannot detach dimension scales across incompatible backends. " + errOpstsString,
+      Here());
   }
 }
 
 bool HH_Variable::isDimensionScale() const {
   const htri_t res = H5DSis_scale(var_());
   if (res < 0) {
-    Options errOpts;
+    std::string errOpts;
     try {
-      errOpts.add("variable", getNameFromIdentifier(var_()));
+      errOpts = "variable: " + getNameFromIdentifier(var_());
     } catch (...) {
-      errOpts.add("variable", "unknown / bad id");
+      errOpts = "variable: unknown / bad id";
     }
     
-    throw Exception("Error returned from H5DSis_scale.", ioda_Here(), errOpts);
+    throw eckit::Exception("Error returned from H5DSis_scale." + errOpts, Here());
   }
   return (res > 0);
 }
@@ -189,16 +192,15 @@ bool HH_Variable::isDimensionScale() const {
 Variable HH_Variable::setIsDimensionScale(const std::string& dimensionScaleName) {
   const htri_t res = H5DSset_scale(var_(), dimensionScaleName.c_str());
   if (res != 0) {
-    Options errOpts;
-    errOpts.add("dimensionScaleName", dimensionScaleName);
+    std::string errOpts = "Details: dimensionScaleName=" + dimensionScaleName;
     try {
-      errOpts.add("variable", getNameFromIdentifier(var_()));
+      errOpts += (" variable=" + getNameFromIdentifier(var_()));
     } catch (...) {
-      errOpts.add("variable", "unknown / bad id");
+      errOpts += " variable=unknown / bad id";
     }
 
-    throw Exception(
-      "Error returned from H5DSset_scale.", ioda_Here(), errOpts);
+    throw eckit::Exception(
+      "Error returned from H5DSset_scale." + errOpts, Here());
   }
   return Variable{shared_from_this()};
 }
@@ -208,14 +210,14 @@ Variable HH_Variable::getDimensionScaleName(std::string& res) const {
   std::array<char, max_label_size> label{};  // Value-initialized to nulls.
   const ssize_t sz = H5DSget_scale_name(var_(), label.data(), max_label_size);
   if (sz < 0) {
-    Options errOpts;
+    std::string errOpts = "Variable: ";
     try {
-      errOpts.add("variable", getNameFromIdentifier(var_()));
+      errOpts += getNameFromIdentifier(var_());
     } catch (...) {
-      errOpts.add("variable", "unknown / bad id");
+      errOpts += "unknown / bad id";
     }
 
-    throw Exception("Error returned from H5DSget_scale_name.", ioda_Here(), errOpts);
+    throw eckit::Exception("Error returned from H5DSget_scale_name." + errOpts, Here());
   }
   // sz is the size of the label. The HDF5 documentation does not include whether the label is
   // null-terminated, so I am terminating it manually.
@@ -266,8 +268,8 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
     std::vector<unsigned> dimensionNumbers = dimensionNumbers_;
     if (!dimensionNumbers.empty()) {
       auto max_elem_it = std::max_element(dimensionNumbers.cbegin(), dimensionNumbers.cend());
-      if (max_elem_it == dimensionNumbers.cend()) throw Exception(ioda_Here());
-      if (datadims.dimensionality <= *max_elem_it) throw Exception(ioda_Here());
+      if (max_elem_it == dimensionNumbers.cend()) throw eckit::Exception(Here());
+      if (datadims.dimensionality <= *max_elem_it) throw eckit::Exception(Here());
     } else {
       dimensionNumbers.resize(datadims.dimensionality);
       std::iota(dimensionNumbers.begin(), dimensionNumbers.end(), 0);
@@ -300,7 +302,7 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
                     iterate_find_attr,        // C-style search function
       reinterpret_cast<void*>(&search_data_opts)  // Data passed to/from the C-style search function
       );
-    if (att_search_ret < 0) throw Exception(ioda_Here());
+    if (att_search_ret < 0) throw eckit::Exception(Here());
 
     if (!search_data_opts.success) return ret; // Fallthrough returning a vector of empty vectors.
 
@@ -323,7 +325,7 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
     Vlen_data buf((size_t)datadims.dimensionality, vltyp, aDims_HH.space());
 
     if (H5Aread(aDims_HH.get()(), vltyp.get(), reinterpret_cast<void*>(buf.buf.get())) < 0)
-      throw Exception("Attribute read failure", ioda_Here());
+      throw eckit::Exception("Attribute read failure", Here());
 
       // We now have the list of object references.
       // We need to query the scale information.
@@ -339,10 +341,10 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
     for (size_t i = 0; i < scales.size(); ++i) {
 #if H5_VERSION_GE(1, 10, 3)
       if (H5Oget_info2(scales[i].second->get()(), &scale_infos[i], H5O_INFO_BASIC) < 0)
-        throw Exception("H5Oget_info2 failure", ioda_Here());
+        throw eckit::Exception("H5Oget_info2 failure", Here());
 #else
       if (H5Oget_info(scales[i].second->get()(), &scale_infos[i], H5O_INFO_BASIC) < 0)
-        throw Exception("H5Oget_info failure", ioda_Here());
+        throw eckit::Exception("H5Oget_info failure", Here());
 #endif
     }
 
@@ -369,10 +371,10 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
         // Get deref_scale's info and compare to scale_info.
 #if H5_VERSION_GE(1, 10, 3)
         if (H5Oget_info2(deref_scale.get()(), &check_info, H5O_INFO_BASIC) < 0)
-          throw Exception("H5Oget_info2 failure", ioda_Here());
+          throw eckit::Exception("H5Oget_info2 failure", Here());
 #else
         if (H5Oget_info(deref_scale.get()(), &check_info, H5O_INFO_BASIC) < 0)
-          throw Exception("H5Oget_info failure", ioda_Here());
+          throw eckit::Exception("H5Oget_info failure", Here());
 #endif
 
         // Iterate over each scalesToQueryAgainst
@@ -396,14 +398,14 @@ std::vector<std::vector<Named_Variable>> HH_Variable::getDimensionScaleMappings(
 
     return ret;
   } catch (...) {
-    Options errOpts;
+    std::string errOpts = "Variable: ";
     try {
-      errOpts.add("variable", getNameFromIdentifier(var_()));
+      errOpts += getNameFromIdentifier(var_());
     } catch (...) {
-      errOpts.add("variable", "unknown / bad id");
+      errOpts += "unknown / bad id";
     }
 
-    std::throw_with_nested(Exception("Caught an exception.", ioda_Here(), errOpts));
+    std::throw_with_nested(eckit::Exception("Caught an exception." + errOpts, Here()));
   }
 }
 
@@ -414,14 +416,14 @@ bool HH_Variable::isDimensionScaleAttached(unsigned int DimensionNumber,
     auto res = getDimensionScaleMappings(scalesToQueryAgainst, true, {DimensionNumber});
     return !res[DimensionNumber].empty();
   } catch (...) {
-    Options errOpts;
+    std::string errOpts = "Variable: ";
     try {
-      errOpts.add("variable", getNameFromIdentifier(var_()));
+      errOpts += getNameFromIdentifier(var_());
     } catch (...) {
-      errOpts.add("variable", "unknown / bad id");
+      errOpts += "unknown / bad id";
     }
 
-    std::throw_with_nested(Exception("Caught an exception.", ioda_Here(), errOpts));
+    std::throw_with_nested(eckit::Exception("Caught an exception." + errOpts, Here()));
   }
 }
 
@@ -453,20 +455,20 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
     if (sel.getActions().empty()) return HH_hid_t(H5S_ALL);
   
   HH_hid_t spc(H5Scopy(space()()), Handles::Closers::CloseHDF5Dataspace::CloseP);
-  if (spc() < 0) throw Exception("Cannot copy dataspace.", ioda_Here());
+  if (spc() < 0) throw eckit::Exception("Cannot copy dataspace.", Here());
 
   if (!sel.extent().empty()) {
     if (H5Sset_extent_simple(spc(), gsl::narrow<int>(sel.extent().size()),
                              convertToH5Length<hsize_t>(sel.extent()).data(),
                              convertToH5Length<hsize_t>(sel.extent()).data())
         < 0)
-      throw Exception("Cannot set dataspace extent.", ioda_Here());
+      throw eckit::Exception("Cannot set dataspace extent.", Here());
   }
 
   if (sel.getDefault() == SelectionState::ALL) {
-    if (H5Sselect_all(spc()) < 0) throw Exception("Dataspace selection failed.", ioda_Here());
+    if (H5Sselect_all(spc()) < 0) throw eckit::Exception("Dataspace selection failed.", Here());
   } else if (sel.getDefault() == SelectionState::NONE) {
-    if (H5Sselect_none(spc()) < 0) throw Exception("Dataspace selection failed.", ioda_Here());
+    if (H5Sselect_none(spc()) < 0) throw eckit::Exception("Dataspace selection failed.", Here());
   }
 
   static const std::map<SelectionOperator, H5S_seloper_t> op_map
@@ -480,7 +482,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
        {SelectionOperator::PREPEND, H5S_SELECT_PREPEND}};
   bool first_action = true;
   for (const auto& s : sel.getActions()) {
-    if (!op_map.count(s.op_)) throw Exception("Unimplemented map value.", ioda_Here());
+    if (!op_map.count(s.op_)) throw eckit::Exception("Unimplemented map value.", Here());
     herr_t chk = 0;
     // Is this a hyperslab or a single point selection?
     if (!s.points_.empty()) {  // Single point selection
@@ -492,11 +494,13 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       // Waiting for std::ranges in C++20
       for (size_t i = 0; i < s.points_.size(); ++i)  // const auto& p : s.points_)
       {
-        if (s.points_[i].size() != dimensionality)
-          throw Exception("Points have inconsistent dimensionalities.", ioda_Here())
-          .add("dimensionality", dimensionality)
-          .add("s.points_[i].size()", s.points_[i].size())
-          .add("i", i);
+        if (s.points_[i].size() != dimensionality) {
+          std::string msg = "Points have inconsistent dimensionalities. Dimensionality: "
+                            + std::to_string(dimensionality)
+                            + ", s.points[i].size(): " + std::to_string(s.points_[i].size())
+                            + ", index i: " + std::to_string(i);
+          throw eckit::Exception(msg, Here());
+        }
         for (size_t j = 0; j < dimensionality; ++j)
           elems[j + (dimensionality * i)] = s.points_[i][j];
         // std::copy_n(p.data(), dimensionality, elems.data() + (i * dimensionality));
@@ -513,7 +517,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       //  Then, apply this bulk selection to the actual space.
 #if H5_VERSION_GE(1, 12, 0)
       HH_hid_t cloned_space(H5Scopy(spc()), Handles::Closers::CloseHDF5Dataspace::CloseP);
-      if(H5Sselect_none(cloned_space()) < 0) throw Exception("Cannot copy space", ioda_Here());
+      if(H5Sselect_none(cloned_space()) < 0) throw eckit::Exception("Cannot copy space", Here());
 
       ioda::Dimensions dims = getDimensions();
       Expects(s.dimension_ < (size_t)dims.dimensionality);
@@ -541,7 +545,7 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
         if (H5Sselect_hyperslab(cloned_space(), op_map.at(SelectionOperator::OR), hstart.data(),
                                 NULL, hcount.data(), NULL)
             < 0)
-          throw Exception("Sub-space selection failed.", ioda_Here());
+          throw eckit::Exception("Sub-space selection failed.", Here());
       }
 
       // Once we have looped through then we apply the actual selection operator to our
@@ -551,16 +555,16 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
       // instead of a select modify.
       if (first_action) {
         if (H5Sselect_copy(spc(), cloned_space()) < 0)
-          throw Exception("Space copy selection failed", ioda_Here());
+          throw eckit::Exception("Space copy selection failed", Here());
       } else {
         if (H5Smodify_select(spc(), op_map.at(s.op_), cloned_space()) < 0)
-          throw Exception("Space modify selection failed", ioda_Here());
+          throw eckit::Exception("Space modify selection failed", Here());
       }
 #else
-      throw Exception(
+      throw eckit::Exception(
                   "The HDF5 engine needs to be backed by at least "
                   "HDF5 1.12.0 to do the requested selection properly. Older HDF5 versions "
-                  "do not have the H5Smodify_select function.", ioda_Here());
+                  "do not have the H5Smodify_select function.", Here());
 #endif
     } else {  // Hyperslab selection
 
@@ -573,14 +577,14 @@ HH_hid_t HH_Variable::getSpaceWithSelection(const Selection& sel) const {
                                 (s.stride_.size()) ? hstride.data() : NULL, hcount.data(),
                                 (s.block_.size()) ? hblock.data() : NULL);
     }
-    if (chk < 0) throw Exception("Space selection failed.", ioda_Here());
+    if (chk < 0) throw eckit::Exception("Space selection failed.", Here());
     first_action = false;  // NOLINT: Compilers inconsistently complain about use/unuse of
                            // first_action. Not our bug.
   }
 
   if (!sel.getOffset().empty()) {
     if (H5Soffset_simple(spc(), convertToH5Length<hssize_t>(sel.getOffset()).data()) < 0)
-      throw Exception("Problem applying offset to space.", ioda_Here());
+      throw eckit::Exception("Problem applying offset to space.", Here());
   }
 
   auto res = std::make_shared<HH_Selection>();
@@ -615,10 +619,10 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
   // writing. We are using independent for now since we have discovered issues on
   // some platforms with collective style.
   hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
-  if (plist_id < 0) throw Exception("H5Pcreate failed", ioda_Here());
+  if (plist_id < 0) throw eckit::Exception("H5Pcreate failed", Here());
   if (isParallelIo) {
     herr_t rc = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
-    if (rc < 0) throw Exception("H5Pset_fapl_mpio failed", ioda_Here());
+    if (rc < 0) throw eckit::Exception("H5Pset_fapl_mpio failed", Here());
   }
   HH_hid_t xfer_plist(plist_id, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
@@ -629,16 +633,16 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
     htri_t isMemStrVar = H5Tis_variable_str(memTypeBackend->handle());
     htri_t isVarStrVar = H5Tis_variable_str(varType());
     if (isMemStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on memory data type.", Here());
     if (isVarStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on backend (file) variable data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on backend (file) variable data type.", Here());
     
     if ((isMemStrVar && isVarStrVar) || (!isMemStrVar && !isVarStrVar)) {
       // No need to change anything. Pass through.
       // NOTE: Using varType instead of memTypeBackend->handle! This is because strings can have
       //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
       if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), data.data()) < 0)
-        throw Exception("H5Dwrite failed.", ioda_Here());
+        throw eckit::Exception("H5Dwrite failed.", Here());
     }
     else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in var.
@@ -647,7 +651,7 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
       std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
 
       if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), out_buf.data()) < 0)
-        throw Exception("H5Dwrite failed.", ioda_Here());
+        throw eckit::Exception("H5Dwrite failed.", Here());
     }
     else if (isVarStrVar) {
       // Fixed-length in memory. Variable-length in file.
@@ -659,7 +663,7 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
       char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
 
       if (H5Dwrite(var_(), varType(), memSpace(), fileSpace(), xfer_plist(), converted_data) < 0)
-        throw Exception("H5Dwrite failed.", ioda_Here());
+        throw eckit::Exception("H5Dwrite failed.", Here());
     }
 
   } else {
@@ -671,7 +675,7 @@ Variable HH_Variable::writeImpl(gsl::span<const char> data, const Type& in_memor
                         xfer_plist(),             // xfer_plist_id
                         data.data()               // data
     );
-    if (ret < 0) throw Exception("H5Dwrite failure.", ioda_Here());
+    if (ret < 0) throw eckit::Exception("H5Dwrite failure.", Here());
   }
   return Variable{shared_from_this()};
 }
@@ -694,16 +698,16 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
     htri_t isMemStrVar = H5Tis_variable_str(memTypeBackend->handle());
     htri_t isVarStrVar = H5Tis_variable_str(varType());
     if (isMemStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on memory data type.", Here());
     if (isVarStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on backend (file) variable data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on backend (file) variable data type.", Here());
     
     if ((isMemStrVar && isVarStrVar) || (!isMemStrVar && !isVarStrVar)) {
       // No need to change anything. Pass through.
       // NOTE: Using varType instead of memTypeBackend->handle! This is because strings can have
       //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
       if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, data.data()) < 0)
-        throw Exception("H5Dread failed.", ioda_Here());
+        throw eckit::Exception("H5Dread failed.", Here());
     }
     else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in file.
@@ -713,7 +717,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
       std::vector<char> in_buf(numStrs * strLen);
 
       if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, in_buf.data()) < 0)
-        throw Exception("H5Dread failed.", ioda_Here());
+        throw eckit::Exception("H5Dread failed.", Here());
 
       // This block of code is a bit of a kludge in that we are switching from a packed
       // structure of strings to a packed structure of pointers of strings.
@@ -739,15 +743,17 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
       std::vector<char> in_buf(numStrs * sizeof(char*));
 
       if (H5Dread(var_(), varType(), memSpace(), fileSpace(), H5P_DEFAULT, in_buf.data()) < 0)
-        throw Exception("H5Dread failed.", ioda_Here());
+        throw eckit::Exception("H5Dread failed.", Here());
 
       // We could avoid using the temporary out_buf and write
       // directly to "data", but there is no strong need to do this, as
       // this is a very rare type conversion. C++ lacks a fixed-length string type!
       std::vector<char> out_buf = convertVariableLengthToFixedLength(in_buf, strLen, false);
-      if (out_buf.size() != data.size())
-        throw Exception("Unexpected sizes.", ioda_Here())
-          .add("data.size()", data.size()).add("out_buf.size()", out_buf.size());
+      if (out_buf.size() != data.size()) {
+        std::string msg = "Unexpected sizes: data.size()=" + std::to_string(data.size())
+                          + " and out_buf_size()=" + std::to_string(out_buf.size());
+        throw eckit::Exception(msg, Here());
+      }
       std::copy(out_buf.begin(), out_buf.end(), data.begin());
     }
   } else {
@@ -759,7 +765,7 @@ Variable HH_Variable::read(gsl::span<char> data, const Type& in_memory_dataType,
                         H5P_DEFAULT,              // xfer_plist_id
                         data.data()               // data
     );
-    if (ret < 0) throw Exception("H5Dread failure.", ioda_Here());
+    if (ret < 0) throw eckit::Exception("H5Dread failure.", Here());
   }
 
   return Variable{std::make_shared<HH_Variable>(*this)};
@@ -816,13 +822,13 @@ bool HH_Variable::isA(Type lhs) const {
 bool HH_Variable::isExactlyA(HH_hid_t ttype) const {
   HH_hid_t otype = internalType();
   auto ret       = H5Tequal(ttype(), otype());
-  if (ret < 0) throw Exception(ioda_Here());
+  if (ret < 0) throw eckit::Exception(Here());
   return (ret > 0) ? true : false;
 }
 
 bool HH_Variable::hasFillValue(HH_hid_t create_plist) {
   H5D_fill_value_t fvstatus;                                            // NOLINT: HDF5 C interface
-  if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw Exception(ioda_Here());
+  if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw eckit::Exception(Here());
   // if H5D_FILL_VALUE_UNDEFINED, return false. In all other cases, return true.
   return (fvstatus != H5D_FILL_VALUE_UNDEFINED);
 }
@@ -838,7 +844,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
     HH_Variable::FillValueData_t res;
 
     H5D_fill_value_t fvstatus;  // NOLINT: HDF5 C interface
-    if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw Exception(ioda_Here());
+    if (H5Pfill_value_defined(create_plist.get(), &fvstatus) < 0) throw eckit::Exception(Here());
 
     // if H5D_FILL_VALUE_UNDEFINED, false. In all other cases, true.
     res.set_ = (fvstatus != H5D_FILL_VALUE_UNDEFINED);
@@ -887,7 +893,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
       // H5D_FILL_VALUE_DEFAULT with HDF5 fill value policy
       // H5D_FILL_VALUE_USER_DEFINED regardless of fill value policy
       auto hType = internalType();  // Get type as
-      if (!hType.isValid()) throw Exception(ioda_Here());
+      if (!hType.isValid()) throw eckit::Exception(Here());
 
       H5T_class_t cls = H5Tget_class(hType());  // NOLINT: HDF5 C interface
       // Check types for support in this function
@@ -895,11 +901,11 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
       // Unsupported for now: H5T_BITFIELD, H5T_OPAQUE, H5T_COMPOUND,
       // H5T_REFERENCE, H5T_ENUM, H5T_VLEN, H5T_ARRAY.
       if (!supported.count(cls))
-        throw Exception(
+        throw eckit::Exception(
           "HH's getFillValue function only supports "
           "basic numeric and string data types. Any other types "
           "will require enhancement to FillValueData_t::FillValueUnion_t.",
-          ioda_Here());
+          Here());
 
       size_t szType_inBytes = H5Tget_size(hType());
 
@@ -908,7 +914,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
       std::vector<char> fvbuf(szType_inBytes, 0);
       if (H5Pget_fill_value(create_plist.get(), hType(),
         reinterpret_cast<void*>(fvbuf.data())) < 0)
-        throw Exception(ioda_Here());
+        throw eckit::Exception(Here());
 
       // When recovering the fill value, we need to distinguish between
       // strings and the other types.
@@ -918,7 +924,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
       if (cls == H5T_STRING) {
         // Need to distinguish between variable-length and fixed-width data types.
         htri_t str_type = H5Tis_variable_str(hType());
-        if (str_type < 0) throw Exception(ioda_Here());
+        if (str_type < 0) throw eckit::Exception(Here());
         if (str_type > 0) {
           // Variable-length string
           const char** ccp = (const char**)fvbuf.data();  // NOLINT: Casting with HDF5
@@ -929,7 +935,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
             res.isString_ = true;
             // Do proper deallocation of the HDF5-returned string array.
             if (H5free_memory(const_cast<void*>(reinterpret_cast<const void*>(ccp[0]))) < 0)
-              throw Exception(ioda_Here());
+              throw eckit::Exception(Here());
           }
         } else {
           // Fixed-length string
@@ -937,14 +943,15 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
           res.isString_ = true;
         }
       } else {
-        if (szType_inBytes > sizeof(res.fillValue_))
-          throw Exception(
-            "The fill value in HDF5 is too large for the "
-            "fillValue_ union. ioda-engines currently only supports fill "
-            "values on fundamental types and strings.",
-            ioda_Here())
-            .add("szType_inBytes", szType_inBytes)
-            .add("sizeof(res.fillValue_)", sizeof(res.fillValue_));
+        if (szType_inBytes > sizeof(res.fillValue_)) {
+          std::string msg
+            = "The fill value in HDF5 is too large for the fillValue_ union. ioda-engines "
+              "currently only supports fill values on fundamental types and strings. Details: "
+              "szType_inBytes="
+              + std::to_string(szType_inBytes)
+              + "sizeof(res.fillValue_)=" + std::to_string(sizeof(res.fillValue_));
+          throw eckit::Exception(msg, Here());
+        }
         // Copy the buffer to the fvdata object
         memcpy(&(res.fillValue_.ui64), fvbuf.data(),
                fvbuf.size());  // NOLINT: Accessing this union member deliberately.
@@ -952,7 +959,7 @@ HH_Variable::FillValueData_t HH_Variable::getFillValue(HH_hid_t create_plist) co
     }
     return res;
   } catch (...) {
-    std::throw_with_nested(Exception("Caught an exception.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("Caught an exception.", Here()));
   }
 }
 
@@ -968,7 +975,7 @@ std::vector<Dimensions_t> HH_Variable::getChunkSizes(HH_hid_t create_plist, cons
     int max_ndims = gsl::narrow<int>(dims.dimensionality);
     std::vector<hsize_t> chunks(max_ndims);
     if (H5Pget_chunk(create_plist.get(), max_ndims, chunks.data()) < 0)
-      throw Exception(ioda_Here());
+      throw eckit::Exception(Here());
     std::vector<Dimensions_t> res;
     res.reserve(chunks.size());
     for (const auto& i : chunks)
@@ -987,7 +994,7 @@ std::vector<Dimensions_t> HH_Variable::getChunkSizes() const {
 
 std::pair<bool, int> HH_Variable::getGZIPCompression(HH_hid_t create_plist) {
   int nfilters = H5Pget_nfilters(create_plist.get());
-  if (nfilters < 0) throw Exception(ioda_Here());
+  if (nfilters < 0) throw eckit::Exception(Here());
 
   for (unsigned i = 0; i < (unsigned)nfilters; ++i) {
     // See https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-GetFilter2 for the function
@@ -1006,7 +1013,7 @@ std::pair<bool, int> HH_Variable::getGZIPCompression(HH_hid_t create_plist) {
                                        namelen, name.data(), &filter_config);
     if (filt != H5Z_FILTER_DEFLATE) continue;
 
-    if (!cd_nelems) throw Exception(ioda_Here());
+    if (!cd_nelems) throw eckit::Exception(Here());
 
     return std::pair<bool, int>(true, gsl::narrow<int>(cd_values[0]));
   }
@@ -1023,7 +1030,7 @@ std::pair<bool, int> HH_Variable::getGZIPCompression() const {
 
 std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression(HH_hid_t create_plist) {
   int nfilters = H5Pget_nfilters(create_plist.get());
-  if (nfilters < 0) throw Exception(ioda_Here());
+  if (nfilters < 0) throw eckit::Exception(Here());
 
   for (unsigned i = 0; i < (unsigned)nfilters; ++i) {
     // See https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-GetFilter2 for the function
@@ -1042,7 +1049,7 @@ std::tuple<bool, unsigned, unsigned> HH_Variable::getSZIPCompression(HH_hid_t cr
                                        namelen, name.data(), &filter_config);
     if (filt != H5Z_FILTER_SZIP) continue;
 
-    if (cd_nelems < 2) throw Exception(ioda_Here());
+    if (cd_nelems < 2) throw eckit::Exception(Here());
 
     // cd_nelems is actually 4, but the options do not match the H5Pset_szip flags!
     return std::tuple<bool, unsigned, unsigned>(true, cd_values[0], cd_values[1]);
@@ -1078,11 +1085,11 @@ VariableCreationParameters HH_Variable::getCreationParameters(bool doAtts, bool 
   res.fillValue_ = getFillValue(create_plist);
   // Attributes (optional)
   if (doAtts) {
-    throw Exception("Unimplemented doAtts", ioda_Here());
+    throw eckit::Exception("Unimplemented doAtts", Here());
   }
   // Dimensions (optional)
   if (doDims) {
-    throw Exception("Unimplemented doDims", ioda_Here());
+    throw eckit::Exception("Unimplemented doDims", Here());
   }
 
   return res;

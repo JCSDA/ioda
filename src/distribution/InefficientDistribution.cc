@@ -9,13 +9,11 @@
 
 #include <algorithm>
 #include <iostream>
-#include <numeric>
 
 #include <boost/make_unique.hpp>
 
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/InefficientDistributionAccumulator.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------

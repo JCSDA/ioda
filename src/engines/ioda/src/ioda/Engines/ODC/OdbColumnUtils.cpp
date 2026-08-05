@@ -10,7 +10,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/io/FileHandle.h"
 #include "ioda/Engines/ODC/OdbTablesRange.h"
-#include "odc/api/Odb.h"
 #include "odc/core/MetaData.h"
 #include "oops/util/Logger.h"
 

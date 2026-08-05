@@ -16,10 +16,6 @@
 
 #include <hdf5.h>
 
-#include <algorithm>
-#include <numeric>
-#include <set>
-
 #include "./HH/HH-Filters.h"
 #include "./HH/HH-hasvariables.h"
 #include "./HH/HH-types.h"
@@ -43,7 +39,7 @@ VariableCreation::VariableCreation(const VariableCreationParameters& p, const Ve
   // Data dimensions and max dimensions
   for (const auto& d : dims) dims_.push_back(gsl::narrow<hsize_t>(d));
   // Deliberately not an equality comparison. max_dims may be unspecified.
-  if (dims.size() < max_dims.size()) throw;  // TODO(ryan): Separate PR for ioda Exceptions class.
+  if (dims.size() < max_dims.size()) throw;  
   for (size_t i = 0; i < max_dims.size(); ++i) {
     if (max_dims[i] == ioda::Unlimited)
       max_dims_.push_back(H5S_UNLIMITED);

@@ -8,23 +8,19 @@
 #pragma once
 
 #include <fstream>
-#include <map>
 #include <memory>
 #include <string>
 #include <typeinfo>
-#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
-#include "ioda/Misc/Dimensions.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Variables/Variable.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/missingValues.h"
 
 namespace osdf {

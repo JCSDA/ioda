@@ -8,10 +8,8 @@
 #include "ioda/ioPool/ReaderPrepInputFiles.h"
 
 #include "ioda/distribution/Distribution.h"
-#include "ioda/Exception.h"
 #include "ioda/ioPool/ReaderPoolFactory.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
-
 #include "oops/util/Logger.h"
 
 namespace ioda {
@@ -29,7 +27,7 @@ ReaderPrepInputFiles::ReaderPrepInputFiles(
         const std::string errMsg = std::string("ReaderPrepInputFiles: Must specify the ") +
             std::string("'obs space.io pool.file preparation' section ") +
             std::string("in the YAML configuration.");
-        throw Exception(errMsg, ioda_Here());
+        throw eckit::Exception(errMsg, Here());
     }
 }
 

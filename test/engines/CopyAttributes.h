@@ -20,7 +20,6 @@
 #include "ioda/Copying.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 #include "oops/runs/Test.h"
@@ -96,7 +95,7 @@ void setAndCheckAttributes(ioda::Has_Attributes & srcAttrContainer,
     } else {
       std::string errorMsg = std::string("\nUnrecognized attribute type: ") + attrType +
           std::string("\nMust use one of 'int', 'float', 'double' or 'string'");
-      throw ioda::Exception(errorMsg.c_str(), ioda_Here());
+      throw eckit::Exception(errorMsg.c_str(), Here());
     }
   }
 
@@ -198,7 +197,7 @@ void testVariableAttributes() {
     } else {
       std::string errorMsg = std::string("\nUnrecognized variable type: ") + varType +
           std::string("\nMust use one of 'int', 'float', 'double' or 'string'");
-      throw ioda::Exception(errorMsg.c_str(), ioda_Here());
+      throw eckit::Exception(errorMsg.c_str(), Here());
     }
 
     setAndCheckAttributes(srcVar.atts, destVar.atts, attrConf, Tol);

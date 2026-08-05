@@ -19,11 +19,8 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <exception>
 #include <iostream>
-#include <vector>
 
-#include "ioda/Exception.h"
 #include "ioda/MathOps.h"
 #include "ioda/Units.h"
 

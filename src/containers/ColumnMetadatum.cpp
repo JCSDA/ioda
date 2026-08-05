@@ -9,7 +9,6 @@
 
 #include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameUtils.h"
-#include "eckit/exception/Exceptions.h"
 #include "oops/util/missingValues.h"
 
 osdf::ColumnMetadatum::ColumnMetadatum(const std::string& name, const consts::eDataTypes type,

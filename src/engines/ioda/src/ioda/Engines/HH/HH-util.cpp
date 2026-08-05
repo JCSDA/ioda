@@ -25,7 +25,6 @@
 #include "./HH/HH-attributes.h"
 #include "./HH/HH-variables.h"
 #include "ioda/Misc/compat/std/source_location_compat.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace detail {
@@ -56,12 +55,12 @@ herr_t iterate_find_attr(hid_t loc_id, const char* name, void* op_data) {
 
 H5_index_t getAttrCreationOrder(hid_t obj, H5O_type_t objType) {
   if (objType != H5O_TYPE_DATASET && objType != H5O_TYPE_GROUP)
-    throw Exception("Invalid object type", ioda_Here());
+    throw eckit::Exception("Invalid object type", Here());
   // Apparently files do not have a creation plist. They show up as groups,
   // so we catch this and return H5_INDEX_NAME.
   if (objType == H5O_TYPE_GROUP) {
     H5I_type_t typ = H5Iget_type(obj); // NOLINT
-    if (typ < 0) throw Exception("Error determining object type", ioda_Here());
+    if (typ < 0) throw eckit::Exception("Error determining object type", Here());
     if (typ == H5I_FILE) return H5_INDEX_NAME; // NOLINT
   }
   
@@ -70,9 +69,9 @@ H5_index_t getAttrCreationOrder(hid_t obj, H5O_type_t objType) {
     = (objType == H5O_TYPE_DATASET) ? H5Dget_create_plist(obj) : H5Gget_create_plist(obj);
   HH_hid_t createpl(hcreatepl, Handles::Closers::CloseHDF5PropertyList::CloseP);
 
-  if (createpl() < 0) throw Exception("Cannot get creation property list", ioda_Here());
+  if (createpl() < 0) throw eckit::Exception("Cannot get creation property list", Here());
   if (0 > H5Pget_attr_creation_order(createpl(), &crt_order_flags))
-    throw Exception("Cannot get attribute creation order", ioda_Here());
+    throw eckit::Exception("Cannot get attribute creation order", Here());
   // We only care if this property is tracked. Indexing is performed on the fly
   // if it is not available (and incurs a read penalty), but this has performance of
   // at least ordering by name.
@@ -113,7 +112,7 @@ HH_Attribute iterativeAttributeSearchAndOpen(hid_t baseObject, H5O_type_t objTyp
     // Open attribute and read data
     hid_t found_att = H5Aopen_by_idx(baseObject, ".", iteration_type, H5_ITER_NATIVE, idx,
                                      H5P_DEFAULT, H5P_DEFAULT);
-    if (found_att < 0) throw Exception("Cannot open attribute by index", ioda_Here());
+    if (found_att < 0) throw eckit::Exception("Cannot open attribute by index", Here());
     aDims_HH
       = HH_Attribute(HH_hid_t(std::move(found_att), Handles::Closers::CloseHDF5Attribute::CloseP));
   } else {
@@ -134,11 +133,11 @@ void attr_update_dimension_list(HH_Variable* var, const std::vector<std::vector<
   // The attribute's dataspace
   HH_hid_t sid{-1, Handles::Closers::CloseHDF5Dataspace::CloseP};
   if ((sid = H5Screate_simple(1, hdims, NULL)).get() < 0)
-    throw Exception("Cannot create simple dataspace.", ioda_Here());
+    throw eckit::Exception("Cannot create simple dataspace.", Here());
   // The attribute's datatype
   HH_hid_t tid{-1, Handles::Closers::CloseHDF5Datatype::CloseP};
   if ((tid = H5Tvlen_create(H5T_STD_REF_OBJ)).get() < 0)
-    throw Exception("Cannot create variable length array type.", ioda_Here());
+    throw eckit::Exception("Cannot create variable length array type.", Here());
   // Check if the DIMENSION_LIST attribute exists.
   HH_Attribute aDimList = iterativeAttributeSearchAndOpen(var_id, H5O_TYPE_DATASET, DIMENSION_LIST);
   // If the DIMENSION_LIST attribute does not exist, create it.
@@ -148,7 +147,7 @@ void attr_update_dimension_list(HH_Variable* var, const std::vector<std::vector<
   if (!aDimList.get().isValid()) {
     // Create
     hid_t aid = H5Acreate(var_id, DIMENSION_LIST, tid(), sid(), H5P_DEFAULT, H5P_DEFAULT);
-    if (aid < 0) throw Exception("Cannot create attribute", ioda_Here());
+    if (aid < 0) throw eckit::Exception("Cannot create attribute", Here());
 
     aDimList = HH_Attribute(HH_hid_t(aid, Handles::Closers::CloseHDF5Attribute::CloseP));
     // Initialize dimlist_in_data to nulls. Used in merge operation later.
@@ -159,7 +158,7 @@ void attr_update_dimension_list(HH_Variable* var, const std::vector<std::vector<
   } else {
     // Read
     if (H5Aread(aDimList.get()(), tid(), static_cast<void*>(dimlist_in_data.data())) < 0)
-      throw Exception("Cannot read attribute", ioda_Here());
+      throw eckit::Exception("Cannot read attribute", Here());
   }
   
   // Allocate a new list that combines any previous DIMENSION_LIST with ref_axis.
@@ -201,7 +200,7 @@ void attr_update_dimension_list(HH_Variable* var, const std::vector<std::vector<
     outdims.resize(0);
   }
 
-  if (write_success < 0) throw Exception("Failed to write DIMENSION_LIST.", ioda_Here());
+  if (write_success < 0) throw eckit::Exception("Failed to write DIMENSION_LIST.", Here());
 }
 
 HH_hid_t attr_reference_list_type() {
@@ -209,11 +208,11 @@ HH_hid_t attr_reference_list_type() {
   if (!tid.isValid()) {
     // The attribute's datatype
     if ((tid = H5Tcreate(H5T_COMPOUND, sizeof(ds_list_t))).get() < 0)
-      throw Exception("Cannot create compound datatype.", ioda_Here());
+      throw eckit::Exception("Cannot create compound datatype.", Here());
     if (H5Tinsert(tid(), "dataset", HOFFSET(ds_list_t, ref), H5T_STD_REF_OBJ) < 0)
-      throw Exception("Cannot create compound datatype.", ioda_Here());
+      throw eckit::Exception("Cannot create compound datatype.", Here());
     if (H5Tinsert(tid(), "dimension", HOFFSET(ds_list_t, dim_idx), H5T_NATIVE_INT) < 0)
-      throw Exception("Cannot create compound datatype.", ioda_Here());
+      throw eckit::Exception("Cannot create compound datatype.", Here());
   }
   return tid;
 }
@@ -225,7 +224,7 @@ HH_hid_t attr_reference_list_space(hsize_t numrefs) {
   const hsize_t hdims[1] = {numrefs};
   // The attribute's dataspace
   if ((sid = H5Screate_simple(1, hdims, NULL)).get() < 0)
-    throw Exception("Cannot create simple dataspace.", ioda_Here());
+    throw eckit::Exception("Cannot create simple dataspace.", Here());
   return sid;
 }
 
@@ -243,7 +242,7 @@ void attr_update_reference_list(HH_Variable* scale, const std::vector<ds_list_t>
   if (aDimListOld.get().isValid()) {
     oldrefs.resize(gsl::narrow<size_t>(aDimListOld.getDimensions().numElements));
     if (H5Aread(aDimListOld.get()(), type(), oldrefs.data()) < 0)
-      throw Exception("Cannot read REFERENCE_LIST attribute.", ioda_Here());
+      throw eckit::Exception("Cannot read REFERENCE_LIST attribute.", Here());
     // Release the object handle and delete the attribute.
     aDimListOld = HH_Attribute();
     scale->atts.remove(REFERENCE_LIST);
@@ -256,16 +255,16 @@ void attr_update_reference_list(HH_Variable* scale, const std::vector<ds_list_t>
   // Create the new REFERENCE_LIST attribute.
   HH_hid_t sid = attr_reference_list_space(gsl::narrow<hsize_t>(refs.size()));
   hid_t aid    = H5Acreate(scale_id, REFERENCE_LIST, type(), sid(), H5P_DEFAULT, H5P_DEFAULT);
-  if (aid < 0) throw Exception("Cannot create new REFERENCE_LIST attribute.", ioda_Here());
+  if (aid < 0) throw eckit::Exception("Cannot create new REFERENCE_LIST attribute.", Here());
   HH_Attribute newAtt(HH_hid_t(aid, Handles::Closers::CloseHDF5Attribute::CloseP));
   if (H5Awrite(newAtt.get()(), type(), static_cast<void*>(refs.data())) < 0)
-    throw Exception("Cannot write REFERENCE_LIST attribute.", ioda_Here());
+    throw eckit::Exception("Cannot write REFERENCE_LIST attribute.", Here());
 }
 
 
 /// @brief Data passed around when iterating over the HDF5 error stack.
 struct NestedExceptions {
-  std::list<std::shared_ptr<Exception>> exceptions;
+  std::list<std::shared_ptr<eckit::Exception>> exceptions;
 };
 
 /// @brief Iteration function for the HDF5 error stack.
@@ -277,7 +276,7 @@ herr_t hdf5_h5e_walk2(unsigned /*n*/, const H5E_error2_t *err_desc, void *client
     detail::compat::source_location::source_location
       hdf_here(err_desc->line, 0, err_desc->file_name, err_desc->func_name);
     err_data->exceptions.emplace_back(
-      std::make_shared<Exception>(err_desc->desc, hdf_here));
+      std::make_shared<eckit::Exception>(err_desc->desc, Here()));
 
     return 0;
   } catch (...) {
@@ -286,8 +285,8 @@ herr_t hdf5_h5e_walk2(unsigned /*n*/, const H5E_error2_t *err_desc, void *client
 }
 
 void hdf5_error_stack_recursively_reconstruct(
-  std::list<std::shared_ptr<Exception>> &exceptions) {
-  std::shared_ptr<Exception> cur;
+  std::list<std::shared_ptr<eckit::Exception>> &exceptions) {
+  std::shared_ptr<eckit::Exception> cur;
   bool throwing_cur = false;
   try {
     if (!exceptions.size()) return;  // Just in case.
@@ -308,26 +307,26 @@ void hdf5_error_stack_recursively_reconstruct(
 void hdf5_error_check() {
   try {
     ssize_t num_errs = H5Eget_num(H5E_DEFAULT);
-    if (num_errs < 0) throw Exception("Cannot read HDF5 error stack", ioda_Here());
+    if (num_errs < 0) throw eckit::Exception("Cannot read HDF5 error stack", Here());
     if (num_errs == 0) return;
 
     NestedExceptions err_data;
 
     herr_t res = H5Ewalk2(H5E_DEFAULT, H5E_WALK_DOWNWARD, hdf5_h5e_walk2, &err_data);
-    if (res < 0) throw Exception("Cannot read HDF5 error stack", ioda_Here());
+    if (res < 0) throw eckit::Exception("Cannot read HDF5 error stack", Here());
 
     hdf5_error_stack_recursively_reconstruct(err_data.exceptions);
   } catch (...) {
-    std::throw_with_nested(Exception("An HDF5 error was encountered.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An HDF5 error was encountered.", Here()));
   }
 }
 
 std::string getNameFromIdentifier(hid_t obj_id) {
   ssize_t sz = H5Iget_name(obj_id, nullptr, 0);
-  if (sz < 0) throw Exception("Cannot get object name", ioda_Here());
+  if (sz < 0) throw eckit::Exception("Cannot get object name", Here());
   std::vector<char> data(sz + 1, 0);
   ssize_t ret = H5Iget_name(obj_id, data.data(), data.size());
-  if (ret < 0) throw Exception("Cannot get object name", ioda_Here());
+  if (ret < 0) throw eckit::Exception("Cannot get object name", Here());
   return std::string(data.data());
 }
 
@@ -338,9 +337,13 @@ std::vector<char> convertVariableLengthToFixedLength(
   // frontend / backend interface. Assuming that all POD data types have the same pointer size.
   // This is a reasonable assumption.
   const size_t ptrSize = sizeof(char *);
-  if (in_buf.size() % ptrSize) throw Exception("In-memory variable-length buffer has "
-    "the wrong number of elements. Should be a multiple of the size of a pointer.",
-    ioda_Here()).add("in_buf.size()", in_buf.size()).add("ptrSize", ptrSize);
+  if (in_buf.size() % ptrSize) {
+    std::string msg
+      = "In-memory variable-length buffer has "
+        "the wrong number of elements. Should be a multiple of the size of a pointer. Buffer size: "
+        + std::to_string(in_buf.size()) + " and pointer size " + std::to_string(ptrSize);
+    throw eckit::Exception(msg, Here());
+  }
 
   const size_t numObjs = in_buf.size() / ptrSize;
   gsl::span<const char* const> data_as_ptrs(
@@ -359,9 +362,14 @@ std::vector<char> convertVariableLengthToFixedLength(
 Marshalled_Data<char*, char*, true> convertFixedLengthToVariableLength(
   gsl::span<const char> in_buf, size_t unitLength)
 {
-  if (in_buf.size() % unitLength) throw Exception("In-memory variable-length buffer has "
-    "the wrong number of elements. Should be a multiple of unitLength.",
-    ioda_Here()).add("in_buf.size()", in_buf.size()).add("unitLength", unitLength);
+  if (in_buf.size() % unitLength) {
+    std::string msg
+      = "In-memory variable-length buffer has "
+        "the wrong number of elements: "
+        + std::to_string(in_buf.size())
+        + ". Should be a multiple of unitLength: " + std::to_string(unitLength);
+    throw eckit::Exception(msg, Here());
+  } 
   const size_t numObjs = in_buf.size() / unitLength;
   
   // Construct the output buffer

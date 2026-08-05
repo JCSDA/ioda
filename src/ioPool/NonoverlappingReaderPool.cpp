@@ -12,7 +12,6 @@
 #include <numeric>
 #include <optional>  // NOLINT(build/include_order): linter mis-identifies C++ header as C
 #include <sstream>
-#include <utility>
 
 #include "eckit/config/YAMLConfiguration.h"
 
@@ -22,6 +21,7 @@
 #include "ioda/ioPool/ReaderPoolUtils.h"
 
 #include "oops/util/Logger.h"
+#include "oops/mpi/mpi.h"
 
 namespace ioda {
 namespace IoPool {

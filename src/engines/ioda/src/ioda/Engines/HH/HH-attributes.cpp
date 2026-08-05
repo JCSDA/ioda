@@ -13,10 +13,10 @@
  */
 
 #include "./HH/HH-attributes.h"
+#include <string>
 
 #include "./HH/HH-types.h"
 #include "./HH/HH-util.h"
-#include "ioda/Exception.h"
 #include "ioda/Misc/Dimensions.h"
 
 namespace ioda {
@@ -35,17 +35,17 @@ HH_hid_t HH_Attribute::get() const { return attr_; }
 
 bool HH_Attribute::isAttribute() const {
   H5I_type_t typ = H5Iget_type(attr_());
-  if (typ == H5I_BADID) throw Exception("H5Iget_type failed.", ioda_Here());
+  if (typ == H5I_BADID) throw eckit::Exception("H5Iget_type failed.", Here());
   return (typ == H5I_ATTR);
 }
 
 std::string HH_Attribute::getName() const {
   ssize_t sz = H5Aget_name(attr_(), 0, nullptr);
-  if (sz < 0) throw Exception("H5Aget_name failed.", ioda_Here());
+  if (sz < 0) throw eckit::Exception("H5Aget_name failed.", Here());
   auto s = gsl::narrow<size_t>(sz);
   std::vector<char> v(s + 1, '\0');
   sz = H5Aget_name(attr_(), v.size(), v.data());
-  if (sz < 0) throw Exception("H5Aget_name failed.", ioda_Here());
+  if (sz < 0) throw eckit::Exception("H5Aget_name failed.", Here());
   return std::string(v.data());
 }
 
@@ -68,16 +68,16 @@ void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType
     htri_t isMemStrVar  = H5Tis_variable_str(in_memory_dataType());
     htri_t isAttrStrVar = H5Tis_variable_str(attrType());
     if (isMemStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on memory data type.", Here());
     if (isAttrStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on backend attribute data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on backend attribute data type.", Here());
 
     if ((isMemStrVar && isAttrStrVar) || (!isMemStrVar && !isAttrStrVar)) {
       // No need to change anything. Pass through.
       // NOTE: Using attrType instead of in_memory_dataType! This is because strings can have
       //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
       if (H5Awrite(attr_(), attrType(), data.data()) < 0)
-        throw Exception("H5Awrite failed.", ioda_Here());
+        throw eckit::Exception("H5Awrite failed.", Here());
     } else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in attribute.
       size_t strLen  = H5Tget_size(attrType());
@@ -85,7 +85,7 @@ void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType
       std::vector<char> out_buf = convertVariableLengthToFixedLength(data, strLen, false);
 
       if (H5Awrite(attr_(), attrType(), out_buf.data()) < 0)
-        throw Exception("H5Awrite failed.", ioda_Here());
+        throw eckit::Exception("H5Awrite failed.", Here());
     } else if (isAttrStrVar) {
       // Fixed-length in memory. Variable-length in attribute.
 
@@ -95,12 +95,12 @@ void HH_Attribute::write(gsl::span<const char> data, HH_hid_t in_memory_dataType
       char* converted_data = reinterpret_cast<char*>(converted_data_holder.DataPointers.data());
 
       if (H5Awrite(attr_(), attrType(), converted_data) < 0)
-        throw Exception("H5Awrite failed.", ioda_Here());
+        throw eckit::Exception("H5Awrite failed.", Here());
     }
   } else {
     // Pass-through case.
     if (H5Awrite(attr_(), in_memory_dataType(), data.data()) < 0)
-      throw Exception("H5Awrite failed.", ioda_Here());
+      throw eckit::Exception("H5Awrite failed.", Here());
   }
 }
 
@@ -122,16 +122,16 @@ void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const
     htri_t isMemStrVar  = H5Tis_variable_str(in_memory_dataType());
     htri_t isAttrStrVar = H5Tis_variable_str(attrType());
     if (isMemStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on memory data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on memory data type.", Here());
     if (isAttrStrVar < 0)
-      throw Exception("H5Tis_variable_str failed on backend attribute data type.", ioda_Here());
+      throw eckit::Exception("H5Tis_variable_str failed on backend attribute data type.", Here());
 
     if ((isMemStrVar && isAttrStrVar) || (!isMemStrVar && !isAttrStrVar)) {
       // No need to change anything. Pass through.
       // NOTE: Using attrType instead of in_memory_dataType! This is because strings can have
       //   different character sets (ASCII vs UTF-8), which is entirely unhandled in IODA.
       herr_t ret = H5Aread(attr_(), attrType(), static_cast<void*>(data.data()));
-      if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+      if (ret < 0) throw eckit::Exception("H5Aread failed.", Here());
     } else if (isMemStrVar) {
       // Variable-length in memory. Fixed-length in attribute.
       size_t strLen  = H5Tget_size(attrType());
@@ -139,7 +139,7 @@ void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const
       std::vector<char> in_buf(numStrs * strLen);
 
       if (H5Aread(attr_(), attrType(), in_buf.data()) < 0)
-        throw Exception("H5Aread failed.", ioda_Here());
+        throw eckit::Exception("H5Aread failed.", Here());
 
       // This block of code is a bit of a kludge in that we are switching from a packed
       // structure of strings to a packed structure of pointers of strings.
@@ -166,7 +166,7 @@ void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const
       std::vector<char> in_buf(numStrs * sizeof(char *));
 
       if (H5Aread(attr_(), attrType(), in_buf.data()) < 0)
-        throw Exception("H5Aread failed.", ioda_Here());
+        throw eckit::Exception("H5Aread failed.", Here());
 
       // We could avoid using the temporary out_buf and write
       // directly to "data", but there is no strong need to do this.
@@ -174,16 +174,17 @@ void HH_Attribute::read(gsl::span<char> data, HH_hid_t in_memory_dataType) const
       // 2. We are reading an attribute, which by definition is small.
       std::vector<char> out_buf
         = convertVariableLengthToFixedLength(in_buf, strLen, false);
-      if (out_buf.size() != data.size())
-        throw Exception("Unexpected sizes.", ioda_Here())
-          .add("data.size()", data.size())
-          .add("out_buf.size()", out_buf.size());
+      if (out_buf.size() != data.size()) {
+        std::string msg = "Unexpected sizes: data.size()=" + std::to_string(data.size())
+                          + " and out_buf.size()=" + std::to_string(out_buf.size());
+        throw eckit::Exception(msg, Here());
+      }
       std::copy(out_buf.begin(), out_buf.end(), data.begin());
     }
   } else {
     // Pass-through case
     herr_t ret = H5Aread(attr_(), in_memory_dataType(), static_cast<void*>(data.data()));
-    if (ret < 0) throw Exception("H5Aread failed.", ioda_Here());
+    if (ret < 0) throw eckit::Exception("H5Aread failed.", Here());
   }
 }
 
@@ -198,7 +199,7 @@ Attribute HH_Attribute::read(gsl::span<char> data, const Type& in_memory_dataTyp
 bool HH_Attribute::isA(HH_hid_t ttype) const {
   HH_hid_t otype = internalType();
   auto ret       = H5Tequal(ttype(), otype());
-  if (ret < 0) throw Exception("H5Tequal failed.", ioda_Here());
+  if (ret < 0) throw eckit::Exception("H5Tequal failed.", Here());
   return (ret > 0) ? true : false;
 }
 
@@ -221,7 +222,7 @@ bool HH_Attribute::isA(Type lhs) const {
 
     return isA(typeBackend->handle);
   } catch (const std::bad_cast&) {
-    std::throw_with_nested(Exception("lhs is not an HH_Type.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("lhs is not an HH_Type.", Here()));
   }
 }
 
@@ -241,13 +242,13 @@ Dimensions HH_Attribute::getDimensions() const {
   Dimensions ret;
 
   std::vector<hsize_t> dims;
-  if (H5Sis_simple(space()()) < 0) throw Exception("H5Sis_simple failed.", ioda_Here());
+  if (H5Sis_simple(space()()) < 0) throw eckit::Exception("H5Sis_simple failed.", Here());
   hssize_t numPoints = H5Sget_simple_extent_npoints(space()());
   int dimensionality = H5Sget_simple_extent_ndims(space()());
-  if (dimensionality < 0) throw Exception("H5Sget_simple_extent_ndims failed.", ioda_Here());
+  if (dimensionality < 0) throw eckit::Exception("H5Sget_simple_extent_ndims failed.", Here());
   dims.resize(dimensionality);
   if (H5Sget_simple_extent_dims(space()(), dims.data(), nullptr) < 0)
-    throw Exception("H5Sget_simple_extent_dims failed.", ioda_Here());
+    throw eckit::Exception("H5Sget_simple_extent_dims failed.", Here());
 
   ret.numElements    = gsl::narrow<decltype(Dimensions::numElements)>(numPoints);
   ret.dimensionality = gsl::narrow<decltype(Dimensions::dimensionality)>(dimensionality);

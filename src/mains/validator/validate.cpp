@@ -24,16 +24,13 @@
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/log/Colour.h"
 #include "eckit/runtime/Main.h"
+#include "eckit/filesystem/PathName.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Misc/StringFuncs.h"
 #include "ioda/Units.h"
 #include "ioda/Variables/VarUtils.h"
-#include "oops/mpi/mpi.h"
-#include "oops/runs/Application.h"
-#include "oops/util/LibOOPS.h"
 
 class Validator : public eckit::Main {
   Results res_;
@@ -44,7 +41,6 @@ class Validator : public eckit::Main {
   explicit Validator(int argc, char **argv) : eckit::Main(argc, argv) {}
 
   int execute() {
-    using ioda::Exception;
     using std::cerr;
     using std::cout;
     using std::endl;
@@ -80,7 +76,7 @@ class Validator : public eckit::Main {
           yamlfilename = std::string(argv(3));
           datafilename = std::string(argv(4));
       } else {
-          throw Exception("Improper command usage", ioda_Here());
+          throw eckit::Exception("Improper command usage", Here());
       }
 
       cout << "Reading YAML from " << yamlfilename << endl;

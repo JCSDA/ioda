@@ -14,9 +14,6 @@
  * \brief Interfaces for ioda::WriterPoolBase and related classes.
  */
 
-#include <map>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include "eckit/mpi/Comm.h"
@@ -28,11 +25,7 @@
 #include "ioda/ioPool/IoPoolBase.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 
-#include "oops/util/DateTime.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
-#include "oops/util/Printable.h"
 
 namespace ioda {
 namespace IoPool {

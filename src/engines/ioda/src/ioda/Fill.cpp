@@ -9,8 +9,6 @@
 
 #include "ioda/Variables/Fill.h"
 
-#include "ioda/Group.h"
-
 namespace ioda {
 namespace detail {
 FillValueData_t::FillValueUnion_t FillValueData_t::finalize() const {

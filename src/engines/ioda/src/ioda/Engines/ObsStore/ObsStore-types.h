@@ -11,7 +11,6 @@
  * \brief Functions for translating ioda::Types to ObsStore Types
  */
 #pragma once
-#include <utility>
 
 #include "./Type.hpp"
 #include "ioda/Types/Type.h"

@@ -5,11 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ioda/Exception.h"
 #include "ioda/Misc/StringFuncs.h"
 
 #include <string>
-#include <vector>
 
 #include "eckit/testing/Test.h"
 

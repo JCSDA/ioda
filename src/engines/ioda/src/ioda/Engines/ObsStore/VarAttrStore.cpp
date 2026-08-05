@@ -13,10 +13,9 @@
 
 #include "./VarAttrStore.hpp"
 
-#include <exception>
-
 #include "./Type.hpp"
-#include "ioda/Exception.h"
+
+#include "eckit/exception/Exceptions.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -77,8 +76,8 @@ VarAttrStore_Base *createVarAttrStore(const std::shared_ptr<Type> & dtype) {
   } else if (baseType == ObsTypes::STRING) {
     newStore = new VarAttrStore<std::string>(numElements);
   } else
-    throw Exception("Unrecognized data type encountered during "
-      "Attribute object construnction", ioda_Here());
+    throw eckit::Exception("Unrecognized data type encountered during "
+      "Attribute object construnction", Here());
 
   return newStore;
 }

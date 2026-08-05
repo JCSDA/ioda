@@ -9,10 +9,8 @@
 #include <boost/optional.hpp>
 
 #include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
 
 #include "ioda/Engines/ReadBufrFile.h"
-#include "ioda/Exception.h"
 
 namespace ioda {
 namespace Engines {
@@ -82,11 +80,11 @@ namespace Engines {
         } else if (params.missingFileAction.value() == "error") {
             std::string ErrMsg = std::string("Input file is not readable, ") +
                 std::string("will stop execution. File: ") + fileName_ + std::string("\n");
-            throw Exception(ErrMsg, ioda_Here());
+            throw eckit::Exception(ErrMsg, Here());
         } else {
             std::string ErrMsg = std::string("Unrecognized input file missing action: ") +
                 params.missingFileAction.value();
-            throw Exception(ErrMsg, ioda_Here());
+            throw eckit::Exception(ErrMsg, Here());
         }
   
     }

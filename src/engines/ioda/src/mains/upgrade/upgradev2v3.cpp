@@ -10,10 +10,8 @@
 * Call program as: ioda-upgrade.x YAML_settings_file [input files] ... output_directory
 */
 
-#include <algorithm>
 #include <cctype>
 #include <cstdlib>
-#include <exception>
 #include <iostream>
 #include <numeric>
 #include <set>
@@ -22,15 +20,13 @@
 #include <vector>
 
 #include "eckit/config/YAMLConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "eckit/filesystem/PathName.h"
 #include "eckit/runtime/Main.h"
-#include "../../../../../mains/validator/AttributeChecks.h"
-#include "../../../../../mains/validator/Log.h"
 #include "../../../../../mains/validator/Params.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/Misc/DimensionScales.h"

@@ -17,7 +17,7 @@
 
 #include "./Attributes.hpp"
 #include "../HH/HH/HH-util.h"  // Error catching in H5T_convert
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 
 
 namespace ioda {
@@ -138,7 +138,7 @@ std::shared_ptr<Attribute> Has_Attributes::create(const std::string& name,
 std::shared_ptr<Attribute> Has_Attributes::open(const std::string& name) const {
   auto iattr = attributes_.find(name);
   if (iattr == attributes_.end())
-    throw Exception("Attribute not found.", ioda_Here()).add("name", name);
+    throw eckit::Exception("Attribute not found: " + name, Here());
 
   return iattr->second;
 }

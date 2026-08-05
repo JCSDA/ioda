@@ -14,7 +14,8 @@
 #include "gsl/gsl-lite.hpp"
 
 #include "./Selection.hpp"
-#include "ioda/Exception.h"
+#include <string>
+#include "eckit/exception/Exceptions.h"
 
 namespace ioda {
 namespace ObsStore {
@@ -145,11 +146,11 @@ std::size_t Selection::next_lin_indx() {
   }
 
   // Make sure lin_index_ is in bounds.
-  if (lin_index > max_index_)
-    throw Exception("Next linear index is out of bounds.", ioda_Here())
-      .add("  Next linear index: ", lin_index)
-      .add("  Maximum allowed index: ", max_index_);
-
+  if (lin_index > max_index_) {
+    std::string msg = "Next linear index " + std::to_string(lin_index)
+                      + " is out of bounds. Max index is " + std::to_string(max_index_);
+    throw eckit::Exception(msg, Here());
+  }
   return lin_index;
 }
 

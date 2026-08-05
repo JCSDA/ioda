@@ -14,15 +14,12 @@
  */
 
 #include <gsl/gsl-lite.hpp>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "ioda/Attributes/Attribute.h"
+
 #include "ioda/Attributes/Has_Attributes.h"
-#include "ioda/Misc/Dimensions.h"
-#include "ioda/Types/Type.h"
 #include "ioda/defs.h"
 
 namespace ioda {

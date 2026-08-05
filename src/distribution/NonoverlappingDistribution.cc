@@ -9,12 +9,9 @@
 
 #include <algorithm>
 #include <iostream>
-#include <numeric>
-#include <set>
 
 #include <boost/make_unique.hpp>
 
-#include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/NonoverlappingDistributionAccumulator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"

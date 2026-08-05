@@ -16,7 +16,6 @@
  */
 
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,7 +25,6 @@
 #include "ioda/Engines/Capabilities.h"
 #include "ioda/Engines/HH.h"
 #include "ioda/Group.h"
-#include "ioda/Variables/Has_Variables.h"
 #include "ioda/defs.h"
 
 namespace ioda {

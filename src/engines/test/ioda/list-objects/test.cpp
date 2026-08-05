@@ -7,11 +7,8 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <cstdlib>
-#include <iostream>
-#include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 // These tests really need a better check system.
@@ -41,18 +38,18 @@ void test_group_backend_engine(ioda::Group g) {
 
   // Can we list groups?
   auto g_list = g.list();
-  if (g_list.size() != 3) throw ioda::Exception(ioda_Here());
+  if (g_list.size() != 3) throw eckit::Exception(Here());
   // Can we list another way?
   auto g_list2 = g.listObjects();
-  if (g_list2.empty()) throw ioda::Exception(ioda_Here());
+  if (g_list2.empty()) throw eckit::Exception(Here());
 
   // Can we list groups and variables recursively?
   auto g_list3 = g.listObjects(ioda::ObjectType::Ignored, true);
-  if (g_list3.empty()) throw ioda::Exception(ioda_Here());
+  if (g_list3.empty()) throw eckit::Exception(Here());
 
   // Can we list variables recursively (templated form)?
   auto g_list4 = g.listObjects<ioda::ObjectType::Variable>(true);
-  if (g_list4.empty()) throw ioda::Exception(ioda_Here());
+  if (g_list4.empty()) throw eckit::Exception(Here());
 }
 
 int main(int argc, char** argv) {
@@ -64,7 +61,6 @@ int main(int argc, char** argv) {
     test_group_backend_engine(f);
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;

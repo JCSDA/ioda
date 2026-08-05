@@ -9,11 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
-#include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/ReaderFactory.h"
 #include "ioda/Engines/WriterFactory.h"
 

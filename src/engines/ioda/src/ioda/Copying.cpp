@@ -7,16 +7,9 @@
 /// \file Copying.cpp
 /// \brief Generic copying facility
 
-#include <functional>
-#include <numeric>
-#include <unordered_set>
-
-#include "eckit/mpi/Comm.h"
-
 #include "ioda/Attributes/Attribute.h"
 #include "ioda/Attributes/AttrUtils.h"
 #include "ioda/Copying.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Variables/Has_Variables.h"
 #include "ioda/Variables/Variable.h"

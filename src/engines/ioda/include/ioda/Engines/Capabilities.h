@@ -11,7 +11,6 @@
  * \file Capabilities.h
  * \brief Structs that describe backend capabilities.
  */
-#include <string>
 
 #include "../defs.h"
 

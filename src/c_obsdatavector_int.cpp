@@ -6,6 +6,8 @@
  */
 #include "ioda/c_obsdatavector_int.hpp"
 
+#include "ioda/ObsDataVector.h"
+
 extern "C" {
 
 const int * obsdatavector_int_c_get_row_i(obsdatavector_int_t p, size_t i) {

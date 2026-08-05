@@ -31,10 +31,10 @@
 #include <chrono>
 #include <iomanip>  // std::put_time
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 #if __cplusplus < 202002L
@@ -151,15 +151,14 @@ int main(int argc, char** argv) {
     var.read<ioda::Types::Chrono_Time_Point_t>(read_times);
 
 
-    if (read_times.size() != times.size()) throw Exception("Read size mismatch.", ioda_Here());
+    if (read_times.size() != times.size()) throw eckit::Exception("Read size mismatch.", Here());
     for (size_t i=0; i < times.size(); ++i) {
       cout << "Written: " << times[i] << "    Read: " << read_times[i] << endl;
-      if (read_times[i] != times[i]) throw Exception("Read mismatch", ioda_Here()).add("index", i);
+      if (read_times[i] != times[i]) throw eckit::Exception("Read mismatch at index " + std::to_string(i), Here());
     }
 
     return 0;
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
 }

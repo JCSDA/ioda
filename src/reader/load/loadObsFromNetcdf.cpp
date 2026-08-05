@@ -12,7 +12,6 @@
 #include <cmath>
 #include <map>
 #include <numeric>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -28,7 +27,6 @@
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/ObsDataIoParameters.h"
 
-#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 

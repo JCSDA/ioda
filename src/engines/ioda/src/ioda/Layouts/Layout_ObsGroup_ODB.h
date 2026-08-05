@@ -8,7 +8,6 @@
 /// \file Layout_ObsGroup_ODB.h
 /// \brief Contains definitions for how ODB data are arranged in ioda internally.
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <utility>

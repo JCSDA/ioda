@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "ioda/Attributes/Attribute.h"
-#include "ioda/Exception.h"
+#include "eckit/exception/Exceptions.h"
 
 namespace ioda {
 
@@ -24,60 +24,60 @@ Attribute_Base<>::Attribute_Base(std::shared_ptr<Attribute_Backend> hnd_attr)
 template <>
 Type Attribute_Base<>::getType() const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->getType();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
 template <>
 Dimensions Attribute_Base<>::getDimensions() const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->getDimensions();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
 template <>
 bool Attribute_Base<>::isA(Type lhs) const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->isA(lhs);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
 template <>
 detail::Type_Provider* Attribute_Base<>::getTypeProvider() const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->getTypeProvider();
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
 template <>
 Attribute Attribute_Base<>::write(gsl::span<const char> data, const Type& in_memory_dataType) {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->write(data, in_memory_dataType);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 
 template <>
 Attribute Attribute_Base<>::read(gsl::span<char> data, const Type& in_memory_dataType) const {
   try {
-    if (backend_ == nullptr) throw Exception("Missing backend.", ioda_Here());
+    if (backend_ == nullptr) throw eckit::Exception("Missing backend.", Here());
     return backend_->read(data, in_memory_dataType);
   } catch (...) {
-    std::throw_with_nested(Exception("An exception occurred inside ioda.", ioda_Here()));
+    std::throw_with_nested(eckit::Exception("An exception occurred inside ioda.", Here()));
   }
 }
 

@@ -17,7 +17,6 @@
 #include "ioda/writer/save/saveObsToNetcdf.hpp"
 #include "ioda/writer/save/saveObsToOdb.hpp"
 
-#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
 namespace ioda {

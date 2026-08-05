@@ -18,25 +18,22 @@
 #include <set>
 #include <sstream>
 
-#include "gsl/gsl-lite.hpp"
-
+#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
-#include "eckit/config/YAMLConfiguration.h"
-
+#include "gsl/gsl-lite.hpp"
 #include "ioda/Attributes/AttrUtils.h"
-#include "ioda/defs.h"
-#include "ioda/distribution/Distribution.h"
-#include "ioda/core/IodaUtils.h"
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/WriterFactory.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 #include "ioda/Variables/Fill.h"
-#include "ioda/Variables/Variable.h"
 #include "ioda/Variables/VarUtils.h"
-
+#include "ioda/Variables/Variable.h"
+#include "ioda/core/IodaUtils.h"
+#include "ioda/defs.h"
+#include "ioda/distribution/Distribution.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -298,8 +295,8 @@ void convertEpochStringToDtime(const std::string & epochString, util::DateTime &
      std::string epochUnits = epochString.substr(0, pos);
      std::string epochDtimeString = epochString.substr(pos + 1);
      if (epochUnits != "seconds since") {
-         throw Exception("Date time epoch style units must start with 'seconds since'",
-                         ioda_Here());
+         throw eckit::Exception("Date time epoch style units must start with 'seconds since'",
+                         Here());
      }
      epochDtime = util::DateTime(epochDtimeString);
 }
@@ -323,7 +320,7 @@ void checkForRequiredVars(const ioda::Group & srcGroup, bool emptyFile) {
           std::string("    MetaData/dateTime\n") +
           std::string("    MetaData/latitude\n") +
           std::string("    MetaData/longitude\n");
-      throw Exception(errorMsg.c_str(), ioda_Here());
+      throw eckit::Exception(errorMsg.c_str(), Here());
     }
 }
 
@@ -502,7 +499,7 @@ void buildObsGroupingKeys(const ioda::Group & srcGroup,
                     std::string("ERROR: buildObsGroupingKeys: ") +
                     std::string("obs grouping variable (") + obsGroupVarName +
                     std::string(") must have 'Location' as first dimension");
-                Exception(ErrMsg.c_str(), ioda_Here());
+                eckit::Exception(ErrMsg.c_str(), Here());
             }
 
             VarUtils::forAnySupportedVariableType(
@@ -718,7 +715,7 @@ void emulateMpiDistribution(const std::string & distName, const bool emptyFile,
         const std::string errMsg =
             std::string("emulateMpiDistribution: Unrecognized distribution name: ") +
             distName + std::string("\n    Supported distributions: RoundRobin");
-        throw Exception(errMsg, ioda_Here());
+        throw eckit::Exception(errMsg, Here());
     }
 
     // Expand the rankGrouping information into lists that describe the target
@@ -2124,7 +2121,7 @@ void unpackStringsFromCharArray(const std::vector<char> & strBuffer,
         const int offset = i * charArrayShape[1];
         const auto strEnd = std::find(strBuffer.begin() + offset, strBuffer.end(), '\0');
         if (strEnd == strBuffer.end()) {
-            throw Exception("End of string not found during MPI transfer", ioda_Here());
+            throw eckit::Exception("End of string not found during MPI transfer", Here());
         }
         strncpy(stringSpan[i], strBuffer.data() + offset, charArrayShape[1]);
     }

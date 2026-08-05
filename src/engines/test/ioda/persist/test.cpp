@@ -5,11 +5,10 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include <cmath>
-#include <iostream>
+#include <string>
 #include <vector>
 
 #include "ioda/Engines/EngineUtils.h"
-#include "ioda/Exception.h"
 #include "ioda/Group.h"
 
 // These tests really need a better check system.
@@ -26,9 +25,9 @@ void check_dimensions(const std::string& name, const ioda::Dimensions& dims,
     err_msg = name + std::string(": dimensionality not equal to expected value");
     exp_msg = std::string("  expected dimensionality");
     res_msg = std::string("  ") + name + std::string(": dimensionality");
-    throw ioda::Exception(err_msg.c_str(), ioda_Here())
-      .add(exp_msg, exp_dims.size())
-      .add(res_msg, dims.dimensionality);
+    std::string msg = err_msg + exp_msg + std::to_string(exp_dims.size()) + res_msg
+                      + std::to_string(dims.dimensionality);
+    throw eckit::Exception(msg, Here());
   }
 
   // Check dimension sizes
@@ -37,10 +36,11 @@ void check_dimensions(const std::string& name, const ioda::Dimensions& dims,
       err_msg =
         name + std::string(": dimension ") + std::to_string(i) + std::string(" not equal to expected value");
       exp_msg = std::string("  expected dimsCur[") + std::to_string(i) + std::string("]");
-      res_msg = std::string("  ") + name + std::string(": dimsCur[") + std::to_string(i) + std::string("]");
-      throw ioda::Exception(err_msg.c_str(), ioda_Here())
-        .add(exp_msg, exp_dims[i])
-        .add(res_msg, dims.dimsCur[i]);
+      res_msg = std::string("  ") + name + std::string(": dimsCur[") + std::to_string(i)
+                + std::string("]");
+      std::string msg = err_msg + exp_msg + std::to_string(exp_dims[i]) + res_msg
+                        + std::to_string(dims.dimsCur[i]);
+      throw eckit::Exception(msg, Here());
     }
   }
 }
@@ -56,9 +56,9 @@ void check_data(const std::string& name, const std::vector<double>& data,
     err_msg = name + std::string(": data size not equal to expected value");
     exp_msg = std::string("  expected size");
     res_msg = std::string("  ") + name + std::string(": size");
-    throw ioda::Exception(err_msg.c_str(), ioda_Here())
-      .add(exp_msg, exp_data.size())
-      .add(res_msg, data.size());
+    std::string msg
+      = err_msg + exp_msg + std::to_string(exp_data.size()) + res_msg + std::to_string(data.size());
+    throw eckit::Exception(err_msg, Here());
   }
 
   // Check data values
@@ -69,9 +69,9 @@ void check_data(const std::string& name, const std::vector<double>& data,
                 std::string(" not within tolerence (1e-3) of expected value");
       exp_msg = std::string("  expected data[") + std::to_string(i) + std::string("]");
       res_msg = std::string("  ") + name + std::string(": data[") + std::to_string(i) + std::string("]");
-      throw ioda::Exception(err_msg.c_str(), ioda_Here())
-        .add(exp_msg, exp_data[i])
-        .add(res_msg, data[i]);
+      std::string msg = err_msg + exp_msg + std::to_string(exp_data.size()) + res_msg
+                        + std::to_string(data.size());
+      throw eckit::Exception(err_msg, Here());
     }
   }
 }
@@ -86,9 +86,9 @@ void check_data(const std::string& name, const std::vector<int>& data, const std
     err_msg = name + std::string(": data size not equal to expected value");
     exp_msg = std::string("  expected size");
     res_msg = std::string("  ") + name + std::string(": size");
-    throw ioda::Exception(err_msg.c_str(), ioda_Here())
-      .add(exp_msg, exp_data.size())
-      .add(res_msg, data.size());
+    std::string msg
+      = err_msg + exp_msg + std::to_string(exp_data.size()) + res_msg + std::to_string(data.size());
+    throw eckit::Exception(err_msg, Here());
   }
 
   // Check data values
@@ -98,9 +98,9 @@ void check_data(const std::string& name, const std::vector<int>& data, const std
         name + std::string(": element ") + std::to_string(i) + std::string(" not equal to expected value");
       exp_msg = std::string("  expected data[") + std::to_string(i) + std::string("]");
       res_msg = std::string("  ") + name + std::string(": data[") + std::to_string(i) + std::string("]");
-      throw ioda::Exception(err_msg.c_str(), ioda_Here())
-        .add(exp_msg, exp_data[i])
-        .add(res_msg, data[i]);
+      std::string msg = err_msg + exp_msg + std::to_string(exp_data.size()) + res_msg
+                        + std::to_string(data.size());
+      throw eckit::Exception(err_msg, Here());
     }
   }
 }
@@ -189,7 +189,6 @@ int main(int argc, char** argv) {
     check_group_structure(f);
 
   } catch (const std::exception& e) {
-    ioda::unwind_exception_stack(e);
     return 1;
   }
   return 0;
