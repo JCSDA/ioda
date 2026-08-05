@@ -118,6 +118,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
   testinput/iodatest_obsspace_empty_obs_file_osdf.yaml
+  testinput/iodatest_obsspace_empty_obs_file_osdf_mpi_2.yaml
+  testinput/iodatest_obsspace_empty_obs_file_osdf_mpi_4.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi.yaml
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
@@ -1238,7 +1240,11 @@ ecbuild_add_test( TARGET  ioda_clean_obsspace_empty_obs_file
                     "testoutput/ospace.empty_obs_file.nc4"
                     "testoutput/ospace.empty_obs_file_with_channels.nc4"
                     "testoutput/ospace_osdf.empty_obs_file.nc4"
-                    "testoutput/ospace_osdf.empty_obs_file_with_channels.nc4" )
+                    "testoutput/ospace_osdf.empty_obs_file_with_channels.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file_mpi_2.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file_mpi_4.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file_with_channels_mpi_2.nc4"
+                    "testoutput/ospace_osdf.empty_obs_file_with_channels_mpi_4.nc4" )
 
 # this test produces ospace.empty_obs_file.nc4 and ospace.empty_obs_file_with_channels.nc4
 # which are compared to reference files in the next two tests
@@ -1298,7 +1304,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_with_channels_cmp
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_mpi_2
                   MPI 2
                   COMMAND ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf_mpi_2.yaml"
                   LIBS  ioda_test
                   )
 
@@ -1306,7 +1312,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_mpi_2
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_osdf_mpi_4
                   MPI 4
                   COMMAND ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf.yaml"
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_osdf_mpi_4.yaml"
                   LIBS  ioda_test
                   )
 
