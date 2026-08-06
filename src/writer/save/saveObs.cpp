@@ -34,6 +34,7 @@ namespace writer {
 void saveObs(const ObsDataOutParameters & dataOutParams,
              const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
              const eckit::mpi::Comm & commAll,
+             const std::string & obsName,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata) {
   oops::Log::trace() << "writer::saveObs start" << std::endl;
@@ -58,6 +59,13 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
       saveOsdfToOdb(dataOutParams, obsIoPool->commPool(), srcOsdf, osdfMetadata);
     }
   }
+
+  // Issue the summary message describing where this obs space wrote its data. The file
+  // name reported here is the one from the configuration, before the io pool rank number
+  // gets appended for multiple file output.
+  oops::Log::info() << obsName << ": save database to "
+                    << dataOutParams.engine.value().engineParameters.value().fileName.value()
+                    << " (io pool size: " << obsIoPool->poolSize() << ")" << std::endl;
   oops::Log::trace() << "writer::saveObs end" << std::endl;
 }
 

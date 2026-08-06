@@ -47,6 +47,7 @@ namespace reader {
 /// \param distParams ioda Distribution parameters
 /// \param commAll MPI communicator for all ranks
 /// \param timeWindow time window for selecting observations
+/// \param obsName obs space name (used in the log messaging)
 /// \param ospaceDist distribution object for the caller's obs space
 /// \param destOsdf destination OSDF to be populated
 /// \param obsSourceStats statistics about the obs source (file)
@@ -57,6 +58,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
              const eckit::mpi::Comm & commAll,
              const std::vector<std::string> & obsVarNames,
              const util::TimeWindow & timeWindow,
+             const std::string & obsName,
              std::shared_ptr<Distribution> & ospaceDist,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              ObsSourceStats & obsSourceStats,

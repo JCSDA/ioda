@@ -122,7 +122,7 @@ void testFrames() {
 
         if (preserveInputs) {
           // Call obsWrite. srcOsdf must NOT be modified.
-          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll,
+          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
                                  ospaceDist, srcOsdf, obsSourceStats, osdfMetadata,
                                  true);
 
@@ -138,7 +138,7 @@ void testFrames() {
           tmpPool.reset();
 
           // Call obsWrite. srcOsdf WILL be modified: all data moves to ioPool ranks.
-          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll,
+          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
                                  ospaceDist, srcOsdf, obsSourceStats, osdfMetadata,
                                  false);
 

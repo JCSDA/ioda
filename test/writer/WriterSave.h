@@ -98,7 +98,7 @@ void testFrames() {
       ioPoolParams.deserialize(ioPoolConfig);
       std::unique_ptr<ObsIoPool::ObsIoPool> obsIoPool =
         std::make_unique<ObsIoPool::ObsIoPool>(ioPoolParams, commAll);
-      ioda::writer::saveObs(dataOutParams, obsIoPool, commAll,
+      ioda::writer::saveObs(dataOutParams, obsIoPool, commAll, "WriterSave test",
                             testOsdf, testOsdfMetadata);
     }
   }

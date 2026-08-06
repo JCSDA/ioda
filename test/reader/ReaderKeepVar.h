@@ -66,8 +66,8 @@ void testKeepVarRejection() {
   std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
   osdf::FrameMetadata osdfMetadata;
   const eckit::mpi::Comm & commAll = oops::mpi::world();
-  reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
-                  osdfMetadata);
+  reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow,
+                  "ReaderKeepVar test", testOsdf, osdfMetadata);
 
   // Kept variables produce columns.
   EXPECT(testOsdf->hasColumn("MetaData/latitude"));

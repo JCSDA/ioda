@@ -794,8 +794,6 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
     throw eckit::ReadError(fileName, Here());
   }
 
-  oops::Log::info() << "INFO: ioda::reader::loadOsdfFromNetcdf: reading file: "
-                    << fileName << std::endl;
   netCDF::NcFile inFile(fileName, netCDF::NcFile::read);
   checkNcObj(inFile, "ioda::reader::loadOsdfFromNetcdf: Failed to open file: " + fileName);
 

@@ -200,19 +200,29 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     std::vector<eckit::LocalConfiguration> obsDataInConfigs =
         expandInputFileConfigs(obs_params_.top_level_.obsDataIn.value());
 
-    // Transfer data from the input source (file or generator) into the obs container
+    // Create the obs data container, and report which one is being used. This is done
+    // up front (before the data transfer below) so that the container in use is known
+    // while the reader is executing (and issuing subsequent messages).
     if (use_dataframe_) {
         // Using the new OSDF obs container.
         // The standalone function createIFrame will check that
         // we have a valid dataframe type.
         osdf_ = osdf::createIFrame(obs_params_.top_level_.dataFrameType);
+    } else {
+        // Using current ObsGroup/ObsStore obs container
+        obs_group_ = std::make_unique<ObsGroup>();
+    }
+    oops::Log::info() << obsname() << ": using " << containerName()
+                      << " obs data container" << std::endl;
 
+    // Transfer data from the input source (file or generator) into the obs container
+    if (use_dataframe_) {
         // Transfer obs from the input files to the OSDF container.
         reader::obsRead(obsDataInConfigs,
                         obs_params_.top_level_.ioPool.value(),
                         obs_params_.top_level_.distribution.value().params.value(), comm,
                         obs_params_.top_level_.simVars.value().variables(),
-                        timeWindow_, dist_, osdf_,
+                        timeWindow_, this->obsname(), dist_, osdf_,
                         obs_src_stats_, osdfMetadata_);
 
         // Set the sizes of the dimensions
@@ -222,9 +232,6 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
             dim_info_.set_dim_size(ObsDimensionId::Channel, numChans);
         }
     } else {
-        // Using current ObsGroup/ObsStore obs container
-        obs_group_ = std::make_unique<ObsGroup>();
-
         // Create an MPI distribution object
         const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
         dist_ = DistributionFactory::create(obs_params_.comm(), distParams);
@@ -300,10 +307,11 @@ void ObsSpace::save(bool preserveDistribution) {
     if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
       if (create_empty_output_file_ || obs_src_stats_.gNlocs > 0) {
         if (use_dataframe_) {
-          oops::Log::info() << "Writing " << obsname() << std::endl;
-          writer::obsWrite(
-            *(obs_params_.top_level_.obsDataOut.value()), obs_params_.top_level_.ioPool,
-            obs_params_.comm(), dist_, osdf_, obs_src_stats_, osdfMetadata_, preserveDistribution);
+          writer::obsWrite(*(obs_params_.top_level_.obsDataOut.value()),
+                           obs_params_.top_level_.ioPool,
+                           obs_params_.comm(), this->obsname(), dist_, osdf_,
+                           obs_src_stats_, osdfMetadata_,
+                           preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
@@ -1022,7 +1030,8 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
                             obs_params_.top_level_.distribution.value().params.value(), commMPI_,
                             obs_params_.top_level_.simVars.value().variables(),
-                            timeWindow_, dist_, tempOsdf, obsSourceStats, appendOsdfMetadata);
+                            timeWindow_, this->obsname(), dist_, tempOsdf, obsSourceStats,
+                            appendOsdfMetadata);
 
             // Verify that any multi-slice variable common to both frames uses the same slice
             // dimension before merging. The OSDF append only compares column names/types/units;
@@ -1358,6 +1367,17 @@ void ObsSpace::updateSourceStatsRecordNumbers(ObsSourceStats &obsSourceStats) {
   // its size.
   std::size_t nlocs = dim_info_.get_dim_size(ObsDimensionId::Location) + obsSourceStats.nlocs;
   dim_info_.set_dim_size(ObsDimensionId::Location, nlocs);
+}
+
+// -----------------------------------------------------------------------------
+std::string ObsSpace::containerName() const {
+    std::string containerName;
+    if (use_dataframe_) {
+        containerName = osdf_->frameType();
+    } else {
+        containerName = std::string("ObsGroup");
+    }
+    return containerName;
 }
 
 // -----------------------------------------------------------------------------

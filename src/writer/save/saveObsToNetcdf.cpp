@@ -746,12 +746,9 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
   // output file type is H5File (ie, netcdf).
 
   // Retrieve the file name, open the output file, and transfer the
-  // data from srcOsdf to the output file. Print out the file name
-  // before appending the io pool rank number. It seems a bit
-  // cleaner to do it this way.
+  // data from srcOsdf to the output file.
   std::string outputFileName =
     dataOutParams.engine.value().engineParameters.value().fileName.value();
-  oops::Log::info() << "Saving to file: " << outputFileName << std::endl;
 
   // If we are writing multiple files, then we need to append
   // the io pool rank to the file name to get the unique file name for

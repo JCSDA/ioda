@@ -40,6 +40,12 @@ class ObsIoPool : public util::Printable {
   /// \brief flag indicating if this rank is in the io pool
   bool inIoPool() const { return inIoPool_; }
 
+  /// \brief return the number of ranks in the io pool
+  /// \details This is valid on every rank, including the ranks outside the pool.
+  ///          Note that commPool().size() is the number of ranks outside the
+  ///          pool on the ranks outside the pool.
+  int poolSize() const { return poolSize_; }
+
   /// \brief print the ObsIoPool object
   /// \param os output stream
   void print(std::ostream & os) const override;
@@ -59,6 +65,10 @@ class ObsIoPool : public util::Printable {
 
   /// \brief flag indicating if this rank is in the io pool
   bool inIoPool_;
+
+  /// \brief number of ranks in the io pool
+  /// \details This is set on all ranks, both inside and outside the pool.
+  int poolSize_;
 };
 
 }  // namespace ObsIoPool

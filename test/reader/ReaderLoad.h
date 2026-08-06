@@ -205,8 +205,8 @@ void testFrameRows() {
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
     const eckit::mpi::Comm & commAll = oops::mpi::world();
-    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
-                    osdfMetadata);
+    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow,
+                    "ReaderLoad test", testOsdf, osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameRows", testOsdf, osdfMetadata);
   }
 }
@@ -244,8 +244,8 @@ void testFrameCols() {
     // In normal usage, the obs space would set the frame type prior to calling loadObs.
     osdf::FrameMetadata osdfMetadata;
     const eckit::mpi::Comm & commAll = oops::mpi::world();
-    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow, testOsdf,
-                    osdfMetadata);
+    reader::loadObs(dataInParams, ioPoolParams, commAll, obsVarNames, timeWindow,
+                    "ReaderLoad test", testOsdf, osdfMetadata);
     checkOsdf(testConfig, commAll, "FrameCols", testOsdf, osdfMetadata);
   }
 }

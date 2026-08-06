@@ -30,6 +30,7 @@ namespace writer {
 void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const ioda::IoPool::IoPoolParameters & ioPoolParams,
               const eckit::mpi::Comm & commAll,
+              const std::string & obsName,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
               ObsSourceStats & obsSourceStats,
@@ -51,11 +52,11 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
     std::unique_ptr<osdf::IFrame> outOsdf;
     collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf,
                outOspaceDist, outObsSourceStats, outOsdf);
-    saveObs(dataOutParams, obsIoPool, commAll, outOsdf, osdfMetadata);
+    saveObs(dataOutParams, obsIoPool, commAll, obsName, outOsdf, osdfMetadata);
     outOsdf.reset();  // free memory used for the output osdf since we won't need it anymore
   } else {
     collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf);
-    saveObs(dataOutParams, obsIoPool, commAll, srcOsdf, osdfMetadata);
+    saveObs(dataOutParams, obsIoPool, commAll, obsName, srcOsdf, osdfMetadata);
   }
 
   oops::Log::trace() << "writer::obsWrite end" << std::endl;

@@ -60,15 +60,25 @@ void loadObs(const ObsDataInParameters & dataInParams,
              const eckit::mpi::Comm & commAll,
              const std::vector<std::string> & obsVarNames,
              const util::TimeWindow & timeWindow,
+             const std::string & obsName,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              osdf::FrameMetadata & osdfMetadata) {
   oops::Log::trace() << "reader::loadObs start" << std::endl;
   // todo(SRH): for now only supporting load from a netcdf file, an ODB file, or a generator
   // (GenList, GenRandom). Will want to eventually support BUFR files too.
+  //
+  // Along with checking for a supported input file type, create the description of the obs
+  // source that gets used in the summary message issued at the end of this function.
   const std::string inputFileType =
     dataInParams.engine.value().engineParameters.value().type.value();
-  if (inputFileType != "H5File" && inputFileType != "ODB" &&
-      inputFileType != "GenList" && inputFileType != "GenRandom") {
+  std::string obsSource;
+  if (inputFileType == "H5File" || inputFileType == "ODB") {
+    obsSource = dataInParams.engine.value().engineParameters.value().getFileName();
+  } else if (inputFileType == "GenList") {
+    obsSource = "generate from listed locations";
+  } else if (inputFileType == "GenRandom") {
+    obsSource = "generate from randomized locations";
+  } else {
     const std::string errMsg = std::string("Unsupported input file type: ")
     + inputFileType + std::string(". Must use 'H5File', 'ODB', 'GenList' or 'GenRandom' for now.");
     throw eckit::BadParameter(errMsg, Here());
@@ -135,6 +145,10 @@ void loadObs(const ObsDataInParameters & dataInParams,
                            << " contains zero observations" << std::endl;
     }
   }
+
+  // Issue the summary message describing where this obs space got its data.
+  oops::Log::info() << obsName << ": read database from " << obsSource
+                    << " (io pool size: " << obsIoPool->poolSize() << ")" << std::endl;
   oops::Log::trace() << "reader::loadObs end" << std::endl;
 }
 

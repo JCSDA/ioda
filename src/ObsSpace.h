@@ -694,6 +694,10 @@ namespace ioda {
         /// \brief set data members that are based on the ObsSpace parameter values
         void recordCheckParameterInfo();
 
+        /// \brief return the name of the obs data container that this obs space is using
+        /// Note that the obs data container must have been created before calling this.
+        std::string containerName() const;
+
         /// \brief expand the obsdatain parameter to a vector of obsdatain configs
         /// \details This function will take the obsdatain ObsDataInParameters object
         /// from deserializing the original obsdatain spec, and construct a vector

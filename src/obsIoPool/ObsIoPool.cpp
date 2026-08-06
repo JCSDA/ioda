@@ -66,6 +66,13 @@ ObsIoPool::ObsIoPool(
     inIoPool_ = false;
     commPool_ = &(commAll_.split(nonPoolColor, nonPoolCommName));
   }
+
+  // Record the io pool size on every rank. The ranks outside the pool cannot get this from
+  // their own commPool_ group (which holds the ranks that are outside the pool), so have
+  // them pick it up from the pool ranks. Contributing zero from the outside ranks makes a
+  // max reduction give every rank the pool size.
+  poolSize_ = inIoPool_ ? static_cast<int>(commPool_->size()) : 0;
+  commAll_.allReduceInPlace(poolSize_, eckit::mpi::max());
 }
 
 ObsIoPool::~ObsIoPool() {

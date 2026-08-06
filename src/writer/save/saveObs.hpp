@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 // Forward class declarations
 namespace osdf {
@@ -32,11 +33,13 @@ namespace writer {
 /// \param dataOutParams obs space data out (obsdataout) parameters
 /// \param obsIoPool io pool object
 /// \param commAll MPI communicator for all ranks
+/// \param obsName obs space name (used in the log messaging)
 /// \param srcOsdf source OSDF to be saved
 /// \param osdfMetadata frame metadata for srcOsdf
 void saveObs(const ObsDataOutParameters & dataOutParams,
              const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
              const eckit::mpi::Comm & commAll,
+             const std::string & obsName,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata);
 
