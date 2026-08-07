@@ -4631,7 +4631,7 @@ if (odc_FOUND)
                     
   ecbuild_add_test( TARGET  ioda_convert_abiclr_sequential_channel_indexer_but_missing_varno_odc
                     COMMAND ${CMAKE_BINARY_DIR}/bin/ioda-odc-converter.x
-                    ARGS    ABIClr
+                    ARGS    ABIClr-missing-varno-odc
                             Data/testinput_tier_1/abiclr.odb
                             ../share/test/testinput/odb_default_name_map.yaml 
                             testinput/iodatest_odb_abiclr_sequential_channel_indexer_but_missing_varno.yaml
