@@ -84,7 +84,7 @@ void ObsGroupFacade::initialize(size_t numLocations,
 }
 
 void ObsGroupFacade::addDateTimeVariableToOptions(std::string dateTimeVariableName) {
-  oops::Log::warning() << "Using ObsGroup - dateTimeVariableName not stored." << std::endl;
+  oops::Log::info() << "Using ObsGroup - dateTimeVariableName not stored." << std::endl;
 };
 
 int ObsGroupFacade::numberOfLocations() const {
