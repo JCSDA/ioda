@@ -1,5 +1,6 @@
 where:
   varno: [119,233]
+  query: initial_vertco_reference is not null
 channel indexing:
   method: read from first location
 multichannel varnos: [119,233]

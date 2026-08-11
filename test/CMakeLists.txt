@@ -194,6 +194,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_osdf_frame_rows.yaml
   testinput/iodatest_obsspace_generators_osdf.yaml
   testinput/iodatest_obsspace_osdf_prepare_derived.yaml
+  testinput/iodatest_obsspace_null_channel.yaml
+  testinput/iodatest_obsspace_null_channel_osdf.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_osdf_frame_cols.yaml
   testinput/iodatest_obsvector_osdf_frame_rows.yaml
@@ -2369,6 +2371,26 @@ if (odc_FOUND)
                             testinput/iodatest_writer_scatwindchosen.yaml"
                             ioda_writer_scatwindchosen.odb
                     )
+
+# Separate tests are needed for the ObsGroup and OSDF cases at present because columns and rows
+# are in different orders. The only difference in the input yaml is the `use data frame container` control.
+ecbuild_add_test( TARGET  ioda_obsspace_null_channel
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          odb
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_null_channel.yaml"
+                          obsspace_null_channel.odb)
+
+ecbuild_add_test( TARGET  ioda_obsspace_null_channel_osdf
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          odb
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_obsspace_null_channel_osdf.yaml"
+                          obsspace_null_channel_osdf.odb)
 endif()
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)
