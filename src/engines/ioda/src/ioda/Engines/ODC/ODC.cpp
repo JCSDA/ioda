@@ -819,7 +819,7 @@ void setupBodyColumnInfo(const ContainerFacade &container,
       } else {
         oops::Log::warning()
           << "WARNING: Variable " + map.first + " is in query file "
-          << "but not in ObsSpace therefore assumming float and writing out with missing data"
+          << "but not in ObsSpace therefore assuming float and writing out with missing data"
           << std::endl;
       }
     }  // end of if found
@@ -1031,7 +1031,7 @@ void fillIntArray(const ContainerFacade &container, const std::string varname,
       throw eckit::BadParameter(msg, Here());
     }
     outdata.assign(numBodyColumnElements, odb_missing_int);
-  } 
+  }
 }
 
 void readColumn(const ContainerFacade &container, const ColumnInfo column,
@@ -1078,7 +1078,7 @@ void readColumn(const ContainerFacade &container, const ColumnInfo column,
     pushBackVector(data_store, data_store_date, number_of_locations, number_of_channels);
   } else if (column.column_name == "time" || column.column_name == "receipt_time") {
     std::string obsspacename = "MetaData/dateTime";
-    if (column.column_name == "receipt_date") obsspacename = "MetaData/receiptdateTime";
+    if (column.column_name == "receipt_time") obsspacename = "MetaData/receiptdateTime";
     std::vector<int64_t> buf = container.variableValues<int64_t>(obsspacename);
     const size_t numrows     = buf.size();
     std::vector<double> data_store_time(numrows);
