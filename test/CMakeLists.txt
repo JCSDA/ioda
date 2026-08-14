@@ -4869,9 +4869,9 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/reader)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/writer)
 
 foreach(FILENAME ${ioda_test_input})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach()
 
 # Set up test output directory

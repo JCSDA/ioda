@@ -11,7 +11,8 @@ set(_programs
     compare-odbs
 )
 
+file( MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin )
 foreach(_f IN LISTS _programs)
-  execute_process( COMMAND ${CMAKE_COMMAND} -E copy
-     ${PROJECT_SOURCE_DIR}/tools/${_f} ${CMAKE_BINARY_DIR}/bin/${_f} )
+  file( COPY_FILE ${PROJECT_SOURCE_DIR}/tools/${_f}
+        ${CMAKE_BINARY_DIR}/bin/${_f} ONLY_IF_DIFFERENT )
 endforeach()
