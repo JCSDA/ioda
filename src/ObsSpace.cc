@@ -408,15 +408,22 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
     } else {
         if (use_dataframe_) {
             if (!(returnVal = strictHas(group, name, skipDerived))) {
-                // name is not present verbatim.
+                // The name is not present verbatim.
+                //
+                // In the OSDF storage scheme, a collision/confusion can occur between a
+                // 1D variable with a numeric suffix (e.g., "var_1") and a 2D variable
+                // with a channel dimension (e.g., "var" with channels 1, 2, 3). The former
+                // is stored under the name "var_1" and the latter is stored as three columns
+                // "var_1", "var_2", and "var_3". We only want to check for the base name
+                // if the caller has asked about the base name (e.g., "var") and not a
+                // specific channel (e.g., "var_1").
+                //
+                // TODO(SRH) This isn't a complete solution to the collision problem. This
+                // approach will prevent a class of errors, but the collision problem needs
+                // to be addressed more thoroughly in the future.
                 std::string baseName;
                 int nameChannel;
-                if (extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
-                    // The name carries a numeric suffix and is not a column. Per the
-                    // OSDF storage scheme it may be a spurious suffix on a variable dimensioned
-                    // only by Location, which is stored under the base (unsuffixed) name.
-                    returnVal = strictHas(group, baseName, skipDerived);
-                } else {
+                if (!extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
                     // The name has no numeric suffix: it may be a channelled variable stored as
                     // one column per channel. Report present only if every channel is present.
                     const std::vector<int> channels =
