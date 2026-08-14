@@ -160,12 +160,18 @@ void NonoverlappingReaderPool::load(Group & destGroup) {
   // Create the ObsGroup and attach the backend.
   destGroup = ObsGroup::generate(backend, {});
 
+  // globalNlocs_ must be the pool-wide total *before* ioReadGroup runs, since it drives
+  // chunk-size calculations for the Location-dimensioned variables.
+  commPool_->allReduceInPlace(globalNlocs_, eckit::mpi::Operation::SUM);
+
   // Copy the ObsSpace ObsGroup to the output file Group.
   ioReadGroup(*this, srcGroup, destGroup, dtimeValues, dtimeEpoch_,
               lonValues, latValues, isParallelIo_, emptyFile_);
 
-  // Add up the numbers of locations read/rejected/accepted on all MPI ranks.
-  for (size_t *count : {&globalNlocs_, &sourceNlocs_, &sourceNlocsInsideTimeWindow_,
+  // Add up the numbers of locations read/rejected/accepted on all MPI ranks. sourceNlocs_
+  // and friends must stay local (per-rank) until after ioReadGroup/readerCopyVarData, which
+  // relies on ioPool.sourceNlocs() being this rank's own local count.
+  for (size_t *count : {&sourceNlocs_, &sourceNlocsInsideTimeWindow_,
        &sourceNlocsOutsideTimeWindow_, &sourceNlocsRejectQC_})
     commPool_->allReduceInPlace(*count, eckit::mpi::Operation::SUM);
 

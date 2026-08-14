@@ -15,6 +15,10 @@ observations:
         mapping file: ../share/test/testinput/odb_default_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_atms.yaml
         frame distribution spread: 1
+    obsdataout: # add this output to ensure that the io pool reader below doesn't cause a hang to occur.
+      engine:
+        type: H5File
+        obsfile: testoutput/iodatest_obsspace_odc_atms_parallel_io.nc4
     distribution:
       name: Identity
     io pool:

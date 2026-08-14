@@ -2586,7 +2586,7 @@ void ioReadGroup(const ReaderPoolBase & ioPool, const ioda::Group& fileGroup,
            [&](auto typeDiscriminator) {
                typedef decltype(typeDiscriminator) T;
                readerCreateVariable<T>(srcVarName, fileVar, adjustNlocs,
-                                       VarUtils::getLocationChunkSize(ioPool.globalNlocs()),
+                                       ioPool.globalNlocs(),
                                        memGroup.vars, globalMaxElements, maxElements);
            },
            VarUtils::ThrowIfVariableIsOfUnsupportedType(srcVarName));

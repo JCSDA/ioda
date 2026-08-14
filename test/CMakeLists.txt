@@ -1717,9 +1717,13 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
                     )
 
+  # Dependency added as both tests write to the same output 
+  # Tests write output to check for non-overlapping io-pool failure mode which caused a hang 
+  # (The output is not compared so we can reuse the file-name if we avoid a race condition)
   ecbuild_add_test( TARGET  ioda_obsspace_odc_atms_parallel_io_single_process
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_atms_parallel_io.yaml"
+                    TEST_DEPENDS ioda_obsspace_odc_atms_parallel_io 
                     )
 
   ecbuild_add_test( TARGET  ioda_obsspace_odc_radar
