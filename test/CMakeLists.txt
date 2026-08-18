@@ -551,10 +551,9 @@ ecbuild_add_test( TARGET  ioda_reader_distribute_calc_dist_2
                   )
 
 ecbuild_add_test( TARGET  ioda_reader_distribute_calc_dist_4
+                  COMMAND ioda_reader_distribute_calc_dist_2
                   MPI     4
-                  SOURCES mains/reader/TestCalculateDistribution.cc
                   ARGS    "testinput/reader/iodatest_reader_distribute_calc_dist.yaml"
-                  LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  ioda_reader_distribute_select_rank_2
@@ -566,9 +565,8 @@ ecbuild_add_test( TARGET  ioda_reader_distribute_select_rank_2
 
 ecbuild_add_test( TARGET  ioda_reader_distribute_select_rank_4
                   MPI     4
-                  SOURCES mains/reader/TestOsdfDistSelectRank.cc
+                  COMMAND ioda_reader_distribute_select_rank_2
                   ARGS    "testinput/reader/iodatest_reader_distribute_select_rank.yaml"
-                  LIBS  ioda_test
                   )
 
 ecbuild_add_test( TARGET  ioda_reader_distributeobs_rank_4
@@ -999,9 +997,8 @@ ecbuild_add_test( TARGET  ioda_obsspace
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_reader_pool
-                  SOURCES mains/TestIodaObsSpace.cc
+                  COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
-                  LIBS  ioda_test
                   )
 
 if (odc_FOUND)

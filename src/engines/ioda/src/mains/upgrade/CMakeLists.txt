@@ -12,10 +12,6 @@ ecbuild_add_executable( TARGET ioda-upgrade-v1-to-v2.x
 
 ecbuild_add_executable( TARGET ioda-upgrade-v2-to-v3.x
                         SOURCES upgradev2v3.cpp
-                         ../../../../../mains/validator/AttributeChecks.cpp
-                         ../../../../../mains/validator/AttributeChecks.h
-                         ../../../../../mains/validator/Log.cpp
-                         ../../../../../mains/validator/Log.h
                          ../../../../../mains/validator/Params.cpp
                          ../../../../../mains/validator/Params.h
                         LIBS    ioda )
