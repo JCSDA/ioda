@@ -4888,4 +4888,13 @@ endforeach()
 #####################################################################
 if (Python3_FOUND)
     add_subdirectory( python )
+
+    # Self-test for the ObsGroup-vs-OSDF obs file comparator.  Builds a tiny
+    # pair of files reproducing every difference the two writers introduce, runs
+    # ioda_compare_obs.py over it and over a series of mutations, and fails if
+    # any case does not behave as expected.  Needs no test data, and writes to a
+    # temporary directory that it removes again.
+    ecbuild_add_test( TARGET  ioda_compare_obs_selftest
+                      COMMAND ${Python3_EXECUTABLE}
+                      ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs_selftest.py )
 endif()
