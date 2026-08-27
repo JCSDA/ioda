@@ -2,19 +2,20 @@ time window:
   begin: "2018-01-01T00:00:00Z"
   end: "2022-01-01T00:00:00Z"
 observations:
-- obs space:
-    name: "AMSUA NOAA19"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-15
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_rand_ovec_io_osdf.nc4"
+  observers:
+  - obs space:
+      name: "AMSUA NOAA19"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      use data frame container: true
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_rand_ovec_io_osdf.nc4"
 
 nfiles: 5
 group prefix: RandomObs

@@ -4,73 +4,77 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-- obs space:
-    name: "AMSUA NOAA19"
-    distribution:
-      name: "Identity"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-15
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2.nc4"
-      write multiple files: true
+  # testing the override of the default obs data container (ObsGroup) to OSDF
+  # ie the individual obs space config "use data frame container" specs takes precedence
+  obs data container: ObsGroup
+  observers:
+  - obs space:
+      name: "AMSUA NOAA19"
+      distribution:
+        name: "Identity"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      use data frame container: true
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi2.nc4"
+        write multiple files: true
 
-- obs space:
-    name: "GMI GPM"
-    distribution:
-      name: "Identity"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-13
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi2.nc4"
-      write multiple files: true
+  - obs space:
+      name: "GMI GPM"
+      distribution:
+        name: "Identity"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-13
+      use data frame container: true
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/gmi_gpm_obs_2018041500_m_time_osdf_mpi2.nc4"
+        write multiple files: true
 
-- obs space:
-    name: "Radiosonde"
-    distribution:
-      name: "Identity"
-    simulated variables: ['airTemperature']
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2.nc4"
-      write multiple files: true
-    io pool:
-      max pool size: 2
+  - obs space:
+      name: "Radiosonde"
+      distribution:
+        name: "Identity"
+      simulated variables: ['airTemperature']
+      use data frame container: true
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/sondes_obs_2018041500_m_time_osdf_mpi2.nc4"
+        write multiple files: true
+      io pool:
+        max pool size: 2
 
-- obs space:
-    name: "MultiDim"
-    distribution:
-      name: "Identity"
-    simulated variables: ['brightnessTemperature']
-    channels: 1,3,6
-    use data frame container: true
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/multidim_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/multidim_obs_2018041500_m_time_osdf_mpi2.nc4"
-      write multiple files: true
-    io pool:
-      max pool size: 2
+  - obs space:
+      name: "MultiDim"
+      distribution:
+        name: "Identity"
+      simulated variables: ['brightnessTemperature']
+      channels: 1,3,6
+      use data frame container: true
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/multidim_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/multidim_obs_2018041500_m_time_osdf_mpi2.nc4"
+        write multiple files: true
+      io pool:
+        max pool size: 2

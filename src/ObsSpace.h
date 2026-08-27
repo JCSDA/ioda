@@ -239,12 +239,12 @@ namespace ioda {
         /// obs type, then this will return zero.
         inline size_t nchans() const { return get_dim_size(ObsDimensionId::Channel); }
 
-        /// \brief return the number of records in the obs space container
+        /// \brief return the number of records in the obs data container
         /// \details This is the number of sets of locations after applying the
         /// optional grouping.
         std::size_t nrecs() const {return obs_src_stats_.nrecs;}
 
-        /// \brief return the number of variables in the obs space container.
+        /// \brief return the number of variables in the obs data container.
         /// "Variables" refers to the quantities that can be assimilated as opposed to meta data.
         std::size_t nvars() const;
 

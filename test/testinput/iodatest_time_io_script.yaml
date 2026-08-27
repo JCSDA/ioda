@@ -4,19 +4,20 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-- obs space:
-    name: "MHS"
-    simulated variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: script
-        script file: "testinput/iodatest_time_io_script.py"
-        args:
-          var_no_type_hint_int: 0
-          var_no_type_hint_str: "my_str"
-          var_int: 10
-          var_int_str: "10"
-          var_float: 3.14159
-          var_float_str: "3.14159"
-          var_bool: False
-          var_bool_str: "False"
+  observers:
+  - obs space:
+      name: "MHS"
+      simulated variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: script
+          script file: "testinput/iodatest_time_io_script.py"
+          args:
+            var_no_type_hint_int: 0
+            var_no_type_hint_str: "my_str"
+            var_int: 10
+            var_int_str: "10"
+            var_float: 3.14159
+            var_float_str: "3.14159"
+            var_bool: False
+            var_bool_str: "False"

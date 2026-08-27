@@ -4,35 +4,36 @@ time window:
   end: "2018-04-15T03:00:00Z"
 
 observations:
-- obs space:
-    name: "ATMS"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-22
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "Data/testinput_tier_1/atms.odb"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/atms_time.odb"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_atms.yaml
+  observers:
+  - obs space:
+      name: "ATMS"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-22
+      obsdatain:
+        engine:
+          type: ODB
+          obsfile: "Data/testinput_tier_1/atms.odb"
+          mapping file: ../share/test/testinput/odb_default_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_atms.yaml
+      obsdataout:
+        engine:
+          type: ODB
+          obsfile: "testoutput/atms_time.odb"
+          mapping file: ../share/test/testinput/odb_default_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_atms.yaml
 
-- obs space:
-    name: "Aircraft"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "Data/testinput_tier_1/aircraft.odb"
-        mapping file: ../share/test/testinput/odb_aircraft_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/aircraft_time.odb"
-        mapping file: ../share/test/testinput/odb_default_name_map.yaml
-        query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
+  - obs space:
+      name: "Aircraft"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: ODB
+          obsfile: "Data/testinput_tier_1/aircraft.odb"
+          mapping file: ../share/test/testinput/odb_aircraft_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_aircraft.yaml
+      obsdataout:
+        engine:
+          type: ODB
+          obsfile: "testoutput/aircraft_time.odb"
+          mapping file: ../share/test/testinput/odb_default_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_aircraft.yaml

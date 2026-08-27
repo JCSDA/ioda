@@ -567,7 +567,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                     [&] (int64_t)   {
                         try {
                             // TODO(srh) Workaround to cover when datetime was stored
-                            // as a util::DateTime object (back when the obs space container
+                            // as a util::DateTime object (back when the obs data container
                             // was a boost::multiindex container). For now, ioda accepts
                             // int64_t offset times with its epoch datetime representation.
                             const util::DateTime epoch = ioda::getEpochAsDtime(var);
@@ -582,7 +582,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                     [&] (std::string) {
                         if ((group == "MetaData") && (nameToUse == "datetime")) {
                             // TODO(srh) Workaround to cover when datetime was stored
-                            // as a util::DateTime object (back when the obs space container
+                            // as a util::DateTime object (back when the obs data container
                             // was a boost::multiindex container). For now ioda accepts
                             // string datetime representation.
                             VarType = ObsDtype::DateTime;
@@ -1293,7 +1293,7 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
     readPool->initialize();
     this->comm().barrier();
 
-    // Transfer the obs data from the source to the obs space container (ObsGroup)
+    // Transfer the obs data from the source to the obs data container (ObsGroup)
     readPool->load(destObsGroup);
 
     // Record location and record information

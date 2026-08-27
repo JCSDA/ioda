@@ -4,39 +4,40 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-- obs space:
-    name: "AMSUA NOAA19"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-15
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
+  observers:
+  - obs space:
+      name: "AMSUA NOAA19"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_time.nc4"
 
-- obs space:
-    name: "Radiosonde"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/sondes_obs_2018041500_m_time.nc4"
+  - obs space:
+      name: "Radiosonde"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/sondes_obs_2018041500_m_time.nc4"
 
-- obs space:
-    name: "GNSSRO"
-    simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/gnssro_obs_2021080606_s.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/gnssro_obs_2021080606_s_time.nc4"
+  - obs space:
+      name: "GNSSRO"
+      simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/gnssro_obs_2021080606_s.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/gnssro_obs_2021080606_s_time.nc4"

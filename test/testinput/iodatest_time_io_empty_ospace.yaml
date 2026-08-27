@@ -4,40 +4,41 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-- obs space:
-    name: "Empty (default output)"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/empty_default_output.nc4"
+  observers:
+  - obs space:
+      name: "Empty (default output)"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/empty_default_output.nc4"
 
-- obs space:
-    name: "Empty (create empty output)"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
-    obsdataout:
-      empty obs space action: "create output"
-      engine:
-        type: H5File
-        obsfile: "testoutput/empty_create_output.nc4"
+  - obs space:
+      name: "Empty (create empty output)"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
+      obsdataout:
+        empty obs space action: "create output"
+        engine:
+          type: H5File
+          obsfile: "testoutput/empty_create_output.nc4"
 
-- obs space:
-    name: "Empty (skip empty output)"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
-    obsdataout:
-      empty obs space action: "skip output"
-      engine:
-        type: H5File
-        obsfile: "testoutput/empty_skip_output.nc4"
+  - obs space:
+      name: "Empty (skip empty output)"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/empty_obs_file.nc4"
+      obsdataout:
+        empty obs space action: "skip output"
+        engine:
+          type: H5File
+          obsfile: "testoutput/empty_skip_output.nc4"

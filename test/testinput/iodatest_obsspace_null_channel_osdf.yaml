@@ -4,22 +4,23 @@ time window:
   end: "2026-04-15T03:00:00Z"
 
 observations:
-- obs space: 
-    name: "AIRS"
-    use data frame container: true
-    simulated variables: 
-    - brightnessTemperature
-    channels: 1, 6, 7, 10, 11, 15, 16, 17, 20, 21
-    obsdatain:
-      engine:
-        type: ODB
-        obsfile: "Data/testinput_tier_1/airs_codb_1.odb"
-        mapping file: ../share/test/testinput/odb_radiance_name_map.yaml 
-        query file: ../share/test/testinput/iodatest_odb_airs.yaml
-    obsdataout:
-      engine:
-        type: ODB
-        obsfile: "testoutput/obsspace_null_channel_osdf.odb"
-        mapping file: ../share/test/testinput/odb_radiance_name_map.yaml 
-        query file: ../share/test/testinput/iodatest_odb_airs.yaml
+  observers:
+  - obs space: 
+      name: "AIRS"
+      use data frame container: true
+      simulated variables: 
+      - brightnessTemperature
+      channels: 1, 6, 7, 10, 11, 15, 16, 17, 20, 21
+      obsdatain:
+        engine:
+          type: ODB
+          obsfile: "Data/testinput_tier_1/airs_codb_1.odb"
+          mapping file: ../share/test/testinput/odb_radiance_name_map.yaml 
+          query file: ../share/test/testinput/iodatest_odb_airs.yaml
+      obsdataout:
+        engine:
+          type: ODB
+          obsfile: "testoutput/obsspace_null_channel_osdf.odb"
+          mapping file: ../share/test/testinput/odb_radiance_name_map.yaml 
+          query file: ../share/test/testinput/iodatest_odb_airs.yaml
         

@@ -4,75 +4,76 @@ time window:
   end:   "2022-01-01T00:00:00Z"
 
 observations:
-- obs space:
-    name: "AMSUA NOAA19"
-    simulated variables: ['brightnessTemperature']
-    channels: 1-15
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "./testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7.nc4"
-      file preparation type: "external"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
-    io pool:
-      reader name: SinglePool
-      max pool size: 4
+  observers:
+  - obs space:
+      name: "AMSUA NOAA19"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "./testwork/build_file_set_mpi7/amsua_n19_obs_2018041500_m_mpi7.nc4"
+        file preparation type: "external"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
+      io pool:
+        reader name: SinglePool
+        max pool size: 4
 
-- obs space:
-    name: "Radiosonde"
-    simulated variables: ['airTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "./testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7.nc4"
-      file preparation type: "external"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
-    io pool:
-      reader name: SinglePool
-      max pool size: 4
+  - obs space:
+      name: "Radiosonde"
+      simulated variables: ['airTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "./testwork/build_file_set_mpi7/sondes_obs_2018041500_m_mpi7.nc4"
+        file preparation type: "external"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
+      io pool:
+        reader name: SinglePool
+        max pool size: 4
 
-- obs space:
-    name: "GNSSRO"
-    simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "./testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7.nc4"
-      file preparation type: "external"
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4"
-    io pool:
-      reader name: SinglePool
-      max pool size: 4
+  - obs space:
+      name: "GNSSRO"
+      simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "./testwork/build_file_set_mpi7/gnssro_obs_2021080606_s_mpi7.nc4"
+        file preparation type: "external"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4"
+      io pool:
+        reader name: SinglePool
+        max pool size: 4
 
-- obs space:
-    name: "Windborne, with obs grouping"
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: "./testwork/build_file_set_mpi7/windborne_obs_2022021600_s_mpi7.nc4"
-      obsgrouping:
-        group variables:
-        - flight_name
-        sort variable: pressure
-        sort order: descending
-      file preparation type: external
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4"
-    io pool:
-      reader name: SinglePool
-      max pool size: 4
-    simulated variables:
-    - airTemperature
-    - windEastward
-    - windNorthward
+  - obs space:
+      name: "Windborne, with obs grouping"
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "./testwork/build_file_set_mpi7/windborne_obs_2022021600_s_mpi7.nc4"
+        obsgrouping:
+          group variables:
+          - flight_name
+          sort variable: pressure
+          sort order: descending
+        file preparation type: external
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/windborne_obs_2022021600_s_time_reader_pool_ext_file_prep_mpi7.nc4"
+      io pool:
+        reader name: SinglePool
+        max pool size: 4
+      simulated variables:
+      - airTemperature
+      - windEastward
+      - windNorthward
