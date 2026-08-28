@@ -649,11 +649,6 @@ namespace ioda {
         /// \brief dataframe container meta data
         osdf::FrameMetadata osdfMetadata_;
 
-        /// \brief return appropriate OSDF variable name for use in other function calls
-        /// \param group Group name containting the variable
-        /// \param name Variable name
-        std::string osdfVarNameToUse(const std::string & group, const std::string & name) const;
-
         /// \brief all data structures currently associated with this ObsSpace.
         /// \details This is used so associated data structures can change their state
         ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated
@@ -678,6 +673,22 @@ namespace ioda {
         /// is set to true) `"Derived" + `group` in the ObsSpace container.
         /// (Returns false if ObsSpace is empty.)
         bool strictHas(const std::string & group) const;
+
+        /// \brief return the OSDF column names that hold the variable `group`/`name`
+        /// \details This is the single place that maps an ObsSpace variable onto OSDF
+        ///          storage, and is what has(), dtype() and groupToUse() are all built on
+        ///          so that they cannot disagree about what exists. It applies the naming
+        ///          and existence rule shared with OsdfFrameFacade -- see osdfVarColumnNames
+        ///          and osdfVarColumns in IodaUtils -- to a group/name pair. All of the
+        ///          variable's slice columns are returned, in slice order; an empty vector
+        ///          means the variable is not in the container.
+        ///
+        ///          Only `group` is examined -- choosing between `group` and
+        ///          "Derived" + `group` is the job of groupToUse().
+        /// \param group Group name containing the variable
+        /// \param name Variable name, with or without a slice suffix
+        std::vector<std::string> osdfColumnsFor(const std::string & group,
+                                                const std::string & name) const;
 
         /// \brief transfer location index values from the obs_src_stats data
         //         member to the Location variable

@@ -407,37 +407,13 @@ bool ObsSpace::has(const std::string & group, const std::string & name, bool ski
         returnVal = true;
     } else {
         if (use_dataframe_) {
-            if (!(returnVal = strictHas(group, name, skipDerived))) {
-                // The name is not present verbatim.
-                //
-                // In the OSDF storage scheme, a collision/confusion can occur between a
-                // 1D variable with a numeric suffix (e.g., "var_1") and a 2D variable
-                // with a channel dimension (e.g., "var" with channels 1, 2, 3). The former
-                // is stored under the name "var_1" and the latter is stored as three columns
-                // "var_1", "var_2", and "var_3". We only want to check for the base name
-                // if the caller has asked about the base name (e.g., "var") and not a
-                // specific channel (e.g., "var_1").
-                //
-                // TODO(SRH) This isn't a complete solution to the collision problem. This
-                // approach will prevent a class of errors, but the collision problem needs
-                // to be addressed more thoroughly in the future.
-                std::string baseName;
-                int nameChannel;
-                if (!extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
-                    // The name has no numeric suffix: it may be a channelled variable stored as
-                    // one column per channel. Report present only if every channel is present.
-                    const std::vector<int> channels =
-                        obs_params_.top_level_.simVars.value().channels();
-                    for (int channel : channels) {
-                        const std::string nameToUse =
-                            name + std::string("_") + std::to_string(channel);
-                        returnVal = strictHas(group, nameToUse, skipDerived);
-                        if (!returnVal) {
-                            break;
-                        }
-                    }
-                }
-            }
+            // OSDF container
+            // osdfColumnsFor maps the variable onto the column(s) that hold it, so a
+            // variable with a second (non-Location) dimension is found under its base name
+            // even though it is stored as one column per slice. See osdfColumnsFor for the
+            // resolution rule, which is shared with dtype() and groupToUse().
+            returnVal = !osdfColumnsFor(group, name).empty() ||
+                (!skipDerived && !osdfColumnsFor("Derived" + group, name).empty());
         } else {  // ObsGroup
             // For backward compatibility, recognize and handle appropriately variable names with
             // channel suffixes.
@@ -463,22 +439,15 @@ bool ObsSpace::has(const std::string & group) const {
 }
 
 // -----------------------------------------------------------------------------
-// When we want to look up the type of a variable with channels when using OSDF,
-// we can't look up using the "base" variable name (e.g., "brightnessTemperature"),
-// So we instead need look up the type of one of the channel variables (e.g.,
-// brightnessTemperature_1). This function returns the name of the variable to use
-// to look up the type.
-std::string ObsSpace::osdfVarNameToUse(const std::string & group,
-                                       const std::string & name) const {
-    std::string nameToUse = name;
-    const std::string sliceDimName =
-        osdfMetadata_.varSliceDimName(group + std::string("/") + name);
-    if (!sliceDimName.empty()) {
-        nameToUse =
-           name + std::string("_") +
-              std::to_string(osdfMetadata_.getDimNums(sliceDimName)[0]);
-    }
-    return nameToUse;
+/*!
+ * \details This method resolves an ObsSpace variable onto the OSDF column(s) that
+ *          hold it, and is the single existence/naming rule that has(), dtype() and
+ *          groupToUse() are all built on. See osdfVarColumnNames / osdfVarColumns in
+ *          IodaUtils for the rule itself, which is shared with OsdfFrameFacade.
+ */
+std::vector<std::string> ObsSpace::osdfColumnsFor(const std::string & group,
+                                                  const std::string & name) const {
+    return osdfVarColumns(*osdf_, osdfMetadata_, fullVarName(group, name));
 }
 
 // -----------------------------------------------------------------------------
@@ -494,26 +463,29 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
         VarType = ObsDtype::Empty;
     } else {
         if (use_dataframe_) {
+            // Prefer a "Derived" version of the group, then resolve the variable onto the
+            // OSDF column(s) holding it. Going through osdfColumnsFor means the existence
+            // decision made here is the same one has() makes, by construction.
             std::string groupToUse = this->groupToUse(group, name, skipDerived);
-            // Attach a channel suffix if name comes in without a channel suffix, but is
-            // the name of a variable with channels.
-            std::string nameToUse = osdfVarNameToUse(groupToUse, name);
-            if (!this->strictHas(groupToUse, nameToUse, skipDerived)) {
-                // The resolved name is not a column. If it carries a numeric suffix, the
-                // suffix may be spurious on a variable dimensioned only by Location (stored
-                // under the base name). Strip it and re-resolve the group/name, mirroring
-                // loadVar/has and the ObsGroup backend.
+            std::vector<std::string> columnNames = osdfColumnsFor(groupToUse, name);
+            if (columnNames.empty()) {
+                // The variable is not in the container under the name as given. If the name
+                // carries a numeric suffix, the suffix may be spurious on a variable
+                // dimensioned only by Location (stored under the base name). Strip it and
+                // re-resolve the group/name, mirroring loadVar and the ObsGroup backend.
                 std::string baseName;
-                int nameChannel;
-                if (extractChannelSuffixIfPresent(name, baseName, nameChannel)) {
+                int nameSliceIndex;
+                if (extractChannelSuffixIfPresent(name, baseName, nameSliceIndex)) {
                     groupToUse = this->groupToUse(group, baseName, skipDerived);
-                    nameToUse = osdfVarNameToUse(groupToUse, baseName);
+                    columnNames = osdfColumnsFor(groupToUse, baseName);
                 }
             }
-            if (this->strictHas(groupToUse, nameToUse, skipDerived)) {
+            if (!columnNames.empty()) {
                 // If the variable exists, get its type from the backend. If the variable doesn't
-                // exist, leave the type as "None".
-                switch (osdf_->getColumnType(groupToUse + std::string("/") + nameToUse)) {
+                // exist, leave the type as "None". Every slice column of a variable shares one
+                // type and one units string, so a representative column answers for them all.
+                const std::string & columnName = columnNames.front();
+                switch (osdf_->getColumnType(columnName)) {
                     case osdf::consts::eDataTypes::eInt:
                         VarType = ObsDtype::Integer;
                         break;
@@ -521,8 +493,7 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
                         // An int64 column can represent a DateTime variable when it carries a
                         // "seconds since <epoch>" units string. So check the units and return
                         // either ObsDtype::DateTime or ObsDtype::Integer_64.
-                        const std::string epochUnits =
-                            osdf_->getColumnUnits(groupToUse + std::string("/") + nameToUse);
+                        const std::string epochUnits = osdf_->getColumnUnits(columnName);
                         const std::string epochPrefix("seconds since ");
                         if (epochUnits.compare(0, epochPrefix.size(), epochPrefix) == 0) {
                             VarType = ObsDtype::DateTime;
@@ -2669,36 +2640,25 @@ std::string ObsSpace::groupToUse(const std::string & group,
         // In this case, we have the option to use the "Derived" group.
         // Prefer to use the "Derived" group if the variable exists in that group,
         // otherwise fall back to the given group name. The name parameter is coming
-        // in with the channel suffix stripped off so fullVarName is being set to
-        // "Derived" + group + "/" + name, which is the path to the the variable
-        // (without the channel suffix) in the "Derived" group.
-        std::string fullName = fullVarName(groupToUse, name);
+        // in with the channel suffix stripped off.
         if (use_dataframe_) {
             // OSDF container
             //
-            // If we have a variable with channels, the column names will include
-            // channel suffixes, yet the fullName has the channel suffix stripped off.
-            // In this case, we need to check for the existence of a representative column
-            // with the channel suffix attached. We could check for the existence of
-            // all channels, but by design whenever a variable with channels is stored
-            // in the OSDF a column for each channel is created.
+            // osdfColumnsFor resolves the variable onto the column(s) that hold it, so a
+            // variable with a second (non-Location) dimension is recognized under its base
+            // name even though the column names carry slice suffixes.
             //
-            // If we have a variable without channels, we need to simply check
-            // for the existence of the column using fullName as is.
-            //
-            const std::string sliceDimName = osdfMetadata_.varSliceDimName(fullName);
-            if (!sliceDimName.empty()) {
-                fullName.append(
-                    "_" + std::to_string(osdfMetadata_.getDimNums(sliceDimName)[0]));
-            }
-            if (!osdf_->hasColumn(fullName)) {
+            // This deliberately uses osdfColumnsFor rather than has(): has() reports every
+            // variable as present when the ObsSpace is empty, which would make this pick a
+            // "Derived" group whose columns do not exist.
+            if (osdfColumnsFor(groupToUse, name).empty()) {
                 groupToUse = group;
             }
         } else {
             // ObsGroup container
             // The ObsGroup exists function expects the channel suffix to be stripped off,
             // so it can do the check we want as is.
-            if (!obs_group_->vars.exists(fullName))
+            if (!obs_group_->vars.exists(fullVarName(groupToUse, name)))
                 groupToUse = group;
         }
     }

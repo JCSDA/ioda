@@ -111,6 +111,42 @@ std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & sr
 }
 
 // -----------------------------------------------------------------------------
+std::vector<std::string> osdfVarColumnNames(const osdf::FrameMetadata & frameMetadata,
+                                            const std::string & fullVarName) {
+  // Consulting the registered slice dimension before falling back to the verbatim name is
+  // what keeps a 1-D variable named "var_1" distinct from slice 1 of a 2-D variable "var".
+  //
+  // TODO(SRH) The two can still collide in storage: if both a 1-D "var_1" and a 2-D "var"
+  // with slice 1 are present, they claim the same column. This resolution order gives a
+  // deterministic answer, but the storage collision needs a more thorough fix.
+  const std::string sliceDimName = frameMetadata.varSliceDimName(fullVarName);
+  const std::vector<int> & sliceIndices = frameMetadata.getDimNums(sliceDimName);
+  if (sliceDimName.empty() || sliceIndices.empty()) {
+    return { fullVarName };
+  }
+
+  std::vector<std::string> columnNames;
+  columnNames.reserve(sliceIndices.size());
+  for (int sliceIndex : sliceIndices) {
+    columnNames.push_back(fullVarName + std::string("_") + std::to_string(sliceIndex));
+  }
+  return columnNames;
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::string> osdfVarColumns(const osdf::IFrame & srcOsdf,
+                                        const osdf::FrameMetadata & frameMetadata,
+                                        const std::string & fullVarName) {
+  std::vector<std::string> columnNames = osdfVarColumnNames(frameMetadata, fullVarName);
+  // Check a representative column so that a variable whose columns were never created is
+  // reported absent, rather than handing the caller names that are not columns.
+  if (!srcOsdf.hasColumn(columnNames.front())) {
+    return { };
+  }
+  return columnNames;
+}
+
+// -----------------------------------------------------------------------------
 std::vector<std::size_t> CharShapeFromStringVector(
                                   const std::vector<std::string> & StringVector) {
   std::size_t MaxStrLen = 0;

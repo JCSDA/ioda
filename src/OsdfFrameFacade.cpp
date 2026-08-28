@@ -155,15 +155,10 @@ void OsdfFrameFacade::removeVariable(const std::string &name) {
     throw eckit::UserError("Frame has not been initialized yet", Here());
 
   const std::string iodaName = iodaVariableName(name);
-  const std::string dimName = metadata_.varSliceDimName(iodaName);
-  if (!dimName.empty()) {
-    for (int v : metadata_.getDimNums(dimName))
-      frame_.removeColumn(iodaName + '_' + std::to_string(v));
+  for (const std::string &columnName : osdfVarColumnNames(metadata_, iodaName))
+    frame_.removeColumn(columnName);
 
-    metadata_.removeVarDimNames(iodaName);
-  } else {
-    frame_.removeColumn(iodaName);
-  }
+  metadata_.removeVarDimNames(iodaName);
   missingValueByIodaName_.erase(iodaName);
 }
 
@@ -171,26 +166,17 @@ bool OsdfFrameFacade::hasVariable(const std::string &name) const {
   if (!isInitialized_)
     return false;
 
-  const std::string iodaName = iodaVariableName(name);
-  const std::string dimName = metadata_.varSliceDimName(iodaName);
-  if (!dimName.empty() && !metadata_.getDimNums(dimName).empty())
-    return frame_.hasColumn(iodaName + '_' + std::to_string(metadata_.getDimNums(dimName).front()));
-  else
-    return frame_.hasColumn(iodaName);
+  return !osdfVarColumns(frame_, metadata_, iodaVariableName(name)).empty();
 }
 
 Engines::ContainerVariableType OsdfFrameFacade::variableType(const std::string &name) const {
   if (!isInitialized_)
     throw eckit::UserError("Frame has not been initialized yet", Here());
 
-  const std::string iodaName = iodaVariableName(name);
-  int8_t typeAsInt;
-  const std::string dimName = metadata_.varSliceDimName(iodaName);
-  if (!dimName.empty() && !metadata_.getDimNums(dimName).empty())
-    typeAsInt = frame_.getColumnType(iodaName + '_' +
-                                     std::to_string(metadata_.getDimNums(dimName).front()));
-  else
-    typeAsInt = frame_.getColumnType(iodaName);
+  // Every slice column of a variable shares one type, so a representative column answers
+  // for them all.
+  const int8_t typeAsInt = frame_.getColumnType(
+      osdfVarColumnNames(metadata_, iodaVariableName(name)).front());
 
   switch (typeAsInt) {
     case osdf::consts::eDataTypes::eInt:

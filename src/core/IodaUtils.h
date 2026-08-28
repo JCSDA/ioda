@@ -64,6 +64,29 @@ class ObsSpaceParameters;
   std::vector<std::string> osdfColNamesWithoutChanSuffixes(const osdf::IFrame & srcOsdf,
                                                   const osdf::FrameMetadata & frameMetadata);
 
+  /// \brief return the osdf column names a variable occupies, whether or not they exist yet
+  /// \details This is the OSDF variable naming rule. A variable with a second
+  ///          (non-Location) dimension registered in the frame metadata occupies one
+  ///          column per slice, named "<fullVarName>_<index>" with one index per
+  ///          registered value of that dimension. Any other variable -- including one
+  ///          whose name happens to end in a numeric suffix -- occupies a single column
+  ///          named verbatim. The result is never empty.
+  /// \param frameMetadata osdf frame metadata object
+  /// \param fullVarName hierarchical variable name ("<group>/<name>")
+  std::vector<std::string> osdfVarColumnNames(const osdf::FrameMetadata & frameMetadata,
+                                              const std::string & fullVarName);
+
+  /// \brief return the osdf columns holding a variable, or empty if it is not present
+  /// \details Applies osdfVarColumnNames and then checks the container. By design a
+  ///          column is created for every slice whenever a variable with a second
+  ///          dimension is stored, so a representative slice settles presence.
+  /// \param srcOsdf osdf container
+  /// \param frameMetadata osdf frame metadata object
+  /// \param fullVarName hierarchical variable name ("<group>/<name>")
+  std::vector<std::string> osdfVarColumns(const osdf::IFrame & srcOsdf,
+                                          const osdf::FrameMetadata & frameMetadata,
+                                          const std::string & fullVarName);
+
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.
   std::vector<std::size_t> CharShapeFromStringVector(
