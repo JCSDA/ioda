@@ -51,7 +51,17 @@ class ReadOdbFileParameters : public ReaderParametersBase {
 
     bool isFileBackend() const override { return true; }
 
-    std::string getFileName() const override { return fileName.value(); }
+   // std::string getFileName() const override { return fileName.value(); }
+   // Note: This is a temp fix until we decide how obsfiles should be handled with CDA
+    std::string getFileName() const override { 
+        if (!fileName.value().empty()) {
+            return fileName.value();
+        } else if (!fileNames.value().empty()) {
+            return fileNames.value()[0];
+        }
+        return "";
+    }
+
 };
 
 // Classes
