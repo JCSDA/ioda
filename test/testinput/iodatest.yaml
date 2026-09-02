@@ -3,90 +3,91 @@ time window:
   begin: 2018-04-14T21:00:00Z
   end: 2018-04-15T03:00:00Z
 observations:
-- obs space:
-    name: "AOD"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/aod_obs_2018041500_m.nc4
-- obs space:
-    name: "AOD VIIRS"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4
-- obs space:
-    name: "AMSUA N19"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
-- obs space:
-    name: "GMI GPM"
-    simulated variables: ['brightnessTemperature']
-    observed variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4
-- obs space:
-    name: Radiosonde
-    simulated variables: ['airTemperature', 'windEastward']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+  observers:
+  - obs space:
+      name: "AOD"
+      simulated variables: ['brightnessTemperature']
+      observed variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/aod_obs_2018041500_m.nc4
+  - obs space:
+      name: "AOD VIIRS"
+      simulated variables: ['brightnessTemperature']
+      observed variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4
+  - obs space:
+      name: "AMSUA N19"
+      simulated variables: ['brightnessTemperature']
+      observed variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
+  - obs space:
+      name: "GMI GPM"
+      simulated variables: ['brightnessTemperature']
+      observed variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4
+  - obs space:
+      name: Radiosonde
+      simulated variables: ['airTemperature', 'windEastward']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
 
-  # Marine obs
-- obs space:
-    name: "ADT"
-    simulated variables: ['adt']
-    observed variables: ['adt']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
-- obs space:
-    name: "Insitu Temperature"
-    simulated variables: ['temperature']
-    observed variables: ['temperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
-- obs space:
-    name: "Sea Surface Temp"
-    simulated variables: ['seaSurfaceTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
-- obs space:
-    name: "Sea Ice Fraction"
-    simulated variables: ['seaIceFraction']
-    observed variables: ['seaIceFraction']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
-- obs space:
-    name: "Sea Ice Thickness"
-    simulated variables: ['iceThickness']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
-- obs space:
-    name: "Sea Surface Salinity"
-    simulated variables: ['salinity']
-    observed variables: ['salinity']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4
+    # Marine obs
+  - obs space:
+      name: "ADT"
+      simulated variables: ['adt']
+      observed variables: ['adt']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
+  - obs space:
+      name: "Insitu Temperature"
+      simulated variables: ['temperature']
+      observed variables: ['temperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
+  - obs space:
+      name: "Sea Surface Temp"
+      simulated variables: ['seaSurfaceTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
+  - obs space:
+      name: "Sea Ice Fraction"
+      simulated variables: ['seaIceFraction']
+      observed variables: ['seaIceFraction']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
+  - obs space:
+      name: "Sea Ice Thickness"
+      simulated variables: ['iceThickness']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
+  - obs space:
+      name: "Sea Surface Salinity"
+      simulated variables: ['salinity']
+      observed variables: ['salinity']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/sss_obs_20180415_m.nc4

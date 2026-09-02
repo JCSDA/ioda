@@ -3,14 +3,15 @@ time window:
   begin: 2018-04-14T21:00:00Z
   end: 2018-04-15T03:00:00Z
 observations:
-- obs space:
-    name: "Channel"
-    simulated variables: ['brightnessTemperature']
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/testinput_tier_1/out_dims_check.nc4
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: testoutput/out_dims_check.nc4
+  observers:
+  - obs space:
+      name: "Channel"
+      simulated variables: ['brightnessTemperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/out_dims_check.nc4
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: testoutput/out_dims_check.nc4
