@@ -8,6 +8,10 @@ observations:
   # ie, without "obs data container" the individual obs space would default
   # to ObsGroup
   obs data container: OSDF
+  # NOTE: this file is not a container twin of iodatest_time_io.yaml and is not
+  # expected to diff cleanly against it. The two cover deliberately different obs
+  # spaces -- GNSSRO appears only in the ObsGroup file, GMI GPM and MultiDim only
+  # here -- and each has its own comparison steps and reference files.
   observers:
   - obs space:
       name: "AMSUA NOAA19"

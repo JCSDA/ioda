@@ -4,6 +4,14 @@ time window:
   end: "2021-01-15T18:00:00Z"
 
 observations:
+# NOTE: this file deliberately does NOT mirror iodatest_obsspace_index_recnum.yaml.
+# That file uses the RoundRobin distribution; this one uses Identity, because the OSDF
+# container does not reproduce ObsGroup's RoundRobin index/recnum layout. Running
+# the RoundRobin configuration above through OSDF gives, on rank 0 of 2,
+#   index = [0, 2, 4, 6, 8, 10, 12, 14]   (a dense stride-2 sequence)
+# where ObsGroup gives
+#   index = [0, 3, 5, 8, 10, 14, 16, 18]  (the surviving source-file indices)
+# so the two cannot share expectations.
 - obs space:
     name: "Reader dependent distribution"
     simulated variables: ['windEastward']
