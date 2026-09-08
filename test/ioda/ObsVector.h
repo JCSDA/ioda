@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"

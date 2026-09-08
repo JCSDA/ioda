@@ -9,6 +9,7 @@
 #define TEST_IODA_EXTENDEDOBSSPACE_H_
 
 #include <algorithm>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -23,6 +24,7 @@
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Expect.h"
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 

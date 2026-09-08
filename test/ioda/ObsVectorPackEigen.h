@@ -10,6 +10,7 @@
 
 #include <Eigen/Dense>
 
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,7 @@
 #include "oops/test/TestEnvironment.h"
 #include "oops/util/Logger.h"
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"

@@ -25,6 +25,7 @@
 #include "oops/util/Printable.h"
 
 #include "ioda/distribution/Accumulator.h"
+#include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"

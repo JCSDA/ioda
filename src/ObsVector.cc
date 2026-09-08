@@ -12,6 +12,7 @@
 #include <limits>
 #include <string>
 
+#include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"

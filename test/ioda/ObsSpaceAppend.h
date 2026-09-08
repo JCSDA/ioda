@@ -29,6 +29,7 @@
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceParameters.h"
 
 namespace ioda {
 namespace test {

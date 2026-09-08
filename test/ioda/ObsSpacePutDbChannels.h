@@ -9,6 +9,7 @@
 #define TEST_IODA_OBSSPACEPUTDBCHANNELS_H_
 
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Engines/HH.h"
+#include "ioda/ObsGroup.h"
 #include "ioda/ObsSpace.h"
 
 #include "oops/mpi/mpi.h"

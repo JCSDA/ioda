@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 
@@ -31,17 +33,12 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/TimeWindow.h"
 
-#include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
-#include "ioda/core/IodaUtils.h"
 #include "ioda/core/ObsDimInfo.h"
 #include "ioda/core/ObsSourceStats.h"
-#include "ioda/distribution/Distribution.h"
 #include "ioda/Misc/Dimensions.h"
-#include "ioda/ObsGroup.h"
 #include "ioda/ObsIterator.h"
-#include "ioda/ObsSpaceParameters.h"
-#include "ioda/Variables/VarUtils.h"
+#include "ioda/ObsSpaceAssociated.h"
 #include "oops/util/missingValues.h"
 
 // Forward declarations
@@ -49,8 +46,21 @@ namespace eckit {
     class Configuration;
 }
 
+namespace osdf {
+    class IFrame;
+}
+
 namespace ioda {
+    class ObsDataInParameters;
+    class ObsExtendParameters;
+    class ObsSpaceParameters;
+    class ObsTopLevelParameters;
+
+    class Distribution;
+    class ObsGroup;
     class ObsVector;
+    class Selection;
+    class Variable;
 
     //-------------------------------------------------------------------------------------
     /// Enum type for compare actions
@@ -108,19 +118,6 @@ namespace ioda {
       typedef float to_type;
     };
 
-    /// \brief Base class for data structures associated with ObsSpace.
-    /// \details The  associated data structure change their state (e.g. reduce or append)
-    /// when ObsSpace changes its state. ObsSpaceAssociated is equivalent to Observer
-    /// in the Observer pattern (don't confuse with oops::Observer!)
-    class ObsSpaceAssociated {
-     public:
-      virtual ~ObsSpaceAssociated() = default;
-      virtual void reduce(const std::vector<bool> & keepLocs) = 0;
-      virtual void append() = 0;
-      /// \brief Sync internal append bookkeeping with the current nlocs (default no-op).
-      virtual void syncAppend() {}
-    };
-
     /// \brief Observation data class for IODA
     ///
     /// \details This class handles the memory store of observation data. It handles
@@ -161,7 +158,7 @@ namespace ioda {
                  const util::TimeWindow timeWindow,
                  const eckit::mpi::Comm & timeComm);
         ObsSpace(const ObsSpace &);
-        virtual ~ObsSpace() {}
+        virtual ~ObsSpace();
 
         /// @}
         /// @name Constructor-defined parameters
@@ -177,7 +174,7 @@ namespace ioda {
         const eckit::mpi::Comm & commTime() const {return commTime_;}
 
         /// \details This method will return the associated parameters
-        const ObsSpaceParameters & params() const {return obs_params_;}
+        const ObsSpaceParameters & params() const;
 
         /// \brief return MPI distribution object
         std::shared_ptr<const Distribution> distribution() const { return dist_;}
@@ -279,7 +276,7 @@ namespace ioda {
         const std::string & obsname() const {return obsname_;}
 
         /// \brief return the name of the MPI distribution
-        std::string distname() const {return dist_->name();}
+        std::string distname() const;
 
         /// \brief return reference to the record number vector
         const std::vector<std::size_t> & recnum() const {return obs_src_stats_.recNums;}
@@ -583,8 +580,7 @@ namespace ioda {
             return ObsIterator(*this, nlocs());}
 
         /// \brief Return the configured vertical coordinate variable name, or boost::none if unset.
-        const boost::optional<std::string> & verticalCoordinate() const {
-            return obs_params_.top_level_.verticalCoordinate.value();}
+        const boost::optional<std::string> & verticalCoordinate() const;
 
      private:
         // ----------------------------- private data members ---------------------------
@@ -611,7 +607,10 @@ namespace ioda {
         std::unique_ptr<osdf::IFrame> osdf_;
 
         /// \brief obs io parameters
-        ObsSpaceParameters obs_params_;
+        /// Held by pointer so ObsSpace.h (this header) can forward-declare the ObsSpaceParameters
+        /// type and avoid transitively including ioda's internal parameters definitions to every
+        /// consumer of ioda::ObsSpace.
+        std::unique_ptr<ObsSpaceParameters> obs_params_;
 
         /// \brief name of obs space
         std::string obsname_;
@@ -794,13 +793,6 @@ namespace ioda {
         /// \param append when true append LocationSize to current size, otherwise reset size
         void resizeLocation(const Dimensions_t LocationSize, const bool append);
 
-        /// \brief get fill value for use in the obs_group_ object
-        template<typename DataType>
-        DataType getFillValue() {
-            DataType fillVal = util::missingValue<DataType>();
-            return fillVal;
-        }
-
         /// \brief load a variable from the obs_group_ object
         /// \details This function will load data from the obs_group_ object into
         ///          the memory buffer (vector) varValues. The sliceSelect parameter
@@ -851,38 +843,7 @@ namespace ioda {
         /// \brief open an obs_group_ variable, create the variable if necessary
         template<typename VarType>
         Variable openCreateVar(const std::string & varName,
-                               const std::vector<std::string> & varDimList) {
-            Variable var;
-            if (obs_group_->vars.exists(varName)) {
-                var = obs_group_->vars.open(varName);
-            } else {
-                // Create a vector of the dimension variables
-                std::vector<ioda::Dimensions_t> chunkDims;
-                std::vector<Variable> varDims;
-                for (auto & dimName : varDimList) {
-                    Variable dimVar = obs_group_->vars.open(dimName);
-                    if (dimName == "Location") {
-                        chunkDims.push_back(
-                            VarUtils::getLocationChunkSize(obs_src_stats_.gNlocs));
-                    } else {
-                        chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
-                    }
-                    varDims.push_back(dimVar);
-                }
-
-                // Create the variable. Use the JEDI internal missing value marks for
-                // fill values.
-                VarType fillVal = this->getFillValue<VarType>();
-                VariableCreationParameters params;
-                params.chunk = true;
-                params.setChunks(chunkDims);
-                params.compressWithGZIP();
-                params.setFillValue<VarType>(fillVal);
-
-                var = obs_group_->vars.createWithScales<VarType>(varName, varDims, params);
-            }
-            return var;
-        }
+                               const std::vector<std::string> & varDimList);
 
         /// \brief fill in the channel number to channel index map
         void fillChanNumToIndexMap();

@@ -6,6 +6,7 @@ ObsIterator.cc
 ObsIterator.h
 ObsSpace.cc
 ObsSpace.h
+ObsSpaceAssociated.h
 ObsDataIoParameters.cc
 ObsDataIoParameters.h
 ObsSpaceParameters.h

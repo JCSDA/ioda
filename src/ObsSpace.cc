@@ -27,6 +27,8 @@
 #include "ioda/Copying.h"
 #include "ioda/Engines/EngineUtils.h"
 #include "ioda/Misc/StringFuncs.h"
+#include "ioda/ObsGroup.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/VarUtils.h"
 #include "ioda/Variables/Variable.h"
 #include "ioda/containers/ColumnMetadata.h"
@@ -36,6 +38,7 @@
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/distribution/Accumulator.h"
+#include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/distribution/PairOfDistributions.h"
@@ -186,7 +189,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
                    const eckit::mpi::Comm & timeComm)
                      : oops::ObsSpaceBase(config, comm, timeWindow),
                        timeWindow_(timeWindow), commMPI_(comm), commTime_(timeComm),
-                       obs_group_(), obs_params_(config, timeWindow_, comm, timeComm),
+                       obs_group_(),
+                       obs_params_(std::make_unique<ObsSpaceParameters>(
+                           config, timeWindow_, comm, timeComm)),
                        obsvars_()
 {
     // Save some of the more frequently used parameter values, as well as some
@@ -198,7 +203,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
     // Create a vector of obsdatain configs (one per input file) for the loop below
     std::vector<eckit::LocalConfiguration> obsDataInConfigs =
-        expandInputFileConfigs(obs_params_.top_level_.obsDataIn.value());
+        expandInputFileConfigs(obs_params_->top_level_.obsDataIn.value());
 
     // Create the obs data container, and report which one is being used. This is done
     // up front (before the data transfer below) so that the container in use is known
@@ -207,7 +212,7 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         // Using the new OSDF obs container.
         // The standalone function createIFrame will check that
         // we have a valid dataframe type.
-        osdf_ = osdf::createIFrame(obs_params_.top_level_.dataFrameType);
+        osdf_ = osdf::createIFrame(obs_params_->top_level_.dataFrameType);
     } else {
         // Using current ObsGroup/ObsStore obs container
         obs_group_ = std::make_unique<ObsGroup>();
@@ -219,9 +224,9 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     if (use_dataframe_) {
         // Transfer obs from the input files to the OSDF container.
         reader::obsRead(obsDataInConfigs,
-                        obs_params_.top_level_.ioPool.value(),
-                        obs_params_.top_level_.distribution.value().params.value(), comm,
-                        obs_params_.top_level_.simVars.value().variables(),
+                        obs_params_->top_level_.ioPool.value(),
+                        obs_params_->top_level_.distribution.value().params.value(), comm,
+                        obs_params_->top_level_.simVars.value().variables(),
                         timeWindow_, this->obsname(), dist_, osdf_,
                         obs_src_stats_, osdfMetadata_);
 
@@ -233,8 +238,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
         }
     } else {
         // Create an MPI distribution object
-        const auto & distParams = obs_params_.top_level_.distribution.value().params.value();
-        dist_ = DistributionFactory::create(obs_params_.comm(), distParams);
+        const auto & distParams = obs_params_->top_level_.distribution.value().params.value();
+        dist_ = DistributionFactory::create(obs_params_->comm(), distParams);
 
         // Load the obs space data (into obs_group_) from the obs source (file or generator)
         ObsGroup tempObsGroup;
@@ -281,8 +286,8 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
     fillChanNumToIndexMap();
 
-    if (obs_params_.top_level_.obsExtend.value() != boost::none) {
-        extendObsSpace(*(obs_params_.top_level_.obsExtend.value()));
+    if (obs_params_->top_level_.obsExtend.value() != boost::none) {
+        extendObsSpace(*(obs_params_->top_level_.obsExtend.value()));
     }
 
     createMissingObsErrors();
@@ -296,6 +301,14 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 }
 
 // -----------------------------------------------------------------------------
+ObsSpace::~ObsSpace() = default;
+
+// -----------------------------------------------------------------------------
+const ObsSpaceParameters & ObsSpace::params() const {
+    return *obs_params_;
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::save(bool preserveDistribution) {
     // Determine if we should continue on to write out a file. Conditions for
     // writing out a file are:
@@ -304,12 +317,12 @@ void ObsSpace::save(bool preserveDistribution) {
     //         OR
     //        there are more than zero observations across all MPI ranks.
 
-    if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+    if (obs_params_->top_level_.obsDataOut.value() != boost::none) {
       if (create_empty_output_file_ || obs_src_stats_.gNlocs > 0) {
         if (use_dataframe_) {
-          writer::obsWrite(*(obs_params_.top_level_.obsDataOut.value()),
-                           obs_params_.top_level_.ioPool,
-                           obs_params_.comm(), this->obsname(), dist_, osdf_,
+          writer::obsWrite(*(obs_params_->top_level_.obsDataOut.value()),
+                           obs_params_->top_level_.ioPool,
+                           obs_params_->comm(), this->obsname(), dist_, osdf_,
                            obs_src_stats_, osdfMetadata_,
                            preserveDistribution);
         } else {
@@ -317,11 +330,11 @@ void ObsSpace::save(bool preserveDistribution) {
           dist_->patchObs(patchObsVec);
 
           IoPool::WriterPoolCreationParameters createParams(
-              obs_params_.comm(), obs_params_.timeComm() ,
-              obs_params_.top_level_.obsDataOut.value()->engine.value().engineParameters,
-              patchObsVec, obs_params_.top_level_.obsDataOut.value()->writeMultipleFiles);
+              obs_params_->comm(), obs_params_->timeComm() ,
+              obs_params_->top_level_.obsDataOut.value()->engine.value().engineParameters,
+              patchObsVec, obs_params_->top_level_.obsDataOut.value()->writeMultipleFiles);
           std::unique_ptr<IoPool::WriterPoolBase> writePool =
-              IoPool::WriterPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+              IoPool::WriterPoolFactory::create(obs_params_->top_level_.ioPool, createParams);
 
           writePool->initialize();
           writePool->save(*obs_group_);
@@ -375,22 +388,27 @@ std::size_t ObsSpace::nvars() const {
 
 // -----------------------------------------------------------------------------
 const std::vector<std::string> & ObsSpace::obs_group_vars() const {
-    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars;
+    return obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_var() const {
-    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortVar;
+    return obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsSortVar;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_group() const {
-    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortGroup;
+    return obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsSortGroup;
 }
 
 // -----------------------------------------------------------------------------
 std::string ObsSpace::obs_sort_order() const {
-    return obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsSortOrder;
+    return obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsSortOrder;
+}
+
+// -----------------------------------------------------------------------------
+std::string ObsSpace::distname() const {
+    return dist_->name();
 }
 
 // -----------------------------------------------------------------------------
@@ -834,14 +852,14 @@ void ObsSpace::put_db(const std::string& group, const std::string& name,
       std::vector<int64_t> timeOffsets;
       if (use_dataframe_) {
           const std::int32_t dateTimeIndex = openCreateEpochDtimeColumn(osdf_,
-             fullVarName(group, name), obs_params_.top_level_.epochDateTime);
+             fullVarName(group, name), obs_params_->top_level_.epochDateTime);
           const std::string epochStr = osdf_->getData().getUnits(dateTimeIndex);
           const util::DateTime epochDtime(stripSecondsSincePrefix(epochStr));
           timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
       } else {
           Variable dtVar;
           openCreateEpochDtimeVar(group, name, obs_src_stats_.gNlocs,
-                                  obs_params_.top_level_.epochDateTime,
+                                  obs_params_->top_level_.epochDateTime,
                                   dtVar, obs_group_->vars);
           const util::DateTime epochDtime = getEpochAsDtime(dtVar);
           timeOffsets = convertDtimeToTimeOffsets(epochDtime, vdata);
@@ -953,7 +971,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
     util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
     bool windowShiftedForward = (newWindow.start() > timeWindow_.start());
     timeWindow_ = newWindow;
-    obs_params_.updateWindow(cdaConfig);
+    obs_params_->updateWindow(cdaConfig);
 
     // Remove observations that fall outside the new window
     if (windowShiftedForward && this->nlocs() > 0 && this->has("MetaData", "dateTime")) {
@@ -969,9 +987,9 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
                          std::string("    Must use a non-overlapping distribution for now");
     throw eckit::Exception(errMsg, Here());
   }
-    if (obs_params_.top_level_.obsDataIn.value().isFileBackend()) {
+    if (obs_params_->top_level_.obsDataIn.value().isFileBackend()) {
         // Grab the file name from the ObsSpace parameters and combine it with the appendDir
-        std::string origFileName = obs_params_.top_level_.obsDataIn.value().engine.value().
+        std::string origFileName = obs_params_->top_level_.obsDataIn.value().engine.value().
                                             engineParameters.value().getFileName();
         if (origFileName == "") {
         std::string errMsg =
@@ -990,7 +1008,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
                             << std::endl;
           ObsSourceStats obsSourceStats;
           eckit::LocalConfiguration obsDataInConfig;
-          obs_params_.top_level_.obsDataIn.value().serialize(obsDataInConfig);
+          obs_params_->top_level_.obsDataIn.value().serialize(obsDataInConfig);
           obsDataInConfig.set("engine.obsfile", newFileName);
 
           if (use_dataframe_) {
@@ -1005,9 +1023,9 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             // below merges the new rows into osdf_; osdfMetadata_ already describes the (unchanged)
             // variable/dimension structure, so this temporary metadata is discarded afterwards.
             osdf::FrameMetadata appendOsdfMetadata;
-            reader::obsRead({obsDataInConfig}, obs_params_.top_level_.ioPool.value(),
-                            obs_params_.top_level_.distribution.value().params.value(), commMPI_,
-                            obs_params_.top_level_.simVars.value().variables(),
+            reader::obsRead({obsDataInConfig}, obs_params_->top_level_.ioPool.value(),
+                            obs_params_->top_level_.distribution.value().params.value(), commMPI_,
+                            obs_params_->top_level_.simVars.value().variables(),
                             timeWindow_, this->obsname(), dist_, tempOsdf, obsSourceStats,
                             appendOsdfMetadata);
 
@@ -1249,14 +1267,14 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
     ObsDataInParameters readerParams;
     readerParams.deserialize(obsDataInConfig);
     IoPool::ReaderPoolCreationParameters createParams(
-        obs_params_.comm(), obs_params_.timeComm(),
-        readerParams.engine.value().engineParameters, obs_params_.timeWindow(),
-        obs_params_.top_level_.simVars.value().variables(), dist_,
-        obs_params_.top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars,
-        obs_params_.top_level_.obsDataIn.value().prepType);
+        obs_params_->comm(), obs_params_->timeComm(),
+        readerParams.engine.value().engineParameters, obs_params_->timeWindow(),
+        obs_params_->top_level_.simVars.value().variables(), dist_,
+        obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars,
+        obs_params_->top_level_.obsDataIn.value().prepType);
 
     std::unique_ptr<IoPool::ReaderPoolBase> readPool =
-            IoPool::ReaderPoolFactory::create(obs_params_.top_level_.ioPool, createParams);
+            IoPool::ReaderPoolFactory::create(obs_params_->top_level_.ioPool, createParams);
 
     // Make sure the initialize step completes on all tasks before moving on to the
     // load step (with the barrier call). This is especially important for the case
@@ -1362,15 +1380,15 @@ std::string ObsSpace::containerName() const {
 void ObsSpace::recordCheckParameterInfo() {
     // Record the obs space name. Note that obsname_ is used early on so this function
     // needs to be called early in the ObsSpace constructor.
-    obsname_ = obs_params_.top_level_.obsSpaceName;
+    obsname_ = obs_params_->top_level_.obsSpaceName;
 
     // Check the empty obs space action to see if we should continue with the save operation.
     // Want to do the check here for valid actions because we don't want to wait until the entire
     // DA job is completed just to find there is a fault in the obsdataout spec.
     create_empty_output_file_ = true;
-    if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+    if (obs_params_->top_level_.obsDataOut.value() != boost::none) {
       const std::string emptyOspaceAction =
-          obs_params_.top_level_.obsDataOut.value()->emptyOspaceAction.value();
+          obs_params_->top_level_.obsDataOut.value()->emptyOspaceAction.value();
       if (emptyOspaceAction == "create output") {
         create_empty_output_file_ = true;
       } else if (emptyOspaceAction == "skip output") {
@@ -1384,7 +1402,7 @@ void ObsSpace::recordCheckParameterInfo() {
     // input file type to HDF5 (H5File).
     // TODO(srh) In the future, we will want to allow other
     // input file types (e.g. ODB, BUFR).
-    use_dataframe_ = obs_params_.top_level_.useDataFrame.value();
+    use_dataframe_ = obs_params_->top_level_.useDataFrame.value();
 
     // todo(SRH): Currently, when using the OSDF base writer, there is support for only:
     //   1. HDF5 output file
@@ -1400,9 +1418,9 @@ void ObsSpace::recordCheckParameterInfo() {
     // writing multiple files. So we are okay letting the "multiple output files"
     // setting pass through.
     if (use_dataframe_) {
-      if (obs_params_.top_level_.obsDataOut.value() != boost::none) {
+      if (obs_params_->top_level_.obsDataOut.value() != boost::none) {
         const ObsDataOutParameters obsDataOutParams =
-                                   *(obs_params_.top_level_.obsDataOut.value());
+                                   *(obs_params_->top_level_.obsDataOut.value());
         if (obsDataOutParams.engine.value().engineParameters.value().type.value() != "H5File"
             && obsDataOutParams.engine.value().engineParameters.value().type.value() != "ODB") {
           throw eckit::UserError(
@@ -1514,7 +1532,6 @@ void ObsSpace::resizeLocation(const Dimensions_t LocationSize, const bool append
 }
 
 // -----------------------------------------------------------------------------
-
 template<typename VarType>
 void ObsSpace::loadVar(const std::string & group, const std::string & name,
                        const std::vector<int> & sliceSelect,
@@ -1664,7 +1681,6 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
 }
 
 // -----------------------------------------------------------------------------
-
 template <typename VarType>
 void ObsSpace::saveVar(const std::string& group, std::string name,
                        const std::vector<VarType>& varValues,
@@ -1920,6 +1936,43 @@ std::size_t ObsSpace::createSliceSelections(const Variable & variable,
     return numElements;
 }
 
+// -----------------------------------------------------------------------------
+template<typename VarType>
+Variable ObsSpace::openCreateVar(const std::string & varName,
+                                 const std::vector<std::string> & varDimList) {
+    Variable var;
+    if (obs_group_->vars.exists(varName)) {
+        var = obs_group_->vars.open(varName);
+    } else {
+        // Create a vector of the dimension variables
+        std::vector<ioda::Dimensions_t> chunkDims;
+        std::vector<Variable> varDims;
+        for (auto & dimName : varDimList) {
+            Variable dimVar = obs_group_->vars.open(dimName);
+            if (dimName == "Location") {
+                chunkDims.push_back(
+                    VarUtils::getLocationChunkSize(obs_src_stats_.gNlocs));
+            } else {
+                chunkDims.push_back(dimVar.getDimensions().dimsCur[0]);
+            }
+            varDims.push_back(dimVar);
+        }
+
+        // Create the variable. Use the JEDI internal missing value marks for
+        // fill values.
+        VarType fillVal = util::missingValue<VarType>();
+        VariableCreationParameters params;
+        params.chunk = true;
+        params.setChunks(chunkDims);
+        params.compressWithGZIP();
+        params.setFillValue<VarType>(fillVal);
+
+        var = obs_group_->vars.createWithScales<VarType>(varName, varDims, params);
+    }
+    return var;
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::fillChanNumToIndexMap() {
     // If there is a channels or layers dimension, load up the channel number to index map
     // for channel/layer selection feature.
@@ -1982,17 +2035,17 @@ void ObsSpace::categorizeObsVariables() {
     // Either read from yaml list, use all variables in input file if 'obsdatain' is specified
     // or set to simulated variables if 'generate' is specified.
     const bool usingObsGenerator =
-        ((obs_params_.top_level_.obsDataIn.value().engine.value()
+        ((obs_params_->top_level_.obsDataIn.value().engine.value()
                     .engineParameters.value().type.value() == "GenList") ||
-        (obs_params_.top_level_.obsDataIn.value().engine.value()
+        (obs_params_->top_level_.obsDataIn.value().engine.value()
                     .engineParameters.value().type.value() == "GenRandom"));
 
-    if (obs_params_.top_level_.ObservedVars.value().size()
-            + obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+    if (obs_params_->top_level_.ObservedVars.value().size()
+            + obs_params_->top_level_.derivedSimVars.value().size() != 0) {
         // Read from yaml
-        obsvars_ = obs_params_.top_level_.ObservedVars;
+        obsvars_ = obs_params_->top_level_.ObservedVars;
     } else if (usingObsGenerator) {
-        obsvars_ = obs_params_.top_level_.simVars;
+        obsvars_ = obs_params_->top_level_.simVars;
     } else {
         if (this->strictHas("ObsValue")) {
             // Have an ObsValue group that came from the file. Get the list of
@@ -2019,13 +2072,13 @@ void ObsSpace::categorizeObsVariables() {
             }
             // ToDo (JAW): Get the channels from the input file (currently using the ones from
             //             simVars)
-            std::vector<int> channels = obs_params_.top_level_.simVars.value().channels();
+            std::vector<int> channels = obs_params_->top_level_.simVars.value().channels();
             oops::ObsVariables obsVars(allObsVars, channels);
             obsvars_ = obsVars;
         } else {
             // Don't have an ObsValue group (rare), get the list from the simulated
             // variables list.
-            obsvars_ = obs_params_.top_level_.simVars;
+            obsvars_ = obs_params_->top_level_.simVars;
         }
     }
 
@@ -2033,16 +2086,16 @@ void ObsSpace::categorizeObsVariables() {
     initial_obsvars_ = obsvars_;
 
     // Add derived varible names to observed variables list
-    if (obs_params_.top_level_.derivedSimVars.value().size() != 0) {
+    if (obs_params_->top_level_.derivedSimVars.value().size() != 0) {
         // As things stand, this assert cannot fail, since both variables take the list of
         // channels from the same "channels" YAML option.
-        ASSERT(obs_params_.top_level_.derivedSimVars.value().channels() == obsvars_.channels());
-        obsvars_ += obs_params_.top_level_.derivedSimVars;
-        derived_obsvars_ = obs_params_.top_level_.derivedSimVars;
+        ASSERT(obs_params_->top_level_.derivedSimVars.value().channels() == obsvars_.channels());
+        obsvars_ += obs_params_->top_level_.derivedSimVars;
+        derived_obsvars_ = obs_params_->top_level_.derivedSimVars;
     }
 
     // Get list of variables to be simulated
-    assimvars_ = obs_params_.top_level_.simVars;
+    assimvars_ = obs_params_->top_level_.simVars;
 
 
     oops::Log::info() << this->obsname() << " processed vars: " << obsvars_ << std::endl;
@@ -2085,7 +2138,7 @@ void ObsSpace::buildSortedObsGroups() {
     const float missingFloat = util::missingValue<float>();
     const util::DateTime missingDateTime = util::missingValue<util::DateTime>();
     const MissingSortValueTreatment missingSortValueTreatment =
-      obs_params_.top_level_.obsDataIn.value().obsGrouping.value().missingSortValueTreatment;
+      obs_params_->top_level_.obsDataIn.value().obsGrouping.value().missingSortValueTreatment;
 
     // Get the sort variable from the data store, and convert to a vector of floats.
     std::size_t nlocs = this->nlocs();
@@ -2665,4 +2718,10 @@ std::string ObsSpace::groupToUse(const std::string & group,
     return groupToUse;
 }
 
+// -----------------------------------------------------------------------------
+const boost::optional<std::string> & ObsSpace::verticalCoordinate() const {
+    return obs_params_->top_level_.verticalCoordinate.value();
+}
+
+// -----------------------------------------------------------------------------
 }  // namespace ioda

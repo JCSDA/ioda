@@ -29,6 +29,7 @@
 #include "ioda/distribution/DistributionUtils.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "IodaTestUtils.h"
 
 namespace eckit {
