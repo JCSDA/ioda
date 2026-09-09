@@ -139,11 +139,16 @@ template <typename VarType>
 static VarType getNcVarFillValue(const netCDF::NcVar & var);
 
 /// \brief helper functions to get the default fill value for a netCDF variable
-/// \param fillValue
-static int getNcVarDefaultFillValue(const int & fillValue);
-static int64_t getNcVarDefaultFillValue(const int64_t & fillValue);
-static float getNcVarDefaultFillValue(const float & fillValue);
-static std::string getNcVarDefaultFillValue(const std::string & fillValue);
+/// \details One explicit specialization per supported data type. The primary template is
+/// deleted on purpose: this makes an unsupported data type a compile error. This avoids
+/// implicit specialization which can lead to faulty behavior.
+/// \tparam VarType data type for variable
+template <typename VarType> static VarType getNcVarDefaultFillValue() = delete;
+template <> int getNcVarDefaultFillValue<int>();
+template <> int64_t getNcVarDefaultFillValue<int64_t>();
+template <> float getNcVarDefaultFillValue<float>();
+template <> char getNcVarDefaultFillValue<char>();
+template <> std::string getNcVarDefaultFillValue<std::string>();
 
 /// \brief get the units string from the given netcdf variable
 /// \param ncVar netcdf variable
@@ -428,15 +433,13 @@ void replaceFillValuesWithMissing(const netCDF::NcVar & var, std::vector<VarType
 template <typename VarType>
 VarType getNcVarFillValue(const netCDF::NcVar & var) {
   // Give precedence to an explicit _FillValue attribute; otherwise use the netCDF
-  // default. (Avoids NcVar::getFillModeParameters(), which is unreliable here.)
-  VarType fillValue;
+  // default. Avoids NcVar::getFillModeParameters(), which is unreliable here.
   const auto atts = var.getAtts();
   const auto attIt = atts.find("_FillValue");
   if (attIt == atts.end()) {
-    // Just need to call getNcVarDefaultFillValue with a variable of the desired
-    // data type to get the right overload function.
-    return getNcVarDefaultFillValue(fillValue);
+    return getNcVarDefaultFillValue<VarType>();
   }
+  VarType fillValue;
   const netCDF::NcVarAtt & fillAtt = attIt->second;
   if constexpr (std::is_same<VarType, char>::value) {
     // NcAtt::getValues(char *) always calls nc_get_att_text(), regardless of
@@ -467,16 +470,24 @@ VarType getNcVarFillValue(const netCDF::NcVar & var) {
 }
 
 //--------------------------------------------------------------------------------
-int getNcVarDefaultFillValue(const int & fillValue) {
+template <> int getNcVarDefaultFillValue<int>() {
   return NC_FILL_INT;
 }
-int64_t getNcVarDefaultFillValue(const int64_t & fillValue) {
+template <> int64_t getNcVarDefaultFillValue<int64_t>() {
   return NC_FILL_INT64;
 }
-float getNcVarDefaultFillValue(const float & fillValue) {
+template <> float getNcVarDefaultFillValue<float>() {
   return NC_FILL_FLOAT;
 }
-std::string getNcVarDefaultFillValue(const std::string & fillValue) {
+template <> char getNcVarDefaultFillValue<char>() {
+  // Use the NC_FILL_BYTE (-127) value for the default fill of a char data type. This
+  // is done to avoid issues with the current practice of storing an internal bool type
+  // variable (vector<bool>) in the netCDF file as a char data type. The NC_FILL_CHAR (0)
+  // is unfortunately a value that can be confused with a "false" value in the internal
+  // vector<bool> representation.
+  return NC_FILL_BYTE;
+}
+template <> std::string getNcVarDefaultFillValue<std::string>() {
   return NC_FILL_STRING;
 }
 //--------------------------------------------------------------------------------
