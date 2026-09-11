@@ -7,8 +7,8 @@
 
 #include "ioda/ObsVector.h"
 
-#include <math.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <string>
 
@@ -314,7 +314,7 @@ std::vector<double> ObsVector::multivarrec_dot_product_with(const ObsVector & ot
 double ObsVector::rms() const {
   double zrms = dot_product_with(*this);
   int nobs = this->nobs();
-  if (nobs > 0) zrms = sqrt(zrms / static_cast<double>(nobs));
+  if (nobs > 0) zrms = std::sqrt(zrms / static_cast<double>(nobs));
 
   return zrms;
 }
@@ -427,6 +427,14 @@ ObsVector & ObsVector::operator=(const ObsDataVector<float> & rhs) {
   oops::Log::trace() << "ObsVector::operator= done" << std::endl;
 
   return *this;
+}
+// -----------------------------------------------------------------------------
+const std::string & ObsVector::obstype() const {
+  return obsdb_.obsname();
+}
+// -----------------------------------------------------------------------------
+int64_t ObsVector::getSeed() const {
+  return obsdb_.getSeed();
 }
 // -----------------------------------------------------------------------------
 void ObsVector::mask(const ObsVector & mask) {

@@ -8,18 +8,19 @@
 #ifndef OBSVECTOR_H_
 #define OBSVECTOR_H_
 
-#include <Eigen/Dense>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceAssociated.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 namespace ioda {
-  template <typename DATATYPE> class ObsDataVector;
+
+template <typename DATATYPE> class ObsDataVector;
+class ObsSpace;
 
 //-----------------------------------------------------------------------------
 /*! \brief ObsVector class to handle vectors in observation space for IODA
@@ -108,7 +109,7 @@ class ObsVector : public ObsSpaceAssociated,
   ObsSpace & space() {return obsdb_;}
   const ObsSpace & space() const {return obsdb_;}
   std::vector<double> data() const {return values_;}
-  const std::string & obstype() const {return obsdb_.obsname();}
+  const std::string & obstype() const;
   const oops::ObsVariables & varnames() const {return obsvars_;}
   std::size_t nvars() const {return nvars_;}
   std::size_t nlocs() const {return nlocs_;}
@@ -122,7 +123,7 @@ class ObsVector : public ObsSpaceAssociated,
 
   bool has(const std::string & var) const {return obsvars_.has(var);}
 
-  int64_t getSeed() const {return obsdb_.getSeed();}
+  int64_t getSeed() const;
 
 // I/O
   void save(const std::string &) const;
