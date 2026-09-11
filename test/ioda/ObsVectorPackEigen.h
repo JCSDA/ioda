@@ -28,6 +28,7 @@
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
+#include "IodaTestUtils.h"
 
 namespace ioda {
 namespace test {
@@ -48,6 +49,7 @@ void testPackEigen() {
 
   for (std::size_t jj = 0; jj < conf.size(); ++jj) {
      eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+     applyContainerDefault(::test::TestEnvironment::config(), obsconf);
      ioda::ObsSpace obsdb(obsconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
      const size_t rank = obsdb.distribution()->rank();

@@ -26,6 +26,7 @@
 
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 
 namespace eckit {
   // Don't use the contracted output for these types: the current implementation works only
@@ -70,6 +71,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < configs_.size(); ++jj) {
       eckit::LocalConfiguration obsconf(configs_[jj], "obs space");
+      applyContainerDefault(::test::TestEnvironment::config(), obsconf);
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),
                                                                timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);

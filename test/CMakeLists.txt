@@ -1016,6 +1016,44 @@ ecbuild_add_test( TARGET  ioda_obsspace_reader_pool
                   ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_reader_pool_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_reader_pool_osdf_parity_1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_reader_pool.nc4
+                          testoutput/diagout_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_reader_pool
+                               ioda_obsspace_reader_pool_osdf )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_reader_pool_osdf_parity_2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_reader_pool.nc4
+                          testoutput/diagout_with_groups_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_reader_pool
+                               ioda_obsspace_reader_pool_osdf )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_reader_pool_osdf_parity_3
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_twfilt_reader_pool.nc4
+                          testoutput/diagout_with_groups_twfilt_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_reader_pool
+                               ioda_obsspace_reader_pool_osdf )
+
+
 if (odc_FOUND)
   ecbuild_add_test( TARGET  ioda_clean_obsspace_out_odc_files
                     COMMAND rm
@@ -1343,12 +1381,69 @@ ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_reader_pool
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_reader_pool_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_reader_pool_osdf_parity_1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.empty_obs_file_reader_pool.nc4
+                          testoutput/ospace.empty_obs_file_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_reader_pool
+                               ioda_obsspace_empty_obs_file_reader_pool_osdf )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_reader_pool_osdf_parity_2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.empty_obs_file_with_channels_reader_pool.nc4
+                          testoutput/ospace.empty_obs_file_with_channels_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_reader_pool
+                               ioda_obsspace_empty_obs_file_reader_pool_osdf )
+
+
 ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_mpi_reader_pool
                   MPI 4
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_mpi_reader_pool_osdf
+                  MPI     4
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_mpi_reader_pool_osdf_parity_1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.empty_obs_file_mpi_reader_pool.nc4
+                          testoutput/ospace.empty_obs_file_mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_mpi_reader_pool
+                               ioda_obsspace_empty_obs_file_mpi_reader_pool_osdf )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_mpi_reader_pool_osdf_parity_2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.empty_obs_file_with_channels_mpi_reader_pool.nc4
+                          testoutput/ospace.empty_obs_file_with_channels_mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_empty_obs_file_mpi_reader_pool
+                               ioda_obsspace_empty_obs_file_mpi_reader_pool_osdf )
+
 
 ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn
                   COMMAND ioda_obsspace
@@ -1673,17 +1768,70 @@ ecbuild_add_test( TARGET  ioda_obsspace_locations_qc
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_locations_qc.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/locations_qc_out.nc4
+                          testoutput/locations_qc_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_locations_qc
+                               ioda_obsspace_locations_qc_osdf )
+
 ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_twfilt
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc_twfilt.yaml"
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_twfilt_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_locations_qc_twfilt.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_twfilt_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/locations_qc_twfilt_out.nc4
+                          testoutput/locations_qc_twfilt_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_locations_qc_twfilt
+                               ioda_obsspace_locations_qc_twfilt_osdf )
+
+
 ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
                   ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric_osdf
+                  COMMAND ioda_obsspace_invalid_numeric
+                  ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/invalid_numeric_test_out.nc4
+                          testoutput/invalid_numeric_test_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_invalid_numeric
+                               ioda_obsspace_invalid_numeric_osdf )
+
 
 ecbuild_add_test( TARGET  ioda_obsspace_mpi
                   MPI     2
@@ -2324,6 +2472,24 @@ ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_zero_obs_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/zero_obs_v2_out_reader_pool.nc4
+                          testoutput/zero_obs_v2_out_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_zero_obs_reader_pool
+                               ioda_obsspace_zero_obs_reader_pool_osdf )
+
+
 ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml"
@@ -2347,6 +2513,24 @@ ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound
                   ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout-inclusive-lower-bound.nc4
+                          testoutput/diagout-inclusive-lower-bound_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_inclusive_lower_bound
+                               ioda_obsspace_inclusive_lower_bound_osdf )
+
 
 ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_cmp
                   TYPE    SCRIPT

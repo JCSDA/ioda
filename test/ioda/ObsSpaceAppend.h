@@ -29,6 +29,7 @@
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 #include "ioda/ObsSpaceParameters.h"
 
 namespace ioda {
@@ -64,6 +65,7 @@ class ObsSpaceTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      applyContainerDefault(::test::TestEnvironment::config(), obsconf);
       ioda::ObsTopLevelParameters obsparams;
       obsparams.validateAndDeserialize(obsconf);
       boost::shared_ptr<ioda::ObsSpace> tmp(new ioda::ObsSpace(obsconf, oops::mpi::world(),

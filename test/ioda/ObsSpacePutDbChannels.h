@@ -23,6 +23,7 @@
 #include "ioda/Engines/HH.h"
 #include "ioda/ObsGroup.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -44,6 +45,7 @@ CASE("ioda/ObsSpace/testPutDb") {
 
   for (const eckit::LocalConfiguration & conf : confs) {
     eckit::LocalConfiguration obsconf(conf, "obs space");
+    applyContainerDefault(::test::TestEnvironment::config(), obsconf);
 
     eckit::LocalConfiguration testconf(conf, "test data");
     bool createFile = testconf.getBool("create file", true);

@@ -24,6 +24,7 @@
 
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 
 namespace ioda {
 namespace test {
@@ -45,6 +46,7 @@ class ObsDataVecTestFixture : private boost::noncopyable {
     const util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
 
     eckit::LocalConfiguration obsconf(conf, "obs space");
+    applyContainerDefault(conf, obsconf);
     obspace_ = boost::make_unique<ObsSpace_>(obsconf, oops::mpi::world(),
                                              timeWindow, oops::mpi::myself());
   }

@@ -34,6 +34,7 @@
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsVector.h"
+#include "IodaTestUtils.h"
 
 namespace ioda {
 namespace test {
@@ -69,6 +70,7 @@ class ObsVecTestFixture : private boost::noncopyable {
 
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      applyContainerDefault(::test::TestEnvironment::config(), obsconf);
       boost::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, oops::mpi::world(),
                                                      timeWindow, oops::mpi::myself()));
       ospaces_.push_back(tmp);
@@ -362,6 +364,7 @@ void testDistributedMath() {
        // names in the YAML. Note that this also prevents clobbering any output files
        // specfied in the YAML.
        eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+       applyContainerDefault(::test::TestEnvironment::config(), obsconf);
        obsconf.set("distribution.name", dist_names[dd]);
        // "halo size" is a required parameter and needs to be set if Halo distribution is used
        if (dist_names[dd] == "Halo") { obsconf.set("distribution.halo size", 0); }
@@ -439,6 +442,7 @@ void testRandom() {
   for (std::size_t dd = 0; dd < dist_names.size(); ++dd) {
     for (std::size_t jj = 0; jj < conf.size(); ++jj) {
       eckit::LocalConfiguration obsconf(conf[jj], "obs space");
+      applyContainerDefault(::test::TestEnvironment::config(), obsconf);
       obsconf.set("distribution.name", dist_names[dd]);
       // "halo size" is a required parameter and needs to be set if Halo distribution is used
       // "radius" is defined to be smaller than the default value so not all obs are on all PEs
