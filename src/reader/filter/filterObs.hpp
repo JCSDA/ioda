@@ -32,16 +32,20 @@ namespace reader {
 ///   1. reject locations that have missing values in either of latitude, longitude
 ///      or dateTime
 ///   2. reject locations that fall outside the given time window
+/// Both checks are governed by applyLocationChecks, which is a flag that allows them
+/// to be switched off, intended for testing purposes.
 /// \param timeWindow time window object
 /// \param commAll mpi communicator for all the ranks in the obs space communicator
 /// \param obsSourceStats struct with info about the input file
 /// \param osdfCont OSDF container object
 /// \param osdfMetadata frame metadata for dest OSDF
+/// \param applyLocationChecks when false, keep every location and skip both checks
 void filterObs(const util::TimeWindow & timeWindow,
                const eckit::mpi::Comm & commAll,
                ObsSourceStats & obsSourceStats,
                std::unique_ptr<osdf::IFrame> & osdfCont,
-               osdf::FrameMetadata & osdfMetadata);
+               osdf::FrameMetadata & osdfMetadata,
+               const bool applyLocationChecks = true);
 
 }  // namespace reader
 }  // namespace ioda

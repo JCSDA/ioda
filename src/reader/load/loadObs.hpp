@@ -51,5 +51,11 @@ void loadObs(const ObsDataInParameters & dataInParams,
              std::unique_ptr<osdf::IFrame> & destOsdf,
              osdf::FrameMetadata & osdfMetadata);
 
+/// \brief true when the obs source manufactures its locations instead of reading them
+/// \details The generator backends (GenList, GenRandom) are handed the locations to produce,
+/// so their output is the obs set the caller asked for rather than a sample to be screened.
+/// \param dataInParams obs space data input (obsdatain) parameters
+bool sourceIsGenerated(const ObsDataInParameters & dataInParams);
+
 }  // namespace reader
 }  // namespace ioda

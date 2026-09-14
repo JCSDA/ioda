@@ -140,6 +140,45 @@ void testFrameCols() {
 }
 
 // -----------------------------------------------------------------------------
+// With the location checks switched off, every row survives and nothing is reported as
+// rejected. The input frame is its own reference here: a generated obs source is handed
+// the locations to produce, so the filter must hand them all back.
+void testChecksDisabled() {
+  const eckit::LocalConfiguration timeWinConfig =
+      ::test::TestEnvironment::config().getSubConfiguration("time window");
+  const util::TimeWindow timeWindow(timeWinConfig);
+
+  const std::vector<eckit::LocalConfiguration> configColumnData =
+      ::test::TestEnvironment::config().getSubConfigurations("test column data");
+  const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
+
+  std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
+  std::vector<std::string> testColumnNames;
+  std::vector<std::string> testColumnTypes;
+  populateFrame(configColumnData, testOsdf, testColumnNames, testColumnTypes);
+
+  // Same data again, left untouched, to compare against.
+  std::unique_ptr<osdf::IFrame> refOsdf = std::make_unique<osdf::FrameRows>();
+  std::vector<std::string> refColumnNames;
+  std::vector<std::string> refColumnTypes;
+  populateFrame(configColumnData, refOsdf, refColumnNames, refColumnTypes);
+  const std::size_t numInputRows = refOsdf->numRows();
+
+  ioda::ObsSourceStats obsSourceStats;
+  osdf::FrameMetadata osdfMetadata;
+  const bool applyLocationChecks = false;
+  reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata,
+                    applyLocationChecks);
+  oops::Log::info() << "testChecksDisabled: after filtering" << std::endl;
+  compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames,
+    refColumnTypes, tolerance, false);
+
+  EXPECT_EQUAL(obsSourceStats.nlocs, numInputRows);
+  EXPECT_EQUAL(obsSourceStats.gNlocsOutsideTimewindow, 0);
+  EXPECT_EQUAL(obsSourceStats.gNlocsRejectQc, 0);
+}
+
+// -----------------------------------------------------------------------------
 class ReaderFilter : public oops::Test {
  public:
   ReaderFilter() {}
@@ -155,6 +194,8 @@ class ReaderFilter : public oops::Test {
       { testFrameRows(); });
     ts.emplace_back(CASE("ioda/ReaderFilter/testFrameCols")
       { testFrameCols(); });
+    ts.emplace_back(CASE("ioda/ReaderFilter/testChecksDisabled")
+      { testChecksDisabled(); });
   }
 
   void clear() const override {}

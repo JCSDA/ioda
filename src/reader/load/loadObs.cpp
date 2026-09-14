@@ -55,6 +55,13 @@ static void distributeOsdfMetadata(const eckit::mpi::Comm & mainComm, bool thisR
 //--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
+bool sourceIsGenerated(const ObsDataInParameters & dataInParams) {
+  const std::string inputFileType =
+    dataInParams.engine.value().engineParameters.value().type.value();
+  return (inputFileType == "GenList") || (inputFileType == "GenRandom");
+}
+
+//--------------------------------------------------------------------------------
 void loadObs(const ObsDataInParameters & dataInParams,
              const IoPool::IoPoolParameters & ioPoolParams,
              const eckit::mpi::Comm & commAll,

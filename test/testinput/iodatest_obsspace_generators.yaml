@@ -1,19 +1,20 @@
 ---
-# ObsSpace-level test for the OSDF generator backends (GenList, GenRandom).
+# ObsSpace-level test for the generator backends (GenList, GenRandom).
 #
-# This exercises the full OSDF reader pipeline (load -> filter -> distribute) for generated
-# observations. Its main purpose is to confirm that the time-window filter is applied to
-# generator output the same as it is for file backends:
-#   - GenList places some obs outside the window, which must be filtered out.
-#   - GenRandom generates all obs strictly inside the window, so none are filtered.
+# Registered once per container, the second run selected by IODA_TEST_CONTAINER, so both
+# readers are held to these same expectations. Its main purpose is to confirm that
+# generator output is NOT time-window filtered: a generator is handed the locations to
+# produce, so all of them are kept even when their datetimes fall outside the window.
+# GenList is given obs on both sides of the window to pin that down.
 time window:
   begin: "2018-04-14T21:00:00Z"
   end: "2018-04-15T03:00:00Z"
 
 observations:
 # ----------------------------------------------------------------------------------------
-# GenList: 6 generated locations, 2 of which fall outside the 6-hour (21600 s) window and
-# must be removed by the time-window filter, leaving 4.
+# GenList: 6 generated locations, 2 of which fall outside the 6-hour (21600 s) window.
+# All 6 are retained by both containers: the location checks do not apply to a generated
+# source.
 - obs space:
     name: "GenList"
     simulated variables: ['temperature']
@@ -25,54 +26,52 @@ observations:
         lons:      [  2.0,   4.0,   8.0,  20.0, 100.0, 110.0 ]
         # time offsets (s) relative to the epoch (= window start). The last two are outside
         # the window: one is 1 hour past the end (25200 s > 21600 s), one is 1 hour before
-        # the start (-3600 s).
+        # the start (-3600 s). Both are kept regardless.
         dateTimes: [ 3600,  7200, 10800, 14400, 25200, -3600 ]
         epoch: "seconds since 2018-04-14T21:00:00Z"
         obs values: [ 285.0 ]
         obs errors: [   1.5 ]
     obs perturbations seed: 0
-    use data frame container: true
-    data frame type: FrameRows
   test data:
-    # 6 generated, 2 outside window -> 4 retained.
-    gnlocs: 4
-    gnlocs outside time window: 2
+    # 6 generated, none filtered -> all 6 retained.
+    gnlocs: 6
+    gnlocs outside time window: 0
     gnlocs rejected by qc: 0
     nlocs from source: 6
-    nrecs: 4
+    nrecs: 6
     obs perturbations seed: 0
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    # Norms are over the 4 surviving (in-window) locations:
-    #   latitude  {1,2,4,10}    -> sqrt(1+4+16+100)      = sqrt(121)    = 11
-    #   longitude {2,4,8,20}    -> sqrt(4+16+64+400)     = sqrt(484)    = 22
-    #   ObsValue/temperature is constant 285 -> sqrt(4*285^2) = 2*285   = 570
-    #   ObsError/temperature is constant 1.5 -> sqrt(4*1.5^2) = 2*1.5   = 3
+    # Norms are over all 6 generated locations, in-window or not:
+    #   latitude  {1,2,4,10,50,60}    -> sqrt(6221)
+    #   longitude {2,4,8,20,100,110}  -> sqrt(22584)
+    #   ObsValue/temperature is constant 285 -> sqrt(6*285^2) = 285*sqrt(6)
+    #   ObsError/temperature is constant 1.5 -> sqrt(6*1.5^2) = 1.5*sqrt(6)
     variables for get test:
       - name: "latitude"
         group: "MetaData"
         type: "float"
-        norm: 11.0
+        norm: 78.873316146844
       - name: "longitude"
         group: "MetaData"
         type: "float"
-        norm: 22.0
+        norm: 150.27973915335
       - name: "temperature"
         group: "ObsValue"
         type: "float"
-        norm: 570.0
+        norm: 698.10457669321
       - name: "temperature"
         group: "ObsError"
         type: "float"
-        norm: 3.0
+        norm: 3.6742346141748
     tolerance:
       - 1.0e-11
     variables for putget test: []
 
 # ----------------------------------------------------------------------------------------
-# GenRandom: 9 generated locations, all with datetimes strictly inside the window, so none
-# are removed by the time-window filter.
+# GenRandom: 9 generated locations. Its datetimes are generated inside the window anyway,
+# so this case would look the same either way; it is here to cover the second generator.
 - obs space:
     name: "GenRandom"
     simulated variables: ['temperature']
@@ -89,10 +88,8 @@ observations:
         obs values: [ 285.0 ]
         obs errors: [   1.5 ]
     obs perturbations seed: 0
-    use data frame container: true
-    data frame type: FrameRows
   test data:
-    # None filtered: GenRandom datetimes are generated inside the window.
+    # None filtered.
     gnlocs: 9
     gnlocs outside time window: 0
     gnlocs rejected by qc: 0

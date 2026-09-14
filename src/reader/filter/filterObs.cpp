@@ -29,7 +29,8 @@ void filterObs(const util::TimeWindow & timeWindow,
                const eckit::mpi::Comm & commAll,
                ObsSourceStats & obsSourceStats,
                std::unique_ptr<osdf::IFrame> & osdfCont,
-               osdf::FrameMetadata & osdfMetadata) {
+               osdf::FrameMetadata & osdfMetadata,
+               const bool applyLocationChecks) {
   oops::Log::trace() << "reader::filterObs start" << std::endl;
   // Want to treat an empty input file (sourceNlocs == 0) as a special case
   // in the obs space. sourceNlocs == 0 when there are zero rows in all osdf
@@ -75,40 +76,42 @@ void filterObs(const util::TimeWindow & timeWindow,
         throw eckit::BadValue(errMsg, Here());
     }
 
-    // If we made it to here, we have the required variables to do the filtering.
-    // Read in the dateTime values and do the window check (built into the
-    // TimeWindow class).
-    std::vector<int64_t> dateTimeVals;
-    osdfCont->getColumn(dateTimeColName, dateTimeVals);
-    const std::string epochString = osdfCont->getColumnUnits(dateTimeColName);
-    util::DateTime epochDt(ioda::stripSecondsSincePrefix(epochString));
-    timeWindow.setEpoch(epochDt);
-    std::vector<bool> filterMask = timeWindow.createTimeMask(dateTimeVals);
-    const std::size_t locsOutsideTimewindow =
-      std::count(filterMask.begin(), filterMask.end(), false);
-
-    // Add missing date/time and lat/lon values to the filter mask.
+    std::size_t locsOutsideTimewindow = 0;
     std::size_t locsRejectQc = 0;
-    std::vector<float> latVals, lonVals;
-    osdfCont->getColumn(latColName, latVals);
-    osdfCont->getColumn(lonColName, lonVals);
-    const int64_t int64MissingVal = util::missingValue<int64_t>();
-    const float floatMissingVal = util::missingValue<float>();
-    for (std::size_t i = 0; i < filterMask.size(); ++i) {
-        if (filterMask[i]) {
-            if ((dateTimeVals[i] == int64MissingVal) ||
-                (latVals[i] == floatMissingVal) ||
-                (lonVals[i] == floatMissingVal) ||
-                (!checkLatLonIsValid(latVals[i], lonVals[i]))) {
-                filterMask[i] = false;
-                ++locsRejectQc;
+
+    if (applyLocationChecks) {
+        // We have the required variables to do the filtering. Read in the dateTime
+        // values and do the window check (built into the TimeWindow class).
+        std::vector<int64_t> dateTimeVals;
+        osdfCont->getColumn(dateTimeColName, dateTimeVals);
+        const std::string epochString = osdfCont->getColumnUnits(dateTimeColName);
+        util::DateTime epochDt(ioda::stripSecondsSincePrefix(epochString));
+        timeWindow.setEpoch(epochDt);
+        std::vector<bool> filterMask = timeWindow.createTimeMask(dateTimeVals);
+        locsOutsideTimewindow = std::count(filterMask.begin(), filterMask.end(), false);
+
+        // Add missing date/time and lat/lon values to the filter mask.
+        std::vector<float> latVals, lonVals;
+        osdfCont->getColumn(latColName, latVals);
+        osdfCont->getColumn(lonColName, lonVals);
+        const int64_t int64MissingVal = util::missingValue<int64_t>();
+        const float floatMissingVal = util::missingValue<float>();
+        for (std::size_t i = 0; i < filterMask.size(); ++i) {
+            if (filterMask[i]) {
+                if ((dateTimeVals[i] == int64MissingVal) ||
+                    (latVals[i] == floatMissingVal) ||
+                    (lonVals[i] == floatMissingVal) ||
+                    (!checkLatLonIsValid(latVals[i], lonVals[i]))) {
+                    filterMask[i] = false;
+                    ++locsRejectQc;
+                }
             }
         }
-    }
 
-    // Remove all masked rows. Keep count of locations (row) both
-    // before and after the row removal.
-    osdfCont->removeRows(filterMask);
+        // Remove all masked rows. Keep count of locations (row) both
+        // before and after the row removal.
+        osdfCont->removeRows(filterMask);
+    }
     const std::size_t localNlocs = osdfCont->numRows();
 
     // Fill in the obsSourceStats struct

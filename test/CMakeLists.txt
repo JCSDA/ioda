@@ -192,7 +192,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_inclusive_lower_bound.yaml
   testinput/iodatest_obsspace_osdf_frame_cols.yaml
   testinput/iodatest_obsspace_osdf_frame_rows.yaml
-  testinput/iodatest_obsspace_generators_osdf.yaml
+  testinput/iodatest_obsspace_generators.yaml
   testinput/iodatest_obsspace_osdf_prepare_derived.yaml
   testinput/iodatest_obsspace_null_channel.yaml
   testinput/iodatest_obsspace_null_channel_osdf.yaml
@@ -1676,11 +1676,27 @@ ecbuild_add_test( TARGET  ioda_obsspace_grouping
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_grouping_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_grouping.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
 ecbuild_add_test( TARGET  ioda_obsspace_grouping_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping_reader_pool.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_grouping_reader_pool_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_grouping_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
@@ -1879,11 +1895,121 @@ ecbuild_add_test( TARGET  ioda_obsspace_mpi
                   ARGS    "testinput/iodatest_obsspace_mpi.yaml"
                   )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER,
+# which also tags the output file names with "_osdf" so the two runs do not collide.
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf
+                  MPI     2
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_mpi.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf_parity_1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_mpi.nc4
+                          testoutput/diagout_mpi_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi
+                               ioda_obsspace_mpi_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf_parity_2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.generate.random.mpi.nc4
+                          testoutput/ospace.generate.random.mpi_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi
+                               ioda_obsspace_mpi_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf_parity_3
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.generate.list.mpi.nc4
+                          testoutput/ospace.generate.list.mpi_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi
+                               ioda_obsspace_mpi_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf_parity_4
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_mpi.nc4
+                          testoutput/diagout_with_groups_mpi_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi
+                               ioda_obsspace_mpi_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_osdf_parity_5
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_twfilt_mpi.nc4
+                          testoutput/diagout_with_groups_twfilt_mpi_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi
+                               ioda_obsspace_mpi_osdf )
+
 ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool
                   MPI     2
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_mpi_reader_pool.yaml"
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER,
+# which also tags the output file names with "_osdf" so the two runs do not collide.
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf
+                  MPI     2
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_mpi_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+# Content equality, not bitwise: the two writers differ in row order and attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_mpi_reader_pool.nc4
+                          testoutput/diagout_mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi_reader_pool
+                               ioda_obsspace_mpi_reader_pool_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.generate.random.mpi_reader_pool.nc4
+                          testoutput/ospace.generate.random.mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi_reader_pool
+                               ioda_obsspace_mpi_reader_pool_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_3
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/ospace.generate.list.mpi_reader_pool.nc4
+                          testoutput/ospace.generate.list.mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi_reader_pool
+                               ioda_obsspace_mpi_reader_pool_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_4
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_mpi_reader_pool.nc4
+                          testoutput/diagout_with_groups_mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi_reader_pool
+                               ioda_obsspace_mpi_reader_pool_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_5
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/diagout_with_groups_twfilt_mpi_reader_pool.nc4
+                          testoutput/diagout_with_groups_twfilt_mpi_reader_pool_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_mpi_reader_pool
+                               ioda_obsspace_mpi_reader_pool_osdf )
 
 ecbuild_add_test( TARGET  ioda_obsspace_marine
                   COMMAND ioda_obsspace
@@ -2038,11 +2164,19 @@ ecbuild_add_test( TARGET  ioda_obsspace_osdf_frame_rows
                   LIBS  ioda_test
                   )
 
-ecbuild_add_test( TARGET  ioda_obsspace_generators_osdf
+ecbuild_add_test( TARGET  ioda_obsspace_generators
                   COMMAND ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_generators_osdf.yaml"
+                  ARGS    "testinput/iodatest_obsspace_generators.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# The generators write no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_generators_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_generators.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
 
 # this test checks the creation of an iframe of a given type (FrameRows or FrameCols)
 ecbuild_add_test( TARGET ioda_osdf_create_iframe

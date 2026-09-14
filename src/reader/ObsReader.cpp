@@ -52,9 +52,18 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
 
   // Loop through input files, load into a temporary osdf, then append to destOsdf
   // obsSourceStats are updated in the filter and distribute steps.
+  //
+  // A generated obs source is handed the locations to produce, so its output is the obs
+  // set that was asked for rather than a sample to be screened, and the location checks
+  // do not apply to it. Mixing generated and read sources in one obs space would make
+  // that ambiguous, so the checks are only dropped only when every source is generated.
+  bool applyLocationChecks = false;
   for (size_t index = 0; index < dataInParams.size(); ++index) {
     ObsDataInParameters dataInParamsSingleFile;
     dataInParamsSingleFile.deserialize(dataInParams[index]);
+    if (!sourceIsGenerated(dataInParamsSingleFile)) {
+      applyLocationChecks = true;
+    }
 
     // Handle first osdf separately so that destOsdf has correct metadata for append.
     if (index == 0) {
@@ -79,7 +88,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
 
   //----- Filter step -----
   // Apply filters to the OSDF to remove unwanted rows
-  filterObs(timeWindow, commAll, obsSourceStats, destOsdf, osdfMetadata);
+  filterObs(timeWindow, commAll, obsSourceStats, destOsdf, osdfMetadata, applyLocationChecks);
 
   //----- Distribute step -----
   // Move obs to their intended MPI ranks in the main communicator group
