@@ -54,6 +54,25 @@ class ObsSpaceParameters;
   /// \param sep delimiter to split on
   std::string joinString(const std::vector<std::string> & strVec, std::string sep);
 
+  /// \brief separator between a variable name and a slice index in an OSDF column name
+  /// \details A variable with a slice dimension occupies one OSDF column per slice, named
+  ///          "<variable><separator><slice index>".
+  ///
+  ///          NOTE: TODO(srh) This change moves us toward a single point for changing the
+  ///          slice suffix format. However, more work is needed to remove the remaining
+  ///          hard-coded uses of the underscore for the separator.
+  ///          extractChannelSuffixIfPresent is an example. This function is shared between
+  ///          the OSDF and ObsGroup paths and the work to parameterize the separator is
+  ///          being deferred until the ObsGroup is slated for deprecation.
+  constexpr char osdfSliceSuffixSep = '_';
+
+  /// \brief return the OSDF column name holding one slice of a variable
+  /// \details This is not checked against existence, it simply returns the column
+  ///          name that would hold the given slice of the variable.
+  /// \param fullVarName hierarchical variable name ("<group>/<name>")
+  /// \param sliceIndex slice dimension index value (not a position along the axis)
+  std::string osdfSliceColumnName(const std::string & fullVarName, const int sliceIndex);
+
   /// \brief remove the numerical suffix (if any) from a given string
   /// \param str string of which to remove any numerical suffix
   std::string removeStringNumericSuffix(const std::string & str);

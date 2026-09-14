@@ -10,11 +10,11 @@
 #include <netcdf>
 
 #include <cmath>
-#include <map>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -154,6 +154,21 @@ template <> std::string getNcVarDefaultFillValue<std::string>();
 /// \param ncVar netcdf variable
 std::string getNcVarUnits(const netCDF::NcVar & var);
 
+/// \brief  check that no two variables in a file claim the same OSDF column name
+/// \details A variable dimensioned by a slice dimension is expanded into one column per slice,
+/// named "<variable>_<slice index>". That name is indistinguishable from the name of a plain
+/// 1-D variable that happens to end in the same suffix, so a file holding both a 2-D
+/// "X[Location, Channel]" and a 1-D "X_1[Location]" asks the reader to create the column "X_1"
+/// twice when Channel includes the value 1.
+/// \param inFile netcdf file object (opened in read mode)
+/// \param fileName name of the file, for the error message
+/// \param callerName name of the calling function, for the error message
+/// \param osdfMetadata frame metadata holding the registered slice index values
+static void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
+                                          const std::string & fileName,
+                                          const std::string & callerName,
+                                          const osdf::FrameMetadata & osdfMetadata);
+
 /// \brief  transfer variable data to the destination OSDF container
 /// \tparam VarType
 /// \param varName hierarchical name of variable
@@ -181,11 +196,13 @@ static void transferVarDataToOSDF(const std::string& varName,
 /// specification is made. The idea is to give the first N locations to rank 0, then the
 /// second N locations to rank 1, and so forth in a load balanced manner.
 /// \param inFile netcdf file object (opened in read mode)
+/// \param fileName name of the file, for error messages
 /// \param startLoc beginning of location range
 /// \param locCount number of locations in range
 /// \param destOSDF destination OSDF container object
 /// \param osdfMetadata frame metadata for dest OSDF
 int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
+                           const std::string & fileName,
                            const std::size_t startLoc,
                            const std::size_t locCount,
                            std::unique_ptr<osdf::IFrame> & destOSDF,
@@ -542,6 +559,77 @@ std::string getNcVarUnits(const netCDF::NcVar & var) {
   return unitsString;
 }
 
+//---------------------------------------------------------------------
+void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
+                                   const std::string & fileName,
+                                   const std::string & callerName,
+                                   const osdf::FrameMetadata & osdfMetadata) {
+  // Build up the column names each variable will claim and record the first claimant of
+  // each one. Mirror the loader's own decisions so that this neither misses a collision the
+  // loader would hit nor invents one for a variable the loader never stores: skip what
+  // keepNetcdfVarForOSDF rejects, and skip the types the transfer step has no case for.
+  std::unordered_map<std::string, std::string> claimedBy;
+  std::vector<std::string> collisions;
+  const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
+  for (const auto & varName : allVars) {
+    const std::vector<std::string> varNameParts = ioda::splitString(varName, '/');
+    netCDF::NcGroup topGroup = inFile;
+    netCDF::NcVar var = openHierarchialNetcdfVar(topGroup, varNameParts);
+    if (var.isNull()) {
+      continue;
+    }
+    const std::string varTypeName = var.getType().getName();
+    if (varTypeName != "int" && varTypeName != "int64" && varTypeName != "float" &&
+        varTypeName != "byte" && varTypeName != "string") {
+      continue;
+    }
+    std::vector<std::string> varDimNames;
+    if (!keepNetcdfVarForOSDF(varName, var, varDimNames)) {
+      continue;
+    }
+
+    // A variable dimensioned only by Location becomes a single column under its own name.
+    // Anything else is sliced, one column per registered index of the slice dimension.
+    std::vector<std::string> columnNames;
+    if (varDimNames.size() == 1 && varDimNames[0] == "Location") {
+      columnNames.push_back(varName);
+    } else {
+      const std::string & sliceDimName = varDimNames.back();
+      const std::vector<int> & dimNums = osdfMetadata.getDimNums(sliceDimName);
+      columnNames.reserve(dimNums.size());
+      for (const auto & dimNum : dimNums) {
+        columnNames.push_back(ioda::osdfSliceColumnName(varName, dimNum));
+      }
+    }
+
+    for (const auto & columnName : columnNames) {
+      const auto claim = claimedBy.find(columnName);
+      if (claim == claimedBy.end()) {
+        claimedBy.emplace(columnName, varName);
+      } else {
+        collisions.push_back("    column: " + columnName +
+                             "\n        claimed by variable: " + claim->second +
+                             "\n        and by variable:     " + varName);
+      }
+    }
+  }
+
+  if (!collisions.empty()) {
+    // Report every collision rather than just the first, so that a file needing several
+    // variables renamed or removed says so in one pass.
+    std::string errMsg = callerName + ": Input file has variables that map onto the same OSDF " +
+                         "column name.\n    file: " + fileName + "\n";
+    for (const auto & collision : collisions) {
+      errMsg += collision + "\n";
+    }
+    errMsg += "    A variable dimensioned by a slice dimension expands into "
+              "\"<variable>_<slice index>\" columns,\n"
+              "    which collide with 1-D variables whose names end in the same suffix. "
+              "Rename or remove\n    one of each pair listed above.";
+    throw eckit::BadValue(errMsg, Here());
+  }
+}
+
 //--------------------------------------------------------------------------------
 template <typename VarType>
 void transferVarDataToOSDF(const std::string& varName,
@@ -577,9 +665,8 @@ void transferVarDataToOSDF(const std::string& varName,
         // this later if it turns out to be problematic.
         for (std::size_t islice = 0; islice < dimNums.size(); ++islice) {
           std::vector<VarType> dataSlice(numLocs, varData[islice]);
-          destOSDF->appendNewColumn(
-            varName + std::string("_") + std::to_string(dimNums[islice]),
-            dataSlice, varUnit);
+          destOSDF->appendNewColumn(ioda::osdfSliceColumnName(varName, dimNums[islice]),
+                                    dataSlice, varUnit);
         }
         osdfMetadata.addVarDimNames(varName, varDimNames);
       } else {
@@ -601,9 +688,8 @@ void transferVarDataToOSDF(const std::string& varName,
           const std::size_t idata = (numSlices * iloc) + islice;
           dataSlice[iloc] = varData[idata];
         }
-        destOSDF->appendNewColumn(
-          varName + std::string("_") + std::to_string(dimNums[islice]),
-          dataSlice, varUnit);
+        destOSDF->appendNewColumn(ioda::osdfSliceColumnName(varName, dimNums[islice]),
+                                  dataSlice, varUnit);
       }
       osdfMetadata.addVarDimNames(varName, varDimNames);
     } else {
@@ -622,6 +708,7 @@ void transferVarDataToOSDF(const std::string& varName,
 
 //---------------------------------------------------------------------
 int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
+                           const std::string & fileName,
                            const std::size_t startLoc,
                            const std::size_t locCount,
                            std::unique_ptr<osdf::IFrame> & destOSDF,
@@ -696,6 +783,13 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
       osdfMetadata.setDimNums(dimName, dimNums);
     }
   }
+
+  // The slice index values are now known, so the column names the variables will claim can
+  // be worked out. Reject a file whose variables would claim the same column twice before
+  // loading any of them, while the offending pair can still be named.
+  checkOsdfColumnNameCollisions(inFile, fileName,
+                                std::string("ioda::reader::loadObsBlockFromNetcdf"),
+                                osdfMetadata);
 
   // Get a list of all variables in the file expressed as hierarchical paths. The
   // herierchy is due to the netcdf group structure. Walk through all the variables
@@ -854,7 +948,8 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
 
   // Split file or not, each IO pool rank now reads its assigned data into an OSDF container.
   if (!emptyFile) {
-    const int rc = loadObsBlockFromNetcdf(inFile, start, count, destOSDF, osdfMetadata);
+    const int rc =
+        loadObsBlockFromNetcdf(inFile, fileName, start, count, destOSDF, osdfMetadata);
     if (rc != 0) {
       const std::string errMsg = "loadOsdfFromNetcdf: Failed to load block: "
                                  " start: " + std::to_string(start) +

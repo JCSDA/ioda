@@ -1605,7 +1605,7 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
                 // Read in the column corresponding to the i-th slice
                 std::vector<VarType> singleChanData;
                 osdf_->getColumn(
-                    groupVarName + std::string("_") + std::to_string(sliceSelectToUse[i]),
+                    ioda::osdfSliceColumnName(groupVarName, sliceSelectToUse[i]),
                     singleChanData);
 
                 // If on the first iteration, resize the output vector

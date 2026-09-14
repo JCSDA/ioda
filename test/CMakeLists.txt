@@ -527,6 +527,12 @@ ecbuild_add_test( TARGET  ioda_reader_keepvar
                   LIBS  ioda_test
                   )
 
+# Test the guard that reports non-storable variables due to column name collisions.
+ecbuild_add_test( TARGET  ioda_reader_var_collision
+                  SOURCES mains/reader/TestReaderVarCollision.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
 # Reader fill-value step: verifies fill value handling in a NetCDF file. Of particular
 # interest is the fill value handling for an internal bool variable (vector<bool>) which
 # is stored as a char variable in the NetCDF file.

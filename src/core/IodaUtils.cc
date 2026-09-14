@@ -72,8 +72,13 @@ std::string joinString(const std::vector<std::string> & strVec, std::string sep)
 }
 
 // -----------------------------------------------------------------------------
+std::string osdfSliceColumnName(const std::string & fullVarName, const int sliceIndex) {
+  return fullVarName + osdfSliceSuffixSep + std::to_string(sliceIndex);
+}
+
+// -----------------------------------------------------------------------------
 std::string removeStringNumericSuffix(const std::string & str) {
-  const std::size_t pos = str.rfind('_');
+  const std::size_t pos = str.rfind(osdfSliceSuffixSep);
   if ((pos != std::string::npos) && (pos + 1 < str.size())) {
     const bool allDigits = std::all_of(str.begin() + pos + 1, str.end(),
       [](const unsigned char c) { return std::isdigit(c); });
@@ -128,7 +133,7 @@ std::vector<std::string> osdfVarColumnNames(const osdf::FrameMetadata & frameMet
   std::vector<std::string> columnNames;
   columnNames.reserve(sliceIndices.size());
   for (int sliceIndex : sliceIndices) {
-    columnNames.push_back(fullVarName + std::string("_") + std::to_string(sliceIndex));
+    columnNames.push_back(osdfSliceColumnName(fullVarName, sliceIndex));
   }
   return columnNames;
 }

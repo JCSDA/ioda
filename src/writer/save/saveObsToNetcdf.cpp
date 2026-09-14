@@ -218,7 +218,7 @@ std::string findColNameWithSliceSuffix(const std::string & varName,
   if (!dimName.empty()) {
     const std::vector<int> & sliceNums = osdfMetadata.getDimNums(dimName);
     if (!sliceNums.empty()) {
-      colNameWithSliceSuffix += "_" + std::to_string(sliceNums.front());
+      colNameWithSliceSuffix = ioda::osdfSliceColumnName(varName, sliceNums.front());
     }
   }
   return colNameWithSliceSuffix;
@@ -537,8 +537,8 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
           for (std::size_t islice = 0; islice < numSlices; ++islice) {
             if (numLocs > 0) {
               std::vector<T> sliceVals(numLocs);
-              srcOsdf->getColumn(colWithSlices + "_" + std::to_string(sliceNums[islice]),
-                                 sliceVals);
+              srcOsdf->getColumn(
+                ioda::osdfSliceColumnName(colWithSlices, sliceNums[islice]), sliceVals);
               varVals[islice] = sliceVals[0];
             } else {
               varVals[islice] = util::missingValue<T>();
@@ -555,7 +555,8 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
           std::vector<T> varVals(numLocs * numSlices);
           for (std::size_t islice = 0; islice < numSlices; ++islice) {
             std::vector<T> sliceVals(numLocs);
-            srcOsdf->getColumn(colWithSlices + "_" + std::to_string(sliceNums[islice]), sliceVals);
+            srcOsdf->getColumn(ioda::osdfSliceColumnName(colWithSlices, sliceNums[islice]),
+                               sliceVals);
             for (std::size_t iloc = 0; iloc < numLocs; ++iloc) {
               const std::size_t ival =  (iloc * numSlices) + islice;
               varVals[ival] = sliceVals[iloc];
