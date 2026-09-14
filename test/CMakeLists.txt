@@ -1457,6 +1457,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
 ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_bufr
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml"
@@ -1469,6 +1477,15 @@ ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_mpi
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_mpi_osdf
+                  MPI 4
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
 
 ecbuild_add_test( TARGET  ioda_obsspace_has
                   SOURCES mains/TestIodaObsSpaceHas.cc
@@ -1562,12 +1579,29 @@ if (odc_FOUND)
                     LIBS  ioda_test
                     )
 
+  # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+  # This yaml writes no output file, so no comparison step is needed.
+  ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_odc_osdf
+                    COMMAND ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                    LIBS  ioda_test )
+
   ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_odc_mpi
                     MPI 4
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
                     LIBS  ioda_test
                     )
+
+  # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+  # This yaml writes no output file, so no comparison step is needed.
+  ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_odc_mpi_osdf
+                    MPI 4
+                    COMMAND ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                    LIBS  ioda_test )
 
   # The next two tests are verifying that an exception is thrown (ie, error) when the input
   # obs file is missing which the "missing file action: error" YAML spec is used.
@@ -1854,6 +1888,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool
 ecbuild_add_test( TARGET  ioda_obsspace_marine
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yaml"
+                  )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_marine_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_marine.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 if (odc_FOUND)
@@ -2502,11 +2544,27 @@ ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_reader_pool
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_reader_pool_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
 ecbuild_add_test( TARGET  ioda_obsspace_fill_value
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsspace_fill_value_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
 
 ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values
                   COMMAND ioda_obsspace
@@ -2839,6 +2897,16 @@ ecbuild_add_test( TARGET  ioda_obsvector_missing_locs
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_oops_obsvector ioda_oops_obsdatavector )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsvector_missing_locs_osdf
+                  MPI     4
+                  COMMAND ioda_obsvector
+                  ARGS    "testinput/iodatest_obsvector_missing_locs.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_oops_obsvector ioda_oops_obsdatavector )
+
 # IODA ObsVector class (packEigen method)
 ecbuild_add_test( TARGET  ioda_obsvector_packeigen
                   MPI     4
@@ -2846,6 +2914,15 @@ ecbuild_add_test( TARGET  ioda_obsvector_packeigen
                   ARGS    "testinput/iodatest_obsvector_packeigen.yaml"
                   LIBS  ioda_test
                   )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_obsvector_packeigen_osdf
+                  MPI     4
+                  COMMAND ioda_obsvector_packeigen
+                  ARGS    "testinput/iodatest_obsvector_packeigen.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
 
 #####################################################################
 # ObsDataVector tests
