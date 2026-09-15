@@ -22,6 +22,7 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include <boost/optional.hpp>
 
