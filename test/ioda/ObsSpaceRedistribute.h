@@ -26,8 +26,8 @@
 
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
-#include "IodaTestUtils.h"
 #include "ioda/ObsSpaceParameters.h"
+#include "IodaTestUtils.h"
 
 namespace ioda {
 namespace test {

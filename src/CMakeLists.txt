@@ -1,6 +1,7 @@
 
 list( APPEND ioda_src_files
 IodaTrait.h
+ObsDataVector.cc
 ObsDataVector.h
 ObsIterator.cc
 ObsIterator.h

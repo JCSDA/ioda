@@ -27,6 +27,7 @@
 #include "ioda/distribution/Distribution.h"
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
+#include "ioda/ObsSpaceParameters.h"
 #include "ioda/ObsVector.h"
 #include "IodaTestUtils.h"
 

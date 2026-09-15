@@ -24,6 +24,7 @@
 
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
+#include "ioda/ObsVector.h"
 #include "IodaTestUtils.h"
 
 namespace ioda {
