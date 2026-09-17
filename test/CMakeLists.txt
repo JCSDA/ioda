@@ -150,6 +150,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_2_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml
+  testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml
   testinput/iodatest_obsspace_index_recnum_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
@@ -250,6 +251,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_script.yaml
   testinput/iodatest_time_io_script.py
   testinput/iodatest_time_io_multiple_input_files.yaml
+  testinput/iodatest_time_io_multiple_input_files_osdf_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml
   testinput/iodatest_time_io_empty_ospace.yaml
@@ -1797,6 +1799,23 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_mpi_4
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml"
                   LIBS  ioda_test
                   )
+
+# The same pair of obs spaces read into the OSDF container. The expectations live in their own
+# yaml rather than being layered onto the one above with IODA_TEST_CONTAINER, because the two
+# containers lay the locations out across the MPI tasks differently (see the note in that file).
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_osdf
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_osdf_mpi_2
+                  MPI 2
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_osdf
                   COMMAND ioda_obsspace_index_recnum
@@ -3910,13 +3929,45 @@ ecbuild_add_test( TARGET  ioda_clean_time_io_multiple_input_files
                     "testoutput/gnssro_obs_2021080606_s_time_multi_files_mpi_2.nc4"
                     "testoutput/amsua_n19_obs_2018041500_m_time_multi_files_mpi_4.nc4"
                     "testoutput/sondes_obs_2018041500_m_time_multi_files_mpi_4.nc4"
-                    "testoutput/gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4" )
+                    "testoutput/gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4"
+                    "testoutput/amsua_n19_obs_2018041500_m_time_multi_files_osdf_mpi_2.nc4"
+                    "testoutput/amsua_n19_obs_2018041500_m_time_single_file_osdf_mpi_2.nc4" )
 
 # the following tests read multiple input files and create a single output file for each test
 ecbuild_add_test( TARGET      ioda_time_io_multiple_input_files
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_multiple_input_files.yaml"
                   TEST_DEPENDS ioda_clean_time_io_multiple_input_files )
+
+
+# The two-rank run. With an io pool larger than one rank, every pool rank loads a block of
+# every input file, so this is the run in which a per-rank rather than whole-input location
+# numbering produces colliding Location values.
+ecbuild_add_test( TARGET      ioda_time_io_multiple_input_files_osdf_mpi_2
+                  MPI         2
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_multiple_input_files_osdf_mpi_2.yaml"
+                  TEST_DEPENDS ioda_clean_time_io_multiple_input_files )
+
+# Reading a set of input files into OSDF gives what the reference file holds.
+# Content equality, not bitwise: the reference file was written for use with the
+# ioda_time_io_multiple_input_files_amsua_mpi_2_cmp test, which currently uses the ObsGroup writer.
+ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_amsua_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/amsua_n19_obs_2018041500_m_time_multi_files_mpi_2.nc4
+                          testoutput/amsua_n19_obs_2018041500_m_time_multi_files_osdf_mpi_2.nc4
+                  TEST_DEPENDS ioda_time_io_multiple_input_files_osdf_mpi_2 )
+
+ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_amsua_osdf_file_set_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/amsua_n19_obs_2018041500_m_time_multi_files_osdf_mpi_2.nc4
+                          testoutput/amsua_n19_obs_2018041500_m_time_single_file_osdf_mpi_2.nc4
+                          --strict
+                  TEST_DEPENDS ioda_time_io_multiple_input_files_osdf_mpi_2 )
 
 ecbuild_add_test( TARGET      ioda_time_io_multiple_input_files_mpi_2
                   MPI 2

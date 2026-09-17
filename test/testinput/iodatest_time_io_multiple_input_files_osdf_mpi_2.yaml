@@ -1,0 +1,55 @@
+---
+# OSDF counterpart of the AMSUA obs space in iodatest_time_io_multiple_input_files.yaml
+#
+# Run on two ranks deliberately. With an io pool of more than one rank, every pool rank loads
+# a block of every input file, so this is the configuration in which a reader that numbers
+# those blocks per rank rather than across the concatenated input produces colliding Location
+# values. At one rank the two numberings coincide and nothing is tested.
+#
+# The output names carry an "_osdf_mpi_2" tag so this run does not collide with the ObsGroup
+# run it is compared against. Two families of comparison hang off it:
+#   - against the ObsGroup output, for content parity between the containers;
+#   - against the single-file OSDF output, strictly, which is what puts the Location
+#     coordinate under test. Strict is available there because both sides come from the same
+#     writer; against ObsGroup it is not, as the two writers differ in their attributes.
+#
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2022-01-01T00:00:00Z"
+
+observations:
+  observers:
+  - obs space:
+      name: "AMSUA NOAA19"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      obsdatain:
+        engine:
+          type: H5File
+          obsfiles:
+          - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p1.nc4"
+          - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p2.nc4"
+          - "Data/testinput_tier_1/amsua_n19_obs_2018041500_m_p3.nc4"
+          missing file action: error
+      use data frame container: true
+      data frame type: "FrameCols"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_multi_files_osdf_mpi_2.nc4"
+
+  - obs space:
+      name: "AMSUA NOAA19 single file"
+      simulated variables: ['brightnessTemperature']
+      channels: 1-15
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4"
+          missing file action: error
+      use data frame container: true
+      data frame type: "FrameCols"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/amsua_n19_obs_2018041500_m_time_single_file_osdf_mpi_2.nc4"

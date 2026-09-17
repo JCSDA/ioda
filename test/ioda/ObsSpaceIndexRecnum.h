@@ -118,6 +118,15 @@ void testConstructor() {
     EXPECT(GlobalNlocsOutsideTimeWindow == ExpectedGlobalNlocsOutsideTimeWindow);
     EXPECT(ObsAreSorted == ExpectedObsAreSorted);
 
+    // Optional: the number of simulated variables the obs space holds. Reading a set of input
+    // files must give the same count as reading the single file they were split from, so this
+    // catches a count that accumulates once per input file instead of describing the obs space.
+    if (testConfig.has("nvars")) {
+      const std::size_t Nvars = odb.nvars();
+      const std::size_t ExpectedNvars = testConfig.getUnsigned("nvars");
+      EXPECT_EQUAL(Nvars, ExpectedNvars);
+    }
+
     // records are ambigious and not implemented for halo distribution
     if (odb.distribution()->name() != "Halo") {
       std::size_t Nlocs = odb.nlocs();

@@ -6,6 +6,11 @@
  */
 #include "ioda/reader/ObsReader.hpp"
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/containers/CreateIFrame.h"
@@ -26,6 +31,42 @@
 
 namespace ioda {
 namespace reader {
+
+// -----------------------------------------------------------------------------
+/// \brief renumber a freshly loaded frame's location indices so they follow on from
+///        the input files already loaded, and report how many locations it holds
+/// \details The netCDF reader numbers the rows it loads relative to the start of the file
+/// they came from, and every io pool rank loads a block of every file, so the raw numbering
+/// repeats from one input file to the next. Shifting each file's indices by the number of
+/// locations in the files ahead of it makes the assembled frame number its rows by their
+/// position in the concatenated input, which does not depend on how the io pool happened to
+/// split the reads.
+///
+/// This must be called on every rank in commAll, including ranks holding an empty frame,
+/// because of the collective reduction used to count the frame's locations.
+///
+/// \param commAll MPI communicator for all ranks
+/// \param osdf frame to renumber
+/// \param offset number of locations in the input files already loaded
+/// \return number of locations this frame holds across all ranks in commAll
+static std::size_t offsetSourceLocationIndices(const eckit::mpi::Comm & commAll,
+                                               std::unique_ptr<osdf::IFrame> & osdf,
+                                               const std::size_t offset) {
+  std::size_t globalNlocs = 0;
+  commAll.allReduce(osdf->numRows(), globalNlocs, eckit::mpi::sum());
+
+  // An ODB source need not carry the location index column at all, and a rank outside the
+  // io pool holds the column definitions with no rows to renumber.
+  if ((offset > 0) && (osdf->numRows() > 0) && osdf->hasColumn("sourceLocationIndices")) {
+    std::vector<int> locationIndices;
+    osdf->getColumn("sourceLocationIndices", locationIndices);
+    for (int & locationIndex : locationIndices) {
+      locationIndex += static_cast<int>(offset);
+    }
+    osdf->setColumn("sourceLocationIndices", locationIndices);
+  }
+  return globalNlocs;
+}
 
 // -----------------------------------------------------------------------------
 void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
@@ -58,6 +99,7 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
   // do not apply to it. Mixing generated and read sources in one obs space would make
   // that ambiguous, so the checks are only dropped only when every source is generated.
   bool applyLocationChecks = false;
+  std::size_t sourceLocationOffset = 0;
   for (size_t index = 0; index < dataInParams.size(); ++index) {
     ObsDataInParameters dataInParamsSingleFile;
     dataInParamsSingleFile.deserialize(dataInParams[index]);
@@ -69,10 +111,17 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
     if (index == 0) {
       loadObs(dataInParamsSingleFile, ioPoolParams, commAll, obsVarNames, timeWindow, obsName,
               destOsdf, osdfMetadata);
+      sourceLocationOffset +=
+        offsetSourceLocationIndices(commAll, destOsdf, sourceLocationOffset);
     } else {
       std::unique_ptr<osdf::IFrame> tempOsdf = osdf::createIFrame(destOsdf->frameType());
       loadObs(dataInParamsSingleFile, ioPoolParams, commAll, obsVarNames, timeWindow, obsName,
               tempOsdf, osdfMetadata);
+      // Renumber before the skip checks below so that every rank takes part in the collective
+      // inside this call. A file that was warned about and skipped holds no locations anywhere,
+      // so it contributes nothing to the running offset.
+      sourceLocationOffset +=
+        offsetSourceLocationIndices(commAll, tempOsdf, sourceLocationOffset);
 
       // A warn-and-skipped missing file comes back with no column metadata, which
       // FrameCols::append can't handle on either side, so treat it as a no-op instead.
@@ -81,7 +130,10 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
       } else if (destOsdf->numCols() == 0) {
         destOsdf = std::move(tempOsdf);
       } else {
-        destOsdf->append(tempOsdf);
+        // The location indices were renumbered above. Append's own renumbering derives its
+        // offset from the calling rank's own indices, which collides across the io pool
+        // because each rank holds a block of every file, so switch it off here.
+        destOsdf->append(tempOsdf, false);
       }
     }
   }

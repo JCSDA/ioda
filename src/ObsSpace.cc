@@ -1454,20 +1454,10 @@ std::vector<eckit::LocalConfiguration> ObsSpace::expandInputFileConfigs(
       }
       std::vector<std::string> obsFileListSpec(0);
       if (origOdataInConfig.has("engine.obsfiles")) {
-          // For now, do not allow multiple input files when using the OSDF
-          // obs container. Ie, obsfiles can be used but only with one file.
-          // Todo(srh) In the future, we will want to allow multiple
-          // input files when using the OSDF obs container.
-          //
           // The serialization of the ObsDataInParameters object will
           // always create the obsfiles entry in the config, so we need
           // to extract it first and then see if it has any entries.
           obsFileListSpec = origOdataInConfig.getStringVector("engine.obsfiles");
-          if (use_dataframe_ && obsFileListSpec.size() > 1) {
-              throw eckit::UserError(
-                "When using the OSDF obs container, multiple input files "
-                "are not yet supported", Here());
-          }
       }
 
       // Make sure one and only one of "obsfile" and "obsfiles" is specified

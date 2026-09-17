@@ -716,8 +716,15 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // Get a list of all the dimensions in the file. We won't store dimensions directly in
   // the destOSDF container, but we need to register their coordinate values so the per-slice
   // columns can be expanded. The number of locations that will be read from the file is given
-  // by the locCount parameter. But we want to check that locCount is not greater than the
+  // by the locCount parameter, which must not be greater than the
   // total number of locations in the file.
+
+  // The variable count in osdfMetadata describes the variable set of a single input file.
+  // A multi-file read calls this function once per file with the same osdfMetadata, and every
+  // input file is required to hold the same variables, so start the count over for each file
+  // rather than accumulating a count multiplied by the number of files.
+  osdfMetadata.setNumVars(0);
+
   const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
   for (const auto & dimName : allDims) {
     if (dimName == "Location") {
@@ -780,7 +787,23 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
       if (!useRealValues) {
         std::iota(dimNums.begin(), dimNums.end(), 0);
       }
-      osdfMetadata.setDimNums(dimName, dimNums);
+      // An earlier input file in a multi-file read may already have registered this
+      // dimension, and setDimNums refuses to overwrite an existing registration. Register
+      // it once, and require every input file to agree on the coordinate values: the
+      // per-slice column names are built from those values, so files that disagreed would
+      // silently produce columns that do not line up with each other.
+      if (osdfMetadata.hasDim(dimName)) {
+        if (osdfMetadata.getDimNums(dimName) != dimNums) {
+          const std::string errMsg =
+            std::string("ioda::reader::loadObsBlockFromNetcdf: dimension '") + dimName +
+            std::string("' in file ") + fileName +
+            std::string(" does not have the same coordinate values as it does in the input ") +
+            std::string("files already read into this obs space");
+          throw eckit::BadValue(errMsg, Here());
+        }
+      } else {
+        osdfMetadata.setDimNums(dimName, dimNums);
+      }
     }
   }
 

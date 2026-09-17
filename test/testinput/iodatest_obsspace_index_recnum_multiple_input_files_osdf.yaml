@@ -1,4 +1,11 @@
 ---
+# OSDF counterpart of iodatest_obsspace_index_recnum_multiple_input_files.yaml.
+#
+# The index/recnum expectations deliberately do NOT mirror that file, for the reason
+# documented in iodatest_obsspace_index_recnum_osdf.yaml: the OSDF container does not
+# reproduce ObsGroup's index/recnum layout. index() here is a dense numbering of the
+# locations in the order the reader left them, not the surviving source-file indices
+# that the ObsGroup file expects.
 time window:
   begin: "2022-02-15T21:00:00Z"
   end: "2022-02-16T03:00:00Z"
@@ -13,6 +20,10 @@ observations:
         obsfile: "Data/testinput_tier_1/obsspace_grouping_multiple_input_files.nc4"
       obsgrouping:
         group variables: [ "group_by_int" ]
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 4
 
   test data:
     gnlocs: 15
@@ -97,6 +108,10 @@ observations:
         - "Data/testinput_tier_1/obsspace_grouping_multiple_input_files_p3.nc4"
       obsgrouping:
         group variables: [ "group_by_int" ]
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 4
 
   test data:
     gnlocs: 15
@@ -123,48 +138,48 @@ observations:
 
     mpi size2:
       rank0:
-        index: [ 0, 3, 5, 6, 8, 11, 13 ]
-        recnum: [ 0, 2, 0, 4, 6, 8, 8 ]
+        index: [ 0, 3, 5, 7, 9, 10, 14 ]
+        recnum: [ 0, 2, 4, 6, 8, 0, 6 ]
         recidx:
-          rec0: [ 0, 2 ]
+          rec0: [ 0, 5 ]
           rec2: [ 1 ]
-          rec4: [ 3 ]
-          rec6: [ 4 ]
-          rec8: [ 5, 6 ]
+          rec4: [ 2 ]
+          rec6: [ 3, 6 ]
+          rec8: [ 4 ]
       rank1:
-        index: [ 1, 2, 4, 7, 9, 10, 12, 14 ]
-        recnum: [ 1, 1, 3, 5, 7, 5, 9, 9 ]
+        index: [ 1, 2, 4, 6, 8, 11, 12, 13 ]
+        recnum: [ 1, 1, 3, 5, 7, 9, 3, 5 ]
         recidx:
           rec1: [ 0, 1 ]
-          rec3: [ 2 ]
-          rec5: [ 3, 5 ]
+          rec3: [ 2, 6 ]
+          rec5: [ 3, 7 ]
           rec7: [ 4 ]
-          rec9: [ 6, 7 ]
+          rec9: [ 5 ]
 
     mpi size4:
       rank0:
-        index: [ 0, 5, 6, 11, 13 ]
-        recnum: [ 0, 0, 4, 8, 8 ]
+        index: [ 0, 4, 9, 11, 12 ]
+        recnum: [ 0, 4, 8, 4, 0 ]
         recidx:
-          rec0: [ 0, 1 ]
-          rec4: [ 2 ]
-          rec8: [ 3, 4 ]
+          rec0: [ 0, 4 ]
+          rec4: [ 1, 3 ]
+          rec8: [ 2 ]
       rank1:
-        index: [ 1, 2, 7, 10, 12, 14 ]
-        recnum: [ 1, 1, 5, 5, 9, 9 ]
+        index: [ 1, 5, 6, 10 ]
+        recnum: [ 1, 1, 5, 9 ]
         recidx:
           rec1: [ 0, 1 ]
-          rec5: [ 2, 3 ]
-          rec9: [ 4, 5 ]
+          rec5: [ 2 ]
+          rec9: [ 3 ]
       rank2:
-        index: [ 3, 8 ]
+        index: [ 2, 7 ]
         recnum: [ 2, 6 ]
         recidx:
           rec2: [ 0 ]
           rec6: [ 1 ]
       rank3:
-        index: [ 4, 9 ]
-        recnum: [ 3, 7 ]
+        index: [ 3, 8, 13, 14 ]
+        recnum: [ 3, 7, 3, 7 ]
         recidx:
-          rec3: [ 0 ]
-          rec7: [ 1 ]
+          rec3: [ 0, 2 ]
+          rec7: [ 1, 3 ]
