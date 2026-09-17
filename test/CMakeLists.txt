@@ -116,6 +116,8 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_contda.yaml
   testinput/iodatest_obsspace_dist_write.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
+  testinput/iodatest_obsspace_osdf_round_trip_write.yaml
+  testinput/iodatest_obsspace_osdf_round_trip_read.yaml
   testinput/iodatest_obsspace_empty_obs_file.yaml
   testinput/iodatest_obsspace_empty_obs_file_osdf.yaml
   testinput/iodatest_obsspace_empty_obs_file_osdf_mpi_2.yaml
@@ -2725,6 +2727,56 @@ ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf".
+ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_default_fill_values.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test )
+
+# Both writers are checked against one reference file rather than against each other, so that
+# a regression moving the ObsGroup and OSDF sides the same way is still caught.
+ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_cmp
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/default_fill_values_out.nc4
+                          Data/testinput_tier_1/test_reference/default_fill_values_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_default_fill_values )
+
+ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/default_fill_values_out_osdf.nc4
+                          Data/testinput_tier_1/test_reference/default_fill_values_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_default_fill_values_osdf )
+
+# OSDF round trip (issue 1875): write a file with the OSDF writer, then read that same file
+# back in with the OSDF reader. Stage 2 checks that the boolean comes back as a bool.
+ecbuild_add_test( TARGET  ioda_obsspace_osdf_round_trip_write
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_osdf_round_trip_write.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_osdf_round_trip_read
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_osdf_round_trip_read.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_obsspace_osdf_round_trip_write
+                  )
+
+# The two OSDF outputs hold the same observations: nothing is lost or retyped on the way round.
+ecbuild_add_test( TARGET  ioda_obsspace_osdf_round_trip_cmp
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/osdf_round_trip.nc4
+                          testoutput/osdf_round_trip_2.nc4
+                  TEST_DEPENDS ioda_obsspace_osdf_round_trip_write
+                               ioda_obsspace_osdf_round_trip_read )
+
 ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
@@ -2748,15 +2800,6 @@ ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound_osdf_parity
                   TEST_DEPENDS ioda_obsspace_inclusive_lower_bound
                                ioda_obsspace_inclusive_lower_bound_osdf )
 
-
-ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values_cmp
-                  TYPE    SCRIPT
-                  COMMAND bash
-                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          netcdf_py
-                          "echo Checking io default fill values"
-                          default_fill_values_out.nc4
-                  TEST_DEPENDS ioda_obsspace_default_fill_values )
 
 ecbuild_add_test( TARGET  ioda_obsspace_out_dims_check
                   TYPE    SCRIPT

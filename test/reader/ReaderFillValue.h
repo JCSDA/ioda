@@ -37,7 +37,8 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 // Verify the OSDF netCDF reader's fill-value handling for all supported data types.
-// These include: int, int64, float, byte (char) and string.
+// These include: int, int64, float, byte and ubyte (both loaded into a char column) and
+// string.
 //
 // getNcVarFillValue() has two ways to obtain a fill value, and each type must work in both:
 //
@@ -140,6 +141,23 @@ void testCharFillValues() {
 }
 
 // -----------------------------------------------------------------------------
+// NC_UBYTE loads into a char column just as NC_BYTE does. It is the form the ObsGroup writer
+// emits on a platform whose plain "char" is unsigned, so the reader has to take both. The
+// fill value here is 255, which a signed read would reject with NC_ERANGE.
+void testUbyteFillValues() {
+  std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
+  osdf::FrameMetadata osdfMetadata;
+  loadFillValueTestFrame(testOsdf, osdfMetadata);
+
+  const char missing = util::missingValue<char>();
+
+  checkColumn<char>(testOsdf, "TestReference/ubyteNoFill",
+                    {1, 1, 0, 1, 1, 0, 1});
+  checkColumn<char>(testOsdf, "TestReference/ubyteWithFill",
+                    {1, missing, 0, 1, missing, 0, 1});
+}
+
+// -----------------------------------------------------------------------------
 void testIntFillValues() {
   std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
   osdf::FrameMetadata osdfMetadata;
@@ -217,6 +235,8 @@ class ReaderFillValue : public oops::Test {
 
     ts.emplace_back(CASE("ioda/ReaderFillValue/testCharFillValues")
       { testCharFillValues(); });
+    ts.emplace_back(CASE("ioda/ReaderFillValue/testUbyteFillValues")
+      { testUbyteFillValues(); });
     ts.emplace_back(CASE("ioda/ReaderFillValue/testIntFillValues")
       { testIntFillValues(); });
     ts.emplace_back(CASE("ioda/ReaderFillValue/testInt64FillValues")

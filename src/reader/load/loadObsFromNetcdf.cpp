@@ -21,7 +21,9 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "ioda/containers/Constants.h"
 #include "ioda/containers/FrameMetadata.h"
+#include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/Engines/EngineUtils.h"
@@ -42,11 +44,31 @@ namespace reader {
 /// \param varName name of the variable to check
 static bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & varName);
 
+/// \brief map a netCDF variable's type onto the OSDF column type that will hold its data
+/// \details The OSDF container has five column types, and more than one netCDF type can land
+/// on the same one (see function definition below).
+///
+/// OSDF char columns always hold boolean variables, and OSDF string columns always hold
+/// string variables. ObsSpace::get_db/put_db enforce this convention for in-memory access
+/// to the OSDF. Note that this convention is also enforced in the ObsGroup case.
+///
+/// TODO(srh) The ioda file conventions are missing specs for boolean variables, despite
+/// the usage of boolean variable by UFO via get_db and put_db. For now, using NC_BYTE
+/// or NC_UBTYE in the input file, and NC_BYTE in the output file for boolean variables
+/// offers the minimal impact.
+/// \param var netcdf variable
+/// \param osdfType type of the OSDF column that will hold this variable, set only on success
+/// \return true if the variable's type can be stored in an OSDF container
+static bool osdfColumnTypeForNcVar(const netCDF::NcVar & var,
+                                   osdf::consts::eDataTypes & osdfType);
+
 /// \brief check if we can keep a variable for loading into the OSDF container
 /// \details The OSDF container accepts any 1D variable (dimensioned by Location or by any
 /// slice dimension), and any 2D variable whose first dimension is Location (the second
-/// dimension may have any name). This function checks for this and returns true if the
-/// variable can be loaded into the OSDF.
+/// dimension may have any name). 2D NC_CHAR variables (whose trailing
+/// dimension counts characters rather than indexing a slice) are not yet supported by
+/// the OSDF container. This function returns true if the variable can be loaded into
+/// the OSDF.
 /// \param varName hierarchical variable name
 /// \param var netCDF variable to check
 /// \param varDimNames list in order of dimension names for the variable
@@ -220,6 +242,25 @@ bool isNetcdfVarADimension(const netCDF::NcGroup & group, const std::string & va
 }
 
 //---------------------------------------------------------------------
+bool osdfColumnTypeForNcVar(const netCDF::NcVar & var, osdf::consts::eDataTypes & osdfType) {
+  const std::string varTypeName = var.getType().getName();
+  if (varTypeName == "int") {
+    osdfType = osdf::consts::eInt;
+  } else if (varTypeName == "int64") {
+    osdfType = osdf::consts::eInt64;
+  } else if (varTypeName == "float") {
+    osdfType = osdf::consts::eFloat;
+  } else if (varTypeName == "byte" || varTypeName == "ubyte") {
+    osdfType = osdf::consts::eChar;
+  } else if (varTypeName == "string") {
+    osdfType = osdf::consts::eString;
+  } else {
+    return false;
+  }
+  return true;
+}
+
+//---------------------------------------------------------------------
 // TODO(srh): We eventually need to eliminate the variable limitations on storage
 // in the OSDF container. For now, we can make a lot of progress before these limitations
 // are removed.
@@ -249,7 +290,12 @@ bool keepNetcdfVarForOSDF(const std::string & varName,
     // in FrameMetadata), so it cannot round-trip -- skip it rather than silently mangle it.
     const std::string firstDimName = varDims[0].getName();
     const std::string sliceDimName = varDims[1].getName();
-    if (firstDimName == "Location" && sliceDimName != "Location") {
+    if (var.getType().getName() == "char") {
+      oops::Log::info() << "WARNING: ioda::reader::keepNetcdfVarForOSDF: 2D Variable: " << varName
+                << " is a char array (fixed length string), which is not supported. Skipping."
+                << std::endl;
+      keepVar = false;
+    } else if (firstDimName == "Location" && sliceDimName != "Location") {
       varDimNames.push_back(firstDimName);
       varDimNames.push_back(sliceDimName);
     } else {
@@ -376,10 +422,13 @@ void getSelectNcVarData<char>(const netCDF::NcVar & var,
                              const std::vector<std::size_t> & start,
                              const std::vector<std::size_t> & count,
                              std::vector<char> & varData) {
-  // The char type is ambiguous about the signedness of the data, so this specialization
-  // is needed to assume a signed char type for the underlying data in order to call
-  // the correct netCDF API function (nc_get_vara_schar vs nc_get_vara_uchar).
-  var.getVar(start, count, reinterpret_cast<signed char *>(varData.data()));
+  // The char type is associated with either a byte or ubyte in the file. Make sure the
+  // correct netCDF API function is called to read the data.
+  if (var.getType().getName() == "ubyte") {
+    var.getVar(start, count, reinterpret_cast<unsigned char *>(varData.data()));
+  } else {
+    var.getVar(start, count, reinterpret_cast<signed char *>(varData.data()));
+  }
 }
 
 // Explicit specialization for std::string
@@ -402,6 +451,19 @@ void getSelectNcVarData<std::string>(const netCDF::NcVar & var,
 template <typename VarType>
 void getAllNcVarData(const netCDF::NcVar & var, std::vector<VarType> & varData) {
   var.getVar(varData.data());
+}
+
+// Explicit specialization for char
+template <>
+void getAllNcVarData(const netCDF::NcVar & var, std::vector<char> & varData) {
+  // Signedness is handled the same way as in the getSelectNcVarData<char> specialization
+  // above. Without this specialization the generic template calls NcVar::getVar(char *),
+  // which is nc_get_var_text and rejects a numeric (NC_BYTE or NC_UBYTE) variable.
+  if (var.getType().getName() == "ubyte") {
+    var.getVar(reinterpret_cast<unsigned char *>(varData.data()));
+  } else {
+    var.getVar(reinterpret_cast<signed char *>(varData.data()));
+  }
 }
 
 template <>
@@ -461,8 +523,14 @@ VarType getNcVarFillValue(const netCDF::NcVar & var) {
   if constexpr (std::is_same<VarType, char>::value) {
     // NcAtt::getValues(char *) always calls nc_get_att_text(), regardless of
     // the attribute's actual netCDF type. That throws for the numeric
-    // (NC_BYTE) _FillValue attributes used on byte/bool variables, so read
-    // via signed char instead, which correctly uses nc_get_att_schar().
+    // (NC_BYTE or NC_UBYTE) _FillValue attributes used on byte/bool variables, so read
+    // through the overload matching the variable's own signedness, which correctly uses
+    // nc_get_att_schar() or nc_get_att_uchar().
+    if (var.getType().getName() == "ubyte") {
+      unsigned char attFillValue;
+      fillAtt.getValues(&attFillValue);
+      return static_cast<VarType>(attFillValue);
+    }
     signed char attFillValue;
     fillAtt.getValues(&attFillValue);
     return static_cast<VarType>(attFillValue);
@@ -578,9 +646,8 @@ void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
     if (var.isNull()) {
       continue;
     }
-    const std::string varTypeName = var.getType().getName();
-    if (varTypeName != "int" && varTypeName != "int64" && varTypeName != "float" &&
-        varTypeName != "byte" && varTypeName != "string") {
+    osdf::consts::eDataTypes osdfType = osdf::consts::eNumberOfDataTypes;
+    if (!osdfColumnTypeForNcVar(var, osdfType)) {
       continue;
     }
     std::vector<std::string> varDimNames;
@@ -826,41 +893,27 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
 
     std::vector<std::string> varDimNames;
     if (keepNetcdfVarForOSDF(varName, var, varDimNames)) {
-      // Get the variable type for transferring its data to the OSDF
-      const netCDF::NcType varType = var.getType();
-      std::string varUnit = getNcVarUnits(var);
-
-      if (varType.getName() == "int") {
-        std::vector<int> varData = getNcVarData<int>(startLoc, locCount, var);
-        replaceFillValuesWithMissing<int>(var, varData);
-        transferVarDataToOSDF<int>(
-          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
-      } else if (varType.getName() == "int64") {
-        std::vector<int64_t> varData = getNcVarData<int64_t>(startLoc, locCount, var);
-        replaceFillValuesWithMissing<int64_t>(var, varData);
-        transferVarDataToOSDF<int64_t>(
-          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
-      } else if (varType.getName() == "float") {
-        std::vector<float> varData = getNcVarData<float>(startLoc, locCount, var);
-        replaceFillValuesWithMissing<float>(var, varData);
-        transferVarDataToOSDF<float>(
-          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
-      } else if (varType.getName() == "byte") {
-        std::vector<char> varData = getNcVarData<char>(startLoc, locCount, var);
-        replaceFillValuesWithMissing<char>(var, varData);
-        transferVarDataToOSDF<char>(
-          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
-      } else if (varType.getName() == "string") {
-        std::vector<std::string> varData =
-                                 getNcVarData<std::string>(startLoc, locCount, var);
-        replaceFillValuesWithMissing<std::string>(var, varData);
-        transferVarDataToOSDF<std::string>(
-          varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
-      } else {
+      // Get the OSDF column type that will hold this variable's data
+      osdf::consts::eDataTypes osdfType = osdf::consts::eNumberOfDataTypes;
+      if (!osdfColumnTypeForNcVar(var, osdfType)) {
         oops::Log::info() << "WARNING: ioda::reader::loadObsBlockFromNetcdf: Variable: "
-                          << varName << " is not int, int64, float, char or string. Skipping."
+                          << varName << " has netCDF type: " << var.getType().getName()
+                          << ", which is not supported by the OSDF container. Must be one of: "
+                          << "int, int64, float, byte, ubyte or string. Skipping."
                           << std::endl;
+        continue;
       }
+
+      std::string varUnit = getNcVarUnits(var);
+      osdf::FrameUtils::callWithSupportedType(
+        osdfType,
+        [&](auto typeDiscriminator) {
+          using T = decltype(typeDiscriminator);
+          std::vector<T> varData = getNcVarData<T>(startLoc, locCount, var);
+          replaceFillValuesWithMissing<T>(var, varData);
+          transferVarDataToOSDF<T>(
+            varName, varUnit, varData, locCount, varDimNames, destOSDF, osdfMetadata);
+        });
     }
   }
 

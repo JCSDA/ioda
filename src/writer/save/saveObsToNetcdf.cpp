@@ -9,6 +9,7 @@
 
 #include <netcdf>
 #include <algorithm>
+#include <type_traits>
 #include <utility>
 
 #include "eckit/exception/Exceptions.h"
@@ -195,7 +196,11 @@ netCDF::NcType convertOsdfDataTypeToNcType(const std::int8_t osdfDataType) {
       return netCDF::NcType::nc_FLOAT;
       break;
     case osdf::consts::eChar:
-      return netCDF::NcType::nc_CHAR;
+      // A char column always holds a boolean (ObsSpace has no vector<char> flavor of
+      // get_db/put_db, so bool is the only way one is created), and a boolean belongs in a
+      // one byte integer. NC_CHAR would be wrong here: it is HDF5's H5T_C_S1, a string type
+      // of size one, which the reader takes as text rather than as a boolean.
+      return netCDF::NcType::nc_BYTE;
       break;
     case osdf::consts::eString:
       return netCDF::NcType::nc_STRING;
@@ -248,11 +253,15 @@ void setNcVarFillValue(netCDF::NcVar & var, const netCDF::NcType & type) {
         "ioda::writer::setNcVarFillValue: Failed to create float attribute: _FillValue");
       break;
       }
-    case netCDF::NcType::ncType::nc_CHAR: {
-      const char fillVal = util::missingValue<char>();
+    case netCDF::NcType::ncType::nc_BYTE: {
+      // nc_BYTE is used for the eChar OSDF data type which is storage for a boolean.
+      // The JEDI util::missingValue<char>() is '\0', which is indistinguishable from
+      // a legitimate "false", so it is deliberately not used here. NC_FILL_BYTE matches
+      // what getNcVarDefaultFillValue<char>() assumes in the reader.
+      const signed char fillVal = NC_FILL_BYTE;
       netCDF::NcVarAtt att = var.putAtt("_FillValue", type, 1, &fillVal);
       checkNcObj(att,
-        "ioda::writer::setNcVarFillValue: Failed to create char attribute: _FillValue");
+        "ioda::writer::setNcVarFillValue: Failed to create byte attribute: _FillValue");
       break;
       }
     case netCDF::NcType::ncType::nc_STRING: {
@@ -473,6 +482,15 @@ void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
 template <>
 void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
                   const std::vector<std::size_t> & counts,
+                  std::vector<char> & varData) {
+  // char columns are written as NC_BYTE. Casting to signed char causes nc_put_vara_schar
+  // to be correctly called.
+  var.putVar(starts, counts, reinterpret_cast<const signed char *>(varData.data()));
+}
+
+template <>
+void setNcVarData(netCDF::NcVar & var, const std::vector<std::size_t> & starts,
+                  const std::vector<std::size_t> & counts,
                   std::vector<std::string> & varData) {
   // The vector of strings contains a series of string objects in contiguous
   // memory. Each one of the string objects contains a char * pointing to the
@@ -541,7 +559,13 @@ void setNcVar(netCDF::NcVar & var, const std::string & assocColumn,
                 ioda::osdfSliceColumnName(colWithSlices, sliceNums[islice]), sliceVals);
               varVals[islice] = sliceVals[0];
             } else {
-              varVals[islice] = util::missingValue<T>();
+              // For a char (boolean) column, use NC_FILL_BYTE as the
+              // util::missingValue<char>(), '\0', is indistinguishable from "false".
+              if constexpr (std::is_same<T, char>::value) {
+                varVals[islice] = static_cast<char>(NC_FILL_BYTE);
+              } else {
+                varVals[islice] = util::missingValue<T>();
+              }
             }
           }
           setNcVarData<T>(var, {0}, {numSlices}, varVals);

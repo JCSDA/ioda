@@ -1,13 +1,20 @@
 ---
+# Stage 1 of the OSDF round trip test. Load a file into an OSDF container and write it
+# back out. Stage 2, in iodatest_obsspace_osdf_round_trip_read.yaml, reads this output
+# back into an OSDF container.
+#
+# The container is selected here rather than through IODA_TEST_CONTAINER so that the pair runs
+# as OSDF regardless of the environment, and so that stage 2 is allowed to read this output.
 time window:
   begin: "2018-04-14T21:00:00Z"
   end: "2018-04-15T03:00:00Z"
 
 observations:
 - obs space:
-    name: "Default file values"
+    name: "OSDF round trip, write"
     simulated variables: ['int_var']
     observed variables: ['int_var']
+    use data frame container: true
     obsdatain:
       engine:
         type: H5File
@@ -15,7 +22,7 @@ observations:
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/default_fill_values_out.nc4"
+        obsfile: "testoutput/osdf_round_trip.nc4"
   test data:
     gnlocs: 5
     gnlocs outside time window: 0
@@ -26,28 +33,7 @@ observations:
     expected group variables: []
     expected sort variable: ""
     expected sort order: "ascending"
-    variables for get test:
-      - name: "float_var"
-        group: "NoFillValue"
-        type: "float"
-        norm: 8.1578183840277614
-
-      - name: "int_var"
-        group: "NoFillValue"
-        type: "integer"
-        norm: 7.416198487095663
-
-      - name: "string_var"
-        group: "NoFillValue"
-        type: "string"
-        first value: "ABC"
-        last value: "STUVWXY"
-
-      - name: "int64_var"
-        group: "NoFillValue"
-        type: "integer_64"
-        norm: 74.16198487095663
-
+    variables for get test: []
     tolerance:
       - 1.0e-14
     variables for putget test: []

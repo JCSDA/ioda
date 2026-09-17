@@ -34,6 +34,12 @@ namespace ioda {
 namespace test {
 
 // -----------------------------------------------------------------------------
+// The replaceMissingValues function is used for allowing the string "missing"
+// to be used in test configuration files (YAML) to specify missing values
+// for a particular OSDF column. The YAML configuration for variable values
+// is read in as a vector of strings and then converted to the target data type
+// for the column. The value "missing" is replaced with the approprate JEDI
+// missing value for the target data type.
 template <typename varType>
 std::vector<varType> replaceMissingValues(const std::vector<std::string> & stringVals) {
   const varType missingValue = util::missingValue<varType>();
@@ -43,6 +49,32 @@ std::vector<varType> replaceMissingValues(const std::vector<std::string> & strin
       varVals[i] = missingValue;
     } else {
       std::stringstream ss(stringVals[i]);
+      ss >> varVals[i];
+    }
+  }
+  return varVals;
+}
+
+// The conventional use of a char OSDF column is to hold a boolean variable. Therefore,
+// the values specified in test configurations (YAML) are typically "1", "0" or "missing".
+//
+// This specialization is used to mimic the handling of boolean variables in the OSDF
+// reader and writer paths which is to store the actual values 1 and 0 in a char column
+// instead of the ASCII code values for '1' (49) and '0' (48), which is what happens
+// when using the stringstream utility.
+template <>
+std::vector<char> replaceMissingValues<char>(const std::vector<std::string> & stringVals) {
+  const char missingValue = util::missingValue<char>();
+  std::vector<char> varVals(stringVals.size());
+  for (std::size_t i = 0; i < stringVals.size(); ++i) {
+    const std::string & stringVal = stringVals[i];
+    if (stringVal == "missing") {
+      varVals[i] = missingValue;
+    } else if (!stringVal.empty() &&
+               stringVal.find_first_not_of("0123456789") == std::string::npos) {
+      varVals[i] = static_cast<char>(std::stoi(stringVal));
+    } else {
+      std::stringstream ss(stringVal);
       ss >> varVals[i];
     }
   }
