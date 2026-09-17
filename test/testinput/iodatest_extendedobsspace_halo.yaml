@@ -26,6 +26,7 @@ extend obs space, Halo, 71 entries per averaged profile: &case_1
       name: "Halo"
       radius: 13000000 # 13,000 km, so each halo covers most but not all of the Earth's surface
       halo size: 0
+      enable obs grouping for halo: true
     extension:
       allocate companion records with length: 71
 

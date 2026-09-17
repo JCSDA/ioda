@@ -24,6 +24,13 @@ class DistributionParametersBase : public oops::Parameters {
  public:
   oops::RequiredParameter<std::string> name{"name", "type of the observation MPI distribution",
                                             this};
+
+  /*!
+   * \brief Returns true if obs grouping (as configured via `obsdatain.obsgrouping`) should be
+   * applied when assigning record numbers for this distribution, false if every location
+   * should instead be assigned its own record. Only Halo overrides the default of true.
+   */
+  virtual bool applyObsGrouping() const { return true; }
 };
 
 // -----------------------------------------------------------------------------

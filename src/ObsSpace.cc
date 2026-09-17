@@ -950,7 +950,13 @@ void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
   std::unique_ptr<DistributionParametersBase> distParams =
     DistributionFactory::createParameters(redistributeConfig.getString("name"));
   distParams->deserialize(redistributeConfig);
-  ioda::reader::distributeObs(*distParams, this->comm(), this->obs_group_vars(),
+  // If the new distribution does not want obs grouping applied (currently only possible with
+  // the Halo distribution), pass an empty list of group variables so that every location is
+  // assigned its own record.
+  static const std::vector<std::string> noObsGroupVars;
+  const std::vector<std::string> & obsGroupVars =
+      distParams->applyObsGrouping() ? this->obs_group_vars() : noObsGroupVars;
+  ioda::reader::distributeObs(*distParams, this->comm(), obsGroupVars,
                               obs_src_stats_, dist_, osdf_);
   // Reset the size of locations
   dim_info_.set_dim_size(ObsDimensionId::Location, obs_src_stats_.nlocs);
@@ -1266,11 +1272,19 @@ void ObsSpace::load(const eckit::LocalConfiguration & obsDataInConfig,
     // new reader becomes fully functional it will replace the current reader.
     ObsDataInParameters readerParams;
     readerParams.deserialize(obsDataInConfig);
+    // If the requested distribution does not want obs grouping applied (currently only
+    // possible with the Halo distribution), pass an empty list of group variables to the
+    // reader pool so that every location is assigned its own record.
+    static const std::vector<std::string> noObsGroupVars;
+    const auto & distParams = obs_params_->top_level_.distribution.value().params.value();
+    const std::vector<std::string> & obsGroupVars = distParams.applyObsGrouping() ?
+        obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars :
+        noObsGroupVars;
     IoPool::ReaderPoolCreationParameters createParams(
         obs_params_->comm(), obs_params_->timeComm(),
         readerParams.engine.value().engineParameters, obs_params_->timeWindow(),
         obs_params_->top_level_.simVars.value().variables(), dist_,
-        obs_params_->top_level_.obsDataIn.value().obsGrouping.value().obsGroupVars,
+        obsGroupVars,
         obs_params_->top_level_.obsDataIn.value().prepType);
 
     std::unique_ptr<IoPool::ReaderPoolBase> readPool =

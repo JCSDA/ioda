@@ -150,7 +150,12 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
 
   ObsDataInParameters dataInParamsSingleFile;
   dataInParamsSingleFile.deserialize(dataInParams[0]);
-  const auto obsGroupVarList = dataInParamsSingleFile.obsGrouping.value().obsGroupVars.value();
+  // If the requested distribution does not want obs grouping applied (currently only
+  // possible with the Halo distribution), use an empty list of group variables instead, so
+  // that every location is assigned its own record.
+  const auto obsGroupVarList = distParams.applyObsGrouping() ?
+      dataInParamsSingleFile.obsGrouping.value().obsGroupVars.value() :
+      std::vector<std::string>();
 
   if (ospaceDist) {
     oops::Log::info() << "WARNING: the reader::obsRead function received a non-null pointer " <<

@@ -30,6 +30,12 @@ class HaloDistributionParameters : public DistributionParametersBase {
   oops::OptionalParameter<std::vector<double>> center{"center", this};
   oops::Parameter<double> radius{"radius", 50000000.0, this};
   oops::RequiredParameter<double> haloSize{"halo size", "halo size [m]", this};
+  /// If false (the default), obs grouping (as configured via `obsdatain.obsgrouping`) is
+  /// ignored for this distribution and every location is assigned its own record, so that
+  /// PE assignment is made independently for each location.
+  oops::Parameter<bool> enableObsGrouping{"enable obs grouping for halo", false, this};
+
+  bool applyObsGrouping() const override { return enableObsGrouping.value(); }
 };
 
 
