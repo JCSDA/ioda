@@ -107,7 +107,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_container_facades.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_obsdatavector.yaml
-  testinput/iodatest_obsdatavector_osdf.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
   testinput/iodatest_obsspace_reader_pool.yaml
@@ -3132,11 +3131,13 @@ ecbuild_add_test( TARGET  ioda_obsdatavector
                   LIBS  ioda_test
                   )
 
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
 ecbuild_add_test( TARGET  ioda_obsdatavector_osdf
                   MPI     2
                   COMMAND ioda_obsdatavector
-                  ARGS    "testinput/iodatest_obsdatavector_osdf.yaml"
-                  LIBS  ioda_test
+                  ARGS    "testinput/iodatest_obsdatavector.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 #####################################################################
