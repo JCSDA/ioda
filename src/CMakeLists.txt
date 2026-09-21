@@ -189,9 +189,10 @@ ecbuild_add_library( TARGET ${PROJECT_NAME}
                      LINKER_LANGUAGE CXX )
 
 # Mark Boost as a system library to silence compiler warnings from Boost headers
-# Ditto for Eigen
+# Ditto for Eigen and NetCDF-CXX
 target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} )
 target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIRS} )
+target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${NetCDF_CXX_INCLUDE_DIRS} )
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
