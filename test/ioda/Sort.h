@@ -23,6 +23,7 @@
 
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
+#include "IodaTestUtils.h"
 
 namespace ioda {
 
@@ -32,7 +33,8 @@ void testSort(const eckit::LocalConfiguration &conf) {
   // Produce and configure ObsSpace object
   const util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
 
-  const eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
+  eckit::LocalConfiguration obsSpaceConf(conf, "obs space");
+  applyContainerDefault(::test::TestEnvironment::config(), obsSpaceConf);
   ioda::ObsSpace obsdata(obsSpaceConf, oops::mpi::world(), timeWindow, oops::mpi::myself());
 
   // This test only works for grouped data
@@ -84,6 +86,8 @@ class Sort : public oops::Test {
     const eckit::LocalConfiguration conf(::test::TestEnvironment::config());
     for (const std::string & testCaseName : conf.keys())
     {
+      // Every other top-level key names a test case.
+      if (testCaseName == "obs data container") continue;
       const eckit::LocalConfiguration testCaseConf(::test::TestEnvironment::config(), testCaseName);
       ts.emplace_back(CASE("ioda/Sort/" + testCaseName, testCaseConf)
                       {

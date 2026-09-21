@@ -102,10 +102,13 @@ endif()
 # tests a chance to append items to this list).
 list( APPEND ioda_test_input
   testinput/iodatest.yaml
+  testinput/iodatest_osdf.yaml
   testinput/iodatest_fileformat.yaml
   testinput/iodatest_obsiterator.yaml
+  testinput/iodatest_obsiterator_osdf.yaml
   testinput/iodatest_container_facades.yaml
   testinput/iodatest_departuresensemble.yaml
+  testinput/iodatest_departuresensemble_osdf.yaml
   testinput/iodatest_obsdatavector.yaml
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
@@ -114,6 +117,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_append_mpi.yaml
   testinput/iodatest_obsspace_contda.yaml
   testinput/iodatest_obsspace_dist_write.yaml
+  testinput/iodatest_obsspace_dist_write_osdf.yaml
   testinput/iodatest_obsspace_default_fill_values.yaml
   testinput/iodatest_obsspace_osdf_round_trip_write.yaml
   testinput/iodatest_obsspace_osdf_round_trip_read.yaml
@@ -155,7 +159,9 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
+  testinput/iodatest_obsspace_io_pool_sondes_single_file_osdf.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
+  testinput/iodatest_obsspace_io_pool_sondes_multi_files_osdf.yaml
   testinput/iodatest_obsspace_locations_qc.yaml
   testinput/iodatest_obsspace_locations_qc_twfilt.yaml
   testinput/iodatest_obsspace_marine.yaml
@@ -176,6 +182,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml
   testinput/iodatest_obsspace_odc_two_frames_parallel_io.yaml
   testinput/iodatest_obsspace_fortran.yaml
+  testinput/iodatest_obsspace_fortran_osdf.yaml
   testinput/iodatest_obsspace_out_odc.yaml
   testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml
   testinput/iodatest_obsspace_out_odc_readbackin.yaml
@@ -255,6 +262,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_time_io_multiple_input_files_osdf_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_2.yaml
   testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml
+  testinput/iodatest_time_io_multiple_input_files_mpi_4_osdf.yaml
   testinput/iodatest_time_io_empty_ospace.yaml
   testinput/iodatest_time_io_empty_ospace_osdf.yaml
   testinput/iodatest_bufr_mhs.yaml
@@ -1002,6 +1010,14 @@ ecbuild_add_test( TARGET  ioda_obsiterator
                   LIBS  ioda_test
                   )
 
+# OSDF parity: a twin yaml selecting the OSDF container on every obs space.  The
+# IODA_TEST_CONTAINER environment variable cannot be used here because this test is driven
+# by oops::test::ObsIterator, which does not consult it.
+ecbuild_add_test( TARGET  ioda_obsiterator_osdf
+                  COMMAND ioda_obsiterator
+                  ARGS    "testinput/iodatest_obsiterator_osdf.yaml"
+                  )
+
 #####################################################################
 # ObsSpace tests
 #####################################################################
@@ -1011,6 +1027,12 @@ ecbuild_add_test( TARGET  ioda_oops_obsspace
                   SOURCES mains/TestObsSpace.cc
                   ARGS    "testinput/iodatest.yaml"
                   LIBS  ioda_test
+                  )
+
+# OSDF parity: a twin yaml selecting the OSDF container on every obs space.
+ecbuild_add_test( TARGET  ioda_oops_obsspace_osdf
+                  COMMAND ioda_oops_obsspace
+                  ARGS    "testinput/iodatest_osdf.yaml"
                   )
 
 # IODA ObsSpace class
@@ -2861,6 +2883,25 @@ ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_single_file
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_time_io)
 
+
+# OSDF parity: the same run with the OSDF container selected on every obs space, writing
+# osdf-tagged output.  The outputs are compared for content equality against the ObsGroup
+# reference files, not bitwise: the two writers differ in file-level attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_single_file_osdf
+                  MPI     7
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_io_pool_sondes_single_file_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_time_io)
+
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_single_file_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/io_pool_sondes_single_out.nc4
+                          testoutput/io_pool_sondes_single_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_io_pool_sondes_single_file_osdf )
+
 ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_single_file_check
                   TYPE    SCRIPT
                   COMMAND bash
@@ -2881,6 +2922,25 @@ ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_multi_files
                   ARGS    "testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_time_io)
+
+
+# OSDF parity: the same run with the OSDF container selected on every obs space, writing
+# osdf-tagged output.  The outputs are compared for content equality against the ObsGroup
+# reference files, not bitwise: the two writers differ in file-level attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_multi_files_osdf
+                  MPI     7
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_io_pool_sondes_multi_files_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_time_io)
+
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_multi_files_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/io_pool_sondes_multi_out.nc4
+                          testoutput/io_pool_sondes_multi_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_io_pool_sondes_multi_files_osdf )
 
 ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_multi_file_check_0000
                   TYPE    SCRIPT
@@ -2931,6 +2991,49 @@ ecbuild_add_test( TARGET  ioda_obsspace_dist_write
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_time_io)
 
+
+# OSDF parity: the same run with the OSDF container selected on every obs space, writing
+# osdf-tagged output.  The outputs are compared for content equality against the ObsGroup
+# reference files, not bitwise: the two writers differ in file-level attributes.
+ecbuild_add_test( TARGET  ioda_obsspace_dist_write_osdf
+                  MPI     4
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_dist_write_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_time_io)
+
+ecbuild_add_test( TARGET  ioda_obsspace_dist_write_round_robin_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/dist_write_round_robin_out.nc4
+                          testoutput/dist_write_round_robin_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_dist_write_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_dist_write_inefficient_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/dist_write_inefficient_out.nc4
+                          testoutput/dist_write_inefficient_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_dist_write_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_dist_write_halo_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/dist_write_halo_out.nc4
+                          testoutput/dist_write_halo_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_dist_write_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_dist_write_atlas_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/dist_write_atlas_out.nc4
+                          testoutput/dist_write_atlas_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_dist_write_osdf )
+
 ecbuild_add_test( TARGET  ioda_obsspace_dist_write_round_robin
                   TYPE    SCRIPT
                   COMMAND bash
@@ -2975,6 +3078,14 @@ if (IODA_BUILD_OBSSPACE_FORTRAN)
                 LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
                 LIBS  ioda_test
                 )
+
+    # OSDF parity: a twin yaml selecting the OSDF container on every obs space.  The
+    # IODA_TEST_CONTAINER environment variable cannot be used here because the container is
+    # selected from the Fortran interface, which does not consult it.
+    ecbuild_add_test( TARGET  ioda_obsspace_fortran_osdf
+                      COMMAND ioda_obsspace_fortran
+                      ARGS    --config testinput/iodatest_obsspace_fortran_osdf.yaml
+                      )
 endif()
 
 # IODA ObsSpace sorting of obs groups
@@ -2982,6 +3093,14 @@ ecbuild_add_test( TARGET  ioda_sort
                   SOURCES mains/TestSort.cc
                   ARGS    "testinput/iodatest_sort.yaml"
                   LIBS  ioda_test
+                  )
+
+# OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
+# This yaml writes no output file, so no comparison step is needed.
+ecbuild_add_test( TARGET  ioda_sort_osdf
+                  COMMAND ioda_sort
+                  ARGS    "testinput/iodatest_sort.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 # IODA extended ObsSpace
@@ -3159,6 +3278,15 @@ ecbuild_add_test( TARGET  ioda_oops_departuresensemble
                   SOURCES mains/TestDeparturesEnsemble.cc
                   ARGS    "testinput/iodatest_departuresensemble.yaml"
                   LIBS  ioda_test
+                  )
+
+# OSDF parity: a twin yaml selecting the OSDF container on every obs space.  The
+# IODA_TEST_CONTAINER environment variable cannot be used here because this test is driven
+# by oops::test::DeparturesEnsemble, which does not consult it.
+ecbuild_add_test( TARGET  ioda_oops_departuresensemble_osdf
+                  MPI     2
+                  COMMAND ioda_oops_departuresensemble
+                  ARGS    "testinput/iodatest_departuresensemble_osdf.yaml"
                   )
 
 #####################################################################
@@ -4024,6 +4152,40 @@ ecbuild_add_test( TARGET      ioda_time_io_multiple_input_files_mpi_4
                   COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                   ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_4.yaml"
                   TEST_DEPENDS ioda_clean_time_io_multiple_input_files )
+
+
+# OSDF parity: the same run with the OSDF container selected on every obs space, writing
+# osdf-tagged output.  The outputs are compared for content equality against the ObsGroup
+# reference files, not bitwise: the two writers differ in file-level attributes.
+ecbuild_add_test( TARGET      ioda_time_io_multiple_input_files_mpi_4_osdf
+                  MPI 4
+                  COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                  ARGS        "testinput/iodatest_time_io_multiple_input_files_mpi_4_osdf.yaml"
+                  TEST_DEPENDS ioda_clean_time_io_multiple_input_files )
+
+ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_amsua_osdf_mpi_4_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/amsua_n19_obs_2018041500_m_time_multi_files_mpi_4.nc4
+                          testoutput/amsua_n19_obs_2018041500_m_time_multi_files_osdf_mpi_4.nc4
+                  TEST_DEPENDS ioda_time_io_multiple_input_files_mpi_4_osdf )
+
+ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_sondes_osdf_mpi_4_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/sondes_obs_2018041500_m_time_multi_files_mpi_4.nc4
+                          testoutput/sondes_obs_2018041500_m_time_multi_files_osdf_mpi_4.nc4
+                  TEST_DEPENDS ioda_time_io_multiple_input_files_mpi_4_osdf )
+
+ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_gnssro_osdf_mpi_4_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/gnssro_obs_2021080606_s_time_multi_files_mpi_4.nc4
+                          testoutput/gnssro_obs_2021080606_s_time_multi_files_osdf_mpi_4.nc4
+                  TEST_DEPENDS ioda_time_io_multiple_input_files_mpi_4_osdf )
 
 # the following tests compare the output files
 ecbuild_add_test( TARGET  ioda_time_io_multiple_input_files_amsua_cmp
