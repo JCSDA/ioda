@@ -989,8 +989,8 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
   }
 
   // Determine start and count values to pass to the loadObsBlockFromNetcdf function
-  int start;
-  int count;
+  int start = 0;
+  int count = 0;
   if (readMultipleFiles) {  // reading split files, so each IO pool rank reads its whole file
     start = 0;
     count = numLocations;
@@ -1023,7 +1023,9 @@ void loadOsdfFromNetcdf(const ObsDataInParameters & dataInParams,
   }
 
   // Split file or not, each IO pool rank now reads its assigned data into an OSDF container.
-  if (!emptyFile) {
+  // As long as the file has variables, read it in. This makes sure that the corresponding
+  // column metadata is created, even when there are no locations (zero rows).
+  if (!listAllNetcdfVars(inFile, std::string(""), false).empty()) {
     const int rc =
         loadObsBlockFromNetcdf(inFile, fileName, start, count, destOSDF, osdfMetadata);
     if (rc != 0) {

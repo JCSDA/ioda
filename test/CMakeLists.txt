@@ -2636,11 +2636,42 @@ ecbuild_add_test( TARGET  ioda_obsspace_redistribute
 ################ End of reduce function tests #####################
 ###################################################################
 
+ecbuild_add_test( TARGET  ioda_clean_obsspace_zero_obs
+                  COMMAND rm
+                  ARGS    "-f"
+                    "testoutput/zero_obs_v2_out.nc4"
+                    "testoutput/zero_obs_v2_out_osdf.nc4")
+
 ecbuild_add_test( TARGET  ioda_obsspace_zero_obs
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_zero_obs.yaml"
                   LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_zero_obs
                   )
+
+ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_osdf
+                  COMMAND ioda_obsspace
+                  ARGS    "testinput/iodatest_obsspace_zero_obs.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_clean_obsspace_zero_obs )
+
+ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking contents of zero obs, ObsGroup"
+                          zero_obs_v2_out.nc4
+                  TEST_DEPENDS ioda_obsspace_zero_obs )
+
+ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/zero_obs_v2_out_osdf.nc4
+                          Data/testinput_tier_1/test_reference/zero_obs_v2_out.nc4
+                  TEST_DEPENDS ioda_obsspace_zero_obs_osdf )
 
 ecbuild_add_test( TARGET  ioda_clean_obsspace_filter_to_zero_obs
                   COMMAND rm
@@ -2704,29 +2735,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_amsua_osdf_cmp
                           filter_to_zero_obs.amsua.osdf.nc4
                   TEST_DEPENDS ioda_obsspace_filter_to_zero_obs_osdf )
 
+# Note: This test is for ObsGroup only, since the "reader_pool" naming refers to
+# the ObsGroup based reader pool, which is slated for deprecation. In general,
+# any SinglePool based reader falls into the "only test with ObsGroup" category.
 ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_zero_obs_reader_pool.yaml"
                   LIBS  ioda_test
                   )
-
-# OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
-ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool_osdf
-                  COMMAND ioda_obsspace
-                  ARGS    "testinput/iodatest_obsspace_zero_obs_reader_pool.yaml"
-                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
-                  LIBS  ioda_test )
-
-# Content equality, not bitwise: the two writers differ in row order and attributes.
-ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_reader_pool_osdf_parity
-                  TYPE    SCRIPT
-                  COMMAND ${Python3_EXECUTABLE}
-                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
-                          testoutput/zero_obs_v2_out_reader_pool.nc4
-                          testoutput/zero_obs_v2_out_reader_pool_osdf.nc4
-                  TEST_DEPENDS ioda_obsspace_zero_obs_reader_pool
-                               ioda_obsspace_zero_obs_reader_pool_osdf )
-
 
 ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_reader_pool
                   COMMAND ioda_obsspace
