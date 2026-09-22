@@ -2184,6 +2184,20 @@ ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels_check
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_obsspace_put_db_channels )
 
+# OSDF parity: the same two yamls run again with the container selected by
+# IODA_TEST_CONTAINER, which also tags the output file so the two pairs do not collide.
+ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels_osdf
+                  COMMAND ioda_obsspace_put_db_channels
+                  ARGS    "testinput/iodatest_obsspace_put_db_channels.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels_check_osdf
+                  COMMAND ioda_obsspace_put_db_channels
+                  ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  TEST_DEPENDS ioda_obsspace_put_db_channels_osdf )
+
 ecbuild_add_test( TARGET  ioda_obsspace_contda
                   SOURCES mains/TestIodaObsSpaceContDA.cc
                   ARGS    "testinput/iodatest_obsspace_contda.yaml"

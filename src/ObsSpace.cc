@@ -1715,6 +1715,19 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         splitSliceSuffix(group, name, { }, baseName, sliceSelect);
         const bool writingSingleSlice = !sliceSelect.empty();
 
+        // Writing a suffixed name whose base is already a variable with no slice dimension is
+        // a collision: the suffix reads back as a slice selector on a variable that has no
+        // slices. Reject it rather than letting the create step below
+        // build a second, slice-shaped variable alongside the existing one.
+        if (varHasSliceDim && writingSingleSlice) {
+            const std::string baseFullName = fullVarName(group, baseName);
+            if (osdf_->hasColumn(baseFullName) &&
+                osdfMetadata_.varSliceDimName(baseFullName).empty()) {
+                throw eckit::UserError("Variable " + baseFullName + " is not indexed by " +
+                                       sliceDimName + " numbers", Here());
+            }
+        }
+
         // Register a brand-new slice dimension (one that was never in the input file and is
         // therefore not yet registered) with synthetic 0..n-1 index values, deriving n from the
         // data. This mirrors the reader's synthetic-index rule and gives the selection mechanism
