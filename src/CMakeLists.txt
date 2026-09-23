@@ -197,7 +197,7 @@ target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${NetCDF_CXX_INCLUDE_D
 target_link_libraries( ${PROJECT_NAME} PUBLIC ioda_engines )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${oops_LIBRARIES} )
-target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_CXX )
+target_link_libraries( ${PROJECT_NAME} PRIVATE NetCDF::NetCDF_CXX )
 
 #Configure include directory layout for build-tree to match install-tree
 set(BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
