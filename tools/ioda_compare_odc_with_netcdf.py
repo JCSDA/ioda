@@ -8,7 +8,9 @@
 import argparse
 from collections import namedtuple
 import configparser
+import os
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -60,6 +62,19 @@ def parse_config_file(path):
     return cases
 
 
+def is_local_path(input):
+    """Validate that a path refers to an existing local file.
+
+    Arguments:
+        input: Path to check.
+
+    Returns: the unchanged path if it refers to an existing file.
+    """
+    if not os.path.isfile(input):
+        raise argparse.ArgumentTypeError(f"'{input}' is not an existing file")
+    return input
+
+
 def read_netcdf_file(path, ncdump_exe):
     """Read variables from a NetCDF file.
 
@@ -80,7 +95,7 @@ def read_netcdf_file(path, ncdump_exe):
     in_data = False
     in_variable = False
 
-    command = [ncdump_exe, "-p", "9,17", path]
+    command = [is_local_path(ncdump_exe), "-p", "9,17", is_local_path(path)]
     output = subprocess.check_output(command, universal_newlines=True)
 
     for line in output.splitlines():
@@ -254,7 +269,7 @@ ap.add_argument("config_file", help="Path to a file listing pairs of SQL stateme
 ap.add_argument("odb_file", help="Path to the ODB file")
 ap.add_argument("nc_file", help="Path to the NetCDF file")
 ap.add_argument("--odc", default="odc", help="Path to the ODC executable")
-ap.add_argument("--ncdump", default="ncdump", help="Path to the NCDUMP executable")
+ap.add_argument("--ncdump", default=shutil.which("ncdump") or "ncdump", help="Path to the NCDUMP executable")
 
 args = ap.parse_args()
 
