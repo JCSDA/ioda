@@ -106,8 +106,20 @@ void distributeObs(const DistributionParametersBase & distParams,
     std::transform(recNums.begin(), recNums.end(), recNums.begin(),
                    [recNumOffset] (std::size_t recNum) { return recNum + recNumOffset; });
 
+    // Number the locations held on this MPI process, then offset them the same way the record
+    // indices were offset above, so that the result is a dense global numbering of the locations
+    // that were kept. This is what locIndices means on the distribution path below; without it,
+    // the source file positions recorded by the Load/Filter steps would survive into the obs space
+    // and index() would mean one thing with the Identity distribution and another with every other.
+    const std::size_t numLocations = inOsdf->numRows();
+    std::size_t locIndexOffset = numLocations;
+    oops::mpi::exclusiveScan(commAll, locIndexOffset);
+    std::vector<std::size_t> locIndices(numLocations);
+    std::iota(locIndices.begin(), locIndices.end(), locIndexOffset);
+
     outObsSourceStats.nrecs = numRecords;
     outObsSourceStats.recNums = std::move(recNums);
+    outObsSourceStats.locIndices = std::move(locIndices);
     outDist = tempDistOut;
     tempDistOut.reset();
     return;
