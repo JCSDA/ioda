@@ -9,6 +9,11 @@ if (NOT NCCMP_EXE)
   message (FATAL_ERROR "nccmp needs to be available to run ioda tests.")
 endif()
 
+find_program (PYCODESTYLE_EXE pycodestyle)
+if (NOT PYCODESTYLE_EXE)
+  message (FATAL_ERROR "pycodestyle needs to be available to run ioda tests.")
+endif()
+
 # Test data - from ioda-data repo if found, from local directory, or from tarball (release/develop-in-future?)
 if (DEFINED ENV{IODA_TESTFILES})
   message(STATUS "Use test data from local directory $ENV{IODA_TESTFILES}")

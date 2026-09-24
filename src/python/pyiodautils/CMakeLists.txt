@@ -20,18 +20,13 @@ endforeach()
 # Set install for the build area
 install( FILES ${pyiodautils_file_deps} DESTINATION ${PYIODAUTILS_BUILD_LIBDIR} )
 
-# Run pycodestyle on the source files (only if pycodestyle is available)
-find_program ( PYCODESTYLE_EXE pycodestyle )
-if ( PYCODESTYLE_EXE )
-  set ( PYCODESTYLE_CFG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../.." )
+# Run pycodestyle on the source files
+set ( PYCODESTYLE_CFG_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../.." )
 
-  ecbuild_add_test( TARGET  ${PROJECT_NAME}_pyiodautils_coding_norms
-                    TYPE    SCRIPT
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_pylint.sh
-                    ARGS    ${CMAKE_CURRENT_SOURCE_DIR} ${PYCODESTYLE_CFG_PATH} )
-else()
-  message ( STATUS "pycodestyle not found; skipping ${PROJECT_NAME}_pyiodautils_coding_norms test." )
-endif()
+ecbuild_add_test( TARGET  ${PROJECT_NAME}_pyiodautils_coding_norms
+                  TYPE    SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_pylint.sh
+                  ARGS    ${CMAKE_CURRENT_SOURCE_DIR} ${PYCODESTYLE_CFG_PATH} )
 
 # Set install area for the `make install` target
 install( FILES ${pyiodautils_files} DESTINATION ${PYIODAUTILS_INSTALL_LIBDIR} )
