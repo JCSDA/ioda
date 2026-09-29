@@ -14,6 +14,12 @@ observations:
         mapping file: ../share/test/testinput/odb_surface_name_map.yaml
         query file: ../share/test/testinput/iodatest_odb_surface.yaml
     obs perturbations seed: 25
+    # Sized so that the osdf runs registered off this yaml cover both "as many MPI
+    # processes as io pool members" (mpi 2) and "more MPI processes than io pool
+    # members" (mpi 4). At one MPI process the pool is capped to 1, so this has no
+    # effect on the serial run.
+    io pool:
+      max pool size: 2
   test data: &empty_test_data
     gnlocs: 0
     gnlocs outside time window: 0

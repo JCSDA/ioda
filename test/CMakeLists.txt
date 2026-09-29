@@ -175,7 +175,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_odc_atms_parallel_io.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file.yaml
   testinput/iodatest_obsspace_odc_empty_obs_file_parallel_io.yaml
-  testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml
   testinput/iodatest_obsspace_odc_radar.yaml
   testinput/iodatest_obsspace_odc_radar_parallel_io.yaml
   testinput/iodatest_obsspace_odc_single_frame_parallel_io.yaml
@@ -2126,26 +2125,29 @@ if (odc_FOUND)
                     LIBS    ioda_test
                     )
 
+  # OSDF parity: the same yaml as the ObsGroup test above, run again with the container
+  # selected by IODA_TEST_CONTAINER. This yaml writes no output file, so no comparison step
+  # is needed.
   ecbuild_add_test( TARGET  ioda_obsspace_odc_empty_obs_file_osdf
                     COMMAND ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
-                    LIBS  ioda_test
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                     )
 
   # As many MPI processes as I/O pool members
   ecbuild_add_test( TARGET  ioda_obsspace_odc_empty_obs_file_osdf_mpi_2
                     MPI     2
                     COMMAND ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
-                    LIBS    ioda_test
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                     )
 
   # More MPI processes than I/O pool members
   ecbuild_add_test( TARGET  ioda_obsspace_odc_empty_obs_file_osdf_mpi_4
                     MPI     4
                     COMMAND ioda_obsspace
-                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file_osdf.yaml"
-                    LIBS    ioda_test
+                    ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                     )
 
   ecbuild_add_test( TARGET  ioda_obsspace_odc_single_frame_parallel_io
@@ -3363,7 +3365,28 @@ ecbuild_add_test( TARGET  ioda_time_io
                   ARGS    "testinput/iodatest_time_io.yaml"
                   TEST_DEPENDS ioda_clean_time_io_files )
 
+
 # the following tests compare the output files
+# GMI GPM and MultiDim are run with the OSDF container by ioda_time_io_osdf_mpi1 and with the
+# ObsGroup container here, and both are checked against the same reference file. The comparison
+# is for content equality rather than bitwise, because the reference was written by the OSDF
+# writer and the two writers differ in file-level attributes that are not observation data.
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gmi_gpm
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/gmi_gpm_obs_2018041500_m_time_osdf_mpi1.nc4
+                          testoutput/gmi_gpm_obs_2018041500_m_time.nc4
+                  TEST_DEPENDS ioda_time_io )
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_multidim
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/multidim_obs_2018041500_m_time_osdf_mpi1.nc4
+                          testoutput/multidim_obs_2018041500_m_time.nc4
+                  TEST_DEPENDS ioda_time_io )
+
 ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes
                   TYPE    SCRIPT
                   COMMAND bash
@@ -3415,11 +3438,10 @@ ecbuild_add_test( TARGET  ioda_time_io_osdf_mpi4
 # the sondes test.
 ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi1
                   TYPE    SCRIPT
-                  COMMAND bash
-                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          netcdf
-                          "echo Checking time io sondes (osdf)"
-                          sondes_obs_2018041500_m_time_osdf_mpi1.nc4
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/sondes_obs_2018041500_m_time.nc4
+                          testoutput/sondes_obs_2018041500_m_time_osdf_mpi1.nc4
                   TEST_DEPENDS ioda_time_io_osdf_mpi1)
 
 ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi2_0000
@@ -3458,13 +3480,43 @@ ecbuild_add_test( TARGET  ioda_time_io_cmp_sondes_osdf_mpi4_0001
                           sondes_obs_2018041500_m_time_osdf_mpi4_0001.nc4:sondes_obs_2018041500_m_time_osdf_mpi2_0001.nc4
                   TEST_DEPENDS ioda_time_io_osdf_mpi4)
 
+# GNSSRO under OSDF, checked against the same reference the ObsGroup run uses.
+# GNSSRO written as one file per rank, compared as a file set against the same reference the
+# ObsGroup run uses. Set-level rather than per-rank, so the comparison does not depend on how
+# the 2 ranks happened to split the locations.
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gnssro_osdf_mpi2
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/gnssro_obs_2021080606_s_time.nc4
+                          testoutput/gnssro_obs_2021080606_s_time_osdf_mpi2.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi2)
+
+# GNSSRO written as one file per rank, compared as a file set against the same reference the
+# ObsGroup run uses. Set-level rather than per-rank, so the comparison does not depend on how
+# the 4 ranks happened to split the locations.
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gnssro_osdf_mpi4
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/gnssro_obs_2021080606_s_time.nc4
+                          testoutput/gnssro_obs_2021080606_s_time_osdf_mpi4.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi4)
+
+ecbuild_add_test( TARGET  ioda_time_io_cmp_gnssro_osdf_mpi1
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/gnssro_obs_2021080606_s_time.nc4
+                          testoutput/gnssro_obs_2021080606_s_time_osdf_mpi1.nc4
+                  TEST_DEPENDS ioda_time_io_osdf_mpi1)
+
 ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi1
                   TYPE    SCRIPT
-                  COMMAND bash
-                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
-                          netcdf
-                          "echo Checking time io AMSU-A NOAA19 (osdf)"
-                          amsua_n19_obs_2018041500_m_time_osdf_mpi1.nc4
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/amsua_n19_obs_2018041500_m_time.nc4
+                          testoutput/amsua_n19_obs_2018041500_m_time_osdf_mpi1.nc4
                   TEST_DEPENDS ioda_time_io_osdf_mpi1)
 
 ecbuild_add_test( TARGET  ioda_time_io_cmp_amsua_n19_osdf_mpi2_0000
