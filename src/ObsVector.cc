@@ -515,9 +515,9 @@ void ObsVector::print(std::ostream & os) const {
 
   if (nobs > 0) {
     os << obsdb_.obsname() << " nobs= " << nobs << " Min="
-       << zmin << ", Max=" << zmax << ", RMS=" << zrms << std::endl;
+       << zmin << ", Max=" << zmax << ", RMS=" << zrms;
   } else {
-    os << obsdb_.obsname() << ": No observations." << std::endl;
+    os << obsdb_.obsname() << ": No observations.";
   }
 }
 // -----------------------------------------------------------------------------
