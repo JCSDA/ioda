@@ -112,6 +112,18 @@ void osdf::FrameColsData::removeRow(const std::int64_t index) {
   }
 }
 
+void osdf::FrameColsData::removeRows(const std::vector<bool>& keepRows) {
+  osdf::FrameUtils::removeByMask(ids_, keepRows);
+  for (std::shared_ptr<DataBase>& data : dataColumns_) {
+    osdf::FrameUtils::callWithSupportedType(
+      data->getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        funcs_.removeValues<T>(data, keepRows);
+      });
+  }
+}
+
 const std::int32_t osdf::FrameColsData::getSizeCols() const {
   return static_cast<std::int32_t>(dataColumns_.size());
 }

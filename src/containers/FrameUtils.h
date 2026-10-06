@@ -6,8 +6,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <cstddef>
+#include <iterator>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "eckit/exception/Exceptions.h"
 #include "ioda/containers/Constants.h"
@@ -112,6 +116,34 @@ void withCoercionType(const consts::eDataTypes storedType, const std::string& na
       action(typeDiscriminator);
     }
   });
+}
+
+/// \brief Remove the elements of \p values whose entry in \p keep is false, in a single pass.
+///
+/// Kept elements retain their relative order. Uses move assignment and erase (rather than resize)
+/// so that it works for element types without a default constructor, such as DataRow. Excess
+/// capacity is released when more than half of the elements were removed.
+///
+/// \param values
+///   The vector to be compacted in place.
+/// \param keep
+///   Mask the same length as \p values; element i is kept iff keep[i] is true.
+template <typename T>
+void removeByMask(std::vector<T>& values, const std::vector<bool>& keep) {
+  std::size_t writeIdx = 0;
+  for (std::size_t readIdx = 0; readIdx < values.size(); ++readIdx) {
+    if (keep[readIdx]) {
+      if (writeIdx != readIdx) {
+        values[writeIdx] = std::move(values[readIdx]);
+      }
+      ++writeIdx;
+    }
+  }
+  values.erase(std::next(values.begin(), static_cast<std::ptrdiff_t>(writeIdx)), values.end());
+  // erase() keeps the original capacity; release it when most of the elements were removed.
+  if (values.capacity() > 2 * values.size()) {
+    values.shrink_to_fit();
+  }
 }
 
 }  // end namespace FrameUtils

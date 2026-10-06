@@ -34,6 +34,14 @@ class Functions {
   template<typename T> void addColumnToRow(IFrameData* data, DataRow&, bool&,
                                            std::int32_t&, const T) const;
 
+  /// \brief Common checks before removing rows from a data frame.
+  /// Throws if the mask size does not match the number of rows, or if rows are to be
+  /// removed while any column is read-only.
+  /// \param The data of the frame rows are being removed from.
+  /// \param Mask with one entry per row; row i is kept iff the entry is true.
+  /// \return True if the mask removes at least one row.
+  bool validateRowRemoval(const IFrameData&, const std::vector<bool>&) const;
+
   template<typename T> const std::shared_ptr<DataBase> createData(const std::vector<T>&) const;
 
   template<typename T> const std::shared_ptr<DatumBase> createDatum(const T) const;

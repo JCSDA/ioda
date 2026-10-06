@@ -76,6 +76,10 @@ void osdf::FrameRowsData::removeRow(const std::int64_t index) {
   dataRows_.erase(std::next(dataRows_.begin(), index));
 }
 
+void osdf::FrameRowsData::removeRows(const std::vector<bool>& keepRows) {
+  osdf::FrameUtils::removeByMask(dataRows_, keepRows);
+}
+
 void osdf::FrameRowsData::updateColumnWidth(const std::int32_t columnIndex,
                                             const std::int16_t width) {
   columnMetadata_.updateColumnWidth(columnIndex, width);

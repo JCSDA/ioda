@@ -72,6 +72,23 @@ template void osdf::FunctionsCols::removeDatum<char>(std::shared_ptr<DataBase>&,
 template void osdf::FunctionsCols::removeDatum<std::string>(std::shared_ptr<DataBase>&,
                                                                  const std::int64_t) const;
 
+template<typename T> void osdf::FunctionsCols::removeValues(std::shared_ptr<DataBase>& data,
+                                                          const std::vector<bool>& keep) const {
+  std::shared_ptr<Data<T>> dataType = std::static_pointer_cast<Data<T>>(data);
+  osdf::FrameUtils::removeByMask(dataType->getValues(), keep);
+}
+
+template void osdf::FunctionsCols::removeValues<int>(std::shared_ptr<DataBase>&,
+                                                     const std::vector<bool>&) const;
+template void osdf::FunctionsCols::removeValues<std::int64_t>(std::shared_ptr<DataBase>&,
+                                                              const std::vector<bool>&) const;
+template void osdf::FunctionsCols::removeValues<float>(std::shared_ptr<DataBase>&,
+                                                       const std::vector<bool>&) const;
+template void osdf::FunctionsCols::removeValues<char>(std::shared_ptr<DataBase>&,
+                                                      const std::vector<bool>&) const;
+template void osdf::FunctionsCols::removeValues<std::string>(std::shared_ptr<DataBase>&,
+                                                             const std::vector<bool>&) const;
+
 template<typename T>
 void osdf::FunctionsCols::sequenceIndices(std::vector<std::int64_t>& indices,
                    const std::vector<T>& values, const consts::eSortOrders order) const {

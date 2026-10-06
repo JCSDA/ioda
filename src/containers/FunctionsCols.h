@@ -39,6 +39,12 @@ class FunctionsCols : public Functions {
 
   template<typename T> void removeDatum(std::shared_ptr<DataBase>&, const std::int64_t) const;
 
+  /// \brief Removes the values whose entry in the mask is false, in a single pass.
+  /// \param The data column.
+  /// \param Mask the same length as the column; value i is kept iff the mask entry is true.
+  template<typename T> void removeValues(std::shared_ptr<DataBase>&,
+                                         const std::vector<bool>&) const;
+
   template<typename T> void sequenceIndices(std::vector<std::int64_t>&, const std::vector<T>&,
                                             const consts::eSortOrders) const;
 

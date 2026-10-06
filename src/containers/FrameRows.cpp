@@ -7,6 +7,7 @@
 
 #include "ioda/containers/FrameRows.h"
 
+#include <algorithm>
 #include <string>
 
 #include "eckit/exception/Exceptions.h"
@@ -175,16 +176,9 @@ void osdf::FrameRows::removeRow(const std::int64_t index) {
 }
 
 void osdf::FrameRows::removeRows(const std::vector<bool> & keepRows) {
-  if (keepRows.size() != static_cast<std::size_t>(data_.getSizeRows())) {
-    const std::string errMsg = std::string("keepRows vector size does not match ")
-                               + std::string("the number of rows in the current data frame.");
-    throw eckit::BadValue(errMsg, Here());
-  }
-
-  for (std::int64_t i = (keepRows.size() - 1); i >= 0; --i) {
-    if (!keepRows[i]) {
-        removeRow(i);
-    }
+  if (funcs_.validateRowRemoval(data_, keepRows)) {
+    data_.removeRows(keepRows);
+    notify();
   }
 }
 

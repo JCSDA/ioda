@@ -81,6 +81,10 @@ class FrameColsData : public IFrameData, public IColsData {
   /// \param The index (not ID) of the row.
   void removeRow(const std::int64_t);
 
+  /// \brief Removes rows from the data frame in a single pass.
+  /// \param Mask with one entry per row; row i is kept iff the entry is true.
+  void removeRows(const std::vector<bool>&);
+
   /// \brief Updating of the highest numerical ID given to each row. The column-priority container
   /// has to maintain this outside of each data row.
   /// \param The new, highest ID.

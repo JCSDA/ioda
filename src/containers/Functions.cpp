@@ -7,12 +7,38 @@
 
 #include "ioda/containers/Functions.h"
 
+#include <algorithm>
+#include <string>
+
+#include "eckit/exception/Exceptions.h"
+
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/DataRow.h"
 
 osdf::Functions::Functions() {}
+
+bool osdf::Functions::validateRowRemoval(const IFrameData& data,
+                                         const std::vector<bool>& keepRows) const {
+  if (keepRows.size() != static_cast<std::size_t>(data.getSizeRows())) {
+    const std::string errMsg = std::string("keepRows vector size does not match ")
+                               + std::string("the number of rows in the current data frame.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  if (std::find(keepRows.begin(), keepRows.end(), false) == keepRows.end()) {
+    return false;
+  }
+  for (std::int32_t colIndex = 0; colIndex < data.getSizeCols(); ++colIndex) {
+    if (data.getPermission(colIndex) == consts::eReadOnly) {
+      const std::string errMsg = std::string("ERROR: Cannot remove rows. Column ")
+                                 + data.getName(colIndex)
+                                 + std::string(" is set to read-only.");
+      throw eckit::BadParameter(errMsg, Here());
+    }
+  }
+  return true;
+}
 
 template<> void osdf::Functions::addColumnToRow<const char*>(IFrameData* data, DataRow& row,
     bool& isValid, std::int32_t& columnIndex, const char* param) const {

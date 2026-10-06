@@ -83,6 +83,10 @@ class FrameRowsData : public IFrameData  {
   /// \param The index (not ID) of the row.
   void removeRow(const std::int64_t);
 
+  /// \brief Removes rows from the data frame in a single pass.
+  /// \param Mask with one entry per row; row i is kept iff the entry is true.
+  void removeRows(const std::vector<bool>&);
+
   /// \brief Used to adapt the outputting of whitespace for column alignment when printing.
   /// \param Column index.
   /// \param Updated width value.
