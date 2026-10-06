@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Zero Obs"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
     channels: 1-15

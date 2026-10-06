@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &AOD_GOES_multi_npes
     name: "AOD GOES test multiple output files and io pool members = npes"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -58,6 +59,7 @@ observations:
 
 - obs space: &AOD_GOES_multi_one
     name: "AOD GOES test multiple output files and io pool members = one"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -112,6 +114,7 @@ observations:
 
 - obs space: &AOD_GOES_single_npes
     name: "AOD GOES test single file output and io pool members = npes"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -164,6 +167,7 @@ observations:
 
 - obs space: &AOD_GOES_single_one
     name: "AOD GOES test single file output and io pool members = 1"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:

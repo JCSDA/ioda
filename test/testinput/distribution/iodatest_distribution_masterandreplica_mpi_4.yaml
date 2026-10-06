@@ -14,6 +14,7 @@ time window:
 observations:
 - obs space: &round_robin_space
     name: RoundRobin, with extension
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -66,6 +67,7 @@ observations:
 
 - obs space: &halo_space
     name: Halo
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -120,6 +122,7 @@ observations:
 
 - obs space: &extended_halo_space
     name: Halo, with extension
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File

@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &aircraft_space
     name: "Aircraft"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -50,6 +51,7 @@ observations:
   test data: *aircraft_test_data
 - obs space: &aod_space
     name: "AOD"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:

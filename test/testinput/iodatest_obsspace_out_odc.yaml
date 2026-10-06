@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &AOD_GOES_out
     name: "AOD GOES"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -42,6 +43,7 @@ observations:
 
 - obs space: &Radiosonde_out
     name: "Radiosonde"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -93,6 +95,7 @@ observations:
 
 - obs space: &AMSUA_out
     name: "AMSUA NOAA19"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
@@ -140,6 +143,7 @@ observations:
 
 - obs space: &GMI_out
     name: "GMI GPM"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-13
     obsdatain:
@@ -177,6 +181,7 @@ observations:
 
 - obs space: &aircraft_out
     name: "Aircraft"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -219,6 +224,7 @@ observations:
 
 - obs space: &ATMS_out
     name: ATMS
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:
@@ -258,6 +264,7 @@ observations:
 
 - obs space: &IASI_out
     name: "IASI write odb"
+    use data frame container: false
     observed variables: [radiance]
     simulated variables: [brightnessTemperature]
     derived variables: [brightnessTemperature]
@@ -327,6 +334,7 @@ observations:
 # variable (on read) and its subsequent splitting (on write).
 - obs space: &GroundGPS_out
     name: GroundGPS
+    use data frame container: false
     simulated variables: [zenithTotalDelay]
     obsdatain:
       engine:

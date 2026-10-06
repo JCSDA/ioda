@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &aircraft_readbackin
     name: "Aircraft"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -66,6 +67,7 @@ observations:
 
 - obs space: &ATMS_readbackin
     name: ATMS
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:
@@ -123,6 +125,7 @@ observations:
 
 - obs space: &IASI_readbackin
     name: "IASI odb read back in"
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 16, 38, 49, 51, 55, 57, 59, 61, 63, 66, 70, 72, 74, 79, 81,
               83, 85, 87, 89, 92, 95, 97, 99, 101, 104, 106, 109, 111, 113, 116,
@@ -208,6 +211,7 @@ observations:
 
 - obs space: &GroundGPS_readbackin
     name: GroundGPS
+    use data frame container: false
     simulated variables: [zenithTotalDelay]
     obsdatain:
       engine:

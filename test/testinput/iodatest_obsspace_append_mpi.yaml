@@ -9,6 +9,7 @@ observations:
 
 - obs space: &append_1d_mpi
     name: "Append 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -135,6 +136,7 @@ observations:
 
 - obs space: &append_2d_mpi
     name: "Append 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:

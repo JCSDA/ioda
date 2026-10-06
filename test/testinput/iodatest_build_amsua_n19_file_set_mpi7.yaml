@@ -5,6 +5,7 @@ time window:
 
 obs space:
   name: "AMSUA NOAA19"
+  use data frame container: false
   simulated variables: ['brightnessTemperature']
   channels: 1-15
   obsdatain:

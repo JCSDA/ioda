@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Missing bufr file - warning"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
     channels: 1, 3, 10, 999
@@ -54,6 +55,7 @@ observations:
 
 - obs space:
     name: "Missing bufr file - warning, new reader"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
     channels: 1, 3, 10, 999

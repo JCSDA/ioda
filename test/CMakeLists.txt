@@ -364,6 +364,23 @@ target_include_directories(ioda_test INTERFACE $<BUILD_INTERFACE:${BUILD_DIR_TES
 target_link_libraries(ioda_test INTERFACE ioda)
 
 #####################################################################
+# Container migration guard
+#####################################################################
+
+# Fails if any obs space would take its container from the "use data frame container"
+# parameter default instead of stating it, either in the yaml or via IODA_TEST_CONTAINER
+# on the ctest registration. Without this, changing that default would silently move
+# tests from one container to the other while ctest stayed green.
+# TODO(someone): remove once the ObsGroup container is retired.
+# Run from the source tree, not a copy in bin/: the script locates the testinput
+# directory and this file relative to its own path, so that it takes no path arguments.
+ecbuild_add_test( TARGET  ioda_check_container_pins
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${PROJECT_SOURCE_DIR}/tools/ioda_check_container_pins.py
+                  )
+
+#####################################################################
 # OSDF unit tests
 #####################################################################
 
@@ -1039,6 +1056,7 @@ ecbuild_add_test( TARGET  ioda_obsspace
 ecbuild_add_test( TARGET  ioda_obsspace_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1404,6 +1422,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1439,6 +1458,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_empty_obs_file_mpi_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1474,6 +1494,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1495,6 +1516,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_missing_obs_file_warn_mpi
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1596,6 +1618,7 @@ if (odc_FOUND)
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc.yaml"
                     LIBS  ioda_test
+                    ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                     )
 
   # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1611,6 +1634,7 @@ if (odc_FOUND)
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_missing_obs_file_warn_odc_mpi.yaml"
                     LIBS  ioda_test
+                    ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                     )
 
   # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1693,6 +1717,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_grouping
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1707,6 +1732,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_grouping_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_grouping_reader_pool.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -1858,6 +1884,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_locations_qc
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1881,6 +1908,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_locations_qc_twfilt
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_locations_qc_twfilt.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1905,6 +1933,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric
                   SOURCES mains/TestObsSpaceInvalidNumeric.cc
                   ARGS    "testinput/iodatest_obsspace_invalid_numeric.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -1929,6 +1958,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_mpi
                   MPI     2
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_mpi.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER,
@@ -1990,6 +2020,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool
                   MPI     2
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_mpi_reader_pool.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER,
@@ -2050,6 +2081,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_mpi_reader_pool_osdf_parity_5
 ecbuild_add_test( TARGET  ioda_obsspace_marine
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_marine.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -2111,6 +2143,7 @@ if (odc_FOUND)
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_empty_obs_file.yaml"
                     LIBS  ioda_test
+                    ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                     )
 
   ecbuild_add_test( TARGET  ioda_obsspace_odc_empty_obs_file_parallel_io
@@ -2173,12 +2206,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc
                   ARGS    "testinput/iodatest_obsspace_put_db_channels.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels_check
                   COMMAND ioda_obsspace_put_db_channels
                   ARGS    "testinput/iodatest_obsspace_put_db_channels_check.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   TEST_DEPENDS ioda_obsspace_put_db_channels )
 
 # OSDF parity: the same two yamls run again with the container selected by
@@ -2221,6 +2256,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_generators
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_generators.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -2644,6 +2680,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_zero_obs
                   ARGS    "testinput/iodatest_obsspace_zero_obs.yaml"
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_clean_obsspace_zero_obs
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_zero_obs_osdf
@@ -2745,6 +2782,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_filter_to_zero_obs_reader_pool
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_filter_to_zero_obs_reader_pool.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -2759,6 +2797,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_fill_value
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_fill_value.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -2773,6 +2812,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_default_fill_values
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_default_fill_values.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf".
@@ -2829,6 +2869,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_inclusive_lower_bound
                   COMMAND ioda_obsspace
                   ARGS    "testinput/iodatest_obsspace_inclusive_lower_bound.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with OSDF. Output file names are tagged with "_osdf"
@@ -3120,6 +3161,7 @@ ecbuild_add_test( TARGET  ioda_sort
                   SOURCES mains/TestSort.cc
                   ARGS    "testinput/iodatest_sort.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -3236,6 +3278,7 @@ ecbuild_add_test( TARGET  ioda_obsvector_missing_locs
                   COMMAND ioda_obsvector
                   ARGS    "testinput/iodatest_obsvector_missing_locs.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   TEST_DEPENDS ioda_oops_obsvector ioda_oops_obsdatavector )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -3254,6 +3297,7 @@ ecbuild_add_test( TARGET  ioda_obsvector_packeigen
                   SOURCES mains/TestIodaObsVectorPackEigen.cc
                   ARGS    "testinput/iodatest_obsvector_packeigen.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.
@@ -3275,6 +3319,7 @@ ecbuild_add_test( TARGET  ioda_obsdatavector
                   SOURCES mains/TestIodaObsDataVector.cc
                   ARGS    "testinput/iodatest_obsdatavector.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 # OSDF parity: the same yaml run again with the container selected by IODA_TEST_CONTAINER.

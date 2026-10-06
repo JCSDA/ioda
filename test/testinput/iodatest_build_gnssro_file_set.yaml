@@ -5,6 +5,7 @@ time window:
 
 obs space:
   name: "GNSSRO"
+  use data frame container: false
   simulated variables: [ 'atmosphericRefractivity', 'bendingAngle' ]
   obsdatain:
     engine:

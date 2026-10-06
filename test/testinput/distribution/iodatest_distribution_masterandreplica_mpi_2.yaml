@@ -15,6 +15,7 @@ observations:
 
 - obs space: &round_robin_space
     name: RoundRobin, with extension
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -53,6 +54,7 @@ observations:
 
 - obs space: &inefficient_space
     name: Inefficient, with extension
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File

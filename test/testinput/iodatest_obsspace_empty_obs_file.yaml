@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Empty obs file"
+    use data frame container: false
     simulated variables: ['dummy_variable']
     obsdatain:
       engine:
@@ -54,6 +55,7 @@ observations:
 
 - obs space:
     name: "Empty obs file with channels"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     observed variables: ['brightnessTemperature']
     channels: 1, 3, 10, 999

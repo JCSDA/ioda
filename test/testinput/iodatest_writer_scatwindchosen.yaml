@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: ScatwindChosen
+      use data frame container: false
       simulated variables: ['windEastwardAt10M', 'windNorthwardAt10M']
       derived variables: ['windEastwardAt10M', 'windNorthwardAt10M']
       obsdatain:

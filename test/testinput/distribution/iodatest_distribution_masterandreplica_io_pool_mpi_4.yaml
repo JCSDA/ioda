@@ -14,6 +14,7 @@ time window:
 observations:
 - obs space:
     name: RoundRobin, with extension
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File

@@ -8,6 +8,7 @@ observations:
 
   - obs space:
       name: "Writer distributed obs - RoundRobin"
+      use data frame container: false
       distribution:
         name: RoundRobin
       simulated variables: ['myObs']
@@ -24,6 +25,7 @@ observations:
 
   - obs space:
       name: "Writer distributed obs - Halo"
+      use data frame container: false
       distribution:
         name: Halo
         radius: 10.0e6
@@ -42,6 +44,7 @@ observations:
 
   - obs space:
       name: "Writer distributed obs - Inefficient"
+      use data frame container: false
       distribution:
         name: InefficientDistribution
       simulated variables: ['myObs']
@@ -58,6 +61,7 @@ observations:
 
   - obs space:
       name: "Writer distributed obs - Atlas"
+      use data frame container: false
       distribution:
         name: Atlas
         grid:

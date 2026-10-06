@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &atms_spread_1_space
     name: ATMS, frame distribution spread 1
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:
@@ -62,6 +63,7 @@ observations:
 
 - obs space: &atms_spread_3_space
     name: ATMS, frame distribution spread 3
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:
@@ -114,6 +116,7 @@ observations:
 
 - obs space: &atms_spread_100_space
     name: ATMS, frame distribution spread 100
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:

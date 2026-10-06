@@ -7,6 +7,7 @@ observations:
   observers:
   - obs space:
       name: "Empty (default output)"
+      use data frame container: false
       simulated variables: ['airTemperature']
       obsdatain:
         engine:
@@ -19,6 +20,7 @@ observations:
 
   - obs space:
       name: "Empty (create empty output)"
+      use data frame container: false
       simulated variables: ['airTemperature']
       obsdatain:
         engine:
@@ -32,6 +34,7 @@ observations:
 
   - obs space:
       name: "Empty (skip empty output)"
+      use data frame container: false
       simulated variables: ['airTemperature']
       obsdatain:
         engine:

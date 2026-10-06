@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &empty_space
     name: "Empty ODC obs file"
+    use data frame container: false
     simulated variables: ['height']
     obsdatain:
       engine:

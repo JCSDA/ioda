@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &contda_obs_space
     name: "ContDA Shift Window"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"

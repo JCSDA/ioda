@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: "Channel"
+      use data frame container: false
       simulated variables: ['brightnessTemperature']
       obsdatain:
         engine:

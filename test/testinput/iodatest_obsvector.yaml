@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: "Radiosonde_1var"
+      use data frame container: false
       simulated variables:
       - airTemperature
       obsdatain:
@@ -27,6 +28,7 @@ observations:
 
   - obs space:
       name: "Radiosonde_2vars"
+      use data frame container: false
       simulated variables:
       - airTemperature
       - specificHumidity
@@ -45,6 +47,7 @@ observations:
 
   - obs space:
       name: "Radiosonde_4vars"
+      use data frame container: false
       simulated variables:
       - airTemperature
       - specificHumidity

@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &atms_space
     name: ATMS
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-22
     obsdatain:

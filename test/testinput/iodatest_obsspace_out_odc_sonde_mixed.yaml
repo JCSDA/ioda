@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &radiosonde
     name: "Radiosonde"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -66,6 +67,7 @@ observations:
 
 - obs space: &radiosonde_derived
     name: "Radiosonde derived"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:

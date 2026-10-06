@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: Radiosonde
+      use data frame container: false
       simulated variables: ['airTemperature', 'windEastward']
       observed variables: ['airTemperature', 'windEastward']
       obsdatain:

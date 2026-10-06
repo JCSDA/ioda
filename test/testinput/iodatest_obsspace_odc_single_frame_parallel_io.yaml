@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &aircraft_space
     name: "Aircraft"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:

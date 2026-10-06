@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Grouping, single file input"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -87,6 +88,7 @@ observations:
 
 - obs space:
     name: "Grouping, multiple file input"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:

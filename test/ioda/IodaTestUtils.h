@@ -104,12 +104,18 @@ inline void checkObsSpaceNotChained(const eckit::LocalConfiguration & obsConf,
 ///   2. a top-level "obs data container" key in the test YAML
 ///   3. the IODA_TEST_CONTAINER environment variable
 ///
-/// When none of these is present this is a no-op, so existing test configurations retain
-/// their current behaviour (the ObsGroup container).
+/// When none of these is present this is a no-op and the obs space falls through to the
+/// "use data frame container" parameter default. No ioda test should rely on that: every
+/// obs space either states its container in the YAML, or is registered with
+/// IODA_TEST_CONTAINER naming it. ioda_check_container_pins enforces this.
 ///
-/// Only when the environment variable is what selected the container does this also tag
-/// the obs space's output file name (so the two runs do not collide) and reject an obs
-/// space that shares files with another test.
+/// Only when the environment variable is what selected the container does this also
+/// reject an obs space that shares files with another test, and tag the obs space's
+/// output file name so the two runs do not collide. Only the OSDF run is tagged; the
+/// ObsGroup run keeps the file names the YAML specifies. That asymmetry is deliberate,
+/// so that a test whose container is pinned with IODA_TEST_CONTAINER=ObsGroup writes to
+/// the same paths it wrote to when it took the container from the parameter default, and
+/// the reference comparisons registered against those paths keep working.
 ///
 /// TODO(someone): Remove this function, the IODA_TEST_CONTAINER environment variable and
 /// oops::detail::applyObsSpaceDefaults once the migration to the OSDF container is
@@ -134,10 +140,12 @@ inline void applyContainerDefault(const eckit::Configuration & topLevelConf,
   std::string outputTag;
   if (container == "OSDF") {
     obsConf.set("use data frame container", true);
+    // Only the OSDF run is tagged. The ObsGroup run is the incumbent and keeps the
+    // output file names the YAML specifies, so the reference comparisons registered
+    // against those names keep working when a test is pinned with IODA_TEST_CONTAINER.
     outputTag = "_osdf";
   } else if (container == "ObsGroup") {
     obsConf.set("use data frame container", false);
-    outputTag = "_obsgroup";
   } else {
     throw eckit::BadValue("Unknown 'obs data container': " + container +
                           ", expected 'ObsGroup' or 'OSDF'", Here());
@@ -145,7 +153,7 @@ inline void applyContainerDefault(const eckit::Configuration & topLevelConf,
 
   if (fromEnvironment) {
     checkObsSpaceNotChained(obsConf, container);
-    tagObsOutputFile(obsConf, outputTag);
+    if (!outputTag.empty()) tagObsOutputFile(obsConf, outputTag);
   }
 }
 

@@ -4,8 +4,11 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-  # testing the override of the default obs data container (ObsGroup) to OSDF
-  # ie the individual obs space config "use data frame container" specs takes precedence
+  # Precedence rule owned by this file: an obs space's own "use data frame container"
+  # beats the section-level "obs data container". Every obs space below sets it to true,
+  # so all five run OSDF despite this key saying ObsGroup. That claim is independent of
+  # whatever the parameter default happens to be, so this file needs no change when the
+  # default flips.
   obs data container: ObsGroup
   observers:
   - obs space:

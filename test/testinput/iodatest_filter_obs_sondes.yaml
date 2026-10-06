@@ -5,6 +5,7 @@ time window:
 
 obs space:
   name: "Radiosonde"
+  use data frame container: false
   simulated variables: ['airTemperature']
   obsdatain:
     engine:

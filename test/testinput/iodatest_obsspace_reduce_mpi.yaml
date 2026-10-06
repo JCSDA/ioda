@@ -9,6 +9,7 @@ observations:
 
 - obs space: &reduce_eq_1d_mpi
     name: "Reduce equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -127,6 +128,7 @@ observations:
 
 - obs space: &reduce_eq_1d_halo
     name: "Reduce equal, 1D variables, Halo"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "Halo"
@@ -273,6 +275,7 @@ observations:
 
 - obs space: &reduce_eq_1d_inefficient
     name: "Reduce equal, 1D variables, Inefficient distribution"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: InefficientDistribution
@@ -418,6 +421,7 @@ observations:
 
 - obs space: &reduce_neq_1d_mpi
     name: "Reduce not equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -554,6 +558,7 @@ observations:
 
 - obs space: &reduce_greater_1d_mpi
     name: "Reduce, greater than, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -670,6 +675,7 @@ observations:
 
 - obs space: &reduce_less_1d_mpi
     name: "Reduce, less than, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -790,6 +796,7 @@ observations:
 
 - obs space: &reduce_geq_1d_mpi
     name: "Reduce, greater than or equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -910,6 +917,7 @@ observations:
 
 - obs space: &reduce_leq_1d_mpi
     name: "Reduce, less than or equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -1035,6 +1043,7 @@ observations:
 ####################### 2D variables #######################
 - obs space: &reduce_eq_2d_mpi
     name: "Reduce, equal 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -1154,6 +1163,7 @@ observations:
 
 - obs space: &reduce_neq_2d_mpi
     name: "Reduce, not equal 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -1291,6 +1301,7 @@ observations:
 
 - obs space: &reduce_greater_2d_mpi
     name: "Reduce, greater than, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -1408,6 +1419,7 @@ observations:
 
 - obs space: &reduce_less_2d_mpi
     name: "Reduce, less than, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -1529,6 +1541,7 @@ observations:
 
 - obs space: &reduce_geq_2d_mpi
     name: "Reduce, greater than or equal, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -1650,6 +1663,7 @@ observations:
 
 - obs space: &reduce_leq_2d_mpi
     name: "Reduce, less than or equal, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:

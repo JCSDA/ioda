@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space:
     name: "Round robin distribution"
+    use data frame container: false
     simulated variables: ['windEastward']
     distribution:
       name: "RoundRobin"

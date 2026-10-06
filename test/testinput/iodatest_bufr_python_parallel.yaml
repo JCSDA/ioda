@@ -7,6 +7,7 @@ observations:
   observers:
   - obs space:
       name: "MHS"
+      use data frame container: false
       simulated variables: ['antennaTemperature']
       obsdatain:
         engine:

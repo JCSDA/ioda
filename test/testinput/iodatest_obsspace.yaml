@@ -8,6 +8,7 @@ time window:
 observations:
 - obs space:
     name: "AOD"
+    use data frame container: false
     simulated variables: ['temperature']
     observed variables: ['temperature']
     obsdatain:
@@ -56,6 +57,7 @@ observations:
 
 - obs space:
     name: "AOD VIIRS"
+    use data frame container: false
     simulated variables: ['temperature']
     observed variables: ['temperature']
     obsdatain:
@@ -94,6 +96,7 @@ observations:
 
 - obs space:
     name: "AMSUA NOAA19, Inefficient distribution"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
@@ -137,6 +140,7 @@ observations:
 
 - obs space:
     name: "AMSUA NOAA19, Halo distribution"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     distribution:
@@ -172,6 +176,7 @@ observations:
 
 - obs space:
     name: "SMAP"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-4
     obsdatain:
@@ -204,6 +209,7 @@ observations:
 
 - obs space:
     name: "GMI GPM"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-13
     obsdatain:
@@ -250,6 +256,7 @@ observations:
 
 - obs space:
     name: "Radiosonde"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -303,6 +310,7 @@ observations:
 
 - obs space:
     name: "Radiosonde with grouping"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -342,6 +350,7 @@ observations:
 
 - obs space:
     name: "Radiosonde with grouping and tw filtering"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:
@@ -379,6 +388,7 @@ observations:
 
 - obs space:
     name: "AOD GOES"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:
@@ -410,6 +420,7 @@ observations:
 
 - obs space:
     name: "Derived variables"
+    use data frame container: false
     simulated variables: ['temperature']
     obsdatain:
       engine:
@@ -534,6 +545,7 @@ observations:
 
 - obs space:
     name: "Boolean variable"
+    use data frame container: false
     simulated variables: [airTemperature]
     obsdatain:
       engine:
@@ -566,6 +578,7 @@ observations:
 
 - obs space:
     name: "Derived single-channel simulated variables"
+    use data frame container: false
     simulated variables: [stationPressure, airTemperature, relativeHumidity, dewPointTemperature]
     derived variables: [relativeHumidity, dewPointTemperature] # not present in the input file
     observed variables: [stationPressure, airTemperature]
@@ -590,6 +603,7 @@ observations:
 
 - obs space:
     name: "Derived multi-channel variables"
+    use data frame container: false
     simulated variables: [bias_corrected_brightnessTemperature]
     derived variables: [bias_corrected_brightnessTemperature] # not present in the input file
     observed variables: []

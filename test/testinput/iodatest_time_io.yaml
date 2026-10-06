@@ -4,6 +4,13 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
+  # This file is the ObsGroup half of a two-container parity pair; iodatest_time_io_osdf_mpi1.yaml
+  # is the OSDF half, and the two are checked against the same reference files.
+  #
+  # Precedence rule owned by this file: a section-level "obs data container" overrides the
+  # "use data frame container" parameter default. Keep the setting here rather than on the
+  # individual obs spaces, so the rule still has a test once the default becomes OSDF.
+  obs data container: ObsGroup
   observers:
   - obs space:
       name: "AMSUA NOAA19"

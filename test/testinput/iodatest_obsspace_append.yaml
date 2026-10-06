@@ -7,6 +7,7 @@ observations:
 
 - obs space: &append_1d
     name: "Append 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -85,6 +86,7 @@ observations:
 
 - obs space: &append_2d
     name: "Append 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -164,6 +166,7 @@ observations:
 
 - obs space: &append_no_obserror
     name: "Append no ObsError"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"

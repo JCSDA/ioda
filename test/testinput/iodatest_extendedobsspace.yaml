@@ -11,6 +11,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile: &case_1
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_1
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -72,6 +73,7 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile: &cas
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_2
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -121,6 +123,7 @@ extend obs space, 0 entries per averaged profile: &case_3
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_3
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -147,6 +150,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, alternative data 
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_4
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -196,6 +200,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_5
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File
@@ -246,6 +251,7 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
     end: 2018-04-15T03:30:00Z
   obs space: &obs_space_6
     name: Sondes
+    use data frame container: false
     obsdatain:
       engine:
         type: H5File

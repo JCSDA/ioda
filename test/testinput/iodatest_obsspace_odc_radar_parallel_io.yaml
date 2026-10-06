@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &radar_space
     name: Radar
+    use data frame container: false
     simulated variables: [radialVelocity]
     obsdatain:
       engine:

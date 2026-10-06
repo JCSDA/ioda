@@ -7,6 +7,7 @@ observations:
   observers:
   - obs space:
       name: "Radiosonde"
+      use data frame container: false
       simulated variables: ['air_temperature']
       obsdatain:
         engine:

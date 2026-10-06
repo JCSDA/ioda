@@ -33,6 +33,7 @@ observations:
     name: InefficientDistribution
 - obs space:
     name: "Not-OSDF"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: RoundRobin

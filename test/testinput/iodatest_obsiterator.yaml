@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: simple obs
+      use data frame container: false
       simulated variables: [windEastward]
       obsdatain:
         engine:
@@ -25,6 +26,7 @@ observations:
 
   - obs space:
       name: obs with height
+      use data frame container: false
       iterator vertical coordinate: height
       simulated variables: [windEastward]
       obsdatain:

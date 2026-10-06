@@ -9,6 +9,7 @@ observations:
 
 - obs space: &reduce_eq_1d
     name: "Reduce equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -65,6 +66,7 @@ observations:
 
 - obs space: &reduce_neq_1d
     name: "Reduce not equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -130,6 +132,7 @@ observations:
 
 - obs space: &reduce_greater_1d
     name: "Reduce, greater than, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -185,6 +188,7 @@ observations:
 
 - obs space: &reduce_less_1d
     name: "Reduce, less than, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -242,6 +246,7 @@ observations:
 
 - obs space: &reduce_geq_1d
     name: "Reduce, greater than or equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -299,6 +304,7 @@ observations:
 
 - obs space: &reduce_leq_1d
     name: "Reduce, less than or equal, 1D variables"
+    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -359,6 +365,7 @@ observations:
 ####################### 2D variables #######################
 - obs space: &reduce_eq_2d
     name: "Reduce, equal 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -416,6 +423,7 @@ observations:
 
 - obs space: &reduce_neq_2d
     name: "Reduce, not equal 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -482,6 +490,7 @@ observations:
 
 - obs space: &reduce_greater_2d
     name: "Reduce, greater than, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -538,6 +547,7 @@ observations:
 
 - obs space: &reduce_less_2d
     name: "Reduce, less than, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -596,6 +606,7 @@ observations:
 
 - obs space: &reduce_geq_2d
     name: "Reduce, greater than or equal, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -654,6 +665,7 @@ observations:
 
 - obs space: &reduce_leq_2d
     name: "Reduce, less than or equal, 2D variables"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:

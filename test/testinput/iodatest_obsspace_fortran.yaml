@@ -5,6 +5,7 @@ time window:
 observations:
 - obs space:
     name: Radiosonde
+    use data frame container: false
     simulated variables: [airTemperature, windEastward, windNorthward]
     obsdatain:
       engine:
@@ -15,6 +16,7 @@ observations:
     nvars obsvars: 3
 - obs space:
     name: Radiance
+    use data frame container: false
     simulated variables: [brightnessTemperature]
     channels: 1-10, 15
     obsdatain:

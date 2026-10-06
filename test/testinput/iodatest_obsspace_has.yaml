@@ -8,6 +8,7 @@ time window:
 observations:
 - obs space:
     name: "AMSUA NOAA19 (ObsGroup)"
+    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-15
     obsdatain:
@@ -35,6 +36,7 @@ observations:
 
 - obs space:
     name: "Radiosonde (ObsGroup)"
+    use data frame container: false
     simulated variables: ['airTemperature']
     obsdatain:
       engine:

@@ -6,6 +6,7 @@ observations:
   observers:
   - obs space:
       name: "AOD"
+      use data frame container: false
       simulated variables: ['brightnessTemperature']
       observed variables: ['brightnessTemperature']
       obsdatain:
@@ -14,6 +15,7 @@ observations:
           obsfile: Data/testinput_tier_1/aod_obs_2018041500_m.nc4
   - obs space:
       name: "AOD VIIRS"
+      use data frame container: false
       simulated variables: ['brightnessTemperature']
       observed variables: ['brightnessTemperature']
       obsdatain:
@@ -22,6 +24,7 @@ observations:
           obsfile: Data/testinput_tier_1/aod_viirs_obs_2018041500_sf42.nc4
   - obs space:
       name: "AMSUA N19"
+      use data frame container: false
       simulated variables: ['brightnessTemperature']
       observed variables: ['brightnessTemperature']
       obsdatain:
@@ -30,6 +33,7 @@ observations:
           obsfile: Data/testinput_tier_1/amsua_n19_obs_2018041500_m.nc4
   - obs space:
       name: "GMI GPM"
+      use data frame container: false
       simulated variables: ['brightnessTemperature']
       observed variables: ['brightnessTemperature']
       obsdatain:
@@ -38,6 +42,7 @@ observations:
           obsfile: Data/testinput_tier_1/gmi_gpm_obs_2018041500_m.nc4
   - obs space:
       name: Radiosonde
+      use data frame container: false
       simulated variables: ['airTemperature', 'windEastward']
       obsdatain:
         engine:
@@ -47,6 +52,7 @@ observations:
     # Marine obs
   - obs space:
       name: "ADT"
+      use data frame container: false
       simulated variables: ['adt']
       observed variables: ['adt']
       obsdatain:
@@ -55,6 +61,7 @@ observations:
           obsfile: Data/testinput_tier_1/Jason-2-2018-04-15.nc
   - obs space:
       name: "Insitu Temperature"
+      use data frame container: false
       simulated variables: ['temperature']
       observed variables: ['temperature']
       obsdatain:
@@ -63,6 +70,7 @@ observations:
           obsfile: Data/testinput_tier_1/profile_2018-04-15.nc
   - obs space:
       name: "Sea Surface Temp"
+      use data frame container: false
       simulated variables: ['seaSurfaceTemperature']
       obsdatain:
         engine:
@@ -70,6 +78,7 @@ observations:
           obsfile: Data/testinput_tier_1/sst_obs-2018-04-15.nc4
   - obs space:
       name: "Sea Ice Fraction"
+      use data frame container: false
       simulated variables: ['seaIceFraction']
       observed variables: ['seaIceFraction']
       obsdatain:
@@ -78,6 +87,7 @@ observations:
           obsfile: Data/testinput_tier_1/icec-2018-04-15.nc
   - obs space:
       name: "Sea Ice Thickness"
+      use data frame container: false
       simulated variables: ['iceThickness']
       obsdatain:
         engine:
@@ -85,6 +95,7 @@ observations:
           obsfile: Data/testinput_tier_1/cryosat2-2018-04-15.nc
   - obs space:
       name: "Sea Surface Salinity"
+      use data frame container: false
       simulated variables: ['salinity']
       observed variables: ['salinity']
       obsdatain:

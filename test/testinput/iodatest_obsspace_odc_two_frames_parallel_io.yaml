@@ -6,6 +6,7 @@ time window:
 observations:
 - obs space: &aod_space
     name: "AOD"
+    use data frame container: false
     simulated variables: ['aerosolOpticalDepth']
     obsdatain:
       engine:

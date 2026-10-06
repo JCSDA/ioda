@@ -5,6 +5,7 @@ time window:
 
 obs space:
   name: "Single File Input"
+  use data frame container: false
   simulated variables: ['airTemperature']
   obsdatain:
     engine:

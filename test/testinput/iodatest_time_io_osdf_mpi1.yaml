@@ -4,9 +4,9 @@ time window:
   end: "2022-01-01T00:00:00Z"
 
 observations:
-  # testing the default obs data container setting (OSDF)
-  # ie, without "obs data container" the individual obs space would default
-  # to ObsGroup
+  # Precedence rule owned by this file: a section-level "obs data container" applies to
+  # every obs space that does not set "use data frame container" itself. None of the five
+  # obs spaces below sets it, so all five take OSDF from this one key.
   obs data container: OSDF
   # This file and iodatest_time_io.yaml cover the same five obs spaces with the two
   # containers, and every obs space is checked against one shared reference file, so the
