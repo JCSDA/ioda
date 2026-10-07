@@ -400,6 +400,9 @@ Variables:
   - Variable: [ "reflectivityLowestScanLevel" ]
     Dimensions: [ [ "Location"] ]
     Attributes: { units: "dBZ" }
+  - Variable: [ "reflectivityLinear" ]
+    Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
+    Attributes: { units: "cm6 m-3" }    
   - Variable: [ "radialVelocity", "radial_velocity" ]
     Dimensions: [ [ "Location" ], [ "Location", "Layer" ] ]
     Attributes: { units: "m s-1" }
