@@ -76,9 +76,15 @@ static bool keepNetcdfVarForOSDF(const std::string & varName,
                                  const netCDF::NcVar & var,
                                  std::vector<std::string> & varDimNames);
 
-/// \brief list out variable names in a recursive fashion
+/// \brief a netCDF variable paired with its hierarchical name
+/// \details The name carries the group path (eg, "MetaData/latitude") so that it is
+/// unique across the file and records where the variable lives. The handle is kept
+/// alongside it so that callers do not have to look the variable up again
+typedef std::pair<std::string, netCDF::NcVar> NamedNcVar;
+
+/// \brief list out variables, with their handles, in a recursive fashion
 /// \details This function will traverse the group hierarchy and return a vector
-/// of strings containing all of the variable names under the given group.
+/// of all the variables under the given group, each paired with its name.
 /// The variable names will have the group path prepended to them in order
 /// to keep all the variable names unique, and to denote where they live in
 /// the group hierarchy.
@@ -89,19 +95,9 @@ static bool keepNetcdfVarForOSDF(const std::string & varName,
 /// \param group netCDF group
 /// \param groupPathPrefix leading group path for this level of the heirarchy
 /// \param listDimensions flag to indicate listing dimensions or variables
-static std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
+static std::vector<NamedNcVar> listAllNetcdfVars(const netCDF::NcGroup& group,
                                     const std::string & groupPathPrefix,
                                     const bool listDimensions);
-
-/// \brief load the variable (specified as a hierarchical path) from the netCDF file
-/// \details This function allows variable names with hierarchical paths to be
-/// loaded from the netCDF file.  The variable name is specified as a vector
-/// of strings, where the last entry is the variable and any leading entries are
-/// the group names leading to the variable.
-/// \param topGroup top level group object corresponding to varNameParts entreis
-/// \param varNameParts vector of strings containing the variable name and group names
-static netCDF::NcVar openHierarchialNetcdfVar(netCDF::NcGroup & topGroup,
-                                              const std::vector<std::string> & varNameParts);
 
 /// \brief transfer a block of data from a netCDF variable to a vector
 /// \details This is the "block of locations" signature for getting the netcdf
@@ -308,12 +304,12 @@ bool keepNetcdfVarForOSDF(const std::string & varName,
 }
 
 //---------------------------------------------------------------------
-std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
-                                           const std::string & groupPathPrefix,
-                                           const bool listDimensions) {
+std::vector<NamedNcVar> listAllNetcdfVars(const netCDF::NcGroup& group,
+                                          const std::string & groupPathPrefix,
+                                          const bool listDimensions) {
   // List out this group's variables
   std::string varName;
-  std::vector<std::string> varNames;
+  std::vector<NamedNcVar> namedVars;
   for (const auto & varInfo : group.getVars()) {
     // Determine if the variable is a dimension or not.
     const bool varIsDim = isNetcdfVarADimension(group, varInfo.first);
@@ -326,11 +322,11 @@ std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
     }
     if (listDimensions) {
       if (varIsDim) {
-        varNames.push_back(varName);
+        namedVars.emplace_back(varName, varInfo.second);
       }
     } else {
       if (!varIsDim) {
-        varNames.push_back(varName);
+        namedVars.emplace_back(varName, varInfo.second);
       }
     }
   }
@@ -347,32 +343,13 @@ std::vector<std::string> listAllNetcdfVars(const netCDF::NcGroup& group,
       newGroupPath = groupPathPrefix + std::string("/") + groupInfo.first;
     }
     const netCDF::NcGroup childGroup = group.getGroup(groupInfo.first);
-    const std::vector<std::string> childVarNames =
+    const std::vector<NamedNcVar> childNamedVars =
         listAllNetcdfVars(childGroup, newGroupPath, listDimensions);
-    varNames.insert(varNames.end(), childVarNames.begin(), childVarNames.end());
+    namedVars.insert(namedVars.end(), childNamedVars.begin(), childNamedVars.end());
   }
 
-  // Return the list of variable names
-  return varNames;
-}
-
-//---------------------------------------------------------------------
-netCDF::NcVar openHierarchialNetcdfVar(netCDF::NcGroup & topGroup,
-                                       const std::vector<std::string> & varNameParts) {
-  // Use varNameParts to walk down the group hierarchy to get to the variable.
-  netCDF::NcVar var;
-  if (varNameParts.size() == 1) {
-    // If there is only one part, it's the variabe at the top level
-    var = topGroup.getVar(varNameParts[0]);
-  } else {
-    // Otherwise, walk through the groups and subgroups then get the variable
-    netCDF::NcGroup group = topGroup.getGroup(varNameParts[0]);
-    for (std::size_t i = 1; i < varNameParts.size() - 1; ++i) {
-      group = group.getGroup(varNameParts[i]);
-    }
-    var = group.getVar(varNameParts.back());
-  }
-  return var;
+  // Return the list of variables paired with their names
+  return namedVars;
 }
 
 //--------------------------------------------------------------------------------
@@ -384,14 +361,21 @@ std::vector<VarType> getNcVarData(const std::size_t startLoc, const std::size_t 
     // Location is the first dimension in this form of reading. We want to use the hyperslab
     // selection for the block of locations (first dimension) and select the entirety of any
     // remaining dimesions.
-    std::vector<size_t> count(0);
+    // Deliberately do not ask the first (Location) dimension for its size. The caller
+    // already knows how many locations this block covers and passes it in as locCount,
+    // which is what the hyperslab needs. Querying the size would be wasted work, and it
+    // is expensive work: when Location is UNLIMITED, netCDF-4 answers by walking every
+    // variable in the file that shares the dimension and taking the longest, so the
+    // query costs O(number of variables) and doing it once per variable makes a read
+    // O(n^2). The remaining dimensions are fixed size, so asking them is cheap.
     const std::vector<netCDF::NcDim> varDims = var.getDims();
-    for (auto & dim : varDims) {
-      count.push_back(dim.getSize());
-    }
-    std::vector<size_t> start(count.size(), 0);
+    std::vector<size_t> count(varDims.size(), 0);
+    std::vector<size_t> start(varDims.size(), 0);
     start[0] = startLoc;
     count[0] = locCount;
+    for (std::size_t idim = 1; idim < varDims.size(); ++idim) {
+      count[idim] = varDims[idim].getSize();
+    }
 
     std::size_t numElements = 1;
     for (auto & dimSize : count) {
@@ -638,11 +622,10 @@ void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
   // keepNetcdfVarForOSDF rejects, and skip the types the transfer step has no case for.
   std::unordered_map<std::string, std::string> claimedBy;
   std::vector<std::string> collisions;
-  const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
-  for (const auto & varName : allVars) {
-    const std::vector<std::string> varNameParts = ioda::splitString(varName, '/');
-    netCDF::NcGroup topGroup = inFile;
-    netCDF::NcVar var = openHierarchialNetcdfVar(topGroup, varNameParts);
+  const std::vector<NamedNcVar> allNamedVars = listAllNetcdfVars(inFile, std::string(""), false);
+  for (const auto & namedVar : allNamedVars) {
+    const std::string & varName = namedVar.first;
+    const netCDF::NcVar & var = namedVar.second;
     if (var.isNull()) {
       continue;
     }
@@ -792,8 +775,10 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // rather than accumulating a count multiplied by the number of files.
   osdfMetadata.setNumVars(0);
 
-  const std::vector<std::string> allDims = listAllNetcdfVars(inFile, std::string(""), true);
-  for (const auto & dimName : allDims) {
+  const std::vector<NamedNcVar> allNamedDims =
+      listAllNetcdfVars(inFile, std::string(""), true);
+  for (const auto & namedDim : allNamedDims) {
+    const std::string & dimName = namedDim.first;
     if (dimName == "Location") {
       // For Location, just bounds-check the requested location count.
       netCDF::NcDim dim = inFile.getDim(dimName);
@@ -885,10 +870,10 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // herierchy is due to the netcdf group structure. Walk through all the variables
   // and transfer the location block given by the startLoc and locCount parameters into
   // the destination OSDF container.
-  const std::vector<std::string> allVars = listAllNetcdfVars(inFile, std::string(""), false);
-  for (const auto & varName : allVars) {
-    const std::vector<std::string> varNameParts = ioda::splitString(varName, '/');
-    netCDF::NcVar var = openHierarchialNetcdfVar(inFile, varNameParts);
+  const std::vector<NamedNcVar> allNamedVars = listAllNetcdfVars(inFile, std::string(""), false);
+  for (const auto & namedVar : allNamedVars) {
+    const std::string & varName = namedVar.first;
+    const netCDF::NcVar & var = namedVar.second;
     checkNcObj(var, "ioda::reader::loadObsBlockFromNetcdf: Failed to open variable: " + varName);
 
     std::vector<std::string> varDimNames;
