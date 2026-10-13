@@ -103,8 +103,7 @@ class FrameCols : public IFrame {
   std::size_t serializeColumnMetadata(eckit::Buffer &) const override;
   void deserializeColumnMetadata(eckit::Buffer & columnMetadataBuffer) override;
 
-  void append(const std::unique_ptr<IFrame>& srcOsdf,
-              bool addOffsetToSourceLocationIndices = true) override;
+  void append(const std::unique_ptr<IFrame>& srcOsdf) override;
 
   void print() const override;
   std::string frameType() const override;

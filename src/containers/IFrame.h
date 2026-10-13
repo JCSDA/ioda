@@ -92,14 +92,12 @@ class IFrame {
 
   /// \brief The following function allows for a srcOsdf file to be appended to the end of
   /// the current OSDF
+  /// The values in the `sourceLocationIndices` column of `srcOsdf` are copied unchanged. Keeping
+  /// them unique across the frames being joined (and across MPI tasks) is the caller's
+  /// responsibility.
   /// \param srcOsdf
   ///   File to be appended.
-  /// \param addOffsetToSourceLocationIndices
-  ///   `true` to increment values in the `sourceLocationIndices` column of `srcOsdf` by an offset
-  ///   guaranteeing they will not overlap with values already present in the current OSDF, `false`
-  ///   to leave them unchanged.
-  virtual void append(const std::unique_ptr<IFrame>& srcOsdf,
-                      bool addOffsetToSourceLocationIndices = true) = 0;
+  virtual void append(const std::unique_ptr<IFrame>& srcOsdf) = 0;
 
   /// \brief Returns flag indicating the presence of a column with a specified name.
   /// \param The column name.

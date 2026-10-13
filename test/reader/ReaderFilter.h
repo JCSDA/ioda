@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -24,8 +25,8 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameRows.h"
 #include "ioda/containers/IFrame.h"
-#include "ioda/core/ObsSourceStats.h"
 #include "ioda/reader/filter/filterObs.hpp"
+#include "ioda/reader/ObsReader.hpp"
 #include "ioda/test/containers/OsdfTestUtils.h"
 
 #include "oops/mpi/mpi.h"
@@ -37,8 +38,22 @@
 namespace ioda {
 namespace test {
 
+/// \brief global number of rows in a frame
+std::size_t globalNumRows(const osdf::IFrame & osdf) {
+  std::size_t numRows = 0;
+  oops::mpi::world().allReduce(osdf.numRows(), numRows, eckit::mpi::sum());
+  return numRows;
+}
+
+/// \brief check the filtered frame and the filter counts against the expected obs source stats
+/// \param configObsSourceStats expected obs source stats
+/// \param sourceNlocs global number of locations before filtering
+/// \param filteredOsdf frame after filtering
+/// \param filterCounts counts returned by filterObs
 void compareObsSourceStats(const eckit::LocalConfiguration & configObsSourceStats,
-                           const ioda::ObsSourceStats & obsSourceStats) {
+                           const std::size_t sourceNlocs,
+                           const osdf::IFrame & filteredOsdf,
+                           const reader::FilterCounts & filterCounts) {
   const std::size_t expectedSourceNlocs = configObsSourceStats.getUnsigned("source nlocs");
   const std::size_t expectedNlocs = configObsSourceStats.getUnsigned("nlocs");
   const std::size_t expectedGnlocs = configObsSourceStats.getUnsigned("gnlocs");
@@ -49,94 +64,83 @@ void compareObsSourceStats(const eckit::LocalConfiguration & configObsSourceStat
   const std::vector<std::size_t> expectedLocIndices =
     configObsSourceStats.getUnsignedVector("loc indices");
 
-  EXPECT_EQUAL(obsSourceStats.sourceNlocs, expectedSourceNlocs);
-  EXPECT_EQUAL(obsSourceStats.nlocs, expectedNlocs);
-  EXPECT_EQUAL(obsSourceStats.gNlocs, expectedGnlocs);
-  EXPECT_EQUAL(obsSourceStats.gNlocsOutsideTimewindow, expectedGnlocsOutsideTimewindow);
-  EXPECT_EQUAL(obsSourceStats.gNlocsRejectQc, expectedGnlocsRejectQc);
-  EXPECT_EQUAL(obsSourceStats.locIndices, expectedLocIndices);
+  const std::size_t nlocs = filteredOsdf.numRows();
+  const std::size_t gNlocs = globalNumRows(filteredOsdf);
+
+  EXPECT_EQUAL(sourceNlocs, expectedSourceNlocs);
+  EXPECT_EQUAL(nlocs, expectedNlocs);
+  EXPECT_EQUAL(gNlocs, expectedGnlocs);
+  EXPECT_EQUAL(filterCounts.gNlocsOutsideTimewindow, expectedGnlocsOutsideTimewindow);
+  EXPECT_EQUAL(filterCounts.gNlocsRejectQc, expectedGnlocsRejectQc);
+  EXPECT_EQUAL(reader::getSourceLocationIndices(filteredOsdf), expectedLocIndices);
+  // Every location is either kept or counted by one of the two checks.
+  EXPECT_EQUAL(gNlocs + filterCounts.gNlocsOutsideTimewindow + filterCounts.gNlocsRejectQc,
+               sourceNlocs);
 }
 
-void testFrameRows() {
-  // Configuration contains a time window spec and a list of variables (columns).
-  // Construct a time window object and use the variable list to create the
-  // the row priority data frame by appending the columns.
-  const eckit::LocalConfiguration timeWinConfig =
-      ::test::TestEnvironment::config().getSubConfiguration("time window");
-  const util::TimeWindow timeWindow(timeWinConfig);
+/// \brief collect the test configuration for a single test case
+/// \details Each test case does the same collection of test configuration
+/// which includes the time window specs, data for populating the test OSDF
+/// object and the expected results.
+/// \param testConfig Total configuration for this test
+/// \param timeWindowConfig config for constructing the time window
+/// \param columnDataConfig config for populating the test OSDF object
+/// \param refDataConfig expected data for filtered data
+/// \param refObsSrcStatsConfig expected data for obs source stats
+void collectTestConfig(const eckit::Configuration & testConfig,
+                       eckit::LocalConfiguration & timeWindowConfig,
+                       std::vector<eckit::LocalConfiguration> & columnDataConfig,
+                       std::vector<eckit::LocalConfiguration> & refDataConfig,
+                       eckit::LocalConfiguration & refObsSrcStatsConfig) {
+  timeWindowConfig = testConfig.getSubConfiguration("time window");
+  columnDataConfig = testConfig.getSubConfigurations("test column data");
+  refDataConfig = testConfig.getSubConfigurations("expected filtered data");
+  refObsSrcStatsConfig = testConfig.getSubConfiguration("expected obs source stats data");
+}
 
-  const std::vector<eckit::LocalConfiguration> configColumnData =
-      ::test::TestEnvironment::config().getSubConfigurations("test column data");
+void testFilter(const std::string & frameType) {
+  eckit::LocalConfiguration timeWinConfig;
+  std::vector<eckit::LocalConfiguration> configColumnData;
+  std::vector<eckit::LocalConfiguration> configRefData;
+  eckit::LocalConfiguration configObsSourceStats;
+  collectTestConfig(::test::TestEnvironment::config(), timeWinConfig, configColumnData,
+                    configRefData, configObsSourceStats);
+
+  const util::TimeWindow timeWindow(timeWinConfig);
   const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
 
   // Create an instance of a row priority data frame and populate it with
   // test data from the config file.
-  std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
+  std::unique_ptr<osdf::IFrame> testOsdf;
+  if (frameType == "FrameRows") {
+    testOsdf = std::make_unique<osdf::FrameRows>();
+  } else if (frameType == "FrameCols") {
+    testOsdf = std::make_unique<osdf::FrameCols>();
+  } else {
+    throw eckit::BadParameter("Unknown frame type: " + frameType, Here());
+  }
+  oops::Log::info() << "Testing OSDF of type: " << testOsdf->frameType() << std::endl;
   std::vector<std::string> testColumnNames;
   std::vector<std::string> testColumnTypes;
   populateFrame(configColumnData, testOsdf, testColumnNames, testColumnTypes);
 
   // Read in the expected results after filtering
-  const std::vector<eckit::LocalConfiguration> configRefData =
-  ::test::TestEnvironment::config().getSubConfigurations("expected filtered data");
   std::unique_ptr<osdf::IFrame> refOsdf = std::make_unique<osdf::FrameRows>();
   std::vector<std::string> refColumnNames;
   std::vector<std::string> refColumnTypes;
   populateFrame(configRefData, refOsdf, refColumnNames, refColumnTypes);
 
   // Run the filters and check the results
-  ioda::ObsSourceStats obsSourceStats;
+  const std::size_t sourceNlocs = globalNumRows(*testOsdf);
   osdf::FrameMetadata osdfMetadata;
-  reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata);
+  const reader::FilterCounts filterCounts =
+    reader::filterObs(timeWindow, oops::mpi::world(), testOsdf, osdfMetadata);
   oops::Log::info() << "testFrameRows: after filtering" << std::endl;
   compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames, refColumnTypes,
     tolerance, false);
 
-  // Check the relavent obsSourceStats contents
-  const eckit::LocalConfiguration configObsSourceStats =
-    ::test::TestEnvironment::config().getSubConfiguration("expected obs source stats data");
-  compareObsSourceStats(configObsSourceStats, obsSourceStats);
-}
-
-void testFrameCols() {
-  // Configuration contains a time window spec and a list of variables (columns).
-  // Construct a time window object and use the variable list to create the
-  // column priority data frame by appending the columns.
-  const eckit::LocalConfiguration timeWinConfig =
-      ::test::TestEnvironment::config().getSubConfiguration("time window");
-  const util::TimeWindow timeWindow(timeWinConfig);
-
-  const std::vector<eckit::LocalConfiguration> configColumnData =
-      ::test::TestEnvironment::config().getSubConfigurations("test column data");
-  const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
-
-  // Create an instance of a row priority data frame and populate it with
-  // data from the config file.
-  std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameCols>();
-  std::vector<std::string> testColumnNames;
-  std::vector<std::string> testColumnTypes;
-  populateFrame(configColumnData, testOsdf, testColumnNames, testColumnTypes);
-
-  // Read in the expected results after filtering
-  const std::vector<eckit::LocalConfiguration> configRefData =
-  ::test::TestEnvironment::config().getSubConfigurations("expected filtered data");
-  std::unique_ptr<osdf::IFrame> refOsdf = std::make_unique<osdf::FrameCols>();
-  std::vector<std::string> refColumnNames;
-  std::vector<std::string> refColumnTypes;
-  populateFrame(configRefData, refOsdf, refColumnNames, refColumnTypes);
-
-  // Run the filters and check the results
-  ioda::ObsSourceStats obsSourceStats;
-  osdf::FrameMetadata osdfMetadata;
-  reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata);
-  oops::Log::info() << "testFrameCols: after filtering" << std::endl;
-  compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames, refColumnTypes,
-    tolerance, false);
-
-  // Check the relavent obsSourceStats contents
-  const eckit::LocalConfiguration configObsSourceStats =
-    ::test::TestEnvironment::config().getSubConfiguration("expected obs source stats data");
-  compareObsSourceStats(configObsSourceStats, obsSourceStats);
+  // Check the relevant obs source stats
+  compareObsSourceStats(configObsSourceStats, sourceNlocs, *testOsdf, filterCounts);
 }
 
 // -----------------------------------------------------------------------------
@@ -144,12 +148,14 @@ void testFrameCols() {
 // rejected. The input frame is its own reference here: a generated obs source is handed
 // the locations to produce, so the filter must hand them all back.
 void testChecksDisabled() {
-  const eckit::LocalConfiguration timeWinConfig =
-      ::test::TestEnvironment::config().getSubConfiguration("time window");
-  const util::TimeWindow timeWindow(timeWinConfig);
+  eckit::LocalConfiguration timeWinConfig;
+  std::vector<eckit::LocalConfiguration> configColumnData;
+  std::vector<eckit::LocalConfiguration> configRefData;
+  eckit::LocalConfiguration configObsSourceStats;
+  collectTestConfig(::test::TestEnvironment::config(), timeWinConfig, configColumnData,
+                    configRefData, configObsSourceStats);
 
-  const std::vector<eckit::LocalConfiguration> configColumnData =
-      ::test::TestEnvironment::config().getSubConfigurations("test column data");
+  const util::TimeWindow timeWindow(timeWinConfig);
   const double tolerance = ::test::TestEnvironment::config().getDouble("tolerance");
 
   std::unique_ptr<osdf::IFrame> testOsdf = std::make_unique<osdf::FrameRows>();
@@ -164,18 +170,18 @@ void testChecksDisabled() {
   populateFrame(configColumnData, refOsdf, refColumnNames, refColumnTypes);
   const std::size_t numInputRows = refOsdf->numRows();
 
-  ioda::ObsSourceStats obsSourceStats;
   osdf::FrameMetadata osdfMetadata;
   const bool applyLocationChecks = false;
-  reader::filterObs(timeWindow, oops::mpi::world(), obsSourceStats, testOsdf, osdfMetadata,
-                    applyLocationChecks);
+  const reader::FilterCounts filterCounts =
+    reader::filterObs(timeWindow, oops::mpi::world(), testOsdf, osdfMetadata,
+                      applyLocationChecks);
   oops::Log::info() << "testChecksDisabled: after filtering" << std::endl;
   compareFrames(testOsdf, testColumnNames, testColumnTypes, refOsdf, refColumnNames,
     refColumnTypes, tolerance, false);
 
-  EXPECT_EQUAL(obsSourceStats.nlocs, numInputRows);
-  EXPECT_EQUAL(obsSourceStats.gNlocsOutsideTimewindow, 0);
-  EXPECT_EQUAL(obsSourceStats.gNlocsRejectQc, 0);
+  EXPECT_EQUAL(testOsdf->numRows(), numInputRows);
+  EXPECT_EQUAL(filterCounts.gNlocsOutsideTimewindow, 0);
+  EXPECT_EQUAL(filterCounts.gNlocsRejectQc, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -191,9 +197,9 @@ class ReaderFilter : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("ioda/ReaderFilter/testFrameRows")
-      { testFrameRows(); });
+      { testFilter("FrameRows"); });
     ts.emplace_back(CASE("ioda/ReaderFilter/testFrameCols")
-      { testFrameCols(); });
+      { testFilter("FrameCols"); });
     ts.emplace_back(CASE("ioda/ReaderFilter/testChecksDisabled")
       { testChecksDisabled(); });
   }

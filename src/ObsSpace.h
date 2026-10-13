@@ -308,6 +308,11 @@ namespace ioda {
         /// Example 2: Suppose MPI is not used and the file contains 10 locations in total,
         /// but locations 2, 3 and 7 are outside the DA timing window. In this case,
         /// `ObsSpace::index()` will return `0, 1, 4, 5, 6, 8, 9`.
+        ///
+        /// The values serve as location IDs for now: unique within the ObsSpace and
+        /// independent of the MPI layout. Code should not rely on them being input file
+        /// positions, apart from test support that pairs locations with other files
+        /// (e.g. canned GeoVaLs) by position.
         const std::vector<std::size_t> & index() const {return obs_src_stats_.locIndices;}
 
         /// Check if group exists

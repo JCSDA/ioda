@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -21,12 +22,33 @@
 
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/reader/ObsReader.hpp"
 #include "ioda/test/containers/OsdfTestUtils.h"
+
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
 
 namespace ioda {
 namespace test {
+
+void runAppend(std::unique_ptr<osdf::IFrame>& frame0,
+               const std::unique_ptr<osdf::IFrame>& frame1) {
+  // IFrame::append copies the sourceLocationIndices of frame1 unchanged, so keeping them unique
+  // is the caller's job. frame0 might have gaps in the sourceLocationIndices numbering, which
+  // correponds to file location indices that were filtered out. We want to emulate the
+  // production code which uses the number of source locations (before filtering) as the
+  // offset for the offsetSourceLocationIndices call. In this test setup, we can calculate
+  // what would have been the frame0 number of source locations by adding 1 to the maximum
+  // sourceLocationIndices value in frame0.
+  if ((frame0->numRows() > 0) && (frame1->numRows() > 0)) {
+    std::vector<int> frame0SourceLocIndices;
+    frame0->getColumn("sourceLocationIndices", frame0SourceLocIndices);
+    reader::offsetSourceLocationIndices(oops::mpi::world(), frame1,
+      *std::max_element(frame0SourceLocIndices.begin(), frame0SourceLocIndices.end()) + 1);
+  }
+  frame0->append(frame1);
+}
 
 void testOsdfAppendPasses(std::unique_ptr<osdf::IFrame>& frame0,
                           const std::unique_ptr<osdf::IFrame>& frame1,
@@ -36,34 +58,25 @@ void testOsdfAppendPasses(std::unique_ptr<osdf::IFrame>& frame0,
   std::int64_t frame1Size = frame1->numRows();
   std::int64_t frame0MaxId = frame0->getData().getMaxId();
 
-  frame0->append(frame1);
+  runAppend(frame0, frame1);
   EXPECT_EQUAL(frame0->numRows(), frame0Size + frame1Size);  // check size
   EXPECT_EQUAL(frame0->getData().getMaxId(), frame0MaxId + frame1Size);
 
   std::vector<osdf::DataRow> dataRows0;
   dataRows0.reserve(frame0->getData().getSizeRows());
   frame0->getData().getDataRows(dataRows0);
-  std::int32_t index0 = frame0->getData().getIndex("sourceLocationIndices");
 
   std::vector<osdf::DataRow> dataRows1;
   dataRows1.reserve(frame1->getData().getSizeRows());
   frame1->getData().getDataRows(dataRows1);
-  std::int32_t index1 = frame0->getData().getIndex("sourceLocationIndices");
-
-  EXPECT_EQUAL(index0, index1);
 
   for (std::int64_t index = 0; index < frame1Size; ++index) {
     // Check that row contents match (do not check Ids as these are different)
-    osdf::DataRow dataRow0 = dataRows0.at(frame0Size + index);
-    osdf::DataRow dataRow1 = dataRows1.at(index);
-    dataRow0.remove(index0);
-    dataRow1.remove(index1);
-
-    EXPECT_EQUAL(testCompareTwoDataRows(dataRow0,
-                                        dataRow1, 0, tolerance), 1);
+    EXPECT_EQUAL(testCompareTwoDataRows(dataRows0.at(frame0Size + index),
+                                        dataRows1.at(index), 0, tolerance), 1);
   }
 
-  // Check that resulting sourceLocation indices is correctly updated
+  // Check that the resulting sourceLocationIndices match the expected values
   std::vector<int> sourceLocIndices;
   frame0->getColumn("sourceLocationIndices", sourceLocIndices);
   EXPECT_EQUAL(sourceLocIndices, expectedSourceLocIndices);
@@ -72,13 +85,8 @@ void testOsdfAppendPasses(std::unique_ptr<osdf::IFrame>& frame0,
 void testOsdfAppendFails(std::unique_ptr<osdf::IFrame>& frame0,
                          const std::unique_ptr<osdf::IFrame>& frame1) {
   std::int64_t frame0Size = frame0->numRows();
-  if (frame0Size && (!frame0->hasColumn("sourceLocationIndices"))) {
-    EXPECT_THROWS_AS(frame0->append(frame1), eckit::AssertionFailed);
-    EXPECT_EQUAL(frame0->numRows(), frame0Size);
-  } else {
-    EXPECT_THROWS_AS(frame0->append(frame1), eckit::BadParameter);
-    EXPECT_EQUAL(frame0->numRows(), frame0Size);
-  }
+  EXPECT_THROWS(runAppend(frame0, frame1));
+  EXPECT_EQUAL(frame0->numRows(), frame0Size);
 }
 
 std::unique_ptr<osdf::IFrame> testCreateAppendFrames(

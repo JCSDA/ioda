@@ -17,7 +17,6 @@
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/CreateIFrame.h"
-#include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 #include "ioda/reader/distribute/osdfDistributeUtils.hpp"
@@ -31,34 +30,48 @@ namespace {  // anonymous namespace, so this overload can only be called via the
 void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
-                   ObsSourceStats & inObsSourceStats,
                    std::shared_ptr<Distribution> & inDist,
                    std::unique_ptr<osdf::IFrame> & inOsdf,
-                   ObsSourceStats & outObsSourceStats,
                    std::shared_ptr<Distribution> & outDist,
                    std::unique_ptr<osdf::IFrame> & outOsdf,
+                   std::vector<std::size_t> & outRecNums,
                    const bool preserveInputs) {
   oops::Log::trace() << "reader::distributeObs start" << std::endl;
 
   if (!preserveInputs) {
     // In this mode the code is assuming inputs and outputs are the same objects.
-    ASSERT_MSG(&inObsSourceStats == &outObsSourceStats,
-      "distributeObs: Input and output observation source stats must be the same in this mode");
     ASSERT_MSG(&inDist == &outDist, "distributeObs: Input and output distributions must "
       "be the same in this mode");
     ASSERT_MSG(&inOsdf == &outOsdf, "distributeObs: Input and output OSDF containers must "
       "be the same in this mode");
   }
 
+  // Check that OSDF column counts across all MPI tasks are equal.
+  std::vector<std::size_t> localNumCols(commAll.size());
+  commAll.allGather(inOsdf->numCols(), localNumCols.begin(), localNumCols.end());
+  for (std::size_t i = 1; i < localNumCols.size(); ++i) {
+    if (localNumCols[i] != localNumCols[0]) {
+      std::string errMsg =
+        std::string("distributeObs: Inconsistent number of columns across MPI tasks: ") +
+        std::string("rank0: ") + std::to_string(localNumCols[0]) + std::string(" versus ") +
+        std::string("rank") + std::to_string(i) + std::string(": ") +
+        std::to_string(localNumCols[i]);
+      throw eckit::BadValue(errMsg, Here());
+    }
+  }
+
   // tempDistOut is the user-requested new distribution type (Step 4 of design, (now moved to top))
   std::shared_ptr<Distribution> tempDistOut = DistributionFactory::create(commAll, distParams);
 
-  // Deal with the special case of zero input locations, and we don't need to create a new osdf to
-  // return. Nothing to distribute.
-  if (!preserveInputs && inObsSourceStats.sourceNlocs == 0) {
-    // Just need to set the output obsSourceStats
-    outObsSourceStats.nrecs = 0;
-    outObsSourceStats.recNums.resize(0);
+  // Deal with the special case of input containers that hold no columns on any rank (e.g. when
+  // every input file was missing and skipped), and we don't need to create a new osdf to
+  // return. Nothing to distribute. Containers that hold columns but no rows go through the
+  // steps below, so that the output has the same column order as when there are rows.
+  //
+  // Note we have verified that all the ranks have the same number of columns above,
+  // so we can just check rank 0 here.
+  if (!preserveInputs && localNumCols[0] == 0) {
+    outRecNums.resize(0);
     outDist = tempDistOut;
     tempDistOut.reset();
     return;
@@ -68,9 +81,6 @@ void distributeObs(const DistributionParametersBase & distParams,
   if (distParams.name.value() == "Identity") {
     // Note that we do not allow preserveInputs=true in the Identity distribution case,
     // so the in/out references are definitely the same inside this conditional block.
-    ASSERT_MSG(&inObsSourceStats == &outObsSourceStats,
-      "distributeObs: Input and output observation source stats must be the same for Identity "
-      "distribution");
     ASSERT_MSG(&inDist == &outDist, "distributeObs: Input and output distributions must be "
       "the same for Identity distribution");
     ASSERT_MSG(&inOsdf == &outOsdf, "distributeObs: Input and output OSDF containers must be "
@@ -106,20 +116,7 @@ void distributeObs(const DistributionParametersBase & distParams,
     std::transform(recNums.begin(), recNums.end(), recNums.begin(),
                    [recNumOffset] (std::size_t recNum) { return recNum + recNumOffset; });
 
-    // Number the locations held on this MPI process, then offset them the same way the record
-    // indices were offset above, so that the result is a dense global numbering of the locations
-    // that were kept. This is what locIndices means on the distribution path below; without it,
-    // the source file positions recorded by the Load/Filter steps would survive into the obs space
-    // and index() would mean one thing with the Identity distribution and another with every other.
-    const std::size_t numLocations = inOsdf->numRows();
-    std::size_t locIndexOffset = numLocations;
-    oops::mpi::exclusiveScan(commAll, locIndexOffset);
-    std::vector<std::size_t> locIndices(numLocations);
-    std::iota(locIndices.begin(), locIndices.end(), locIndexOffset);
-
-    outObsSourceStats.nrecs = numRecords;
-    outObsSourceStats.recNums = std::move(recNums);
-    outObsSourceStats.locIndices = std::move(locIndices);
+    outRecNums = std::move(recNums);
     outDist = tempDistOut;
     tempDistOut.reset();
     return;
@@ -162,8 +159,8 @@ void distributeObs(const DistributionParametersBase & distParams,
   }
 
   // Assign the record number for each location in the globalOsdf (Step 3.)
-  std::vector<std::size_t> sourceRecNums;
-  osdfAssignRecordNumbers(*globalOsdf, obsGroupVarList, sourceRecNums);
+  std::vector<std::size_t> globalRecNums;
+  osdfAssignRecordNumbers(*globalOsdf, obsGroupVarList, globalRecNums);
 
   // (Step 4 of the design doc has been moved to the top of this function)
 
@@ -173,18 +170,20 @@ void distributeObs(const DistributionParametersBase & distParams,
   globalOsdf->getColumn(lonColName, lonValues);
   globalOsdf->getColumn(latColName, latValues);
   size_t globalNlocs = latValues.size();
-  ASSERT(globalNlocs == sourceRecNums.size());
-  std::vector<std::size_t> sourceLocIndices(globalNlocs);
+  ASSERT(globalNlocs == globalRecNums.size());
+  std::vector<std::size_t> globalLocIndices(globalNlocs);
   // applyMpiDistribution was designed for use outside the Load/Filter/Distribute paradigm. The
-  // sourceLocIndices we pass it here are just 0 to N-1 since we have received pre-filtered data.
-  std::iota(sourceLocIndices.begin(), sourceLocIndices.end(), 0);
+  // globalLocIndices we pass it here are just 0 to N-1, the row positions in globalOsdf, which
+  // are used below to select this rank's rows. The locations' positions in the input files are
+  // held in the sourceLocationIndices column, which moves with the rows.
+  std::iota(globalLocIndices.begin(), globalLocIndices.end(), 0);
   std::vector<std::size_t> localLocIndices, localRecNums;
   std::size_t localNlocs, localNrecs;
 
   ioda::IoPool::applyMpiDistribution(tempDistOut, false,
                                     lonValues, latValues,
-                                    sourceLocIndices,
-                                    sourceRecNums,
+                                    globalLocIndices,
+                                    globalRecNums,
                                     localLocIndices,
                                     localRecNums,
                                     localNlocs,
@@ -236,11 +235,7 @@ void distributeObs(const DistributionParametersBase & distParams,
   // Update the outOsdf to be the rank-specific osdf (Step 9.)
   outOsdf = std::move(tempRankOsdf);
 
-  // Update the ObsSourceStats
-  outObsSourceStats.nrecs = localNrecs;
-  outObsSourceStats.recNums = std::move(localRecNums);
-  outObsSourceStats.nlocs = localNlocs;
-  outObsSourceStats.locIndices = std::move(localLocIndices);
+  outRecNums = std::move(localRecNums);
 
   oops::Log::trace() << "reader::distributeObs end" << std::endl;
 }
@@ -249,47 +244,34 @@ void distributeObs(const DistributionParametersBase & distParams,
 void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
-                   ObsSourceStats & inOutObsSourceStats,
                    std::shared_ptr<Distribution> & inOutDist,
-                   std::unique_ptr<osdf::IFrame> & inOutOsdf) {
-  distributeObs(distParams, commAll, obsGroupVarList,
-                inOutObsSourceStats, inOutDist, inOutOsdf,
-                inOutObsSourceStats, inOutDist, inOutOsdf,
-                false);
+                   std::unique_ptr<osdf::IFrame> & inOutOsdf,
+                   std::vector<std::size_t> & outRecNums) {
+  distributeObs(distParams, commAll, obsGroupVarList, inOutDist, inOutOsdf,
+                inOutDist, inOutOsdf, outRecNums, false);
 }
 
 void distributeObs(const DistributionParametersBase & distParams,
                    const eckit::mpi::Comm & commAll,
                    const std::vector<std::string> & obsGroupVarList,
-                   ObsSourceStats & inObsSourceStats,
                    std::shared_ptr<Distribution> & inDist,
                    std::unique_ptr<osdf::IFrame> & inOsdf,
-                   ObsSourceStats & outObsSourceStats,
                    std::shared_ptr<Distribution> & outDist,
-                   std::unique_ptr<osdf::IFrame> & outOsdf) {
+                   std::unique_ptr<osdf::IFrame> & outOsdf,
+                   std::vector<std::size_t> & outRecNums) {
   // Disallow this overload for the Identity distribution since it does not make sense and would
   // waste memory.
   ASSERT_MSG(distParams.name.value() != "Identity",
     "The distributeObs overload with separate input and output variables does not allow the "
     "Identity distribution");
   // If caller is passing both input and output variables, then they must be different variables.
-  ASSERT_MSG(&inObsSourceStats != &outObsSourceStats,
-    "distributeObs: Input and output observation source stats cannot be the same in this mode");
   ASSERT_MSG(&inDist != &outDist, "distributeObs: Input and output distributions cannot "
     "be the same in this mode");
   ASSERT_MSG(&inOsdf != &outOsdf, "distributeObs: Input and output OSDF containers cannot "
     "be the same in this mode");
 
-  // Set some of the output obs source stats to be the same as the input obs source stats
-  // (except for those that are always set in distributeObs)
-  outObsSourceStats.sourceNlocs = inObsSourceStats.sourceNlocs;
-  outObsSourceStats.gNlocs = inObsSourceStats.gNlocs;
-  outObsSourceStats.gNlocsOutsideTimewindow = inObsSourceStats.gNlocsOutsideTimewindow;
-  outObsSourceStats.gNlocsRejectQc = inObsSourceStats.gNlocsRejectQc;
-  distributeObs(distParams, commAll, obsGroupVarList,
-                inObsSourceStats, inDist, inOsdf,
-                outObsSourceStats, outDist, outOsdf,
-                true);
+  distributeObs(distParams, commAll, obsGroupVarList, inDist, inOsdf,
+                outDist, outOsdf, outRecNums, true);
 }
 
 }  // namespace reader

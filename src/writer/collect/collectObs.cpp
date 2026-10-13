@@ -7,6 +7,9 @@
 
 #include "ioda/writer/collect/collectObs.hpp"
 
+#include <cstddef>
+#include <vector>
+
 #include "eckit/config/LocalConfiguration.h"
 
 #include "ioda/containers/IFrame.h"
@@ -24,10 +27,8 @@ namespace {  // anonymous namespace, so this overload can only be called via the
 //---------------------------------------------------------------------
 void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
                 std::shared_ptr<Distribution> & inOspaceDist,
-                ObsSourceStats & inObsSourceStats,
                 std::unique_ptr<osdf::IFrame> & inOsdf,
                 std::shared_ptr<Distribution> & outOspaceDist,
-                ObsSourceStats & outObsSourceStats,
                 std::unique_ptr<osdf::IFrame> & outOsdf,
                 const bool preserveInputs) {
   oops::Log::trace() << "writer::collectObs start" << std::endl;
@@ -66,14 +67,15 @@ void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
   SelectedRanksParameters selectedRanksParams;
   selectedRanksParams.validateAndDeserialize(selectedRanksConfig);
 
-  // Apply the distribution
+  // Apply the distribution. The writer does not use the record numbers.
+  std::vector<std::size_t> recNums;
   if (preserveInputs) {
     ioda::reader::distributeObs(selectedRanksParams, obsIoPool->commAll(), {},
-                                inObsSourceStats, inOspaceDist, inOsdf,
-                                outObsSourceStats, outOspaceDist, outOsdf);
+                                inOspaceDist, inOsdf,
+                                outOspaceDist, outOsdf, recNums);
   } else {
     ioda::reader::distributeObs(selectedRanksParams, obsIoPool->commAll(), {},
-                                inObsSourceStats, inOspaceDist, inOsdf);
+                                inOspaceDist, inOsdf, recNums);
   }
   oops::Log::trace() << "writer::collectObs end" << std::endl;
 }
@@ -82,21 +84,18 @@ void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
 //---------------------------------------------------------------------
 void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
                 std::shared_ptr<Distribution> & ospaceDist,
-                ObsSourceStats & obsSourceStats,
                 std::unique_ptr<osdf::IFrame> & inOutOsdf) {
-  collectObs(obsIoPool, ospaceDist, obsSourceStats, inOutOsdf,
-             ospaceDist, obsSourceStats, inOutOsdf, false);
+  collectObs(obsIoPool, ospaceDist, inOutOsdf,
+             ospaceDist, inOutOsdf, false);
 }
 
 void collectObs(const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
                 std::shared_ptr<Distribution> & inOspaceDist,
-                ObsSourceStats & inObsSourceStats,
                 std::unique_ptr<osdf::IFrame> & inOsdf,
                 std::shared_ptr<Distribution> & outOspaceDist,
-                ObsSourceStats & outObsSourceStats,
                 std::unique_ptr<osdf::IFrame> & outOsdf) {
-  collectObs(obsIoPool, inOspaceDist, inObsSourceStats, inOsdf,
-             outOspaceDist, outObsSourceStats, outOsdf, true);
+  collectObs(obsIoPool, inOspaceDist, inOsdf,
+             outOspaceDist, outOsdf, true);
 }
 
 }  // namespace writer

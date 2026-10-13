@@ -24,7 +24,6 @@
 #include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
-#include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/DistributionParametersBase.h"
 #include "ioda/distribution/IdentityDistribution.h"
 #include "ioda/ioPool/IoPoolParameters.h"
@@ -116,15 +115,10 @@ void testFrames() {
                                                  IdentityDistribution::Parameters_{});
         ospaceDist->setNumberLocations(srcOsdf->numRows());
 
-        // ---- ObsSourceStats: sourceNlocs is the global total across all ranks ----
-        ioda::ObsSourceStats obsSourceStats;
-        obsSourceStats.sourceNlocs = totalLocs;
-
         if (preserveInputs) {
           // Call obsWrite. srcOsdf must NOT be modified.
           ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
-                                 ospaceDist, srcOsdf, obsSourceStats, osdfMetadata,
-                                 true);
+                                 ospaceDist, srcOsdf, osdfMetadata, true);
 
           // Validate that the source frame is identical to the reference frame.
           compareFrames(srcOsdf, columnNames, columnTypes,
@@ -139,8 +133,7 @@ void testFrames() {
 
           // Call obsWrite. srcOsdf WILL be modified: all data moves to ioPool ranks.
           ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
-                                 ospaceDist, srcOsdf, obsSourceStats, osdfMetadata,
-                                 false);
+                                 ospaceDist, srcOsdf, osdfMetadata, false);
 
           // Validate that all locations were collected onto the ioPool rank and that
           // non-ioPool ranks have no remaining data.

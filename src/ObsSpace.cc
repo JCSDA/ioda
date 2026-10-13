@@ -323,8 +323,7 @@ void ObsSpace::save(bool preserveDistribution) {
           writer::obsWrite(*(obs_params_->top_level_.obsDataOut.value()),
                            obs_params_->top_level_.ioPool,
                            obs_params_->comm(), this->obsname(), dist_, osdf_,
-                           obs_src_stats_, osdfMetadata_,
-                           preserveDistribution);
+                           osdfMetadata_, preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);
@@ -956,8 +955,12 @@ void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
   static const std::vector<std::string> noObsGroupVars;
   const std::vector<std::string> & obsGroupVars =
       distParams->applyObsGrouping() ? this->obs_group_vars() : noObsGroupVars;
+  std::vector<std::size_t> recNums;
   ioda::reader::distributeObs(*distParams, this->comm(), obsGroupVars,
-                              obs_src_stats_, dist_, osdf_);
+                              dist_, osdf_, recNums);
+  // Update the stats that describe the locations on this rank. The others describe the
+  // obs source as a whole and do not change.
+  ioda::reader::setLocalSourceStats(*osdf_, std::move(recNums), obs_src_stats_);
   // Reset the size of locations
   dim_info_.set_dim_size(ObsDimensionId::Location, obs_src_stats_.nlocs);
   // Recompute patch obs data (for overlapping distributions)
@@ -1336,6 +1339,9 @@ void ObsSpace::appendObsGroup(ObsGroup & appendObsGroup, ObsSourceStats & obsSou
 // -----------------------------------------------------------------------------
 void ObsSpace::appendOsdf(const std::unique_ptr<osdf::IFrame> &appendOsdf,
                           ObsSourceStats &ObsSourceStats) {
+    // Number the appended locations after those of the files already read, using the same
+    // global offset that updateSourceStatsRecordNumbers applies to the location indices.
+    reader::offsetSourceLocationIndices(this->comm(), appendOsdf, obs_src_stats_.sourceNlocs);
     osdf_->append(appendOsdf);
     updateSourceStatsRecordNumbers(ObsSourceStats);
     // (LN) Unlike in the obsGroup case, the osdf append does not allow for appending
@@ -2325,7 +2331,10 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
     size_t upperBoundOnGlobalNumOriginalLocs = 0;
     size_t upperBoundOnGlobalNumOriginalRecs = 0;
     if (numOriginalLocs > 0) {
-      upperBoundOnGlobalNumOriginalLocs = obs_src_stats_.locIndices.back() + 1;
+      // The location indices on a rank need not ascend (e.g. OSDF with multiple input files),
+      // so search for the largest rather than taking the last.
+      upperBoundOnGlobalNumOriginalLocs = *std::max_element(obs_src_stats_.locIndices.begin(),
+                                                            obs_src_stats_.locIndices.end()) + 1;
       upperBoundOnGlobalNumOriginalRecs = *uniqueOriginalRecs.rbegin() + 1;
     }
     dist_->max(upperBoundOnGlobalNumOriginalLocs);
@@ -2430,7 +2439,7 @@ void ObsSpace::extendObsSpace(const ObsExtendParameters & params) {
       // Append the companion rows. IFrame::append places the new rows directly
       // after the existing rows, matching the extendedLoc indices already pushed
       // onto locIndices/recidx_.
-      osdf_->append(companionOsdf, false /*addOffsetToSourceLocationIndices*/);
+      osdf_->append(companionOsdf);
     } else {
       // Extend the Location dimension; this grows every Location-indexed variable
       // and fills the new entries with missing values.

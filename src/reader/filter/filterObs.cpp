@@ -15,7 +15,6 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/core/IodaUtils.h"
-#include "ioda/core/ObsSourceStats.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -25,28 +24,21 @@ namespace ioda {
 namespace reader {
 
 //---------------------------------------------------------------------
-void filterObs(const util::TimeWindow & timeWindow,
-               const eckit::mpi::Comm & commAll,
-               ObsSourceStats & obsSourceStats,
-               std::unique_ptr<osdf::IFrame> & osdfCont,
-               osdf::FrameMetadata & osdfMetadata,
-               const bool applyLocationChecks) {
+FilterCounts filterObs(const util::TimeWindow & timeWindow,
+                       const eckit::mpi::Comm & commAll,
+                       std::unique_ptr<osdf::IFrame> & osdfCont,
+                       osdf::FrameMetadata & osdfMetadata,
+                       const bool applyLocationChecks) {
   oops::Log::trace() << "reader::filterObs start" << std::endl;
-  // Want to treat an empty input file (sourceNlocs == 0) as a special case
-  // in the obs space. sourceNlocs == 0 when there are zero rows in all osdf
-  // containers across all MPI ranks. Figure that out first, and if so,
-  // fill in the obsSourceStats struct accordingly and skip the filtering steps.
-  commAll.allReduce(osdfCont->numRows(), obsSourceStats.sourceNlocs, eckit::mpi::sum());
+  FilterCounts filterCounts;
 
-  if (obsSourceStats.sourceNlocs == 0) {
-    // All ranks have zero rows in their osdfCont containers.
-    // Fill in the obsSourceStats struct
-    obsSourceStats.nlocs = 0;
-    obsSourceStats.gNlocs = 0;
-    obsSourceStats.gNlocsOutsideTimewindow = 0;
-    obsSourceStats.gNlocsRejectQc = 0;
-    obsSourceStats.locIndices.resize(0);
-  } else {
+  // Want to treat an empty input file as a special case. There is nothing to filter
+  // when there are zero rows in all osdf containers across all MPI ranks, and the
+  // containers need not hold the required variables, so skip the filtering steps.
+  std::size_t globalNumRows = 0;
+  commAll.allReduce(osdfCont->numRows(), globalNumRows, eckit::mpi::sum());
+
+  if (globalNumRows > 0) {
     // Check that we have all the required variables
     // which are latitude, longitude and dateTime.
     const std::string dateTimeColName = "MetaData/dateTime";
@@ -108,27 +100,16 @@ void filterObs(const util::TimeWindow & timeWindow,
             }
         }
 
-        // Remove all masked rows. Keep count of locations (row) both
-        // before and after the row removal.
+        // Remove all masked rows.
         osdfCont->removeRows(filterMask);
     }
-    const std::size_t localNlocs = osdfCont->numRows();
 
-    // Fill in the obsSourceStats struct
-    obsSourceStats.nlocs = localNlocs;
-    commAll.allReduce(localNlocs, obsSourceStats.gNlocs, eckit::mpi::sum());
-    commAll.allReduce(locsOutsideTimewindow, obsSourceStats.gNlocsOutsideTimewindow,
+    commAll.allReduce(locsOutsideTimewindow, filterCounts.gNlocsOutsideTimewindow,
                       eckit::mpi::sum());
-    commAll.allReduce(locsRejectQc, obsSourceStats.gNlocsRejectQc, eckit::mpi::sum());
-
-    // Record the source location indices that were kept, which are
-    // simply the values in the sourceLocationIndices column.
-    std::vector<int> sourceLocationIndices(localNlocs);
-    osdfCont->getColumn("sourceLocationIndices", sourceLocationIndices);
-    obsSourceStats.locIndices.assign(sourceLocationIndices.begin(),
-                                    sourceLocationIndices.end());
+    commAll.allReduce(locsRejectQc, filterCounts.gNlocsRejectQc, eckit::mpi::sum());
   }
   oops::Log::trace() << "reader::filterObs end" << std::endl;
+  return filterCounts;
 }
 
 }  // namespace reader

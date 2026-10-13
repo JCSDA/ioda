@@ -8,9 +8,12 @@
 
 #include <cstddef>
 #include <memory>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "ioda/containers/CreateIFrame.h"
@@ -33,31 +36,19 @@ namespace ioda {
 namespace reader {
 
 // -----------------------------------------------------------------------------
-/// \brief renumber a freshly loaded frame's location indices so they follow on from
-///        the input files already loaded, and report how many locations it holds
-/// \details The netCDF reader numbers the rows it loads relative to the start of the file
-/// they came from, and every io pool rank loads a block of every file, so the raw numbering
-/// repeats from one input file to the next. Shifting each file's indices by the number of
-/// locations in the files ahead of it makes the assembled frame number its rows by their
-/// position in the concatenated input, which does not depend on how the io pool happened to
-/// split the reads.
-///
-/// This must be called on every rank in commAll, including ranks holding an empty frame,
-/// because of the collective reduction used to count the frame's locations.
-///
-/// \param commAll MPI communicator for all ranks
-/// \param osdf frame to renumber
-/// \param offset number of locations in the input files already loaded
-/// \return number of locations this frame holds across all ranks in commAll
-static std::size_t offsetSourceLocationIndices(const eckit::mpi::Comm & commAll,
-                                               std::unique_ptr<osdf::IFrame> & osdf,
-                                               const std::size_t offset) {
+std::size_t offsetSourceLocationIndices(const eckit::mpi::Comm & commAll,
+                                        const std::unique_ptr<osdf::IFrame> & osdf,
+                                        const std::size_t offset) {
   std::size_t globalNlocs = 0;
   commAll.allReduce(osdf->numRows(), globalNlocs, eckit::mpi::sum());
 
-  // An ODB source need not carry the location index column at all, and a rank outside the
-  // io pool holds the column definitions with no rows to renumber.
-  if ((offset > 0) && (osdf->numRows() > 0) && osdf->hasColumn("sourceLocationIndices")) {
+  // If we have columns, then we should have a sourceLocationIndices column.
+  if (osdf->numCols() > 0) {
+    ASSERT(osdf->hasColumn("sourceLocationIndices"));
+  }
+
+  // If the offset is zero or the osdf has no rows, there is nothing to renumber.
+  if ((offset > 0) && (osdf->numRows() > 0)) {
     std::vector<int> locationIndices;
     osdf->getColumn("sourceLocationIndices", locationIndices);
     for (int & locationIndex : locationIndices) {
@@ -66,6 +57,28 @@ static std::size_t offsetSourceLocationIndices(const eckit::mpi::Comm & commAll,
     osdf->setColumn("sourceLocationIndices", locationIndices);
   }
   return globalNlocs;
+}
+
+// -----------------------------------------------------------------------------
+std::vector<std::size_t> getSourceLocationIndices(const osdf::IFrame & osdf) {
+  // The proper result when there are zero rows is an empty vector since
+  // there are zero locations.
+  if (osdf.numRows() == 0) {
+    return {};
+  }
+  std::vector<int> sourceLocationIndices;
+  osdf.getColumn("sourceLocationIndices", sourceLocationIndices);
+  return std::vector<std::size_t>(sourceLocationIndices.begin(), sourceLocationIndices.end());
+}
+
+// -----------------------------------------------------------------------------
+void setLocalSourceStats(const osdf::IFrame & osdf, std::vector<std::size_t> recNums,
+                         ObsSourceStats & obsSourceStats) {
+  ASSERT(recNums.size() == osdf.numRows());
+  obsSourceStats.nlocs = osdf.numRows();
+  obsSourceStats.locIndices = getSourceLocationIndices(osdf);
+  obsSourceStats.nrecs = std::set<std::size_t>(recNums.begin(), recNums.end()).size();
+  obsSourceStats.recNums = std::move(recNums);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,17 +143,23 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
       } else if (destOsdf->numCols() == 0) {
         destOsdf = std::move(tempOsdf);
       } else {
-        // The location indices were renumbered above. Append's own renumbering derives its
-        // offset from the calling rank's own indices, which collides across the io pool
-        // because each rank holds a block of every file, so switch it off here.
-        destOsdf->append(tempOsdf, false);
+        // The location indices were renumbered above; append copies them unchanged.
+        destOsdf->append(tempOsdf);
       }
     }
   }
 
   //----- Filter step -----
   // Apply filters to the OSDF to remove unwanted rows
-  filterObs(timeWindow, commAll, obsSourceStats, destOsdf, osdfMetadata, applyLocationChecks);
+  const FilterCounts filterCounts =
+    filterObs(timeWindow, commAll, destOsdf, osdfMetadata, applyLocationChecks);
+
+  // Record the stats that describe the obs source as a whole. These are counted before the
+  // distribute step, which can place a location on more than one rank.
+  obsSourceStats.sourceNlocs = sourceLocationOffset;
+  commAll.allReduce(destOsdf->numRows(), obsSourceStats.gNlocs, eckit::mpi::sum());
+  obsSourceStats.gNlocsOutsideTimewindow = filterCounts.gNlocsOutsideTimewindow;
+  obsSourceStats.gNlocsRejectQc = filterCounts.gNlocsRejectQc;
 
   //----- Distribute step -----
   // Move obs to their intended MPI ranks in the main communicator group
@@ -173,7 +192,11 @@ void obsRead(const std::vector<eckit::LocalConfiguration>& dataInParams,
     createBaseDistributionParams("Identity");
   ospaceDist = DistributionFactory::create(commAll, *identityDistParams);
   ospaceDist->setNumberLocations(destOsdf->numRows());
-  distributeObs(distParams, commAll, obsGroupVarList, obsSourceStats, ospaceDist, destOsdf);
+  std::vector<std::size_t> recNums;
+  distributeObs(distParams, commAll, obsGroupVarList, ospaceDist, destOsdf, recNums);
+
+  // Record the stats that describe the locations on this rank.
+  setLocalSourceStats(*destOsdf, std::move(recNums), obsSourceStats);
   oops::Log::trace() << "reader::obsRead end" << std::endl;
 }
 

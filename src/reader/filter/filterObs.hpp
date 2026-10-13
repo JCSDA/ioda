@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
 
 // Forward class declarations
@@ -23,8 +24,16 @@ namespace util {
 }
 
 namespace ioda {
-    struct ObsSourceStats;
 namespace reader {
+
+/// \brief global counts of the locations removed by filterObs
+struct FilterCounts {
+  /// \brief number of locations that fell outside the time window
+  std::size_t gNlocsOutsideTimewindow = 0;
+
+  /// \brief number of locations rejected for missing or invalid date/time or lat/lon
+  std::size_t gNlocsRejectQc = 0;
+};
 
 /// \brief remove locations that fail checks
 /// \details This function will apply two checks to determine which locations
@@ -36,16 +45,15 @@ namespace reader {
 /// to be switched off, intended for testing purposes.
 /// \param timeWindow time window object
 /// \param commAll mpi communicator for all the ranks in the obs space communicator
-/// \param obsSourceStats struct with info about the input file
 /// \param osdfCont OSDF container object
 /// \param osdfMetadata frame metadata for dest OSDF
 /// \param applyLocationChecks when false, keep every location and skip both checks
-void filterObs(const util::TimeWindow & timeWindow,
-               const eckit::mpi::Comm & commAll,
-               ObsSourceStats & obsSourceStats,
-               std::unique_ptr<osdf::IFrame> & osdfCont,
-               osdf::FrameMetadata & osdfMetadata,
-               const bool applyLocationChecks = true);
+/// \return global counts of the locations removed by each check
+FilterCounts filterObs(const util::TimeWindow & timeWindow,
+                       const eckit::mpi::Comm & commAll,
+                       std::unique_ptr<osdf::IFrame> & osdfCont,
+                       osdf::FrameMetadata & osdfMetadata,
+                       const bool applyLocationChecks = true);
 
 }  // namespace reader
 }  // namespace ioda

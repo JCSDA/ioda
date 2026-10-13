@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,6 +41,39 @@ namespace ioda {
   }
 
 namespace reader {
+
+/// \brief renumber a freshly loaded frame's location indices so they follow on from
+///        the input files already loaded, and report how many locations it holds
+/// \details The netCDF reader numbers the rows it loads relative to the start of the file
+/// they came from, and every io pool rank loads a block of every file, so the raw numbering
+/// repeats from one input file to the next. Shifting each file's indices by the number of
+/// locations in the files ahead of it makes the assembled frame number its rows by their
+/// position in the concatenated input, which does not depend on how the io pool happened to
+/// split the reads.
+///
+/// This must be called on every rank in commAll, including ranks holding an empty frame,
+/// because of the collective reduction used to count the frame's locations.
+///
+/// \param commAll MPI communicator for all ranks
+/// \param osdf frame to renumber
+/// \param offset number of locations in the input files already loaded
+/// \return number of locations this frame holds across all ranks in commAll
+std::size_t offsetSourceLocationIndices(const eckit::mpi::Comm & commAll,
+                                        const std::unique_ptr<osdf::IFrame> & osdf,
+                                        const std::size_t offset);
+
+/// \brief return the input file position of each location held in an OSDF container
+/// \param osdf OSDF container object
+std::vector<std::size_t> getSourceLocationIndices(const osdf::IFrame & osdf);
+
+/// \brief set the obs source stats that describe the locations held on this rank
+/// \details Sets nlocs, locIndices, recNums and nrecs from a distributed OSDF container and
+/// the record numbers returned by distributeObs.
+/// \param osdf OSDF container object holding this rank's locations
+/// \param recNums global record number of each location in osdf
+/// \param obsSourceStats statistics about the obs source (file), updated in place
+void setLocalSourceStats(const osdf::IFrame & osdf, std::vector<std::size_t> recNums,
+                         ObsSourceStats & obsSourceStats);
 
 /// \brief read observation data from a NetCDF file into an OSDF
 /// \param dataInParams obs space data inputs (obsdatain) parameters

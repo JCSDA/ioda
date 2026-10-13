@@ -12,7 +12,6 @@
 
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
-#include "ioda/core/ObsSourceStats.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/ioPool/IoPoolParameters.h"
 #include "ioda/obsIoPool/ObsIoPool.hpp"
@@ -33,7 +32,6 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const std::string & obsName,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
-              ObsSourceStats & obsSourceStats,
               osdf::FrameMetadata & osdfMetadata,
               const bool preserveInputs) {
   oops::Log::trace() << "writer::obsWrite start" << std::endl;
@@ -48,14 +46,13 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
   if (preserveInputs) {
     // create new output objects to pass to collectObs
     std::shared_ptr<Distribution> outOspaceDist;
-    ObsSourceStats outObsSourceStats;
     std::unique_ptr<osdf::IFrame> outOsdf;
-    collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf,
-               outOspaceDist, outObsSourceStats, outOsdf);
+    collectObs(obsIoPool, ospaceDist, srcOsdf,
+               outOspaceDist, outOsdf);
     saveObs(dataOutParams, obsIoPool, commAll, obsName, outOsdf, osdfMetadata);
     outOsdf.reset();  // free memory used for the output osdf since we won't need it anymore
   } else {
-    collectObs(obsIoPool, ospaceDist, obsSourceStats, srcOsdf);
+    collectObs(obsIoPool, ospaceDist, srcOsdf);
     saveObs(dataOutParams, obsIoPool, commAll, obsName, srcOsdf, osdfMetadata);
   }
 

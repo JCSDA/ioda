@@ -23,7 +23,6 @@ namespace osdf {
 namespace ioda {
   class ObsDataOutParameters;
   class Distribution;
-  struct ObsSourceStats;
   namespace IoPool {
     class IoPoolParameters;
   }
@@ -37,7 +36,6 @@ namespace writer {
 /// \param obsName obs space name (used in the log messaging)
 /// \param ospaceDist distribution object for the caller's obs space
 /// \param srcOsdf source OSDF to be transferred to the output file
-/// \param obsSourceStats statistics about the obs source (file)
 /// \param osdfMetadata frame metadata object associated with srcOsdf
 /// \param preserveInputs preserves the srcOsdf (requires more memory). Otherwise it is overwritten.
 void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
@@ -46,7 +44,6 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const std::string & obsName,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
-              ObsSourceStats & obsSourceStats,
               osdf::FrameMetadata & osdfMetadata,
               const bool preserveInputs = false);
 

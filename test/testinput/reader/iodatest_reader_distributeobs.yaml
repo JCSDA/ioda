@@ -2,13 +2,17 @@
 function inputs:
   # In this test, 10 locations begin on just the first two ranks. We use
   # RoundRobin distribution to put them on 4 ranks, with record grouping by
-  # stationIdentification.
+  # stationIdentification. The sourceLocationIndices values have gaps, as if 4 of
+  # 14 locations in the input file had been filtered out, so that they differ from
+  # the row positions and show that the column moves with its rows.
   distribution:
     name: "RoundRobin"
-  number of locations: 10
   column data:
     mpisize4:
       rank0:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 0, 2, 3, 5 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -24,6 +28,9 @@ function inputs:
         type: "float"
         values: [ 10.5, 20.5, 30.5, 40.5 ]
       rank1:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 6, 7, 9, 11, 12, 13 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -39,6 +46,9 @@ function inputs:
         type: "float"
         values: [ 50.5, 60.5, 70.5, 80.5, 90.5, 100.5 ]
       rank2:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -54,6 +64,9 @@ function inputs:
         type: "float"
         values: [ ]
       rank3:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -73,6 +86,9 @@ expected results:
   mpisize4:
     rank0:
       expected local data:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 0, 6, 7, 9 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -87,12 +103,15 @@ expected results:
       - name: "ObsValue/myObsInst"
         type: "float"
         values: [ 10.5, 50.5, 60.5, 70.5 ]
-      local loc indices: [ 0, 4, 5, 6 ]
+      local loc indices: [ 0, 6, 7, 9 ]
       local record numbers: [ 0, 4, 4, 0 ]
       local num locations: 4
       local num records: 2
     rank1:
       expected local data:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 2, 12 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -107,12 +126,15 @@ expected results:
       - name: "ObsValue/myObsInst"
         type: "float"
         values: [ 20.5, 90.5 ]
-      local loc indices: [ 1, 8 ]
+      local loc indices: [ 2, 12 ]
       local record numbers: [ 1, 5 ]
       local num locations: 2
       local num records: 2
     rank2:
       expected local data:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 3, 13 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -127,12 +149,15 @@ expected results:
       - name: "ObsValue/myObsInst"
         type: "float"
         values: [ 30.5, 100.5 ]
-      local loc indices: [ 2, 9 ]
+      local loc indices: [ 3, 13 ]
       local record numbers: [ 2, 6 ]
       local num locations: 2
       local num records: 2
     rank3:
       expected local data:
+      - name: "sourceLocationIndices"
+        type: "int"
+        values: [ 5, 11 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
@@ -147,7 +172,7 @@ expected results:
       - name: "ObsValue/myObsInst"
         type: "float"
         values: [ 40.5, 80.5 ]
-      local loc indices: [ 3, 7 ]
+      local loc indices: [ 5, 11 ]
       local record numbers: [ 3, 3 ]
       local num locations: 2
       local num records: 1

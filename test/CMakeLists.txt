@@ -151,7 +151,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_twfilt_mpi_4_reader_pool.yaml
   testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml
   testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml
-  testinput/iodatest_obsspace_index_recnum_osdf.yaml
+  testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file_osdf.yaml
@@ -1747,6 +1747,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum
                   SOURCES mains/TestIodaObsSpaceIndexRecnum.cc
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_mpi_2
@@ -1754,6 +1755,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_mpi_2
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_mpi_4
@@ -1761,12 +1763,14 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_mpi_4
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_mpi_2
@@ -1774,6 +1778,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_mpi_2
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_mpi_4
@@ -1781,6 +1786,7 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_mpi_4
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
                   LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_reader_pool
@@ -1859,25 +1865,77 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_osdf_m
                   LIBS  ioda_test
                   )
 
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_osdf_mpi_4
+                  MPI 4
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml"
+                  LIBS  ioda_test
+                  )
 
+
+# The Identity distribution with the OSDF container. The RoundRobin cases are covered by the
+# parity tests below.
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_identity_osdf
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_identity_osdf_mpi_2
+                  MPI 2
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_identity_osdf_mpi_4
+                  MPI 4
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+# OSDF parity: the same yamls as the ObsGroup tests above, run again with the container
+# selected by IODA_TEST_CONTAINER. Both containers report the input file positions of the
+# locations, including the gaps left by the time window filtering in the twfilt yaml.
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_osdf
                   COMMAND ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
-                  LIBS  ioda_test
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_osdf_mpi_2
                   MPI 2
                   COMMAND ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
-                  LIBS  ioda_test
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_osdf_mpi_4
                   MPI 4
                   COMMAND ioda_obsspace_index_recnum
-                  ARGS    "testinput/iodatest_obsspace_index_recnum_osdf.yaml"
-                  LIBS  ioda_test
+                  ARGS    "testinput/iodatest_obsspace_index_recnum.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_osdf
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_osdf_mpi_2
+                  MPI 2
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_twfilt_osdf_mpi_4
+                  MPI 4
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_index_recnum_twfilt.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 ecbuild_add_test( TARGET  ioda_obsspace_locations_qc
