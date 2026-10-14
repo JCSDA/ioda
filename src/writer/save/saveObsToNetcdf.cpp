@@ -41,17 +41,23 @@ struct DimCreationParameters {
       size(dim_size), unlimited(unlim) {}
 };
 
+/// \brief maximum chunk size along the Location dimension of an output variable
+static constexpr std::size_t locationChunkMax = 10000;
+
 struct VarCreationParameters {
   std::string assocColumn;
   std::vector<std::string> dimNames;
   netCDF::NcType dataType;
   std::string units;
+  std::size_t locChunkSize;  // chunk size along Location, 0 means use the netCDF default
 
   VarCreationParameters(const std::string & assoc_col,
                         const std::vector<std::string> & dim_names,
                         const netCDF::NcType data_type,
-                        const std::string & units) :
-      assocColumn(assoc_col), dimNames(dim_names), dataType(data_type), units(units) {}
+                        const std::string & units,
+                        const std::size_t loc_dim_size) :
+      assocColumn(assoc_col), dimNames(dim_names), dataType(data_type), units(units),
+      locChunkSize(std::min(locationChunkMax, loc_dim_size)) {}
 };
 
 typedef std::vector<std::pair<std::string, DimCreationParameters>> DimCreationList;
@@ -93,9 +99,11 @@ static DimCreationList makeDimCreationList(const std::unique_ptr<osdf::IFrame> &
 ///  2. The variables that will be dimensioned by Channel
 /// \param srcOsdf source OSDF container from which to get the column names
 /// \param osdfMetadata source OSDF metadata containing information about the variables
+/// \param locationDimSize gloval size of the Location dimension (used for chunk sizing)
 /// \return VarCreationList output vector of variable names with their creation parameters
 static VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                              const osdf::FrameMetadata & osdfMetadata);
+                                              const osdf::FrameMetadata & osdfMetadata,
+                                              const std::size_t locationDimSize);
 
 /// \brief create netcdf dimension
 /// \param group netcdf group containing the dimension
@@ -125,9 +133,11 @@ static void setNcDimVar(netCDF::NcVar & dimVar,
 ///  3. The variables that will be dimensioned by Location and Channel
 /// \param srcOsdf source OSDF container from which to get the column names
 /// \param osdfMetadata source OSDF metadata containing information about the variables
+/// \param locationDimSize size of the Location dimension
 /// \return VarCreationList output vector of variable names with their creation parameters
 static VarCreationList makeVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                           const osdf::FrameMetadata & osdfMetadata);
+                                           const osdf::FrameMetadata & osdfMetadata,
+                                           const std::size_t locationDimSize);
 
 /// \brief create the variable (specified as a hierarchical path) from the netCDF file
 /// \details This function allows variable names with hierarchical paths to be
@@ -313,7 +323,8 @@ DimCreationList makeDimCreationList(const std::unique_ptr<osdf::IFrame> & srcOsd
 
 //---------------------------------------------------------------------
 VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                       const osdf::FrameMetadata & osdfMetadata) {
+                                       const osdf::FrameMetadata & osdfMetadata,
+                                       const std::size_t locationDimSize) {
   // We always have the Location dimension, and we can check with the osdfMetata
   // to see if we need the Channel dimension.
   // For the creation parameters:
@@ -326,7 +337,8 @@ VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & src
   {
     const std::string locDimName("Location");
     VarCreationParameters locVarCreateParams(locDimName, {locDimName},
-                                             netCDF::NcType::nc_INT64, varUnits);
+                                             netCDF::NcType::nc_INT64,
+                                             varUnits, locationDimSize);
     varCreationList.emplace_back(std::make_pair(locDimName, locVarCreateParams));
   }
 
@@ -339,7 +351,8 @@ VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & src
       continue;
     }
     VarCreationParameters dimVarCreateParams(dimName, {dimName},
-                                             netCDF::NcType::nc_INT, varUnits);
+                                             netCDF::NcType::nc_INT,
+                                             varUnits, locationDimSize);
     varCreationList.emplace_back(std::make_pair(dimName, dimVarCreateParams));
   }
   return varCreationList;
@@ -381,7 +394,8 @@ void setNcDimVar(netCDF::NcVar & dimVar,
 
 //---------------------------------------------------------------------
 VarCreationList makeVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
-                                    const osdf::FrameMetadata & osdfMetadata) {
+                                    const osdf::FrameMetadata & osdfMetadata,
+                                    const std::size_t locationDimSize) {
   // Get the list of column names from srcOsdf. Use this list and the
   // information in osdfMetadata to create the list of variable
   // names with their corresponding dimension names.
@@ -419,7 +433,7 @@ VarCreationList makeVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsd
       convertOsdfDataTypeToNcType(srcOsdf->getColumnType(associatedColumn));
     const std::string varUnits = srcOsdf->getColumnUnits(associatedColumn);
     const VarCreationParameters varCreationParams(associatedColumn, varDimNames,
-                                                  varNcType, varUnits);
+                                                  varNcType, varUnits, locationDimSize);
     varCreationList.emplace_back(std::make_pair(columnName, varCreationParams));
   }
   return varCreationList;
@@ -467,6 +481,19 @@ netCDF::NcVar createHierNcVar(netCDF::NcGroup & topGroup,
   }
   netCDF::NcVar var = group.addVar(varName, createParams.dataType, varDims);
   checkNcObj(var, "ioda::writer::saveOsdsToNetcdf: Failed to create variable: " + varName);
+
+  // If the variable is dimensioned by Location, chunk it with createParams.locChunkSize
+  // along Location and the full extent along any other dimension. A zero chunk size
+  // (no locations) is invalid, so use the netCDF default chunking in that case.
+  if ((createParams.locChunkSize > 0) && !createParams.dimNames.empty() &&
+      (createParams.dimNames.front() == "Location")) {
+    std::vector<std::size_t> chunkSizes;
+    for (std::size_t i = 0; i < varDims.size(); ++i) {
+      chunkSizes.push_back((i == 0) ? createParams.locChunkSize : varDims[i].getSize());
+    }
+    var.setChunking(netCDF::NcVar::nc_CHUNKED, chunkSizes);
+  }
+
   setNcVarAttributes(var, createParams);
   return var;
 }
@@ -703,13 +730,15 @@ static void saveOsdfToNetcdfSingleFile(const eckit::mpi::Comm & ioPoolComm,
         }
       }
 
-      const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+      const VarCreationList dimVarCreationList =
+        makeDimVarCreationList(srcOsdf, osdfMetadata, totalNlocs);
       for (auto & dimVarCreate : dimVarCreationList) {
         netCDF::NcVar dimVar = createHierNcVar(outFile, dimVarCreate.first, dimVarCreate.second);
         setNcDimVar(dimVar, srcOsdf, osdfMetadata, nlocsStart);
       }
 
-      const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+      const VarCreationList varCreationList =
+        makeVarCreationList(srcOsdf, osdfMetadata, totalNlocs);
       for (auto & varCreate : varCreationList) {
         netCDF::NcVar var = createHierNcVar(outFile, varCreate.first, varCreate.second);
         setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata, nlocsStart);
@@ -722,13 +751,15 @@ static void saveOsdfToNetcdfSingleFile(const eckit::mpi::Comm & ioPoolComm,
       checkNcObj(outFile,
         "ioda::writer::saveOsdfToNetcdf: Failed to open file: " + outputFileName);
 
-      const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+      const VarCreationList dimVarCreationList =
+        makeDimVarCreationList(srcOsdf, osdfMetadata, totalNlocs);
       for (auto & dimVarCreate : dimVarCreationList) {
         netCDF::NcVar dimVar = getHierNcVar(outFile, dimVarCreate.first);
         setNcDimVar(dimVar, srcOsdf, osdfMetadata, nlocsStart);
       }
 
-      const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+      const VarCreationList varCreationList =
+        makeVarCreationList(srcOsdf, osdfMetadata, totalNlocs);
       for (auto & varCreate : varCreationList) {
         netCDF::NcVar var = getHierNcVar(outFile, varCreate.first);
         setNcVar(var, varCreate.second.assocColumn, srcOsdf, osdfMetadata, nlocsStart);
@@ -745,7 +776,7 @@ static void saveOsdfToNetcdfSingleFile(const eckit::mpi::Comm & ioPoolComm,
       "ioda::writer::saveOsdfToNetcdf: Failed to create file: " + outputFileName);
     outFile.addDim("Location");
     const VarCreationParameters locVarCreateParams("Location", {"Location"},
-                                                   netCDF::NcType::nc_INT64, "");
+                                                   netCDF::NcType::nc_INT64, "", 0);
     createHierNcVar(outFile, "Location", locVarCreateParams);
     outFile.close();
   }
@@ -819,7 +850,8 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
     for (auto & dimCreationInfo : dimCreationList) {
       createNcDim(outFile, dimCreationInfo.first, dimCreationInfo.second);
     }
-    const VarCreationList dimVarCreationList = makeDimVarCreationList(srcOsdf, osdfMetadata);
+    const VarCreationList dimVarCreationList =
+      makeDimVarCreationList(srcOsdf, osdfMetadata, srcOsdf->numRows());
     for (auto & dimVarCreate : dimVarCreationList) {
       netCDF::NcVar dimVar =
         createHierNcVar(outFile, dimVarCreate.first, dimVarCreate.second);
@@ -832,7 +864,8 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
     //  1. The variables that will be dimensioned by Location
     //  2. The variables that will be dimensioned by Channel
     //  3. The variables that will be dimensioned by Location and Channel
-    const VarCreationList varCreationList = makeVarCreationList(srcOsdf, osdfMetadata);
+    const VarCreationList varCreationList =
+      makeVarCreationList(srcOsdf, osdfMetadata, srcOsdf->numRows());
     for (auto & varCreate : varCreationList) {
       netCDF::NcVar var =
         createHierNcVar(outFile, varCreate.first, varCreate.second);
@@ -846,7 +879,7 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
     std::string locName("Location");
     outFile.addDim(locName);
 
-    VarCreationParameters locVarCreateParams(locName, {locName}, netCDF::NcType::nc_INT64, "");
+    VarCreationParameters locVarCreateParams(locName, {locName}, netCDF::NcType::nc_INT64, "", 0);
     createHierNcVar(outFile, locName, locVarCreateParams);
   }
 
