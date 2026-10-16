@@ -1,0 +1,62 @@
+---
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+# Exercise the "observations.max io pool size" global setting. The test is run with
+# 7 MPI tasks and each obs space writes one output file per io pool task, so the number
+# of output files shows the io pool size that was used.
+observations:
+  max io pool size: 3
+  observers:
+  # No "io pool.max pool size" on this obs space, so the global setting applies
+  # and limits the pool to 3 tasks (instead of the parameter default of 4).
+  - obs space:
+      use data frame container: true
+      name: "Radiosonde global pool size"
+      simulated variables: ['air_temperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/io_pool_sondes.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/io_pool_sondes_global_max_size_osdf_out.nc4"
+        write multiple files: true
+
+  # An "io pool" section without "max pool size". The global setting is merged into
+  # this section (rather than replacing it), limiting the pool to 3 tasks.
+  - obs space:
+      use data frame container: true
+      name: "Radiosonde merged pool size"
+      simulated variables: ['air_temperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/io_pool_sondes.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/io_pool_sondes_merged_max_size_osdf_out.nc4"
+        write multiple files: true
+      io pool:
+        writer name: SinglePool
+
+  # The obs space setting takes precedence over the global setting, limiting the
+  # pool to 2 tasks.
+  - obs space:
+      use data frame container: true
+      name: "Radiosonde local pool size"
+      simulated variables: ['air_temperature']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/io_pool_sondes.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/io_pool_sondes_local_max_size_osdf_out.nc4"
+        write multiple files: true
+      io pool:
+        max pool size: 2

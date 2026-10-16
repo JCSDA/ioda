@@ -155,6 +155,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file_osdf.yaml
+  testinput/iodatest_obsspace_io_pool_global_max_size_osdf.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files.yaml
   testinput/iodatest_obsspace_io_pool_sondes_multi_files_osdf.yaml
   testinput/iodatest_obsspace_locations_qc.yaml
@@ -3104,6 +3105,40 @@ ecbuild_add_test( TARGET  ioda_obsspace_io_pool_sondes_multi_file_check_0003
                           io_pool_sondes_multi_out_0003.nc4
                   TEST_DEPENDS ioda_obsspace_io_pool_sondes_multi_files)
 
+# This test checks the "observations.max io pool size" global setting (applied by
+# oops::ObsSpaces). Each obs space writes one output file per io pool task (7 tasks),
+# so the following test checks the io pool size by counting the output files:
+#    global setting only (3)            -> 3 files
+#    global setting merged into io pool -> 3 files
+#    obs space setting (2)              -> 2 files, obs space takes precedence
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_global_max_size_osdf
+                  MPI     7
+                  COMMAND time_IodaIO.x
+                  ARGS    "testinput/iodatest_obsspace_io_pool_global_max_size_osdf.yaml"
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_time_io ioda_clean_time_io_files)
+
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_global_max_size_osdf_check
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    -c
+                          "test -f testoutput/io_pool_sondes_global_max_size_osdf_out_0002.nc4 && \
+                           test ! -e testoutput/io_pool_sondes_global_max_size_osdf_out_0003.nc4 && \
+                           test -f testoutput/io_pool_sondes_merged_max_size_osdf_out_0002.nc4 && \
+                           test ! -e testoutput/io_pool_sondes_merged_max_size_osdf_out_0003.nc4 && \
+                           test -f testoutput/io_pool_sondes_local_max_size_osdf_out_0001.nc4 && \
+                           test ! -e testoutput/io_pool_sondes_local_max_size_osdf_out_0002.nc4"
+                  TEST_DEPENDS ioda_obsspace_io_pool_global_max_size_osdf)
+
+# The obs in the 3 file set are the same as those in the 4 file reference set.
+ecbuild_add_test( TARGET  ioda_obsspace_io_pool_global_max_size_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          Data/testinput_tier_1/test_reference/io_pool_sondes_multi_out.nc4
+                          testoutput/io_pool_sondes_global_max_size_osdf_out.nc4
+                  TEST_DEPENDS ioda_obsspace_io_pool_global_max_size_osdf )
+
 # These tests check that the writer does not create duplicate obs for all of the
 # distribution types (currently, RoundRobin, Inefficient, Halo and Atlas).
 # The first test creates 4 files each based on the 4 different distribution types,
@@ -3455,7 +3490,28 @@ ecbuild_add_test( TARGET  ioda_clean_time_io_files
                           "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep.nc4"
                           "testoutput/amsua_n19_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
                           "testoutput/sondes_obs_2018041500_m_time_reader_pool_ext_file_prep_mpi7.nc4"
-                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4" )
+                          "testoutput/gnssro_obs_2021080606_s_time_reader_pool_ext_file_prep_mpi7.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0000.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0001.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0002.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0003.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0004.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0005.nc4"
+                          "testoutput/io_pool_sondes_global_max_size_osdf_out_0006.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0000.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0001.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0002.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0003.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0004.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0005.nc4"
+                          "testoutput/io_pool_sondes_merged_max_size_osdf_out_0006.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0000.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0001.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0002.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0003.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0004.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0005.nc4"
+                          "testoutput/io_pool_sondes_local_max_size_osdf_out_0006.nc4" )
 
 # this test creates new output files
 ecbuild_add_test( TARGET  ioda_time_io
