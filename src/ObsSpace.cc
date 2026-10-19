@@ -1628,8 +1628,9 @@ void ObsSpace::loadVar(const std::string & group, const std::string & name,
 
                 // Place the single slice data into the output vector
                 if (isSliceDimOnly) {
-                    // All rows in the column hold the same value; take the first.
-                    varValues[i] = singleChanData[0];
+                    // All rows in the column hold the same value; take the first when present.
+                    varValues[i] = singleChanData.empty() ? util::missingValue<VarType>()
+                                                          : singleChanData[0];
                 } else {
                     for (std::size_t j = 0; j < numLocs; ++j) {
                         const size_t indx = i + (j * numSlices);
