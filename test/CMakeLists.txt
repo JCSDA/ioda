@@ -556,6 +556,14 @@ ecbuild_add_test( TARGET  ioda_reader_var_collision
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
+
+# Test the guards that reject required variables not dimensioned by Location, and 
+# arbitrary variables using dimensions with no coordinate variable.
+ecbuild_add_test( TARGET  ioda_reader_var_dims
+                  SOURCES mains/reader/TestReaderVarDims.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS  ioda_test
+                  )
 # Reader fill-value step: verifies fill value handling in a NetCDF file. Of particular
 # interest is the fill value handling for an internal bool variable (vector<bool>) which
 # is stored as a char variable in the NetCDF file.

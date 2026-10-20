@@ -178,14 +178,35 @@ std::string getNcVarUnits(const netCDF::NcVar & var);
 /// 1-D variable that happens to end in the same suffix, so a file holding both a 2-D
 /// "X[Location, Channel]" and a 1-D "X_1[Location]" asks the reader to create the column "X_1"
 /// twice when Channel includes the value 1.
-/// \param inFile netcdf file object (opened in read mode)
+/// \param namedVars all non-dimension variables in the file, with their hierarchical names
 /// \param fileName name of the file, for the error message
 /// \param callerName name of the calling function, for the error message
 /// \param osdfMetadata frame metadata holding the registered slice index values
-static void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
-                                          const std::string & fileName,
-                                          const std::string & callerName,
-                                          const osdf::FrameMetadata & osdfMetadata);
+static void checkOsdfColumnNameCollisions(const std::vector<NamedNcVar> &namedVars,
+                                          const std::string &fileName,
+                                          const std::string &callerName,
+                                          const osdf::FrameMetadata &osdfMetadata);
+
+/// \brief Check required metadata variables are 1D [Location] variables.
+/// \details If any of the required variables MetaData/dateTime, latitude,
+/// or longitude have dimension other than [Location],
+/// throw rather than loading as slice data.
+/// \param namedVars all non-dimension variables in the file, with their hierarchical names
+/// \param fileName name of the file loaded
+static void checkRequiredVarDims(const std::vector<NamedNcVar> & namedVars,
+                                 const std::string & fileName);
+
+/// \brief Check that all variable dimensions have been registered.
+/// \details Each dimension used by a variable must be Location
+/// or have been registered in the frame metadata.
+/// Dimensions are only registered when they have a coordinate variable,
+/// so throw if a variable possesses a coordinate-less dimension.
+/// \param namedVars all non-dimension variables in the file, with their hierarchical names
+/// \param fileName name of the file, for the error message
+/// \param osdfMetadata frame metadata holding the registered slice dimensions
+static void checkVarDimsRegistered(const std::vector<NamedNcVar> & namedVars,
+                                   const std::string & fileName,
+                                   const osdf::FrameMetadata & osdfMetadata);
 
 /// \brief  transfer variable data to the destination OSDF container
 /// \tparam VarType
@@ -612,18 +633,16 @@ std::string getNcVarUnits(const netCDF::NcVar & var) {
 }
 
 //---------------------------------------------------------------------
-void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
-                                   const std::string & fileName,
-                                   const std::string & callerName,
-                                   const osdf::FrameMetadata & osdfMetadata) {
+void checkOsdfColumnNameCollisions(const std::vector<NamedNcVar> &namedVars,
+                                   const std::string &fileName, const std::string &callerName,
+                                   const osdf::FrameMetadata &osdfMetadata) {
   // Build up the column names each variable will claim and record the first claimant of
   // each one. Mirror the loader's own decisions so that this neither misses a collision the
   // loader would hit nor invents one for a variable the loader never stores: skip what
   // keepNetcdfVarForOSDF rejects, and skip the types the transfer step has no case for.
   std::unordered_map<std::string, std::string> claimedBy;
   std::vector<std::string> collisions;
-  const std::vector<NamedNcVar> allNamedVars = listAllNetcdfVars(inFile, std::string(""), false);
-  for (const auto & namedVar : allNamedVars) {
+  for (const auto & namedVar : namedVars) {
     const std::string & varName = namedVar.first;
     const netCDF::NcVar & var = namedVar.second;
     if (var.isNull()) {
@@ -677,6 +696,62 @@ void checkOsdfColumnNameCollisions(const netCDF::NcGroup & inFile,
               "    which collide with 1-D variables whose names end in the same suffix. "
               "Rename or remove\n    one of each pair listed above.";
     throw eckit::BadValue(errMsg, Here());
+  }
+}
+
+//---------------------------------------------------------------------
+void checkRequiredVarDims(const std::vector<NamedNcVar> & namedVars,
+                          const std::string & fileName) {
+  const std::unordered_set<std::string> requiredVars =
+      {"MetaData/dateTime", "MetaData/latitude", "MetaData/longitude"};
+  std::string invalidRequiredVars;
+
+  for (const auto &namedVar : namedVars) {
+    // If a variable in the file is not required, skip the check.
+    // Missing required variables are not an error (they are reported in filterObs).
+    if (requiredVars.count(namedVar.first) == 0) {
+      continue;
+    }
+
+    // If a variable in the file is required, check it is dimensioned [Location]
+    // and construct error message if not.
+    const std::vector<netCDF::NcDim> dims = namedVar.second.getDims();
+    if (dims.size() != 1 || dims[0].getName() != "Location") {
+      std::string dimList;
+      for (const auto & dim : dims) {
+        dimList += (dimList.empty() ? "" : ", ") + dim.getName();
+      }
+      invalidRequiredVars += "    " + namedVar.first + " has dimensions (" + dimList + ")\n";
+    }
+  }
+  if (!invalidRequiredVars.empty()) {
+    throw eckit::BadValue("ioda::reader::checkRequiredVarDims: required variables must be "
+                          "dimensioned by (Location) only.\n    file: " + fileName + "\n" +
+                          invalidRequiredVars, Here());
+  }
+}
+
+//---------------------------------------------------------------------
+void checkVarDimsRegistered(const std::vector<NamedNcVar> & namedVars,
+                            const std::string & fileName,
+                            const osdf::FrameMetadata & osdfMetadata) {
+  std::string unregisteredDimensionVars;
+  for (const auto & namedVar : namedVars) {
+    std::vector<std::string> varDimNames;
+    if (!keepNetcdfVarForOSDF(namedVar.first, namedVar.second, varDimNames)) {
+      continue;
+    }
+    for (const auto & dimName : varDimNames) {
+      if (dimName != "Location" && !osdfMetadata.hasDim(dimName)) {
+        unregisteredDimensionVars += "    " + namedVar.first +
+                                     " uses dimension '" + dimName + "'\n";
+      }
+    }
+  }
+  if (!unregisteredDimensionVars.empty()) {
+    throw eckit::BadValue("ioda::reader::checkVarDimsRegistered: variables use dimensions with "
+                          "no coordinate variable.\n    file: " + fileName + "\n" +
+                          unregisteredDimensionVars, Here());
   }
 }
 
@@ -775,8 +850,11 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // rather than accumulating a count multiplied by the number of files.
   osdfMetadata.setNumVars(0);
 
-  const std::vector<NamedNcVar> allNamedDims =
-      listAllNetcdfVars(inFile, std::string(""), true);
+  const std::vector<NamedNcVar> allNamedVars = listAllNetcdfVars(inFile, std::string(""), false);
+  const std::vector<NamedNcVar> allNamedDims = listAllNetcdfVars(inFile, std::string(""), true);
+
+  checkRequiredVarDims(allNamedVars, fileName);
+
   for (const auto & namedDim : allNamedDims) {
     const std::string & dimName = namedDim.first;
     if (dimName == "Location") {
@@ -859,10 +937,15 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
     }
   }
 
+  // The slice dimension names are now known. Reject a file containing a variable with
+  // unregistered slice dimension, likely due to missing the dimension's corresponding
+  // coordinate variable.
+  checkVarDimsRegistered(allNamedVars, fileName, osdfMetadata);
+
   // The slice index values are now known, so the column names the variables will claim can
   // be worked out. Reject a file whose variables would claim the same column twice before
   // loading any of them, while the offending pair can still be named.
-  checkOsdfColumnNameCollisions(inFile, fileName,
+  checkOsdfColumnNameCollisions(allNamedVars, fileName,
                                 std::string("ioda::reader::loadObsBlockFromNetcdf"),
                                 osdfMetadata);
 
@@ -870,7 +953,6 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
   // herierchy is due to the netcdf group structure. Walk through all the variables
   // and transfer the location block given by the startLoc and locCount parameters into
   // the destination OSDF container.
-  const std::vector<NamedNcVar> allNamedVars = listAllNetcdfVars(inFile, std::string(""), false);
   for (const auto & namedVar : allNamedVars) {
     const std::string & varName = namedVar.first;
     const netCDF::NcVar & var = namedVar.second;
