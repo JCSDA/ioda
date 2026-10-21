@@ -263,6 +263,15 @@ void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
   // Check if the srcOSDF is compatible with the current OSDF
   data_.validateColumnMetadata(srcColumnMetadata);
 
+  // A FrameCols source has the same column storage as this frame, so copy column by column.
+  // Other sources (and appending a frame to itself) go through the row-by-row path below.
+  const FrameCols* srcFrameCols = dynamic_cast<const FrameCols*>(srcOsdf.get());
+  if (srcFrameCols != nullptr && srcFrameCols != this) {
+    data_.appendRows(srcFrameCols->getData());
+    notify();
+    return;
+  }
+
   // Append to the current OSDF
   std::vector<osdf::DataRow> dataRowsToAppend;
   dataRowsToAppend.reserve(srcOsdf->getData().getSizeRows());

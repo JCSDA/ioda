@@ -62,6 +62,15 @@ class FrameColsData : public IFrameData, public IColsData {
   /// \param The row of data.
   void appendNewRow(const DataRow&);
 
+  /// \brief Appends all rows of another container, copying each column in bulk. The source
+  /// is assumed to have the same columns (names, types and order) as this container; the
+  /// caller is responsible for validating this (with a call to ValidateColumnMetadata), and the
+  /// source must not be this container.
+  /// New rows get ids following on from the current maximum id. Column widths are taken as the
+  /// larger of the two containers' widths rather than being recomputed from every value.
+  /// \param The source container.
+  void appendRows(const FrameColsData&);
+
   /// \brief Adds a new column with accompanying data to the data frame. The column is assumed to
   /// read-write uncless specified with the fourth, optional parameter.
   /// \param A pointer to the column data.

@@ -77,6 +77,37 @@ void osdf::FrameColsData::appendNewRow(const DataRow& newRow) {
   }
 }
 
+void osdf::FrameColsData::appendRows(const FrameColsData& src) {
+  const std::int64_t numNewRows = src.getSizeRows();
+  if (numNewRows == 0) {
+    return;
+  }
+
+  // New row ids follow on from the current maximum id, as in appendNewRow.
+  const std::int64_t firstId = getMaxId() + 1;
+  ids_.reserve(ids_.size() + static_cast<std::size_t>(numNewRows));
+  for (std::int64_t rowIndex = 0; rowIndex < numNewRows; ++rowIndex) {
+    ids_.push_back(firstId + rowIndex);
+  }
+  columnMetadata_.updateMaxId(firstId + numNewRows - 1);
+
+  const ColumnMetadata& srcColumnMetadata = src.getColumnMetadata();
+  for (std::int32_t columnIndex = 0; columnIndex < getSizeCols(); ++columnIndex) {
+    const std::shared_ptr<DataBase>& destData = getDataColumn(columnIndex);
+    const std::shared_ptr<DataBase>& srcData = src.getDataColumn(columnIndex);
+    osdf::FrameUtils::callWithSupportedType(
+      destData->getType(),
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        std::vector<T>& destValues = std::static_pointer_cast<Data<T>>(destData)->getValues();
+        const std::vector<T>& srcValues =
+          std::static_pointer_cast<const Data<T>>(srcData)->getValues();
+        destValues.insert(destValues.end(), srcValues.begin(), srcValues.end());
+      });
+    columnMetadata_.updateColumnWidth(columnIndex, srcColumnMetadata.getWidth(columnIndex));
+  }
+}
+
 void osdf::FrameColsData::appendNewColumn(const std::shared_ptr<DataBase>& data,
                                           const std::string& name, const consts::eDataTypes type,
                                           const std::string& unit,
