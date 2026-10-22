@@ -67,6 +67,14 @@ extend obs space, RoundRobin, 71 entries per averaged profile, OSDF:
     name: Sondes, OSDF
     use data frame container: true
 
+extend obs space, RoundRobin, 71 entries per averaged profile, OSDF FrameRows:
+  <<: *case_1
+  obs space:
+    <<: *obs_space_1
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows
+
 extend obs space, InefficientDistribution, 71 entries per averaged profile: &case_2
   time window:
     begin: 2018-04-14T20:30:00Z
@@ -117,6 +125,14 @@ extend obs space, InefficientDistribution, 71 entries per averaged profile, OSDF
     name: Sondes, OSDF
     use data frame container: true
 
+extend obs space, InefficientDistribution, 71 entries per averaged profile, OSDF FrameRows:
+  <<: *case_2
+  obs space:
+    <<: *obs_space_2
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows
+
 extend obs space, 0 entries per averaged profile: &case_3
   time window:
     begin: 2018-04-14T20:30:00Z
@@ -143,6 +159,14 @@ extend obs space, 0 entries per averaged profile, OSDF:
     <<: *obs_space_3
     name: Sondes, OSDF
     use data frame container: true
+
+extend obs space, 0 entries per averaged profile, OSDF FrameRows:
+  <<: *case_3
+  obs space:
+    <<: *obs_space_3
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows
 
 extend obs space, RoundRobin, 71 entries per averaged profile, alternative data set: &case_4
   time window:
@@ -245,6 +269,14 @@ extend obs space, RoundRobin, 71 entries per averaged profile, only pressure fil
     name: Sondes, OSDF
     use data frame container: true
 
+extend obs space, RoundRobin, 71 entries per averaged profile, only pressure filled with non-missing values, OSDF FrameRows:
+  <<: *case_5
+  obs space:
+    <<: *obs_space_5
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows
+
 extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values: &case_6
   time window:
     begin: 2018-04-14T20:30:00Z
@@ -295,3 +327,11 @@ extend obs space, RoundRobin, 71 entries per averaged profile, no variables fill
     <<: *obs_space_6
     name: Sondes, OSDF
     use data frame container: true
+
+extend obs space, RoundRobin, 71 entries per averaged profile, no variables filled with non-missing values, OSDF FrameRows:
+  <<: *case_6
+  obs space:
+    <<: *obs_space_6
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows

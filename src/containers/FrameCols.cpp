@@ -248,41 +248,18 @@ void osdf::FrameCols::deserializeColumnMetadata(eckit::Buffer & columnMetadataBu
 }
 
 void osdf::FrameCols::append(const std::unique_ptr<IFrame>& srcOsdf) {
-  const std::int32_t numParams = data_.getSizeCols();
-
-  // Check if it is possible to append to the current OSDF
-  if (!(numParams > 0)) {
-    const std::string errMsg
-      = std::string("Error: Cannot append to this OSDF without first setting column headings.");
-    throw eckit::BadParameter(errMsg, Here());
-  }
-
-  const osdf::ColumnMetadata& srcColumnMetadata = srcOsdf->getData().getColumnMetadata();
-  data_.validateCanWriteAllData();
-
-  // Check if the srcOSDF is compatible with the current OSDF
-  data_.validateColumnMetadata(srcColumnMetadata);
+  funcs_.validateAppend(data_, srcOsdf->getData());
 
   // A FrameCols source has the same column storage as this frame, so copy column by column.
-  // Other sources (and appending a frame to itself) go through the row-by-row path below.
+  // Other sources (and appending a frame to itself) go through the row-by-row path.
   const FrameCols* srcFrameCols = dynamic_cast<const FrameCols*>(srcOsdf.get());
   if (srcFrameCols != nullptr && srcFrameCols != this) {
     data_.appendRows(srcFrameCols->getData());
-    notify();
-    return;
-  }
-
-  // Append to the current OSDF
-  std::vector<osdf::DataRow> dataRowsToAppend;
-  dataRowsToAppend.reserve(srcOsdf->getData().getSizeRows());
-  srcOsdf->getData().getDataRows(dataRowsToAppend);
-
-  for (const osdf::DataRow& dataRow : dataRowsToAppend) {
-    DataRow newDataRow(data_.getMaxId() + 1);
-    for (std::int32_t index = 0; index < dataRow.getSize(); ++index) {
-      newDataRow.insert(dataRow.getColumn(index));
-    }
-    data_.appendNewRow(newDataRow);
+  } else {
+    std::vector<osdf::DataRow> dataRowsToAppend;
+    dataRowsToAppend.reserve(srcOsdf->getData().getSizeRows());
+    srcOsdf->getData().getDataRows(dataRowsToAppend);
+    funcs_.appendDataRows(data_, dataRowsToAppend);
   }
 
   notify();

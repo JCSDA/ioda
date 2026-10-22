@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "ioda/containers/Constants.h"
+#include "ioda/containers/DataRow.h"
 #include "ioda/containers/IFrameData.h"
 
 namespace osdf {
@@ -41,6 +42,28 @@ class Functions {
   /// \param Mask with one entry per row; row i is kept iff the entry is true.
   /// \return True if the mask removes at least one row.
   bool validateRowRemoval(const IFrameData&, const std::vector<bool>&) const;
+
+  /// \brief Common checks before appending the rows of one data frame to another.
+  /// Throws if the destination has no columns, if any destination column is read-only, or if
+  /// the source columns do not match the destination columns (names, units and types).
+  /// \param The data of the frame being appended to.
+  /// \param The data of the frame being appended.
+  void validateAppend(const IFrameData&, const IFrameData&) const;
+
+  /// \brief Appends a copy of each of the given rows to a data frame, numbering the new rows
+  /// after the frame's current maximum row id.
+  /// \param The data of the frame being appended to (FrameRowsData or FrameColsData).
+  /// \param The rows to append. They are assumed to have passed validateAppend.
+  template<typename FrameDataT>
+  void appendDataRows(FrameDataT& dest, const std::vector<DataRow>& rows) const {
+    for (const DataRow& row : rows) {
+      DataRow newRow(dest.getMaxId() + 1);
+      for (std::int32_t columnIndex = 0; columnIndex < row.getSize(); ++columnIndex) {
+        newRow.insert(row.getColumn(columnIndex));
+      }
+      dest.appendNewRow(newRow);
+    }
+  }
 
   template<typename T> const std::shared_ptr<DataBase> createData(const std::vector<T>&) const;
 

@@ -71,3 +71,11 @@ extend obs space, Halo, 71 entries per averaged profile, OSDF:
     <<: *obs_space_1
     name: Sondes, OSDF
     use data frame container: true
+
+extend obs space, Halo, 71 entries per averaged profile, OSDF FrameRows:
+  <<: *case_1
+  obs space:
+    <<: *obs_space_1
+    name: Sondes, OSDF FrameRows
+    use data frame container: true
+    data frame type: FrameRows

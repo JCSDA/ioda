@@ -12,6 +12,7 @@
 
 #include "eckit/exception/Exceptions.h"
 
+#include "ioda/containers/ColumnMetadata.h"
 #include "ioda/containers/Data.h"
 #include "ioda/containers/Datum.h"
 #include "ioda/containers/FrameUtils.h"
@@ -38,6 +39,16 @@ bool osdf::Functions::validateRowRemoval(const IFrameData& data,
     }
   }
   return true;
+}
+
+void osdf::Functions::validateAppend(const IFrameData& dest, const IFrameData& src) const {
+  if (!(dest.getSizeCols() > 0)) {
+    const std::string errMsg
+      = std::string("Error: Cannot append to this OSDF without first setting column headings.");
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  dest.getColumnMetadata().validateCanWriteAllData();
+  dest.getColumnMetadata().validateColumnMetadata(src.getColumnMetadata());
 }
 
 template<> void osdf::Functions::addColumnToRow<const char*>(IFrameData* data, DataRow& row,
