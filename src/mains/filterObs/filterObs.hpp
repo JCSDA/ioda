@@ -16,7 +16,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #  include "eckit/exception/Exceptions.h"
 
-#include "oops/interface/ObsSpace.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -162,8 +161,6 @@ static void generateReceiptTimes(const std::int64_t delayMin, const std::int64_t
 namespace ioda {
 
 template <typename OBS> class FilterObs : public oops::Application {
-  typedef oops::ObsSpace<OBS>         ObsSpace_;
-
  public:
   // ---------------------------------------------------------------------------
   explicit FilterObs(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
@@ -188,7 +185,7 @@ template <typename OBS> class FilterObs : public oops::Application {
 
     // Create an ObsSpace object and the time window filtering will
     // happen automatically via the ioda reader.
-    ObsSpace_ obsdb(obsconf, this->getComm(), timeWindow);
+    ioda::ObsSpace obsdb(obsconf, this->getComm(), timeWindow, oops::mpi::myself());
 
     // If specified, apply the receipt time filter - keep track of how many locations
     // were rejected due to the receipt time filter.
@@ -221,20 +218,20 @@ template <typename OBS> class FilterObs : public oops::Application {
             filterConfig.getSubConfiguration(generateSpec);
         std::int64_t delayMin = generateConfig.getInt64("delay min");
         std::int64_t delayMax = generateConfig.getInt64("delay max");
-        generateReceiptTimes(delayMin, delayMax, receiptVarName, obsdb.obsspace());
+        generateReceiptTimes(delayMin, delayMax, receiptVarName, obsdb);
       }
 
       numReceiptTimeRejected = applyReceiptTimeFilter(receiptVarName,
-          receiptAcceptWindow, obsdb.obsspace());
+          receiptAcceptWindow, obsdb);
     }
 
     // Display some stats
     oops::Log::info() << obsdb.obsname() << ": Total number of locations read: "
-                      << obsdb.obsspace().sourceNumLocs() << std::endl;
+                      << obsdb.sourceNumLocs() << std::endl;
     oops::Log::info() << obsdb.obsname() << ": Total number of locations kept: "
-                      << obsdb.obsspace().globalNumLocs() << std::endl;
+                      << obsdb.globalNumLocs() << std::endl;
     oops::Log::info() << obsdb.obsname() << ": Number of locations outside time window: "
-                      << obsdb.obsspace().globalNumLocsOutsideTimeWindow() << std::endl;
+                      << obsdb.globalNumLocsOutsideTimeWindow() << std::endl;
     if (numReceiptTimeRejected >= 0) {
       oops::Log::info() << obsdb.obsname()
                         << ": Number of locations rejected by the receipt time filter: "

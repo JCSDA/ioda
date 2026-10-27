@@ -167,6 +167,10 @@ void fillCompanionLocations(const ObsSpace::RecIdxMap &recidx,
 
 }  // namespace
 
+// -----------------------------------------------------------------------------
+int ObsSpace::instances_ = 0;
+// -----------------------------------------------------------------------------
+
 // ----------------------------- public functions ------------------------------
 // -----------------------------------------------------------------------------
 /*!
@@ -187,12 +191,11 @@ void fillCompanionLocations(const ObsSpace::RecIdxMap &recidx,
 ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::TimeWindow timeWindow,
                    const eckit::mpi::Comm & timeComm)
-                     : oops::ObsSpaceBase(config, comm, timeWindow),
-                       timeWindow_(timeWindow), commMPI_(comm), commTime_(timeComm),
+                     : timeWindow_(timeWindow), commMPI_(comm), commTime_(timeComm),
                        obs_group_(),
                        obs_params_(std::make_unique<ObsSpaceParameters>(
                            config, timeWindow_, comm, timeComm)),
-                       obsvars_()
+                       obsvars_(), instance_(++instances_)
 {
     // Save some of the more frequently used parameter values, as well as some
     // derived values, into data members for easy access. Also check some settings
@@ -296,6 +299,20 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
     << " observations are outside of time window out of " << sourceNumLocs() << std::endl;
     oops::Log::debug() << obsname() << ": " << globalNumLocsRejectQC()
     << " observations were rejected by QC checks out of " << sourceNumLocs() << std::endl;
+
+    // Determine seed for random number generator that is reproducible when re-running
+    // but does not repeat itself over analysis cycles, ensemble members or obs type
+    util::DateTime ref(1623, 6, 19, 0, 0, 0);
+    ASSERT(timeWindow_.start() > ref);
+    util::Duration dt(timeWindow_.start() - ref);
+    seed_ = dt.toSeconds();
+
+    // Won't repeat if more seconds between analysis cycles than members in EDA
+    seed_ += config.getInt("obs perturbations seed", 0);
+
+    //           31622400 seconds max in 1 year
+    //        12197962800 seed at this step for 2010-01-01T03:00:00Z
+    seed_ += 100000000000 * instance_;
 
     oops::Log::trace() << "ObsSpace::ObsSpace constructed name = " << obsname() << std::endl;
 }

@@ -29,9 +29,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Printable.h"
 #include "oops/util/TimeWindow.h"
 
 #include "ioda/containers/FrameMetadata.h"
@@ -130,7 +130,7 @@ namespace ioda {
     /// During the DA run, all data transfers are done in memory. The only time file I/O is
     /// invoked is during the constructor (read from the file into the obs container) and
     /// optionally during the the destructor (write from obs container into the file).
-    class ObsSpace : public oops::ObsSpaceBase {
+    class ObsSpace : public util::Printable {
      public:
         static const std::string classname() {return "ioda::ObsSpace";}
 
@@ -166,6 +166,8 @@ namespace ioda {
         /// @{
 
         const util::TimeWindow & timeWindow() const {return timeWindow_;}
+        util::DateTime windowStart() const {return timeWindow_.start();}
+        util::DateTime windowEnd() const {return timeWindow_.end();}
 
         /// \details This method will return the associated MPI communicator
         const eckit::mpi::Comm & comm() const {return commMPI_;}
@@ -588,6 +590,9 @@ namespace ioda {
         /// \brief Return the configured vertical coordinate variable name, or boost::none if unset.
         const boost::optional<std::string> & verticalCoordinate() const;
 
+        /// Manage seed for randomization
+        int64_t getSeed() const {return seed_++;}
+
      private:
         // ----------------------------- private data members ---------------------------
         /// Time window class
@@ -659,6 +664,11 @@ namespace ioda {
         ///          (e.g. reduce) when ObsSpace changes its state. ObsSpaceAssociated
         ///          is Observer in the Observer pattern.
         std::vector<std::reference_wrapper<ObsSpaceAssociated>> obs_space_associated_;
+
+        /// Manage seed for randomization
+        static int instances_;
+        int instance_;
+        mutable int64_t seed_;
 
         /// \brief disable the "=" operator
         ObsSpace & operator= (const ObsSpace &) = delete;
