@@ -98,6 +98,11 @@ void VariableCreator::createTypedVariable(
       values.data(), numLocations, numValuesPerLocation);
     Eigen::RowVector<T, Eigen::Dynamic> currentValues(numValuesPerLocation);
     for (size_t location = 0; location < numLocations; ++location) {
+      if constexpr (std::is_same_v<T, char>)
+        currentValues.setZero();
+      else
+        currentValues.setConstant(odb_missing<T>());
+
       reader.getVariableValuesAtLocation(
         gsl::make_span(rowsByLocation[location]),
         gsl::make_span(currentValues));

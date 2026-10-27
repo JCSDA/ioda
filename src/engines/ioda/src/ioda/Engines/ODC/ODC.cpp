@@ -1494,7 +1494,17 @@ void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,
   sql_data.select(columnsToSelect, odcparams.filename, varnos, queryParameters.where.value().query,
                   comm, odcparams.chunksPerProcess, recordIdColumns);
 
-  oops::Log::info() << "sql_data.varnos_: " << sql_data.getVarnos() << std::endl;
+  // When reading in parallel, each rank only sees the varnos present in its own chunk of the
+  // file. Take the union over all ranks so that every rank creates the same set of variables;
+  // otherwise later collective operations (e.g. the writer pool's MPI transfers, which are
+  // matched by variable index) can deadlock.
+  std::vector<int> availableVarnos = sql_data.getVarnos();
+  if (comm != nullptr && comm->size() > 1) {
+    eckit::mpi::Buffer<int> allVarnos(comm->size());
+    comm->allGatherv(availableVarnos.begin(), availableVarnos.end(), allVarnos);
+    std::set<int> varnoUnion(allVarnos.buffer.begin(), allVarnos.buffer.end());
+    availableVarnos.assign(varnoUnion.begin(), varnoUnion.end());
+  }
 
   // 7. Initialize the container that will receive the data read from the ODB file. Use the mapping
   //    file to set up the translation of ODB column names to ioda variable names.
@@ -1553,7 +1563,7 @@ void openFile(const ODC_Parameters &odcparams, ContainerFacade &container,
   // 8. Populate the ObsGroup with variables
 
   const std::vector<VariableCreator> variableCreators = makeVariableCreators(
-    layoutParameters, queryParameters, sql_data.getVarnos(), complementarityInfo);
+    layoutParameters, queryParameters, availableVarnos, complementarityInfo);
 
   // 8.1. Create location-dependent variables
 
