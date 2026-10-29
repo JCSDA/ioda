@@ -67,14 +67,21 @@ auto callWithSupportedType(const consts::eDataTypes dtype, const Action &action)
 /// entry survives the conversion. String is not a numeric frame type and is rejected at compile
 /// time (callers must guard string columns before instantiating this, e.g. via withCoercionType).
 ///
+/// A char source is the exception: char columns hold booleans (0 = false, 1 = true) and
+/// util::missingValue<char>() ('\0') is indistinguishable from false, so it is not remapped.
+///
 /// \param value
 ///   The stored value to convert.
 template <typename T, typename S>
 T coerce(const S value) {
   static_assert((std::is_arithmetic_v<S> && std::is_arithmetic_v<T>),
                 "osdf::FrameUtils::coerce supports numeric frame types only");
-  return value == util::missingValue<S>() ? util::missingValue<T>()
-                                          : static_cast<T>(value);
+  if constexpr (std::is_same_v<S, char>) {
+    return static_cast<T>(value);
+  } else {
+    return value == util::missingValue<S>() ? util::missingValue<T>()
+                                            : static_cast<T>(value);
+  }
 }
 
 /// \brief Dispatch \p action over the stored column type \p storedType while enforcing the OSDF

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -63,18 +64,21 @@ void buildFrame(std::unique_ptr<osdf::IFrame> & frame) {
 // -----------------------------------------------------------------------------
 // Read column \p name (stored type S, whose values are \p stored) back as requested type T and
 // verify each element matches the coercion contract: a stored missing marker maps to the requested
-// type's missing marker, everything else is a static_cast.
+// type's missing marker, everything else is a static_cast. A char (boolean) column has no
+// distinguishable missing marker ('\0' is false), so its values are always a static_cast.
 template <typename S, typename T>
 void expectReadCoerces(const std::unique_ptr<osdf::IFrame> & frame, const std::string & name,
                        const std::vector<S> & stored) {
   const S srcMissing = util::missingValue<S>();
   const T dstMissing = util::missingValue<T>();
+  constexpr bool remapMissing = !std::is_same_v<S, char>;
 
   std::vector<T> got;
   frame->getColumn(name, got);
   EXPECT(got.size() == stored.size());
   for (std::size_t r = 0; r < stored.size(); ++r) {
-    const T expected = (stored[r] == srcMissing) ? dstMissing : static_cast<T>(stored[r]);
+    const T expected = (remapMissing && (stored[r] == srcMissing)) ? dstMissing
+                                                                   : static_cast<T>(stored[r]);
     EXPECT(got[r] == expected);
   }
 }
@@ -125,6 +129,15 @@ void testReadCoercion(std::unique_ptr<osdf::IFrame> & frame) {
   EXPECT(floatExact.size() == 4);
   EXPECT(floatExact[0] == 1.5f);
   EXPECT(floatExact[kMissingRow] == missingFloat);
+
+  // A '\0' in a char (boolean) column is a legitimate false, not missing: it must read back as
+  // zero rather than the requested type's missing marker.
+  std::vector<float> charAsFloat;
+  frame->getColumn("charCol", charAsFloat);
+  EXPECT(charAsFloat[kMissingRow] == 0.0f);
+  std::vector<int> charAsInt;
+  frame->getColumn("charCol", charAsInt);
+  EXPECT(charAsInt[kMissingRow] == 0);
 }
 
 // -----------------------------------------------------------------------------
