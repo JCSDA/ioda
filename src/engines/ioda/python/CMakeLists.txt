@@ -33,8 +33,8 @@ set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
 
 # AddPyLib will set the target file for _ioda_python to the subdirectory:
 #
-#   lib/${pyver}/pyioda/ioda/_ioda_python.*  # .* is the appropriate system suffix for
-#                                            # a shared library
+#   lib/${pyver}/site-packages/pyioda/ioda/_ioda_python.*  # .* is the appropriate system
+#                                                          # suffix for a shared library
 #
 # underneath the install prefix (for both package install and build/test install). We've
 # got two python modules we want to install, ioda and obs_space, and they go in the
@@ -44,7 +44,7 @@ set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
 #
 # which is one directory up from the generator TARGET_FILE_DIR for the _ioda_python target.
 # Note that TARGET_FILE_DIR is like running dirname on a file path in the shell.
-AddPyLib(_ioda_python ioda ${pyver})
+AddPyLib(_ioda_python ioda ${pyver}/site-packages)
 
 # Need to set RPATH to directory where libioda et al. got installed which is three up
 # from where _ioda_python.* got installed.
@@ -71,11 +71,11 @@ add_custom_command(TARGET _ioda_python POST_BUILD
 	${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py ${PYIODA_DIR}/ioda_obs_space/__init__.py)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda
-	    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/
+	    DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/site-packages/pyioda/
 	 	COMPONENT Python
 	    FILES_MATCHING PATTERN "*.py")
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py
-		DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/ioda_obs_space/
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/site-packages/ioda_obs_space/
         COMPONENT Python)
 
