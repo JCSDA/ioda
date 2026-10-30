@@ -7,6 +7,8 @@ set(_programs
     ioda_compare_nc.py
     ioda_compare_obs.py
     ioda_compare_obs_selftest.py
+    ioda_compare_odb.py
+    ioda_compare_odb_selftest.py
     ioda_compare_odc_with_netcdf.py
     refactor-yaml.py
     retrieval_upgrader.py

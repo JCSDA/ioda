@@ -1165,22 +1165,192 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_obsspace_out_odc.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS ioda_clean_obsspace_out_odc_files )
+
+  # OSDF parity tests follow, which test content equality between the OSDF output and the ObsGroup
+  # output written by the test above. Then the ObsGroup output is bitwise compared to a committed
+  # reference. That chain is the whole check on the OSDF side; there is deliberately no
+  # committed OSDF reference.
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aircraft
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aircraft.odc
+                            testoutput/diagout-aircraft-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_atms
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-atms.odc
+                            testoutput/diagout-atms-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_gmi
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-gmi.odc
+                            testoutput/diagout-gmi-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_amsua
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-amsua.odc
+                            testoutput/diagout-amsua-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_groundgps
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-groundgps.odc
+                            testoutput/diagout-groundgps-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_sonde
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-sonde.odc
+                            testoutput/diagout-sonde-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aod
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aod.odc
+                            testoutput/diagout-aod-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_iasi
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-iasi.odc
+                            testoutput/diagout-iasi-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc )
+
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_sonde_mixed
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_sonde_mixed.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS ioda_clean_obsspace_out_odc_files )
+
+  # OSDF parity: content equality between the OSDF output and the ObsGroup output written
+  # by the test above, which is in turn pinned bit for bit to a committed reference below.
+  # That chain is the whole check on the OSDF side; there is deliberately no committed OSDF
+  # reference.  A bitwise check across the two containers is not possible anyway: the two
+  # writers order columns differently, and rows follow each container's location order.
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_sonde_mixed
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-sonde-mixed.odc
+                            testoutput/diagout-sonde-mixed-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_sonde_derived
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-sonde-derived.odc
+                            testoutput/diagout-sonde-derived-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
+
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_readbackin
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_readbackin.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS ioda_obsspace_out_odc ioda_obsspace_odc )
+
+  # OSDF parity: content equality between the OSDF output and the ObsGroup output written
+  # by the test above, which is in turn pinned bit for bit to a committed reference below.
+  # That chain is the whole check on the OSDF side; there is deliberately no committed OSDF
+  # reference.  A bitwise check across the two containers is not possible anyway: the two
+  # writers order columns differently, and rows follow each container's location order.
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_readbackin_aircraft
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aircraft-readbackin.odc
+                            testoutput/diagout-aircraft-readbackin-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_readbackin_atms
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-atms-readbackin.odc
+                            testoutput/diagout-atms-readbackin-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_readbackin_iasi
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-iasi-readbackin.odc
+                            testoutput/diagout-iasi-readbackin-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_readbackin_groundgps
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-groundgps-readbackin.odc
+                            testoutput/diagout-groundgps-readbackin-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
+
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_mpi_2
                     MPI 2
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_out_odc_mpi_2.yaml"
                     LIBS  ioda_test
                     TEST_DEPENDS ioda_clean_obsspace_out_odc_files )
+
+  # OSDF parity: content equality between the OSDF output and the ObsGroup output written
+  # by the test above, which is in turn pinned bit for bit to a committed reference below.
+  # That chain is the whole check on the OSDF side; there is deliberately no committed OSDF
+  # reference.  A bitwise check across the two containers is not possible anyway: the two
+  # writers order columns differently, and rows follow each container's location order.
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aod_multifiles
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aod-multifiles_0000.odc,testoutput/diagout-aod-multifiles_0001.odc
+                            testoutput/diagout-aod-multifiles-osdf_0000.odc,testoutput/diagout-aod-multifiles-osdf_0001.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aod_multifiles_oneiopool
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aod-multifiles-oneiopool.odc
+                            testoutput/diagout-aod-multifiles-oneiopool-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aod_singlefile
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aod-singlefile.odc
+                            testoutput/diagout-aod-singlefile-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
+  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_osdf_parity_aod_singlefile_oneiopool
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/diagout-aod-singlefile-oneiopool.odc
+                            testoutput/diagout-aod-singlefile-oneiopool-osdf.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
 
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aircraft
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
@@ -1259,85 +1429,6 @@ if (odc_FOUND)
   ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_groundgps
                     COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
                     ARGS    "testoutput/diagout-groundgps-readbackin.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aircraft_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aircraft-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_atms_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-atms-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-atms-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_gmi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-gmi-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-gmi-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_amsua_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-amsua-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-amsua-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_groundgps_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-groundgps-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_mixed_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-mixed-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-mixed-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_sonde_derived_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-sonde-derived-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-sonde-derived-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_sonde_mixed )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_iasi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-iasi-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-iasi-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_osdf_0000
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-osdf_0000.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-osdf_0000.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_osdf_0001
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-osdf_0001.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-osdf_0001.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_multifiles_oneiopool_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-multifiles-oneiopool-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-multifiles-oneiopool-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_singlefile_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-singlefile-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-singlefile-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_aod_singlefile_oneiopool_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aod-singlefile-oneiopool-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aod-singlefile-oneiopool-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_mpi_2 )
-
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_aircraft_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-aircraft-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-aircraft-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_atms_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-atms-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-atms-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_iasi_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-iasi-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-iasi-readbackin-osdf.odc" ${ODC_TOOL_PATH}
-                    TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
-  ecbuild_add_test( TARGET  ioda_obsspace_out_odc_compare_readbackin_groundgps_osdf
-                    COMMAND ${CMAKE_BINARY_DIR}/bin/compare-odbs
-                    ARGS    "testoutput/diagout-groundgps-readbackin-osdf.odc" "Data/testinput_tier_1/test_reference/diagout-groundgps-readbackin-osdf.odc" ${ODC_TOOL_PATH}
                     TEST_DEPENDS ioda_obsspace_out_odc_readbackin )
 
   ecbuild_add_test( TARGET  ioda_odb_tables_iterator
@@ -3031,6 +3122,17 @@ ecbuild_add_test( TARGET  ioda_obsspace_null_channel_osdf
                           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                           testinput/iodatest_obsspace_null_channel_osdf.yaml"
                           obsspace_null_channel_osdf.odb)
+
+# Content equality between the two outputs above, which odc compare cannot check directly.
+ecbuild_add_test( TARGET  ioda_obsspace_null_channel_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                          testoutput/obsspace_null_channel.odb
+                          testoutput/obsspace_null_channel_osdf.odb
+                          --odc-lib $<TARGET_FILE:odccore>
+                  TEST_DEPENDS ioda_obsspace_null_channel
+                               ioda_obsspace_null_channel_osdf )
 endif()
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)
@@ -3941,9 +4043,9 @@ if (odc_FOUND)
                     COMMAND rm
                     ARGS    "-f"
                             "testoutput/aircraft_time.odb"
-                            "testouput/aircraft_time_reader_pool.odb"
+                            "testoutput/aircraft_time_reader_pool.odb"
                             "testoutput/atms_time.odb"
-                            "testoutput/atms_reader_pool.odb" )
+                            "testoutput/atms_time_reader_pool.odb" )
 
   # this test creates new output files
   ecbuild_add_test( TARGET  ioda_time_io_odc
@@ -5838,4 +5940,15 @@ if (Python3_FOUND)
     ecbuild_add_test( TARGET  ioda_compare_obs_selftest
                       COMMAND ${Python3_EXECUTABLE}
                       ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs_selftest.py )
+
+    # The same for the ODB comparator, ioda_compare_odb.py.  The test files are
+    # written with odc import, so this needs the odc executable as well as the
+    # library the comparator reads them with.
+    if (odc_FOUND)
+        ecbuild_add_test( TARGET  ioda_compare_odb_selftest
+                          COMMAND ${Python3_EXECUTABLE}
+                          ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb_selftest.py
+                                  --odc ${ODC_TOOL_PATH}
+                                  --odc-lib $<TARGET_FILE:odccore> )
+    endif()
 endif()

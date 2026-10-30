@@ -10,16 +10,28 @@ r"""Compare two IODA obs files for equivalence, independent of row order.
 Useful for comparing files produced by the OSDF container writer against those
 produced by the legacy ObsGroup container.
 
-Method: full-row canonical sort
+Method: identity-first sort, then pairing by identity
   Each file is sorted by a key made of the ENTIRE observation record at each
   location -- every Location-indexed variable, a (Location, Channel) variable
-  contributing one key column per channel -- then compared variable by variable.
-  Because the key is the whole row, two rows can tie only if they are identical,
-  so tie-break order cannot affect the result. The report prints the tie count
-  so this can be checked.
+  contributing one key column per channel -- with the variables that identify
+  an observation first (IDENTITY_VARIABLES, or --key) and every other one after
+  them.  Walking the two sorted files together then pairs the rows whose
+  identity matches; a row with no partner is reported as present on one side
+  only, and the variables are compared over the paired rows.
+
+  The identity variables lead so that a difference shows up where it is: a
+  changed value in any other variable can only reorder rows that share an
+  identity, and a changed identity is one observation on each side only, not a
+  shift that misaligns every row after it.  The rest of the row still breaks
+  ties, so two rows can tie only if they are identical, and two file sets match
+  only if they hold the same multiset of records, exactly as with a plain
+  full-row sort.  The report prints the tie count so this can be checked.
 
   Location alone is held out of the key, being a row label rather than data, so a
   disagreement about it is reported on one line instead of scrambling the sort.
+
+  --dump writes both sorted tables as text, identity variables first, so that an
+  ordinary diff of the two shows just the rows that differ.
 
 Normalization rules, each absorbing a deliberate difference between the writers.
 Every variable becomes one of four kinds plus a missing mask:
@@ -32,12 +44,19 @@ Every variable becomes one of four kinds plus a missing mask:
   NC_CHAR |SN, N>1     -> string  fixed-length, decoded
   NC_UBYTE / NC_BYTE   -> bool    x != 0; never missing -- a legacy boolean
   NC_INT / NC_INT64    -> int     exact int64; missing when == _FillValue or a
-                                  known sentinel, tested in the NATIVE dtype
+    and unsigned                  known sentinel, tested in the NATIVE dtype.
+                                  A present uint64 value beyond the int64
+                                  range is a structural failure, not wrapped
   NC_FLOAT / NC_DOUBLE -> float   float64; missing when not finite,
                                   == _FillValue, or |v| >= 1e30
 
   An int on one side and a float on the other (legacy writes nrecs as float32,
-  OSDF as int32) are compared as floats.
+  OSDF as int32) are compared as integers, exactly: a float that is not a whole
+  number in int64 range differs, and --tolerance does not apply.  The kind
+  difference itself is reported, and is fatal under --strict.
+  ioda_compare_odb.py fails outright on a declared type difference instead,
+  because both its sides come from one writer and so should agree; here the two
+  writers are known to disagree on nrecs.
 
 Three of those rules are load-bearing: done naively, each makes the tool report
 PASS on files that differ.
@@ -47,14 +66,13 @@ PASS on files that differ.
   * A one-byte character variable is a boolean only when all its dimensions index
     observations; stationId(Location, nchars) is a string.  Read as a boolean,
     every printable character becomes True and unrelated ids compare equal.
-  * Integers are never widened to float64.  Values above 2**53 collide when
-    rounded, as do the two int64 missing sentinels.
 
 Fatal vs reported:
-  Data differences fail.  Differences in coordinate variables (name equals its
-  only dimension: Location, Channel, nvars, ...) and in attributes are reported
-  but not fatal, because the writers differ there by design -- OSDF emits no
-  global attributes at all.  --strict makes them fatal, which is how to ask
+  Data differences fail, as does a row with no partner of the same identity on
+  the other side.  Differences in coordinate variables (name equals its
+  only dimension: Location, Channel, nvars, ...), int vs float kinds and
+  attributes are reported but not fatal, because the writers differ there by
+  design -- OSDF emits no global attributes at all.  --strict makes them fatal, which is how to ask
   whether that gap has closed.
 
 Multi-file sets:
@@ -70,6 +88,9 @@ divergence would cascade into many failures rather than be absorbed.
 Output:
   A pass prints just the verdict; a failure prints only the reasons for it.
   -v prints the full report of every variable that was checked, pass or fail.
+  A Location-indexed mismatch is named by the row's identity, plus its channel
+  where it has one, e.g. [stationIdentification=07510 ...] Channel=7, rather
+  than by its position in the sort, which means nothing to a reader.
   A tie warning, when there is one, is printed at every verbosity, because it
   qualifies the verdict rather than explaining it.
 
@@ -84,6 +105,7 @@ import os
 import glob
 import math
 import argparse
+import tempfile
 from collections import namedtuple
 
 import numpy as np
@@ -111,6 +133,26 @@ LOCATION = "Location"
 # and excluding it means a disagreement about it is reported on one line instead
 # of scrambling the sort and failing every variable.
 KEY_EXCLUDE = (LOCATION,)
+
+# The variables that, between them, identify one observation: the station or
+# platform, the time and place, and the scan position or vertical coordinate.
+# The sort puts them first and rows are paired on them.  Those a file set lacks
+# are skipped; --key replaces the list.  Edit here to change the default.
+IDENTITY_VARIABLES = (
+    "MetaData/stationIdentification",
+    "MetaData/satelliteIdentifier",
+    "MetaData/dateTime",
+    "MetaData/latitude",
+    "MetaData/longitude",
+    "MetaData/sequenceNumber",
+    "MetaData/sensorScanPosition",
+    "MetaData/pressure",
+    "MetaData/height",
+)
+
+# Dropped from a variable's name where it labels a row, which is long enough
+# already: [latitude=10.0 ...] rather than [MetaData/latitude=10.0 ...].
+LABEL_PREFIX = "MetaData/"
 
 # Dimensions that index observations rather than counting characters.  A one-byte
 # character variable whose trailing dimension is NOT one of these is a
@@ -142,6 +184,10 @@ def resolve_file_set(spec):
     """
     if "," in spec:
         paths = [p.strip() for p in spec.split(",") if p.strip()]
+        # "," or ", ," names no file at all.  Every caller needs at least one,
+        # so say so here rather than let it fail later on paths[0].
+        if not paths:
+            raise IOError("no file named in %r" % spec)
         missing = [p for p in paths if not os.path.exists(p)]
         if missing:
             raise IOError("no such file: %s" % ", ".join(missing))
@@ -288,7 +334,9 @@ def load_file_set(paths):
 
     Variables whose first dimension is Location are concatenated along axis 0
     across the set.  All other variables are taken from the first file; the
-    remaining files hold per-pool-rank copies of the same dimension data.
+    remaining files hold per-pool-rank copies of the same dimension data, and
+    each copy is checked against the first, so that a set whose members
+    disagree is reported rather than masked by reading only one of them.
     """
     datasets = []
     for path in paths:
@@ -319,13 +367,52 @@ def load_file_set(paths):
     columns = {}
     for name in sorted(names):
         var = per_file[0][name]
-        if var.dimensions and var.dimensions[0] == LOCATION and len(datasets) > 1:
+        concatenated = (var.dimensions and var.dimensions[0] == LOCATION
+                        and len(datasets) > 1)
+        if concatenated:
             raw = np.concatenate([np.asarray(pf[name][...]) for pf in per_file], axis=0)
-            columns[name] = canonical_column(var, raw)
         else:
-            columns[name] = canonical_column(var, np.asarray(var[...]))
+            raw = np.asarray(var[...])
+        columns[name] = canonical_column(var, raw)
+        beyond = beyond_int64(raw, columns[name])
+        if beyond:
+            structural.append("%s: %s beyond the int64 range, which cannot be "
+                              "compared exactly" % (name, plural(beyond, "uint64 value")))
+        if not concatenated:
+            structural += copy_differences(name, columns[name], paths, per_file)
 
     return columns, nlocs, datasets, structural
+
+
+def beyond_int64(raw, column):
+    """How many present values of a uint64 variable int64 cannot hold.
+
+    canonical_column casts every integer to int64, which wraps these: 2**64 - 1
+    becomes -1 and would match a signed -1 on the other side.  A missing value
+    is not counted, NC_FILL_UINT64 itself being beyond the range.
+    """
+    arr = np.asarray(raw)
+    if arr.dtype != np.uint64:
+        return 0
+    return int(((arr > np.iinfo(np.int64).max) & ~column.missing).sum())
+
+
+def copy_differences(name, column, paths, per_file):
+    """Where a member of a file set holds a copy of a variable unlike the first's.
+
+    Compared exactly, as the copies come from one writer.  Only the first file
+    is compared against the other side, so a difference here would otherwise
+    never be seen.
+    """
+    lines = []
+    for path, pf in zip(paths[1:], per_file[1:]):
+        copy = canonical_column(pf[name], np.asarray(pf[name][...]))
+        ok, details = compare_column(column, copy, None, None, 0.0, 1)
+        if not ok:
+            lines.append("%s: differs between %s and %s (%s)"
+                         % (name, paths[0], path,
+                            "; ".join(line.strip() for line in details)))
+    return lines
 
 
 def is_coordinate(name, dims):
@@ -403,13 +490,83 @@ def summarize(column):
         valid.size, nmiss, valid.min(), valid.max(), math.fsum(valid))
 
 
-def compare_column(ca, cb, order_a, order_b, tol, max_diffs):
+def _trailing_name(dim, position, coords):
+    """'Channel=7': one trailing index, named by its coordinate value if known."""
+    if dim in coords:
+        return "%s=%s" % (dim, coords[dim][position])
+    return "%s#%d" % (dim, position)
+
+
+def _element_name(index, row_label, dims, coords):
+    """How the report names one element: by index, or by the caller's row label.
+
+    A row label names the row only, so each trailing index, a channel say, is
+    appended to it.
+    """
+    if row_label is None:
+        return "index %s" % (index[0] if len(index) == 1 else index,)
+    return " ".join([row_label(index[0])]
+                    + [_trailing_name(dim, int(position), coords)
+                       for dim, position in zip(dims[1:], index[1:])])
+
+
+def _element_value(side, index):
+    values, missing = side
+    return "missing" if missing[index] else values[index]
+
+
+def _element_lines(mask, max_diffs, row_label, dims, coords, side_a, side_b):
+    """One report line for each of the first max_diffs elements set in mask."""
+    return ["    %s:  A = %s   B = %s"
+            % (_element_name(index, row_label, dims, coords),
+               _element_value(side_a, index), _element_value(side_b, index))
+            for index in list(zip(*np.nonzero(mask)))[:max_diffs]]
+
+
+def _equal_as_int(ints, floats):
+    """Elementwise ints == floats, exactly, without rounding either to the other.
+
+    A float that is not a whole number in int64 range equals no integer.  The
+    bound is exact: -2**63 and 2**63 are both representable as floats.
+    """
+    whole = (np.isfinite(floats) & (floats == np.floor(floats))
+             & (floats >= -2.0 ** 63) & (floats < 2.0 ** 63))
+    return whole & (ints == np.where(whole, floats, 0.0).astype(np.int64))
+
+
+def _unequal(kind_a, kind_b, values_a, values_b, tol):
+    """Elementwise values_a != values_b, by the rule for the two columns' kinds."""
+    # One side integral and the other floating -- nrecs is float32 from the
+    # legacy writer and int32 from the OSDF writer, for instance.  Compared as
+    # integers, since widening int64 to float64 rounds above 2**53.
+    if kind_a != kind_b:
+        if kind_a == "int":
+            return ~_equal_as_int(values_a, values_b)
+        return ~_equal_as_int(values_b, values_a)
+    # A tolerance only makes sense for floating-point values; integers are
+    # compared exactly so that no int64 difference can be absorbed.
+    if tol > 0.0 and kind_a == "float":
+        return ~np.isclose(values_a, values_b, atol=tol, rtol=0.0)
+    return values_a != values_b
+
+
+def compare_column(ca, cb, order_a, order_b, tol, max_diffs, row_label=None, coords=None):
     """Compare two canonicalized columns under the given row permutations.
+
+    row_label, if given, turns a row number in the permuted order into the text
+    that names it in the report; by default a mismatch is named by its index.
+    coords maps a dimension name to its coordinate values, which then name the
+    trailing indices of a row-labelled element, e.g. Channel=7.
 
     Returns (ok, detail_lines).
     """
+    coords = coords or {}
     if ca.values.shape != cb.values.shape:
         return False, ["shape %s != %s" % (ca.values.shape, cb.values.shape)]
+    # Equal shapes are not enough: (Location, Channel) and (Location, Level)
+    # can be the same size and still hold different things.
+    if ca.dims != cb.dims:
+        return False, ["dimensions %s != %s" % (ca.dims, cb.dims)]
 
     numeric = ("int", "float")
     if ca.kind != cb.kind and not (ca.kind in numeric and cb.kind in numeric):
@@ -417,14 +574,6 @@ def compare_column(ca, cb, order_a, order_b, tol, max_diffs):
 
     values_a, values_b = ca.values, cb.values
     missing_a, missing_b = ca.missing, cb.missing
-
-    # One side integral and the other floating -- nrecs is float32 from the
-    # legacy writer and int32 from the OSDF writer, for instance.  Compare as
-    # floats; both sides stay exact below 2**53.
-    mixed_numeric = ca.kind != cb.kind
-    if mixed_numeric:
-        values_a = values_a.astype(np.float64)
-        values_b = values_b.astype(np.float64)
     if order_a is not None:
         values_a, missing_a = values_a[order_a], missing_a[order_a]
         values_b, missing_b = values_b[order_b], missing_b[order_b]
@@ -434,25 +583,150 @@ def compare_column(ca, cb, order_a, order_b, tol, max_diffs):
     if bad.any():
         details.append("missing-value mask differs at %d of %d elements"
                        % (int(bad.sum()), bad.size))
+        # Only a caller that can name rows gets them listed; an index into a
+        # permuted order would mean nothing to a reader.
+        if row_label is not None:
+            details += _element_lines(bad, max_diffs, row_label, ca.dims, coords,
+                                      (values_a, missing_a), (values_b, missing_b))
 
     present = ~(missing_a | missing_b)
-    # A tolerance only makes sense for floating-point values; integers are
-    # compared exactly so that no int64 difference can be absorbed.
-    if tol > 0.0 and (ca.kind == "float" or mixed_numeric):
-        unequal = ~np.isclose(values_a, values_b, atol=tol, rtol=0.0)
-    else:
-        unequal = values_a != values_b
-    unequal &= present
+    unequal = _unequal(ca.kind, cb.kind, values_a, values_b, tol) & present
 
     if unequal.any():
         details.append("%d of %d present values differ"
                        % (int(unequal.sum()), int(present.sum())))
-        for index in list(zip(*np.nonzero(unequal)))[:max_diffs]:
-            position = index[0] if len(index) == 1 else index
-            details.append("    index %s:  A = %s   B = %s"
-                           % (position, values_a[index], values_b[index]))
+        details += _element_lines(unequal, max_diffs, row_label, ca.dims, coords,
+                                  (values_a, missing_a), (values_b, missing_b))
 
     return not details, details
+
+
+def plural(count, noun):
+    return "%d %s%s" % (count, noun, "" if count == 1 else "s")
+
+
+# sort_a, sort_b : each side's rows in identity-first canonical order
+# rows_a, rows_b : the paired rows, as file row numbers, aligned with each other
+# only_a, only_b : file row numbers of the rows with no partner on the other side
+# distinct_a/b   : how many distinct identities each side holds
+Alignment = namedtuple("Alignment", ["sort_a", "sort_b", "rows_a", "rows_b",
+                                     "only_a", "only_b", "distinct_a", "distinct_b"])
+
+
+def identity_tuples(keys, order):
+    """Each sorted row's identity, as a tuple of its identity key values."""
+    if not keys:
+        return [()] * len(order)
+    return list(zip(*[key[order].tolist() for key in keys]))
+
+
+def merge_identities(ids_a, ids_b):
+    """Pair up two identity-sorted sequences, as a merge join.
+
+    Returns (pairs, only_a, only_b), all as positions in the sorted sequences.
+    Rows sharing an identity are paired in sorted order, so the rest of the row
+    decides which goes with which, and any surplus on one side is unmatched.
+    """
+    pairs, only_a, only_b = [], [], []
+    i = j = 0
+    while i < len(ids_a) and j < len(ids_b):
+        if ids_a[i] == ids_b[j]:
+            pairs.append((i, j))
+            i, j = i + 1, j + 1
+        elif ids_a[i] < ids_b[j]:
+            only_a.append(i)
+            i += 1
+        else:
+            only_b.append(j)
+            j += 1
+    return pairs, only_a + list(range(i, len(ids_a))), only_b + list(range(j, len(ids_b)))
+
+
+def align_by_identity(columns_a, nrows_a, columns_b, nrows_b, identity, rest):
+    """Sort both sides identity first, then pair the rows whose identity matches.
+
+    The sort key is the identity columns followed by the rest; every name must
+    be a column both sides canonicalize to the same kind.  The tuples compared
+    in the merge are the sort's own key values, so the merge sees the rows in
+    exactly the order the sort put them.
+    """
+    keys_a = key_columns(columns_a, nrows_a, identity + rest)
+    keys_b = key_columns(columns_b, nrows_b, identity + rest)
+    sort_a = canonical_order(keys_a, nrows_a)
+    sort_b = canonical_order(keys_b, nrows_b)
+    ids_a = identity_tuples(keys_a[:len(identity)], sort_a)
+    ids_b = identity_tuples(keys_b[:len(identity)], sort_b)
+    pairs, only_a, only_b = merge_identities(ids_a, ids_b)
+    as_rows = np.asarray
+    return Alignment(sort_a, sort_b,
+                     as_rows([sort_a[i] for i, _ in pairs], dtype=np.int64),
+                     as_rows([sort_b[j] for _, j in pairs], dtype=np.int64),
+                     [int(sort_a[i]) for i in only_a], [int(sort_b[j]) for j in only_b],
+                     len(set(ids_a)), len(set(ids_b)))
+
+
+def label_name(name):
+    """A variable's name as it appears in a row label."""
+    return name[len(LABEL_PREFIX):] if name.startswith(LABEL_PREFIX) else name
+
+
+def identity_label(columns, identity, row):
+    """'[stationIdentification=07510 latitude=10.0 ...]': how the report names one row."""
+    if not identity:
+        return "row %d" % row
+    return "[%s]" % " ".join(
+        "%s=%s" % (label_name(name),
+                   "missing" if columns[name].missing[row] else columns[name].values[row])
+        for name in identity)
+
+
+def unmatched_lines(columns_a, columns_b, identity, alignment, max_rows):
+    """The rows with no partner on the other side, named by identity."""
+    lines = []
+    for side, columns, rows in (("A", columns_a, alignment.only_a),
+                                ("B", columns_b, alignment.only_b)):
+        if rows:
+            lines.append("%s in %s only" % (plural(len(rows), "row"), side))
+            lines += ["  %s" % identity_label(columns, identity, row)
+                      for row in rows[:max_rows]]
+            if len(rows) > max_rows:
+                lines.append("  ... %d more" % (len(rows) - max_rows))
+    return lines
+
+
+def take(column, rows):
+    """The column restricted to the given rows, in that order."""
+    return column._replace(values=column.values[rows], missing=column.missing[rows])
+
+
+def cell_texts(column, order):
+    """A 1-D column's values in the given row order, as exact text."""
+    values = column.values[order]
+    if column.kind == "float":
+        texts = [repr(float(v)) for v in values]
+    else:
+        texts = [str(v) for v in values.tolist()]
+    return [("NULL" if missing else text)
+            for missing, text in zip(column.missing[order].tolist(), texts)]
+
+
+def write_tables(prefix, tables):
+    """Write (name, header, cells) tables as text to a new temporary directory.
+
+    cells is a list of columns, each a list of texts.  Returns the paths, one
+    per table, in order.  The directory is always a fresh one this tool
+    creates, never a path from the command line, so a dump can never overwrite
+    anything else.
+    """
+    directory = tempfile.mkdtemp(prefix=prefix)
+    paths = []
+    for name, header, cells in tables:
+        path = os.path.join(directory, name + ".txt")
+        with open(path, "w") as out:
+            out.write("\t".join(header) + "\n")
+            out.writelines("\t".join(row) + "\n" for row in zip(*cells))
+        paths.append(path)
+    return paths
 
 
 def _diff_attrs(obj_a, obj_b, path, lines):
@@ -482,7 +756,71 @@ def compare_attributes(group_a, group_b, path, lines):
     return lines
 
 
-def failure_report(structural, data_lines, coord_lines, attr_lines, strict):
+def identity_variables(requested, columns_a, columns_b, candidates):
+    """The identity key: the --key variables, or those of IDENTITY_VARIABLES present.
+
+    Only a 1-D Location-indexed variable that both sides canonicalize to the
+    same kind can identify a row; candidates are the Location-indexed
+    variables the two sides have in common.
+    """
+    usable = [n for n in candidates
+              if n not in KEY_EXCLUDE and columns_a[n].values.ndim == 1
+              and columns_a[n].kind == columns_b[n].kind]
+    if requested is None:
+        return [n for n in IDENTITY_VARIABLES if n in usable]
+    names = [n.strip() for n in requested.split(",") if n.strip()]
+    unknown = [n for n in names if n not in usable]
+    if unknown:
+        raise ValueError("--key: %s not a 1-D Location variable both file sets "
+                         "hold alike" % ", ".join(unknown))
+    return names
+
+
+def coordinate_values(columns):
+    """Map each index dimension that has a coordinate variable to its values."""
+    return {dim: columns[dim].values for dim in INDEX_DIMS
+            if dim in columns and columns[dim].dims == (dim,)}
+
+
+def dump_cells(name, column, coords, order):
+    """(headers, cells) for one variable, one text column per trailing element.
+
+    A (Location, Channel) variable becomes one column per channel, headed by
+    its coordinate value, e.g. ObsValue/brightnessTemperature[Channel=7].
+    """
+    nrows = column.values.shape[0]
+    trailing = column.values.shape[1:]
+    if not trailing:
+        return [name], [cell_texts(column, order)]
+    values = column.values.reshape(nrows, -1)
+    missing = column.missing.reshape(nrows, -1)
+    headers, cells = [], []
+    for flat, index in enumerate(np.ndindex(*trailing)):
+        headers.append("%s[%s]" % (name, " ".join(
+            _trailing_name(dim, position, coords)
+            for dim, position in zip(column.dims[1:], index))))
+        cells.append(cell_texts(column._replace(values=values[:, flat],
+                                                missing=missing[:, flat]), order))
+    return headers, cells
+
+
+def dump_tables(columns_a, columns_b, names, alignment):
+    """Write both sorted tables to a new temporary directory; return the paths."""
+    tables = []
+    for label, columns, order in (("A", columns_a, alignment.sort_a),
+                                  ("B", columns_b, alignment.sort_b)):
+        coords = coordinate_values(columns)
+        header, cells = [], []
+        for name in names:
+            headers, texts = dump_cells(name, columns[name], coords, order)
+            header += headers
+            cells += texts
+        tables.append((label, header, cells))
+    return write_tables("ioda_compare_obs_dump.", tables)
+
+
+def failure_report(structural, unmatched, data_lines, coord_lines, kind_lines, attr_lines,
+                   strict):
     """The reasons a comparison failed, and nothing else.
 
     This is what a default (non-verbose) run prints when the files differ.  It
@@ -494,6 +832,9 @@ def failure_report(structural, data_lines, coord_lines, attr_lines, strict):
     if structural:
         lines.append("Structural differences:")
         lines.extend("  %s" % line for line in structural)
+    if unmatched:
+        lines.append("Rows on one side only:")
+        lines.extend("  %s" % line for line in unmatched)
     if data_lines:
         lines.append("Data variables that differ:")
         for _, rendered in data_lines:
@@ -502,6 +843,9 @@ def failure_report(structural, data_lines, coord_lines, attr_lines, strict):
         lines.append("Coordinate variables that differ (fatal under --strict):")
         for _, rendered in coord_lines:
             lines.extend(rendered)
+    if strict and kind_lines:
+        lines.append("Int vs float differences (fatal under --strict):")
+        lines.extend("  %s" % line for line in kind_lines)
     if strict and attr_lines:
         lines.append("Attribute differences (fatal under --strict):")
         lines.extend("  %s" % line for line in attr_lines[:20])
@@ -527,6 +871,14 @@ examples:
 
   Allow a small numeric difference, and show more of each mismatch:
     ioda_compare_obs.py a.nc4 b.nc4 -T 1.0e-6 -n 25
+
+  Name the variables that identify an observation, for an obs type the default
+  list does not suit:
+    ioda_compare_obs.py a.nc4 b.nc4 \\
+        --key MetaData/stationIdentification,MetaData/dateTime,MetaData/pressure
+
+  Write both sorted tables as text, to see the differing rows with diff:
+    ioda_compare_obs.py a.nc4 b.nc4 --dump
 
   Require the coordinate variables and attributes to agree as well.  The OSDF
   writer emits no global attributes, so this will normally fail:
@@ -559,15 +911,24 @@ def build_parser():
                         help="absolute tolerance for numeric values (default: 0.0). "
                              "Relaxes the comparison, not the sort.")
     parser.add_argument("-n", "--max-diffs", type=int, default=5, metavar="N",
-                        help="show at most N differing indices per variable (default: 5)")
+                        help="show at most N differing elements per variable, and N "
+                             "rows on each side only (default: 5)")
     parser.add_argument("--strict", action="store_true",
-                        help="also fail on coordinate-variable and attribute "
-                             "differences, which are reported but not fatal by "
+                        help="also fail on coordinate-variable, int vs float and "
+                             "attribute differences, which are reported but not fatal by "
                              "default because the two writers differ there by design")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print the full report of everything that was checked. "
                              "By default a pass prints only the verdict and a failure "
                              "prints only the reasons for it.")
+    parser.add_argument("--key", metavar="VARS",
+                        help="comma-separated 1-D Location variables, by full path, that "
+                             "identify an observation, sorted on first and used to pair "
+                             "rows (default: those of %s present in both file sets)"
+                             % ",".join(IDENTITY_VARIABLES))
+    parser.add_argument("--dump", action="store_true",
+                        help="write both sorted tables as text to a new temporary "
+                             "directory, and print a diff command for them")
     return parser
 
 
@@ -581,7 +942,22 @@ def main():
         paths_b = resolve_file_set(args.files_b)
         columns_a, nloc_a, datasets_a, structural_a = load_file_set(paths_a)
         columns_b, nloc_b, datasets_b, structural_b = load_file_set(paths_b)
-    except (IOError, OSError) as err:
+
+        # Location-indexed variables are sorted and paired by identity; the rest
+        # are compared positionally.  Pairing takes care of the Location axis,
+        # so only the trailing dimensions have to agree, in name and size.  One
+        # whose trailing dimensions disagree cannot be paired meaningfully, so
+        # it falls through to the positional group, where compare_column
+        # reports the mismatch. Only A is tested for Location as its first
+        # dimension since the equal dims check below verifies that B also has
+        # Location as its first dimension.
+        common = sorted(set(columns_a) & set(columns_b))
+        loc_names = [n for n in common
+                     if columns_a[n].dims[:1] == (LOCATION,)
+                     and columns_a[n].dims == columns_b[n].dims
+                     and columns_a[n].values.shape[1:] == columns_b[n].values.shape[1:]]
+        identity = identity_variables(args.key, columns_a, columns_b, loc_names)
+    except (IOError, OSError, ValueError) as err:
         print("ERROR: %s" % err, file=sys.stderr)
         return 2
 
@@ -611,65 +987,83 @@ def main():
     if nloc_a != nloc_b:
         structural.append("Location count %d (A) != %d (B)" % (nloc_a, nloc_b))
 
-    # Location-indexed variables get the canonical sort; everything else is
-    # compared positionally.  A Location variable whose shapes disagree cannot
-    # be sorted meaningfully, so it falls through to the positional group where
-    # compare_column reports the shape mismatch.
-    common = sorted(names_a & names_b)
-    loc_names = [n for n in common
-                 if columns_a[n].dims and columns_a[n].dims[0] == LOCATION
-                 and columns_a[n].values.shape == columns_b[n].values.shape]
     other_names = [n for n in common if n not in set(loc_names)]
+
+    # An int on one side and a float on the other is compared exactly, as
+    # integers, but the files still differ in kind, so it is reported like an
+    # attribute difference: non-fatal unless --strict.  Any other kind
+    # mismatch fails in compare_column.
+    numeric = ("int", "float")
+    kind_lines = ["%s: %s in A, %s in B" % (n, columns_a[n].kind, columns_b[n].kind)
+                  for n in common
+                  if columns_a[n].kind != columns_b[n].kind
+                  and columns_a[n].kind in numeric and columns_b[n].kind in numeric]
 
     emit("Locations: A = %d   B = %d" % (nloc_a, nloc_b))
     emit("Variables: %d in A, %d in B, %d in common (%d Location-indexed, %d other)"
          % (len(names_a), len(names_b), len(common), len(loc_names), len(other_names)))
     emit()
 
-    # ---- 4. Establish the canonical row order --------------------------------
-    # With differing location counts there is no correspondence to establish, so
-    # the orders stay None and everything is compared positionally.
-    if nloc_a != nloc_b:
-        emit("Location counts differ -- cannot establish a row correspondence.")
-        order_a = order_b = None
-        ties = 0
-        tie_warning = None
-    else:
-        # A variable can only key the sort if both sides canonicalize it the
-        # same way; a kind mismatch is reported when it is compared instead.
-        key_names = [n for n in loc_names
-                     if n not in exclude and columns_a[n].kind == columns_b[n].kind]
-        keys_a = key_columns(columns_a, nloc_a, key_names)
-        keys_b = key_columns(columns_b, nloc_b, key_names)
-        order_a = canonical_order(keys_a, nloc_a)
-        order_b = canonical_order(keys_b, nloc_b)
-        ties = count_ties(keys_a, order_a)
+    # ---- 4. Sort identity first, then pair the rows by identity --------------
+    # A variable can only key the sort if both sides canonicalize it the same
+    # way; a kind mismatch is reported when it is compared instead.  The
+    # identity leads, so a changed value elsewhere in a row can only reorder
+    # rows that share its identity, and a changed identity is one row on each
+    # side only rather than a shift that misaligns every row after it.  The
+    # rest of the row still breaks ties, so the two sides match only if they
+    # hold the same multiset of records, exactly as with a plain full-row sort.
+    rest = [n for n in loc_names
+            if n not in exclude and n not in identity
+            and columns_a[n].kind == columns_b[n].kind]
+    alignment = align_by_identity(columns_a, nloc_a, columns_b, nloc_b, identity, rest)
+    rows_a, rows_b = alignment.rows_a, alignment.rows_b
+    unmatched = unmatched_lines(columns_a, columns_b, identity, alignment, args.max_diffs)
+    keys_a = key_columns(columns_a, nloc_a, identity + rest)
+    ties = count_ties(keys_a, alignment.sort_a)
 
-        emit("Canonical row sort")
-        emit("  key = %d Location-indexed variable%s -> %d key column%s"
-             % (len(key_names), "" if len(key_names) == 1 else "s",
-                len(keys_a), "" if len(keys_a) == 1 else "s"))
-        if exclude:
-            emit("  excluded from key: %s" % ", ".join(sorted(exclude)))
-        emit("  %d of %d rows distinct (%d tie%s)%s"
-             % (nloc_a - ties, nloc_a, ties, "" if ties == 1 else "s",
-                " -> row correspondence is unique" if ties == 0 else ""))
-        if ties:
-            # Tied rows are identical across the key, so any variable NOT in the
-            # key may be paired arbitrarily between the two files.  Without this
-            # warning a spurious DIFF on such a variable looks like real data
-            # loss.  Variables in the key are unaffected: a tie there means the
-            # rows are genuinely interchangeable.
-            tie_warning = (
-                "%d tied row pair%s: rows identical across the sort key, so "
-                "differences reported for variables excluded from it (%s) may "
-                "be an artifact of arbitrary pairing rather than real."
-                % (ties, "" if ties == 1 else "s",
-                   ", ".join(sorted(exclude)) if exclude else "none"))
-            emit("  WARNING: %s" % tie_warning)
-        else:
-            tie_warning = None
+    emit("Canonical row sort")
+    emit("  identity key = %s"
+         % (", ".join(identity) if identity else "(none -- rows paired in full-row order)"))
+    emit("  then the other %s -> %s in all"
+         % (plural(len(rest), "Location-indexed variable"), plural(len(keys_a), "key column")))
+    if exclude:
+        emit("  excluded from key: %s" % ", ".join(sorted(exclude)))
+    emit("  A: %d of %d rows have distinct identities" % (alignment.distinct_a, nloc_a))
+    emit("  B: %d of %d rows have distinct identities" % (alignment.distinct_b, nloc_b))
+    emit("  %s paired by identity, %d in A only, %d in B only"
+         % (plural(len(rows_a), "row"), len(alignment.only_a), len(alignment.only_b)))
+    emit("  %d of %d rows distinct (%s)%s"
+         % (nloc_a - ties, nloc_a, plural(ties, "tie"),
+            " -> row correspondence is unique" if ties == 0 else ""))
+    if ties:
+        # Tied rows are identical across the key, so any variable NOT in the
+        # key may be paired arbitrarily between the two files.  Without this
+        # warning a spurious DIFF on such a variable looks like real data
+        # loss.  Variables in the key are unaffected: a tie there means the
+        # rows are genuinely interchangeable.
+        tie_warning = (
+            "%d tied row pair%s: rows identical across the sort key, so "
+            "differences reported for variables excluded from it (%s) may "
+            "be an artifact of arbitrary pairing rather than real."
+            % (ties, "" if ties == 1 else "s",
+               ", ".join(sorted(exclude)) if exclude else "none"))
+        emit("  WARNING: %s" % tie_warning)
+    else:
+        tie_warning = None
+    emit()
+
+    if unmatched:
+        emit("Rows on one side only (fatal)")
+        for line in unmatched:
+            emit("  %s" % line)
         emit()
+
+    # A mismatch in a paired row is named by A's identity, and its channel by
+    # A's coordinate value; a disagreement about either shows up on its own.
+    coords = coordinate_values(columns_a)
+
+    def row_label(position):
+        return identity_label(columns_a, identity, rows_a[position])
 
     # ---- 5. Compare every variable -------------------------------------------
     # record() sorts each result into one of two buckets.  That split is the
@@ -695,11 +1089,12 @@ def main():
             if not ok:
                 data_lines.append((name, lines))
 
-    def compare_section(heading, section_names, permute):
+    def compare_section(heading, section_names, paired):
         """Compare a group of variables and report each one.
 
-        `permute` selects whether the canonical row order is applied, which is
-        the only difference between the Location-indexed and the other section.
+        `paired` selects whether the variables are compared over the rows paired
+        by identity, which is the only difference between the Location-indexed
+        and the other section.
         """
         if not section_names:
             return
@@ -707,10 +1102,13 @@ def main():
         for name in section_names:
             ca, cb = columns_a[name], columns_b[name]
             coord = is_coordinate(name, ca.dims)
-            ok, details = compare_column(
-                ca, cb,
-                order_a if permute else None, order_b if permute else None,
-                args.tolerance, args.max_diffs)
+            if paired:
+                ok, details = compare_column(
+                    take(ca, rows_a), take(cb, rows_b), None, None,
+                    args.tolerance, args.max_diffs, row_label, coords)
+            else:
+                ok, details = compare_column(ca, cb, None, None,
+                                             args.tolerance, args.max_diffs)
             shape = "x".join(str(s) for s in ca.values.shape)
             # On a match the two summaries are equal, so one on the headline is
             # enough.  On a mismatch a single summary would be misleading about
@@ -730,8 +1128,8 @@ def main():
                 emit(line)
         emit()
 
-    compare_section("Location-indexed variables (compared after canonical sort)",
-                    loc_names, True)
+    compare_section("Location-indexed variables (compared over the %s paired by identity)"
+                    % plural(len(rows_a), "row"), loc_names, True)
     compare_section("Other variables (compared in file order)", other_names, False)
 
     # ---- 6. Report the remaining sections ------------------------------------
@@ -752,6 +1150,13 @@ def main():
                 emit(line)
         emit()
 
+    if kind_lines:
+        emit("Int vs float differences (%sfatal; compared exactly as integers)"
+             % ("" if args.strict else "non-"))
+        for line in kind_lines:
+            emit("  %s" % line)
+        emit()
+
     if attr_lines:
         # Members of a file set carry identical attributes, so only the leading
         # file of each side is diffed; doing all of them would just repeat every
@@ -768,19 +1173,25 @@ def main():
     strictness = "" if args.strict else "non-"
     emit("Summary")
     emit("  data variables         %3d pass  %3d fail" % (data_pass, data_fail))
+    emit("  rows on one side only  %3d in A  %3d in B  (fatal)"
+         % (len(alignment.only_a), len(alignment.only_b)))
     emit("  coordinate variables   %3d pass  %3d diff  (%sfatal)"
          % (coord_pass, coord_diff, strictness))
+    emit("  int vs float kinds     %3d            (%sfatal)"
+         % (len(kind_lines), strictness))
     emit("  attribute differences  %3d            (%sfatal)"
          % (len(attr_lines), strictness))
     emit()
 
     # ---- 7. Decide the verdict and flush -------------------------------------
-    # Data and structure always fail; coordinates and attributes only under
-    # --strict, because the OSDF writer differs from the legacy one there by
+    # Data and structure always fail; coordinates, int vs float kinds and
+    # attributes only under --strict, because the OSDF writer differs from the legacy one there by
     # design and would otherwise fail every real comparison.
     failed = (len(structural) > 0
+              or len(unmatched) > 0
               or data_fail > 0
-              or (args.strict and (coord_diff > 0 or len(attr_lines) > 0)))
+              or (args.strict and (coord_diff > 0 or len(kind_lines) > 0
+                                   or len(attr_lines) > 0)))
 
     for dataset in datasets_a + datasets_b:
         dataset.close()
@@ -791,9 +1202,16 @@ def main():
     if args.verbose:
         print("\n".join(out))
     elif failed:
-        for line in failure_report(structural, data_lines, coord_lines,
-                                   attr_lines, args.strict):
+        for line in failure_report(structural, unmatched, data_lines, coord_lines,
+                                   kind_lines, attr_lines, args.strict):
             print(line)
+    if args.dump:
+        # Location is left out: it numbers each file's own rows, so it would
+        # differ on nearly every line and hide the rows that really differ.
+        dumped = identity + [n for n in loc_names if n not in exclude and n not in identity]
+        path_a, path_b = dump_tables(columns_a, columns_b, dumped, alignment)
+        print("Sorted rows written for inspection; compare them with:")
+        print("  diff %s %s" % (path_a, path_b))
 
     # The tie warning qualifies the verdict itself rather than the detail, so it
     # is printed at every verbosity, on a pass as well as a failure.

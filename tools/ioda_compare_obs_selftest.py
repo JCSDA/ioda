@@ -34,6 +34,11 @@ The mutation cases then confirm the tool actually has teeth.  The important one
 is 'one column permuted': it is invisible to per-variable norms and per-variable
 hashes, and is the failure mode this comparator exists to catch.
 
+The diagnostic cases then check that a failure says which observation differs
+and how: by its identity and channel rather than by an index into the sort, a
+changed identity as one row on each side only, and --dump as a pair of tables
+that differ in exactly the changed line.
+
 Exit codes:
   0  every self-test behaved as expected
   1  at least one self-test did not
@@ -56,16 +61,20 @@ COMPARE = os.path.join(HERE, "ioda_compare_obs.py")
 # Shared by mkdtemp and is_own_temp_directory so the two cannot drift apart.
 TEMP_PREFIX = "ioda_compare_obs_selftest."
 
+# The prefix of the directory 'ioda_compare_obs.py --dump' creates; it must
+# match dump_tables there.  Used to check before removing one.
+DUMP_PREFIX = "ioda_compare_obs_dump."
+
 EPILOG = """
 examples:
   Run the self-test:
     ioda_compare_obs_selftest.py
 
   Keep the generated files and read them in full, which is the point of a pair
-  this small:
-    ioda_compare_obs_selftest.py --keep /tmp/selftest
-    ncdump /tmp/selftest/selftest_obsgroup.nc4
-    ncdump /tmp/selftest/selftest_osdf.nc4
+  this small.  The directory they are in is printed at the end:
+    ioda_compare_obs_selftest.py --keep
+    ncdump <printed directory>/selftest_obsgroup.nc4
+    ncdump <printed directory>/selftest_osdf.nc4
 
   Show the comparator's whole report for the matching pair:
     ioda_compare_obs_selftest.py -v
@@ -81,6 +90,8 @@ NC_FILL_FLOAT = 9.9692099683868690e+36
 NC_FILL_INT = -2147483647
 MISSING_FLOAT = -3.368795e+38
 MISSING_INT32 = -2147483643
+NC_FILL_INT64 = -9223372036854775806
+NC_FILL_UINT64 = 18446744073709551614
 MISSING_STRING = "MISSING*"
 
 # Six observations, listed in the order file A stores them.  File B stores the
@@ -194,6 +205,7 @@ def mutate(source, target, kind):
         values = np.asarray(var[...])
         var[...] = values[::-1]
     elif kind == "change_one_value":
+        # Latitude is an identity variable, so this is a changed observation.
         var = dataset["MetaData"]["latitude"]
         values = np.asarray(var[...])
         values[2] += 0.25
@@ -209,6 +221,12 @@ def mutate(source, target, kind):
         var = dataset["MetaData"]["qualityFlag"]
         values = np.asarray(var[...])
         var[...] = values[::-1]
+    elif kind == "change_obsvalue":
+        # B's first row is ddd4; airTemperature is not an identity variable.
+        var = dataset["ObsValue"]["airTemperature"]
+        values = np.asarray(var[...])
+        values[0] += 1.0
+        var[...] = values
     elif kind == "change_channel":
         var = dataset["ObsValue"]["brightnessTemperature"]
         values = np.asarray(var[...])
@@ -238,16 +256,16 @@ def count_values(path):
     return total
 
 
-def is_own_temp_directory(directory):
-    """True if `directory` is a scratch directory made by mkdtemp below.
+def is_own_temp_directory(directory, prefix=TEMP_PREFIX):
+    """True if `directory` is a scratch directory made by mkdtemp with `prefix`.
 
-    A pure predicate, so the rmtree in main() can be checked against paths
+    A pure predicate, so the rmtree in clean_up() can be checked against paths
     like "/" without any risk of deleting them.  Keep the realpath: it makes
     a symlink judged by where it points, not by its name.
     """
     resolved = os.path.realpath(directory)
     return (os.path.dirname(resolved) == os.path.realpath(tempfile.gettempdir())
-            and os.path.basename(resolved).startswith(TEMP_PREFIX))
+            and os.path.basename(resolved).startswith(prefix))
 
 
 def run(path_a, path_b, extra=()):
@@ -308,6 +326,113 @@ def build_bigint_pair(directory):
     return paths
 
 
+def build_dimname_pair(directory):
+    """Two files holding the same values over different, equal-sized dimensions.
+
+    A is (Location, Channel) and B is (Location, Level), both 3 x 2.  Compared
+    by shape alone they match, though a channel is not a level.
+    """
+    paths = []
+    for name, second in (("dimname_a.nc4", "Channel"), ("dimname_b.nc4", "Level")):
+        path = os.path.join(directory, name)
+        dataset = nc.Dataset(path, "w", format="NETCDF4")
+        dataset.createDimension("Location", 3)
+        dataset.createDimension(second, 2)
+        dataset.createVariable("Location", "i4", ("Location",))[:] = np.arange(3)
+        meta = dataset.createGroup("MetaData")
+        meta.createVariable("latitude", "f4", ("Location",))[:] = [10.0, 20.0, 30.0]
+        obs = dataset.createGroup("ObsValue")
+        obs.createVariable("airTemperature", "f4", ("Location", second))[:] = \
+            [[250.0, 251.0], [252.0, 253.0], [254.0, 255.0]]
+        dataset.close()
+        paths.append(path)
+    return paths
+
+
+def build_unsigned_pair(directory, name, unsigned, signed, fill=None):
+    """A variable stored as uint64 in file A and as int64 in file B.
+
+    Cast to int64, 2**64 - 1 wraps to -1, so it would match a signed -1.
+    fill, if given, is the _FillValue of each side, as (unsigned, signed).
+    """
+    paths = []
+    for side, dtype, values, fill_value in (("a", "u8", unsigned, fill and fill[0]),
+                                            ("b", "i8", signed, fill and fill[1])):
+        path = os.path.join(directory, "%s_%s.nc4" % (name, side))
+        dataset = nc.Dataset(path, "w", format="NETCDF4")
+        dataset.createDimension("Location", len(values))
+        dataset.createVariable("Location", "i4", ("Location",))[:] = np.arange(len(values))
+        meta = dataset.createGroup("MetaData")
+        meta.createVariable("latitude", "f4", ("Location",))[:] = 10.0 * np.arange(len(values))
+        var = meta.createVariable("counter", dtype, ("Location",), fill_value=fill_value)
+        var[:] = np.array(values, dtype=dtype)
+        dataset.close()
+        paths.append(path)
+    return paths
+
+
+def unsigned_cases(directory):
+    """A uint64 value int64 cannot hold must not be wrapped into a match."""
+    small_a, small_b = build_unsigned_pair(directory, "unsigned", [1, 2, 3], [1, 2, 3])
+    code, _ = run(small_a, small_b)
+    cases = [("uint64 vs int64 holding the same small values", 0, code)]
+
+    big_a, big_b = build_unsigned_pair(directory, "unsigned_big", [2 ** 64 - 1], [-1])
+    code, output = run(big_a, big_b)
+    cases.append(("uint64 2**64-1 vs int64 -1  <- must not wrap to equal", 1, code))
+    cases.append(("  ...and is reported as beyond the int64 range",
+                  True, "MetaData/counter: 1 uint64 value beyond the int64 range" in output))
+
+    # NC_FILL_UINT64 is itself beyond the int64 range, but marks a missing value.
+    fill_a, fill_b = build_unsigned_pair(
+        directory, "unsigned_fill", [5, NC_FILL_UINT64], [5, NC_FILL_INT64],
+        fill=(NC_FILL_UINT64, NC_FILL_INT64))
+    code, _ = run(fill_a, fill_b)
+    cases.append(("  ...but a missing uint64 at NC_FILL_UINT64 is not", 0, code))
+    return cases
+
+
+def build_mixed_pair(directory, name, ints, floats):
+    """A variable stored as int64 in file A and as float32 in file B.
+
+    The two writers disagree on nrecs this way. Tested to ensure that
+    2^53+1 does not falsely match 2^53 due to rounding.
+    """
+    paths = []
+    for side, dtype, values in (("a", "i8", ints), ("b", "f4", floats)):
+        path = os.path.join(directory, "%s_%s.nc4" % (name, side))
+        dataset = nc.Dataset(path, "w", format="NETCDF4")
+        dataset.createDimension("Location", len(values))
+        dataset.createVariable("Location", "i4", ("Location",))[:] = np.arange(len(values))
+        meta = dataset.createGroup("MetaData")
+        meta.createVariable("latitude", "f4", ("Location",))[:] = 10.0 * np.arange(len(values))
+        meta.createVariable("recordCount", dtype, ("Location",))[:] = values
+        dataset.close()
+        paths.append(path)
+    return paths
+
+
+def mixed_kind_cases(directory):
+    """An int on one side and a float on the other is compared exactly."""
+    mixed_a, mixed_b = build_mixed_pair(directory, "mixed", [1, 2, 3], [1.0, 2.0, 3.0])
+    code, output = run(mixed_a, mixed_b, ["-v"])
+    cases = [("int vs float holding the same whole numbers", 0, code),
+             ("  ...and the kind difference is reported",
+              True, "MetaData/recordCount: int in A, float in B" in output)]
+    code, _ = run(mixed_a, mixed_b, ["--strict"])
+    cases.append(("  ...which is fatal under --strict", 1, code))
+
+    # 2**53 is exact in float32, being a power of two.
+    big_a, big_b = build_mixed_pair(directory, "mixed_big", [2 ** 53 + 1], [2.0 ** 53])
+    code, _ = run(big_a, big_b)
+    cases.append(("int 2**53+1 vs float 2**53  <- must not round to equal", 1, code))
+
+    frac_a, frac_b = build_mixed_pair(directory, "mixed_frac", [2], [2.5])
+    code, _ = run(frac_a, frac_b, ["-T", "1.0"])
+    cases.append(("int 2 not equal float 2.5, even with -T 1.0", 1, code))
+    return cases
+
+
 def build_tie_pair(directory):
     """Two files holding two observations that are identical in every variable.
 
@@ -330,29 +455,155 @@ def build_tie_pair(directory):
     return paths
 
 
+def file_set_cases(path_a, directory):
+    """A multi-file set is checked member by member, not read from its first file.
+
+    A is written again as a two-file set, as a 2-rank IO pool would, and then
+    with the second member's Channel coordinate changed.  Channel is not
+    Location-indexed, so only the first member's copy is compared with the
+    other side; a disagreement between members must still be reported.
+    """
+    first = os.path.join(directory, "selftest_set_0000.nc4")
+    second = os.path.join(directory, "selftest_set_0001.nc4")
+    _write(first, RECORDS[:3], legacy=True)
+    _write(second, RECORDS[3:], legacy=True)
+    code, _ = run("%s,%s" % (first, second), path_a)
+    cases = [("A as a two-file set, matching", 0, code)]
+
+    bad = os.path.join(directory, "selftest_set_0001_bad.nc4")
+    shutil.copy(second, bad)
+    dataset = nc.Dataset(bad, "r+")
+    dataset["Channel"][:] = [1, 4]
+    dataset.close()
+    code, output = run("%s,%s" % (first, bad), path_a)
+    cases.append(("a set whose members disagree on Channel", 1, code))
+    cases.append(("  ...is a structural difference naming both files",
+                  True, "Channel: differs between %s and %s" % (first, bad) in output))
+    return cases
+
+
+def write_mutated(source, directory, kind):
+    """Copy B with the named corruption from mutate(); return its path."""
+    target = os.path.join(directory, "selftest_osdf_mutated_%s.nc4" % kind)
+    mutate(source, target, kind)
+    return target
+
+
+def diagnostic_cases(path_a, path_b, directory):
+    """A failure must say which observation differs, and how."""
+    _, output = run(path_a, write_mutated(path_b, directory, "change_obsvalue"))
+    cases = [("non-identity change: row named by identity, not index",
+              True, "[stationIdentification=ddd4" in output and "index " not in output)]
+
+    _, output = run(path_a, write_mutated(path_b, directory, "drop_missing"))
+    cases.append(("missing vs present: the row is listed, shown as missing",
+                  True, "A = missing" in output))
+
+    # Without pairing by identity, the moved row would misalign others.
+    _, output = run(path_a, write_mutated(path_b, directory, "change_one_value"))
+    cases.append(("changed identity: one row each side only, no cascade",
+                  True, "1 row in A only" in output and "1 row in B only" in output
+                  and "Data variables that differ" not in output))
+
+    # B's first row is ddd4, and its second channel is Channel 3, not index 1.
+    _, output = run(path_a, write_mutated(path_b, directory, "change_channel"))
+    cases.append(("2-D change: channel named by its coordinate value",
+                  True, "[stationIdentification=ddd4" in output and "] Channel=3:" in output))
+
+    # B without its last row, bbb2: the rows that remain still pair and match.
+    short = os.path.join(directory, "selftest_osdf_short.nc4")
+    _write(short, [RECORDS[i] for i in PERMUTATION][:-1], legacy=False)
+    code, output = run(path_a, short)
+    cases.append(("a Location missing from B", 1, code))
+    cases.append(("  ...is listed by identity, and the rest still compared",
+                  True, "1 row in A only" in output and "[stationIdentification=bbb2" in output
+                  and "Data variables that differ" not in output))
+
+    code, _ = run(path_a, path_b, ["--key", "MetaData/latitude"])
+    cases.append(("--key naming one identity variable, matching pair", 0, code))
+    code, output = run(path_a, path_b, ["--key", "MetaData/latitude,MetaData/noSuchVar"])
+    cases.append(("--key naming an unknown variable is a usage error", 2, code))
+    cases.append(("  ...which names the variable", True, "--key: MetaData/noSuchVar" in output))
+    return cases
+
+
+def dumped_line_differences(output):
+    """How many lines differ between the two tables a --dump run reports.
+
+    The dump directory is removed afterwards, once it is confirmed to be one
+    the comparator made.  None if the report names no dump.
+    """
+    commands = [line.split() for line in output.splitlines() if line.startswith("  diff ")]
+    if not commands or len(commands[0]) != 3:
+        return None
+    path_a, path_b = commands[0][1:]
+    with open(path_a) as file_a, open(path_b) as file_b:
+        lines_a, lines_b = file_a.readlines(), file_b.readlines()
+    directory = os.path.dirname(path_a)
+    if is_own_temp_directory(directory, DUMP_PREFIX):
+        shutil.rmtree(directory, ignore_errors=True)
+    return sum(x != y for x, y in zip(lines_a, lines_b)) + abs(len(lines_a) - len(lines_b))
+
+
+def dump_cases(path_a, path_b, directory):
+    _, output = run(path_a, write_mutated(path_b, directory, "change_obsvalue"), ["--dump"])
+    return [("--dump: the sorted tables differ in exactly one line",
+             1, dumped_line_differences(output))]
+
+
+def remove_directory(directory):
+    """Remove a scratch directory; if that fails, say so rather than leave it silently."""
+    try:
+        shutil.rmtree(directory)
+    except OSError as err:
+        print("WARNING: could not remove scratch directory %s: %s" % (directory, err),
+              file=sys.stderr)
+
+
+def clean_up(keep, directory):
+    """Delete the scratch directory, or under --keep say where it is."""
+    if keep:
+        print("Test files kept in %s -- inspect with:" % directory)
+        for name in ("selftest_obsgroup.nc4", "selftest_osdf.nc4"):
+            print("  ncdump %s" % os.path.join(directory, name))
+    elif is_own_temp_directory(directory):
+        remove_directory(directory)
+    else:
+        print("REFUSING to delete %s: not a %s* scratch directory"
+              % (directory, TEMP_PREFIX), file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--keep", metavar="DIR",
-                        help="write the test files to DIR and leave them there, "
-                             "so they can be inspected with ncdump")
+    parser.add_argument("--keep", action="store_true",
+                        help="leave the test files in their temporary directory, "
+                             "and print where it is, so they can be inspected "
+                             "with ncdump")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="print the comparator's full report for the good pair")
     args = parser.parse_args()
 
-    # Kept separate from `directory` so that the cleanup below can only ever
-    # be handed a directory this script created itself.
-    temp_directory = None if args.keep else tempfile.mkdtemp(prefix=TEMP_PREFIX)
-    directory = args.keep or temp_directory
-    if args.keep and not os.path.isdir(args.keep):
-        os.makedirs(args.keep)
-        print("Created keep directory %s" % args.keep)
-    elif args.keep:
-        print("Using existing keep directory %s" % args.keep)
+    try:
+        # Always a fresh directory this script creates, even under --keep, so
+        # the test files can never land on, or overwrite, anything else.
+        directory = tempfile.mkdtemp(prefix=TEMP_PREFIX)
+    except OSError as err:
+        print("ERROR: %s" % err, file=sys.stderr)
+        return 2
+    # Every exit from here on -- a pass, a failure, an early error, or an
+    # exception nothing expected -- cleans up the scratch directory.
+    try:
+        return run_self_test(args, directory)
+    finally:
+        clean_up(args.keep, directory)
 
+
+def run_self_test(args, directory):
+    """Write the fixtures into `directory`, run every case, and return the exit code."""
     try:
         path_a, path_b = build_pair(directory)
     except (IOError, OSError) as err:
@@ -416,6 +667,23 @@ def main():
     big_a, big_b = build_bigint_pair(directory)
     code, _ = run(big_a, big_b)
     cases.append(("int64 2**53 vs 2**53+1  <- must not collapse in float64", 1, code))
+    cases += mixed_kind_cases(directory)
+    cases += unsigned_cases(directory)
+
+    dim_a, dim_b = build_dimname_pair(directory)
+    code, output = run(dim_a, dim_b)
+    cases.append(("Channel vs Level of equal size  <- shape alone matches", 1, code))
+    cases.append(("  ...and the dimension names are reported",
+                  True, "dimensions ('Location', 'Channel') != ('Location', 'Level')"
+                  in output))
+
+    # A file list of only commas names no file.  It must be a usage error, not
+    # a traceback, whose exit code 1 would read as "files differ".
+    for spec in (",", ", ,"):
+        code, output = run(spec, path_b)
+        cases.append(("file list %-5r is a usage error" % spec, 2, code))
+        cases.append(("  ...reported, not a traceback",
+                      True, "ERROR: no file named in" in output and "Traceback" not in output))
 
     # The cleanup guard.  These paths are only spelled, never touched -- the
     # predicate deletes nothing, which is what makes asking about them safe.
@@ -432,6 +700,10 @@ def main():
     cases.append(("  ...and the tie is reported, not passed over silently",
                   True, "WARNING" in output and "tied row pair" in output))
 
+    cases += file_set_cases(path_a, directory)
+    cases += diagnostic_cases(path_a, path_b, directory)
+    cases += dump_cases(path_a, path_b, directory)
+
     # A case is either an expected exit code or an expected boolean assertion
     # about the report text, so render both as strings.
     print("%-62s %-8s %-8s %s" % ("case", "expect", "actual", "result"))
@@ -443,16 +715,6 @@ def main():
         print("%-62s %-8s %-8s %s"
               % (label, expected, actual, "ok" if ok else "WRONG"))
     print()
-
-    if args.keep:
-        print("Test files kept in %s -- inspect with:" % directory)
-        print("  ncdump %s" % path_a)
-        print("  ncdump %s" % path_b)
-    elif is_own_temp_directory(temp_directory):
-        shutil.rmtree(temp_directory, ignore_errors=True)
-    else:
-        print("REFUSING to delete %s: not a %s* scratch directory"
-              % (temp_directory, TEMP_PREFIX), file=sys.stderr)
 
     if failures:
         print("SELF-TEST FAILED: %d of %d cases behaved unexpectedly"
