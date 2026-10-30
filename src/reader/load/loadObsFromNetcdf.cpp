@@ -10,6 +10,8 @@
 #include <netcdf>
 
 #include <cmath>
+#include <cstdint>
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <string>
@@ -224,6 +226,15 @@ static void transferVarDataToOSDF(const std::string& varName,
                                   const std::vector<std::string> & varDimNames,
                                   std::unique_ptr<osdf::IFrame> & destOSDF,
                                   osdf::FrameMetadata & osdfMetadata);
+
+/// \brief read the coordinate values of a slice dimension, with their storage type
+/// \details The accepted types are int, int64, and float holding whole numbers. Any other
+/// type, or a float holding a fractional value, is rejected with an exception.
+/// \param var netcdf coordinate variable of the dimension
+/// \param dimName name of the dimension, for error messages
+/// \param fileName name of the file, for error messages
+static osdf::DimCoords readDimCoords(const netCDF::NcVar & var, const std::string & dimName,
+                                     const std::string & fileName);
 
 /// \brief load specified range of locations from the input file to the OSDF container
 /// \details This function is not MPI aware, rather it is the low level function that handles
@@ -832,6 +843,51 @@ void transferVarDataToOSDF(const std::string& varName,
 }
 
 //---------------------------------------------------------------------
+osdf::DimCoords readDimCoords(const netCDF::NcVar & var, const std::string & dimName,
+                              const std::string & fileName) {
+  // Accept int, int64, and float holding whole numbers. A coordinate must hold whole numbers
+  // so that it can serve as a channel number, and so that its values are kept exactly.
+  osdf::DimCoords dimCoords;
+  const std::size_t dimSize = var.getDim(0).getSize();
+  dimCoords.values.resize(dimSize);
+  const netCDF::NcType::ncType coordType = var.getType().getTypeClass();
+  if (coordType == netCDF::NcType::ncType::nc_INT) {
+    // netCDF converts the int values to int64 on the read
+    dimCoords.type = osdf::DimCoordType::eInt;
+    var.getVar(dimCoords.values.data());
+  } else if (coordType == netCDF::NcType::ncType::nc_INT64) {
+    dimCoords.type = osdf::DimCoordType::eInt64;
+    var.getVar(dimCoords.values.data());
+  } else if (coordType == netCDF::NcType::ncType::nc_FLOAT) {
+    dimCoords.type = osdf::DimCoordType::eFloat;
+    std::vector<double> vals(dimSize);
+    var.getVar(vals.data());
+    // A float can hold whole numbers far outside the int64 range (e.g. 1e30), and casting
+    // one of those to int64 is undefined, so check the range first.
+      // The int64 range is: -2^63 < x <= +2^63. std::numeric_limits<int64_t>::min()
+      // returns -2^63, whereas max() returns 2^63 - 1, so it's easer to work with min().
+    constexpr double int64Min = static_cast<double>(std::numeric_limits<std::int64_t>::min());
+    for (std::size_t i = 0; i < dimSize; ++i) {
+      if (!std::isfinite(vals[i]) || (vals[i] != std::floor(vals[i]))) {
+        throw eckit::BadValue("ioda::reader::loadObsBlockFromNetcdf: Coordinate values of "
+            "dimension " + dimName + " in file " + fileName + " must be whole numbers "
+            "(found " + std::to_string(vals[i]) + ")", Here());
+      }
+      if ((vals[i] < int64Min) || (vals[i] >= -int64Min)) {
+        throw eckit::BadValue("ioda::reader::loadObsBlockFromNetcdf: Coordinate value " +
+            std::to_string(vals[i]) + " of dimension " + dimName + " in file " + fileName +
+            " is outside the range of an int64", Here());
+      }
+      dimCoords.values[i] = static_cast<std::int64_t>(vals[i]);
+    }
+  } else {
+    throw eckit::BadParameter("ioda::reader::loadObsBlockFromNetcdf: Unsupported coordinate "
+        "type '" + var.getType().getName() + "' for dimension " + dimName + " in file " +
+        fileName + ". Must use one of: int, int64 or float (holding whole numbers)", Here());
+  }
+  return dimCoords;
+}
+
 int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                            const std::string & fileName,
                            const std::size_t startLoc,
@@ -867,63 +923,55 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
                                  "number of locations in the file.");
       }
     } else {
-      // Register every slice dimension. Store the coordinate's real values as the slice
-      // index values when they form a set of unique integers -- either stored as an integer
-      // type (e.g. Channel: {1, 3, 5, ..., 22}) or stored as a floating type whose values are
-      // all whole numbers (e.g. float Channel: {1, 2, 3, 4}). Floating coordinates are read
-      // and cast to int only when every value is integral, so a genuinely fractional
-      // coordinate does not silently collide after truncation. In every other case (non-numeric
-      // type, non-integral floats, or non-unique integers) fall back to synthetic 0-based
-      // indices {0, 1, ..., n-1} so that the "_<index>" column suffixes are always unique.
+      // Register every slice dimension. The dimension numbers become the "_<number>"
+      // suffixes of the per-slice column names, and are chosen so that a numeric suffix or
+      // sliceSelect value names its column directly:
+      //   - Channel: the channel numbers, i.e. the coordinate values.
+      //   - Any other slice dimension: the 1-based positions {1, 2, ..., n}, whatever the
+      //     coordinate values are.
+      // The coordinate values are recorded separately, along with their storage type, so
+      // that the writer reproduces them in the output file.
       netCDF::NcVar var = inFile.getVar(dimName);
       if (var.isNull()) {
         continue;
       }
-      const std::size_t dimSize = var.getDim(0).getSize();
-      bool useRealValues = false;
+      const osdf::DimCoords dimCoords = readDimCoords(var, dimName, fileName);
+      const std::size_t dimSize = dimCoords.values.size();
+
       std::vector<int> dimNums(dimSize);
-      const netCDF::NcType::ncType coordType = var.getType().getTypeClass();
-      if (coordType == netCDF::NcType::ncType::nc_INT) {
-        var.getVar(dimNums.data());
-        const std::unordered_set<int> uniqueVals(dimNums.begin(), dimNums.end());
-        useRealValues = (uniqueVals.size() == dimSize);
-      } else if (coordType == netCDF::NcType::ncType::nc_FLOAT ||
-                 coordType == netCDF::NcType::ncType::nc_DOUBLE) {
-        // Read the raw floating values and accept them as slice indices only if every value
-        // is a whole number (so the int cast is exact) and the resulting set is unique.
-        std::vector<double> realVals(dimSize);
-        var.getVar(realVals.data());
-        bool allIntegral = true;
+      if (dimName == "Channel") {
+        // Channel numbers select the channels, so they must fit an int and be unique. A
+        // repeated channel number would leave a channel that cannot be selected, so reject
+        // the file rather than hide the problem.
+        std::unordered_set<std::int64_t> seen;
         for (std::size_t i = 0; i < dimSize; ++i) {
-          if (realVals[i] != std::floor(realVals[i])) {
-            allIntegral = false;
-            break;
+          const std::int64_t chanNum = dimCoords.values[i];
+          if ((chanNum < std::numeric_limits<int>::min()) ||
+              (chanNum > std::numeric_limits<int>::max())) {
+            throw eckit::BadValue("ioda::reader::loadObsBlockFromNetcdf: Channel number " +
+                std::to_string(chanNum) + " in file " + fileName +
+                " is outside the range of an int", Here());
           }
-          dimNums[i] = static_cast<int>(realVals[i]);
-        }
-        if (allIntegral) {
-          const std::unordered_set<int> uniqueVals(dimNums.begin(), dimNums.end());
-          useRealValues = (uniqueVals.size() == dimSize);
+          if (!seen.insert(chanNum).second) {
+            throw eckit::BadValue("ioda::reader::loadObsBlockFromNetcdf: Channel numbers in "
+                "file " + fileName + " are not unique (channel number " +
+                std::to_string(chanNum) + " is repeated)", Here());
+          }
+          dimNums[i] = static_cast<int>(chanNum);
         }
       } else {
-        // Coordinate values are not int, float nor double. Throw an exception to
-        // discourage the use of non-numeric dimension coordinates.
-        const std::string errMsg =
-                "ioda::reader::loadObsBlockFromNetcdf: Unsupported coordinate "
-                "type for dimension: " + dimName + std::string("\n") +
-                "Must use one of: int, float or double";
-        throw eckit::BadParameter(errMsg, Here());
-      }
-      if (!useRealValues) {
-        std::iota(dimNums.begin(), dimNums.end(), 0);
+        std::iota(dimNums.begin(), dimNums.end(), 1);
       }
       // An earlier input file in a multi-file read may already have registered this
       // dimension, and setDimNums refuses to overwrite an existing registration. Register
-      // it once, and require every input file to agree on the coordinate values: the
-      // per-slice column names are built from those values, so files that disagreed would
-      // silently produce columns that do not line up with each other.
+      // it once, and require every input file to agree on the dimension numbers and the
+      // coordinate values: the per-slice column names are built from the numbers, so files
+      // that disagreed would silently produce columns that do not line up with each other,
+      // and the writer outputs a single set of coordinate values for the obs space.
       if (osdfMetadata.hasDim(dimName)) {
-        if (osdfMetadata.getDimNums(dimName) != dimNums) {
+        if ((osdfMetadata.getDimNums(dimName) != dimNums) ||
+            !osdfMetadata.hasDimCoords(dimName) ||
+            !(osdfMetadata.getDimCoords(dimName) == dimCoords)) {
           const std::string errMsg =
             std::string("ioda::reader::loadObsBlockFromNetcdf: dimension '") + dimName +
             std::string("' in file ") + fileName +
@@ -933,6 +981,7 @@ int loadObsBlockFromNetcdf(netCDF::NcFile & inFile,
         }
       } else {
         osdfMetadata.setDimNums(dimName, dimNums);
+        osdfMetadata.setDimCoords(dimName, dimCoords);
       }
     }
   }

@@ -15,6 +15,7 @@ namespace osdf {
 //----------------------------------------------------------------------
 FrameMetadata::FrameMetadata()
                   : dimNums_({}),
+                    dimCoords_({}),
                     varDimNames_({}),
                     numVars_(0) {
 }
@@ -34,6 +35,34 @@ const std::vector<int> &FrameMetadata::getDimNums(const std::string &dimName) co
   static const std::vector<int> emptyVec;
   const auto it = dimNums_.find(dimName);
   return (it != dimNums_.end()) ? it->second : emptyVec;
+}
+
+void FrameMetadata::setDimCoords(const std::string &dimName, const DimCoords &coords) {
+  const auto it = dimNums_.find(dimName);
+  if (it == dimNums_.end()) {
+    throw eckit::BadValue("FrameMetadata::setDimCoords: Dimension not registered: " +
+                          dimName, Here());
+  }
+  if (coords.values.size() != it->second.size()) {
+    throw eckit::BadValue("FrameMetadata::setDimCoords: Number of coordinate values (" +
+                          std::to_string(coords.values.size()) + ") does not match the " +
+                          "number of dimension numbers (" + std::to_string(it->second.size()) +
+                          ") for dimension: " + dimName, Here());
+  }
+  dimCoords_[dimName] = coords;
+}
+
+bool FrameMetadata::hasDimCoords(const std::string &dimName) const {
+  return dimCoords_.count(dimName) > 0;
+}
+
+const DimCoords &FrameMetadata::getDimCoords(const std::string &dimName) const {
+  const auto it = dimCoords_.find(dimName);
+  if (it == dimCoords_.end()) {
+    throw eckit::BadValue("FrameMetadata::getDimCoords: No coordinate values recorded for "
+                          "dimension: " + dimName, Here());
+  }
+  return it->second;
 }
 
 bool FrameMetadata::hasDim(const std::string &dimName) const {
@@ -116,10 +145,18 @@ std::size_t FrameMetadata::serialize(eckit::Buffer &bufr) const {
   //      size_t - number of entries
   //      per entry:
   //        string - dimension name
-  //        size_t - number of coordinate values
-  //        int[]  - coordinate values
+  //        size_t - number of dimension numbers
+  //        int[]  - dimension numbers
   //
-  // 3. varDimNames_ (unordered_map<string, vector<string>>)
+  // 3. dimCoords_ (unordered_map<string, DimCoords>)
+  //      size_t - number of entries
+  //      per entry:
+  //        string   - dimension name
+  //        int       - coordinate storage type
+  //        size_t    - number of coordinate values
+  //        int64_t[] - coordinate values
+  //
+  // 4. varDimNames_ (unordered_map<string, vector<string>>)
   //      size_t - number of entries
   //      per entry:
   //        string   - variable name
@@ -138,6 +175,20 @@ std::size_t FrameMetadata::serialize(eckit::Buffer &bufr) const {
     memStream << kv.second.size();
     for (int n : kv.second) {
       memStream << n;
+    }
+  }
+
+  // dimCoords_
+  memStream << dimCoords_.size();
+  for (const auto &kv : dimCoords_) {
+    memStream << kv.first;
+    memStream << static_cast<int>(kv.second.type);
+    memStream << kv.second.values.size();
+    for (const std::int64_t v : kv.second.values) {
+      // Use long long to ensure that the value is serialized as 8 bytes.
+      // Without the long long cast, the values may be truncated by the
+      // eckit Stream operator <<.
+      memStream << static_cast<long long>(v);  // NOLINT(runtime/int)
     }
   }
 
@@ -178,6 +229,27 @@ void FrameMetadata::deserialize(eckit::Buffer &bufr) {
     dimNums_[dimName] = nums;
   }
 
+  // dimCoords_
+  memStream >> numEntries;
+  dimCoords_.clear();
+  for (std::size_t i = 0; i < numEntries; ++i) {
+    std::string dimName;
+    memStream >> dimName;
+    int coordType;
+    memStream >> coordType;
+    std::size_t numValues;
+    memStream >> numValues;
+    DimCoords coords;
+    coords.type = static_cast<DimCoordType>(coordType);
+    coords.values.resize(numValues);
+    for (std::size_t j = 0; j < numValues; ++j) {
+      long long v;  // NOLINT(runtime/int)
+      memStream >> v;
+      coords.values[j] = v;
+    }
+    dimCoords_[dimName] = coords;
+  }
+
   // varDimNames_
   memStream >> numEntries;
   varDimNames_.clear();
@@ -207,8 +279,17 @@ std::size_t FrameMetadata::bufrSize() const {
   numBytes += sizeof(std::size_t);  // number of entries
   for (const auto &kv : dimNums_) {
     numBytes += kv.first.size();
-    numBytes += sizeof(std::size_t);              // number of coordinate values
-    numBytes += kv.second.size() * sizeof(int);   // coordinate values
+    numBytes += sizeof(std::size_t);              // number of dimension numbers
+    numBytes += kv.second.size() * sizeof(int);   // dimension numbers
+  }
+
+  // dimCoords_
+  numBytes += sizeof(std::size_t);  // number of entries
+  for (const auto &kv : dimCoords_) {
+    numBytes += kv.first.size();
+    numBytes += sizeof(int);                              // coordinate storage type
+    numBytes += sizeof(std::size_t);                      // number of coordinate values
+    numBytes += kv.second.values.size() * sizeof(std::int64_t);  // coordinate values
   }
 
   // varDimNames_
@@ -228,6 +309,7 @@ std::size_t FrameMetadata::bufrSize() const {
 bool FrameMetadata::operator==(const FrameMetadata &refFrameMetadata) const {
   return (this->numVars_ == refFrameMetadata.numVars_) &&
          (this->dimNums_ == refFrameMetadata.dimNums_) &&
+         (this->dimCoords_ == refFrameMetadata.dimCoords_) &&
          (this->varDimNames_ == refFrameMetadata.varDimNames_);
 }
 

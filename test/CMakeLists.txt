@@ -108,6 +108,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsdtype.yaml
   testinput/iodatest_obsspace.yaml
   testinput/iodatest_obsspace_reader_pool.yaml
+  testinput/iodatest_obsspace_slice_select.yaml
   testinput/iodatest_obsspace_append.yaml
   testinput/iodatest_obsspace_append_mpi.yaml
   testinput/iodatest_obsspace_contda.yaml
@@ -306,6 +307,7 @@ list( APPEND ioda_test_input
 
   testinput/reader/iodatest_reader_filter.yaml
   testinput/reader/iodatest_reader_load.yaml
+  testinput/reader/iodatest_reader_dim_coords.yaml
   testinput/reader/iodatest_osdf_dist_allgatherv.yaml
   testinput/reader/iodatest_reader_distribute_assignrecords.yaml
   testinput/reader/iodatest_reader_distribute_calc_dist.yaml
@@ -556,6 +558,12 @@ ecbuild_add_test( TARGET  ioda_reader_var_collision
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
+# Reader coordinate variables: which slice dimension coordinate types and values are accepted
+ecbuild_add_test( TARGET  ioda_reader_dim_coords
+                  SOURCES mains/reader/TestReaderDimCoords.cc
+                  ARGS    "testinput/reader/iodatest_reader_dim_coords.yaml"
+                  LIBS  ioda_test
+                  )
 
 # Test the guards that reject required variables not dimensioned by Location, and 
 # arbitrary variables using dimensions with no coordinate variable.
@@ -564,6 +572,7 @@ ecbuild_add_test( TARGET  ioda_reader_var_dims
                   ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
+
 # Reader fill-value step: verifies fill value handling in a NetCDF file. Of particular
 # interest is the fill value handling for an internal bool variable (vector<bool>) which
 # is stored as a char variable in the NetCDF file.
@@ -2268,6 +2277,21 @@ if (odc_FOUND)
                     ARGS    "testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml"
                     )
 endif()
+
+# Slice selection on a non-Channel slice dimension: both containers must pass
+# the same expectations.
+ecbuild_add_test( TARGET  ioda_obsspace_slice_select
+                  SOURCES mains/TestIodaObsSpaceSliceSelect.cc
+                  ARGS    "testinput/iodatest_obsspace_slice_select.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_slice_select_osdf
+                  COMMAND ioda_obsspace_slice_select
+                  ARGS    "testinput/iodatest_obsspace_slice_select.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
 
 ecbuild_add_test( TARGET  ioda_obsspace_put_db_channels
                   SOURCES mains/TestIodaObsSpacePutDbChannels.cc

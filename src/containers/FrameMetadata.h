@@ -8,6 +8,7 @@
 #ifndef CONTAINERS_FRAMEMETADATA_H_
 #define CONTAINERS_FRAMEMETADATA_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -16,6 +17,29 @@
 #include "eckit/io/Buffer.h"
 
 namespace osdf {
+
+/// \brief storage type of a dimension's coordinate variable in its source file
+enum class DimCoordType : std::int8_t {
+  eInt,
+  eInt64,
+  eFloat
+};
+
+/// \brief coordinate values of a dimension as they appear in its source file
+/// \details These are kept apart from the dimension numbers (see setDimNums) so that
+///          the writer can reproduce the source coordinates, whatever numbers are used
+///          to key the per-slice columns. The reader only accepts coordinates holding
+///          whole numbers (int, int64, or float with whole values), so the values are
+///          held exactly as int64.
+struct DimCoords {
+  std::vector<std::int64_t> values;
+  DimCoordType type = DimCoordType::eInt;
+
+  bool operator==(const DimCoords &other) const {
+    return (values == other.values) && (type == other.type);
+  }
+};
+
 class FrameMetadata {
  public:
   FrameMetadata();
@@ -23,14 +47,31 @@ class FrameMetadata {
   //----------------------------------------------------------------------
   // Data member accessors
 
-  /// \brief register coordinate values for a named slice dimension
+  /// \brief register the dimension numbers for a named slice dimension
+  /// \details The dimension numbers are the "_<number>" suffixes of the per-slice
+  ///          column names. For Channel they are the channel numbers. For every other
+  ///          slice dimension they are the 1-based positions 1..N.
   /// \param dimName dimension name (e.g. "Channel", "Level", "nfactors")
-  /// \param nums coordinate values for that dimension
+  /// \param nums dimension numbers for that dimension
   void setDimNums(const std::string &dimName, const std::vector<int> &nums);
 
-  /// \brief return the coordinate values for a named dimension, or an empty
+  /// \brief return the dimension numbers for a named dimension, or an empty
   ///        vector if the dimension has not been registered
   const std::vector<int> &getDimNums(const std::string &dimName) const;
+
+  /// \brief record the source file coordinate values for a named slice dimension
+  /// \param dimName dimension name
+  /// \param coords coordinate values and their storage type
+  /// \throws eckit::BadValue if the dimension is not registered (see setDimNums), or if the
+  ///         number of coordinate values differs from the number of dimension numbers
+  void setDimCoords(const std::string &dimName, const DimCoords &coords);
+
+  /// \brief return true if source file coordinate values were recorded for a dimension
+  bool hasDimCoords(const std::string &dimName) const;
+
+  /// \brief return the source file coordinate values for a named dimension
+  /// \throws eckit::BadValue if no coordinate values were recorded for the dimension
+  const DimCoords &getDimCoords(const std::string &dimName) const;
 
   /// \brief return true if a named dimension has been registered
   bool hasDim(const std::string &dimName) const;
@@ -95,8 +136,11 @@ class FrameMetadata {
   std::unordered_set<std::string> getMultiSliceVars() const;
 
  private:
-  /// \brief dimension name to coordinate values (e.g. "Channel" -> {1,3,5,...,22})
+  /// \brief dimension name to dimension numbers (e.g. "Channel" -> {1,3,5,...,22})
   std::unordered_map<std::string, std::vector<int>> dimNums_;
+
+  /// \brief dimension name to source file coordinate values
+  std::unordered_map<std::string, DimCoords> dimCoords_;
 
   /// \brief dimension names for each variable
   std::unordered_map<std::string, std::vector<std::string>> varDimNames_;

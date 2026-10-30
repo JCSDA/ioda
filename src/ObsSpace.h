@@ -393,14 +393,10 @@ namespace ioda {
         ///   Location is always the first dimension, and the slice dimension is an arbitrary
         ///   dimension other than Location (e.g. Channel, Layer, Level, etc.). This parameter
         ///   is a vector of integers that specify which items to select along the slice
-        ///   dimension. The values of these integers correspond to the assigned values of the
-        ///   slice dimension, which are different than the positional indices of the slice
-        ///   dimension. For example, if the slice dimension is Channel, and the
-        ///   instrument being represented has channel numbers 1, 2, 4, 5, 7, and 10, the
-        ///   sliceSelect vector needs to be a subset of these channel numbers. Note that
-        ///   the sliceSelect parameter can also be applied to 1D variables that are
-        ///   dimensioned by [slice-dim] (such as associated Channel metadata using our
-        ///   example above).
+        ///   dimension.
+        ///     - Channel dimension: values are channel numbers
+        ///     - non-Channel dimension: values are 1-N positional indices
+        ///   A numeric suffix on the variable name ("var_<k>") is interpreted the same way.
         /// \param skipDerived
         ///   By default, this function will look for the variable `name` in the group `"Derived" +
         ///   group` first and only if it doesn't exist will it look in the group `group`. Set this

@@ -5,7 +5,7 @@ test cases:
       channel numbers: []
       variable dim names: []
       number of variables: 1
-    bytes serialized: 32
+    bytes serialized: 37
 
   - name: "Variables with channels"
     frame metadata:
@@ -16,4 +16,19 @@ test cases:
       - name: "MetaData/chanCentralFrequency"
         dim names: ["Channel"]
       number of variables: 1
-    bytes serialized: 163
+    bytes serialized: 168
+
+  - name: "Variables with channels and a layer dimension"
+    frame metadata:
+      channel numbers: [1, 3, 6]
+      variable dim names:
+      - name: "ObsValue/brightnessTemperature"
+        dim names: ["Location", "Channel"]
+      - name: "RetrievalAncillaryData/averagingKernel"
+        dim names: ["Location", "Layer"]
+      dimension coordinates:
+      - name: "Layer"
+        type: "float"
+        values: [34, 33, 0]
+      number of variables: 1
+    bytes serialized: 265

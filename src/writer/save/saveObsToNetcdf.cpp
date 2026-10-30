@@ -105,6 +105,12 @@ static VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame
                                               const osdf::FrameMetadata & osdfMetadata,
                                               const std::size_t locationDimSize);
 
+/// \brief netcdf type of a slice dimension's coordinate variable in the output file
+/// \param osdfMetadata source OSDF metadata holding the dimension's coordinate values
+/// \param dimName name of the slice dimension
+static netCDF::NcType dimVarNcType(const osdf::FrameMetadata & osdfMetadata,
+                                   const std::string & dimName);
+
 /// \brief create netcdf dimension
 /// \param group netcdf group containing the dimension
 /// \param dimName name of dimension
@@ -322,6 +328,24 @@ DimCreationList makeDimCreationList(const std::unique_ptr<osdf::IFrame> & srcOsd
 }
 
 //---------------------------------------------------------------------
+netCDF::NcType dimVarNcType(const osdf::FrameMetadata & osdfMetadata,
+                            const std::string & dimName) {
+  // Use the storage type of the source file's coordinate variable when it is known.
+  // Otherwise the dimension numbers are written, and those are int.
+  if (osdfMetadata.hasDimCoords(dimName)) {
+    switch (osdfMetadata.getDimCoords(dimName).type) {
+      case osdf::DimCoordType::eInt64:
+        return netCDF::NcType::nc_INT64;
+      case osdf::DimCoordType::eFloat:
+        return netCDF::NcType::nc_FLOAT;
+      default:
+        break;
+    }
+  }
+  return netCDF::NcType::nc_INT;
+}
+
+//---------------------------------------------------------------------
 VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & srcOsdf,
                                        const osdf::FrameMetadata & osdfMetadata,
                                        const std::size_t locationDimSize) {
@@ -351,7 +375,7 @@ VarCreationList makeDimVarCreationList(const std::unique_ptr<osdf::IFrame> & src
       continue;
     }
     VarCreationParameters dimVarCreateParams(dimName, {dimName},
-                                             netCDF::NcType::nc_INT,
+                                             dimVarNcType(osdfMetadata, dimName),
                                              varUnits, locationDimSize);
     varCreationList.emplace_back(std::make_pair(dimName, dimVarCreateParams));
   }
@@ -384,8 +408,18 @@ void setNcDimVar(netCDF::NcVar & dimVar,
     srcOsdf->getColumn("sourceLocationIndices", locVals);
     dimVar.putVar({nlocsStart}, {locVals.size()}, locVals.data());
   } else if (osdfMetadata.hasDim(dimVarName)) {
-    const std::vector<int> & dimVals = osdfMetadata.getDimNums(dimVarName);
-    dimVar.putVar(dimVals.data());
+    if (osdfMetadata.hasDimCoords(dimVarName)) {
+      // The source file's coordinate values. netCDF converts them to the variable's type,
+      // which makeDimVarCreationList set to the source file's storage type.
+      const std::vector<std::int64_t> & dimVals =
+          osdfMetadata.getDimCoords(dimVarName).values;
+      dimVar.putVar(dimVals.data());
+    } else {
+      // A dimension that did not come from a file (e.g. one created by put_db): write the
+      // dimension numbers.
+      const std::vector<int> & dimVals = osdfMetadata.getDimNums(dimVarName);
+      dimVar.putVar(dimVals.data());
+    }
   } else {
     throw eckit::BadValue(
       "ioda::write::setNcDimVar: unknown dimension name: " + dimVarName, Here());

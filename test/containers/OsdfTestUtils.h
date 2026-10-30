@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -204,6 +205,29 @@ void populateFrameMetadata(const eckit::LocalConfiguration & frameMetadataConfig
     const std::vector<std::string> dimNames =
       varDimNameConfig.getStringVector("dim names");
     osdfMetadata.addVarDimNames(varName, dimNames);
+  }
+  // Optional non-Channel slice dimensions, with their source file coordinate values
+  std::vector<eckit::LocalConfiguration> dimCoordsConfig;
+  if (frameMetadataConfig.has("dimension coordinates")) {
+    dimCoordsConfig = frameMetadataConfig.getSubConfigurations("dimension coordinates");
+  }
+  for (const auto & dimCoordConfig : dimCoordsConfig) {
+    const std::string dimName = dimCoordConfig.getString("name");
+    osdf::DimCoords dimCoords;
+    const std::vector<long> values = dimCoordConfig.getLongVector("values");  // NOLINT
+    dimCoords.values.assign(values.begin(), values.end());
+    const std::string coordType = dimCoordConfig.getString("type");
+    if (coordType == "float") {
+      dimCoords.type = osdf::DimCoordType::eFloat;
+    } else if (coordType == "int64") {
+      dimCoords.type = osdf::DimCoordType::eInt64;
+    } else {
+      dimCoords.type = osdf::DimCoordType::eInt;
+    }
+    std::vector<int> dimNums(dimCoords.values.size());
+    std::iota(dimNums.begin(), dimNums.end(), 1);
+    osdfMetadata.setDimNums(dimName, dimNums);
+    osdfMetadata.setDimCoords(dimName, dimCoords);
   }
 }
 

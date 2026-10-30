@@ -1,0 +1,72 @@
+---
+# Slice selection on a non-Channel slice dimension. Run once per container
+# (IODA_TEST_CONTAINER), and both runs must pass with the same expectations. A numeric
+# suffix or sliceSelect value is a 1-based position along the Layer dimension, whatever the
+# Layer coordinate values are. averagingKernel holds 100 * location + position.
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+observations:
+- obs space:
+    name: "Layer coordinates 5..1"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_slice_select_layer_reversed.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_slice_select_layer_reversed.nc4"
+  test data:
+    group: "RetrievalAncillaryData"
+    name: "averagingKernel"
+    dimension: "Layer"
+    expected values: [  1,   2,   3,   4,   5,
+                      101, 102, 103, 104, 105,
+                      201, 202, 203, 204, 205,
+                      301, 302, 303, 304, 305]
+    expected coordinate values: [5, 4, 3, 2, 1]
+
+- obs space:
+    name: "Layer coordinates all zero"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_slice_select_layer_zeros.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_slice_select_layer_zeros.nc4"
+  test data:
+    group: "RetrievalAncillaryData"
+    name: "averagingKernel"
+    dimension: "Layer"
+    expected values: [  1,   2,   3,   4,   5,
+                      101, 102, 103, 104, 105,
+                      201, 202, 203, 204, 205,
+                      301, 302, 303, 304, 305]
+    expected coordinate values: [0, 0, 0, 0, 0]
+
+- obs space:
+    name: "Layer coordinates 5..1, int64"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_slice_select_layer_reversed_int64.nc4"
+    obsdataout:
+      engine:
+        type: H5File
+        obsfile: "testoutput/obsspace_slice_select_layer_reversed_int64.nc4"
+  test data:
+    group: "RetrievalAncillaryData"
+    name: "averagingKernel"
+    dimension: "Layer"
+    expected values: [  1,   2,   3,   4,   5,
+                      101, 102, 103, 104, 105,
+                      201, 202, 203, 204, 205,
+                      301, 302, 303, 304, 305]
+    expected coordinate values: [5, 4, 3, 2, 1]

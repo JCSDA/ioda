@@ -1,0 +1,61 @@
+---
+# OSDF reader handling of slice dimension coordinate variables.
+#   accepted: int, int64, and float holding whole numbers. Channel coordinate values are the
+#             channel numbers and must be unique. Any other slice dimension is numbered by
+#             position (1..N), so its coordinate values may repeat.
+#   rejected: any other type, a float holding a fractional value, a float outside the range
+#             of an int64, repeated Channel numbers, and a Channel number outside the range
+#             of an int.
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+accepted:
+- file: "osdf_reader_coord_channel_int64.nc4"
+  dimension: "Channel"
+  numbers: [1, 3, 6]
+  coordinate type: "int64"
+  coordinate values: [1, 3, 6]
+- file: "osdf_reader_coord_layer_int64.nc4"
+  dimension: "Layer"
+  numbers: [1, 2, 3]
+  coordinate type: "int64"
+  coordinate values: [3, 2, 1]
+- file: "osdf_reader_coord_layer_float_dup.nc4"
+  dimension: "Layer"
+  numbers: [1, 2, 3]
+  coordinate type: "float"
+  coordinate values: [0, 0, 0]
+- file: "osdf_reader_float_channel.nc4"
+  dimension: "Channel"
+  numbers: [1, 2, 3, 4]
+  coordinate type: "float"
+  coordinate values: [1, 2, 3, 4]
+
+rejected:
+- file: "osdf_reader_coord_channel_double.nc4"
+  message contains: ["Unsupported coordinate type 'double'", "dimension Channel"]
+- file: "osdf_reader_coord_layer_double.nc4"
+  message contains: ["Unsupported coordinate type 'double'", "dimension Layer"]
+- file: "osdf_reader_coord_channel_short.nc4"
+  message contains: ["Unsupported coordinate type 'short'", "dimension Channel"]
+- file: "osdf_reader_coord_layer_short.nc4"
+  message contains: ["Unsupported coordinate type 'short'", "dimension Layer"]
+- file: "osdf_reader_coord_channel_string.nc4"
+  message contains: ["Unsupported coordinate type 'string'", "dimension Channel"]
+- file: "osdf_reader_coord_layer_string.nc4"
+  message contains: ["Unsupported coordinate type 'string'", "dimension Layer"]
+- file: "osdf_reader_coord_channel_float_frac.nc4"
+  message contains: ["dimension Channel", "must be whole numbers"]
+- file: "osdf_reader_coord_layer_float_frac.nc4"
+  message contains: ["dimension Layer", "must be whole numbers"]
+- file: "osdf_reader_coord_channel_int_dup.nc4"
+  message contains: ["Channel numbers", "are not unique", "channel number 1 is repeated"]
+- file: "osdf_reader_coord_channel_int_zero.nc4"
+  message contains: ["Channel numbers", "are not unique", "channel number 0 is repeated"]
+- file: "osdf_reader_coord_channel_float_dup.nc4"
+  message contains: ["Channel numbers", "are not unique", "channel number 1 is repeated"]
+- file: "osdf_reader_coord_channel_int64_big.nc4"
+  message contains: ["Channel number 3000000000", "outside the range of an int"]
+- file: "osdf_reader_coord_layer_float_huge.nc4"
+  message contains: ["Coordinate value", "dimension Layer", "outside the range of an int64"]

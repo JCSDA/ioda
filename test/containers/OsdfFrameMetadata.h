@@ -62,6 +62,35 @@ void testDimNums() {
 }
 
 // -----------------------------------------------------------------------------
+void testDimCoords() {
+  osdf::FrameMetadata md;
+
+  // nothing recorded before any coordinates are set
+  EXPECT(!md.hasDimCoords("Layer"));
+  EXPECT_THROWS_AS(md.getDimCoords("Layer"), eckit::BadValue);
+
+  osdf::DimCoords coords;
+  coords.values = {34, 33, 32};
+  coords.type = osdf::DimCoordType::eInt64;
+
+  // setDimCoords throws if the dimension is not registered
+  EXPECT_THROWS_AS(md.setDimCoords("Layer", coords), eckit::BadValue);
+  EXPECT(!md.hasDimCoords("Layer"));
+
+  // setDimCoords throws if the number of coordinate values differs from the number of
+  // dimension numbers
+  md.setDimNums("Layer", {1, 2, 3, 4});
+  EXPECT_THROWS_AS(md.setDimCoords("Layer", coords), eckit::BadValue);
+  EXPECT(!md.hasDimCoords("Layer"));
+
+  // setDimCoords / getDimCoords / hasDimCoords round-trip
+  md.setDimNums("Level", {1, 2, 3});
+  md.setDimCoords("Level", coords);
+  EXPECT(md.hasDimCoords("Level"));
+  EXPECT(md.getDimCoords("Level") == coords);
+}
+
+// -----------------------------------------------------------------------------
 void testGetDimNames() {
   osdf::FrameMetadata md;
 
@@ -186,6 +215,8 @@ class OsdfFrameMetadata : public oops::Test {
 
     ts.emplace_back(CASE("ioda/OsdfFrameMetadata/dimNums")
                     { testDimNums(); });
+    ts.emplace_back(CASE("ioda/OsdfFrameMetadata/dimCoords")
+                    { testDimCoords(); });
     ts.emplace_back(CASE("ioda/OsdfFrameMetadata/getDimNames")
                     { testGetDimNames(); });
     ts.emplace_back(CASE("ioda/OsdfFrameMetadata/varSliceDimName")

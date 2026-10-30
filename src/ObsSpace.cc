@@ -1750,28 +1750,44 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
                 throw eckit::UserError("Variable " + baseFullName + " is not indexed by " +
                                        sliceDimName + " numbers", Here());
             }
+            // The suffix names the slice's column directly. A suffix that names no column
+            // of an existing variable is a nonexistent slice. Reject it rather than letting
+            // the create step below try to re-create the variable's columns.
+            if (!osdfColumnsFor(group, baseName).empty() &&
+                !osdf_->hasColumn(fullVarName(group, name))) {
+                throw eckit::BadParameter("Variable " + baseFullName + " has no " +
+                    sliceDimName + " slice " + std::to_string(sliceSelect[0]), Here());
+            }
         }
 
         // Register a brand-new slice dimension (one that was never in the input file and is
-        // therefore not yet registered) with synthetic 0..n-1 index values, deriving n from the
-        // data. This mirrors the reader's synthetic-index rule and gives the selection mechanism
-        // (numeric suffix / sliceSelect) index values to work with. Only do this for a
-        // full-variable write (no per-slice suffix), where the data spans the entire
-        // slice dimension -- a
-        // single-slice write cannot determine the dimension's full size. This supports creating a
-        // new slice dimension on the OSDF (dataframe) backend only; the ObsGroup backend
-        // does not.
+        // therefore not yet registered) with synthetic index values, deriving n from the data.
+        // Any dimension other than Channel gets 1..n. A new Channel dimension has no channel
+        // numbers to use, and it is assigned 0..n-1 numbering. This gives the selection
+        // mechanism (numeric suffix / sliceSelect) index values to work with. Only do this
+        // for a full-variable write (no per-slice suffix), where the data spans the entire
+        // slice dimension - a single-slice write cannot determine the dimension's full size.
+        // This supports creating a new slice dimension on the OSDF (dataframe) backend only;
+        // the ObsGroup backend does not.
         if (varHasSliceDim && !osdfMetadata_.hasDim(sliceDimName) &&
                                                          !writingSingleSlice) {
-            const std::size_t n = (dimList.size() == 1) ? varValues.size()
-                                  : (numLocs > 0 ? varValues.size() / numLocs : 0);
+            // n is the number of unique values in the slice dimension.
+            std::size_t n = 0;
+            if (dimList.size() == 1) {
+                // 1D variable, no repeated values
+                n = varValues.size();
+            } else if (numLocs > 0) {
+                // 2D variable, repeated values for each location
+                n = varValues.size() / numLocs;
+            }
             if (n == 0) {
-                throw eckit::BadValue("ObsSpace::storeVar: cannot infer the size of new "
+                throw eckit::BadValue("ObsSpace::saveVar: cannot infer the size of new "
                     "dimension '" + sliceDimName + "' (no data / zero locations); register "
                     "the dimension before creating the variable", Here());
             }
             std::vector<int> synth(n);
-            std::iota(synth.begin(), synth.end(), 0);
+            const int firstNum = (sliceDimName == get_dim_name(ObsDimensionId::Channel)) ? 0 : 1;
+            std::iota(synth.begin(), synth.end(), firstNum);
             osdfMetadata_.setDimNums(sliceDimName, synth);
         }
         const std::size_t numSlices =
