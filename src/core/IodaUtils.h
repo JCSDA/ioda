@@ -40,7 +40,8 @@ class ObsSpaceParameters;
   /// \param firstVector one vector to compare
   /// \param secondVector another vector to compare with the first
   /// Outputs a struct containing two vectors of strings, listing the elements
-  /// /// in one of the vectors which is not found in the other
+  /// in one of the vectors which is not found in the other. The order of the elements
+  /// in the output vectors does not necessarily match their order in the input vectors.
   vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& firstVector,
                                               const std::vector<std::string>& secondVector);
 
@@ -105,6 +106,20 @@ class ObsSpaceParameters;
   std::vector<std::string> osdfVarColumns(const osdf::IFrame & srcOsdf,
                                           const osdf::FrameMetadata & frameMetadata,
                                           const std::string & fullVarName);
+
+  /// \brief prepare an osdf for appending to another osdf that has more columns
+  /// \details When targetOsdf has more columns than srcOsdf (eg, derived variables created
+  ///          after the targetOsdf was read in), srcOsdf is replaced by a frame whose columns
+  ///          are in the same order as targetOsdf, since the OSDF append matches columns by
+  ///          position. Columns already in srcOsdf keep their own type and units. Columns
+  ///          not in srcOsdf are filled with missing values, using the type and units of
+  ///          targetOsdf. When srcOsdf has as many or more columns than targetOsdf, srcOsdf
+  ///          is left unchanged for the append itself to handle.
+  ///          Throws an exception if srcOsdf has columns that are not in targetOsdf.
+  /// \param targetOsdf osdf that srcOsdf will be appended to
+  /// \param srcOsdf osdf to be appended, replaced in place
+  void osdfAlignColumnsForAppend(const osdf::IFrame & targetOsdf,
+                                 std::unique_ptr<osdf::IFrame> & srcOsdf);
 
   // Utilities for converting back and forth between vector of strings and
   // a 2D character array.

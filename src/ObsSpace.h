@@ -517,13 +517,6 @@ namespace ioda {
         /// specification in the YAML configuration. Only works for OSDF-based ObsSpaces.
         void redistribute(const eckit::Configuration &);
 
-        /// \brief Prepare sourceOsdf for append if osdf_ has derived variables
-        /// \details If the osdf_ has more columns than appendOsdf, this function creates columns of
-        /// missing data with those names and adds them to appendOsdf
-        /// Will throw an exception if appendOsdf has more columns than osdf_
-        /// \param srcOsdf Osdf containing variables to be compared with osdf_
-        void prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFrame> &srcOsdf);
-
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call

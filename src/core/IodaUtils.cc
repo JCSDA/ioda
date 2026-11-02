@@ -9,10 +9,13 @@
 #include <set>
 #include <sstream>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
+#include "ioda/containers/CreateIFrame.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/FrameMetadata.h"
+#include "ioda/containers/FrameUtils.h"
 #include "ioda/core/IodaUtils.h"
 #include "ioda/ObsSpaceParameters.h"
 #include "ioda/Variables/VarUtils.h"
@@ -149,6 +152,58 @@ std::vector<std::string> osdfVarColumns(const osdf::IFrame & srcOsdf,
     return { };
   }
   return columnNames;
+}
+
+// -----------------------------------------------------------------------------
+void osdfAlignColumnsForAppend(const osdf::IFrame & targetOsdf,
+                               std::unique_ptr<osdf::IFrame> & srcOsdf) {
+  const std::vector<std::string> targetColumnNames = targetOsdf.columnNames();
+  const std::vector<std::string> srcColumnNames = srcOsdf->columnNames();
+
+  // Only act on srcOsdf if it has fewer variables than targetOsdf
+  // Remaining cases handled by append directly
+  if (targetColumnNames.size() <= srcColumnNames.size()) {
+    return;
+  }
+
+  // Find variables which are not in both Osdfs
+  vectorDifference unsharedElements
+    = findElementsNotInBothVectors(srcColumnNames, targetColumnNames);
+
+  if (!unsharedElements.onlyInFirstVector.empty()) {
+    std::string errMsg
+      = "ERROR: The following variables are present in the srcOsdf but not in the targetOsdf: ";
+    for (const std::string &variable : unsharedElements.onlyInFirstVector) {
+      errMsg += (variable + ", ");
+    }
+    throw eckit::BadParameter(errMsg, Here());
+  }
+
+  // Rebuild srcOsdf with its columns in the same order as targetOsdf, since the OSDF append
+  // matches columns by position. Columns already in srcOsdf are copied over with their
+  // own units, and variables in targetOsdf not found in srcOsdf are filled with missing values.
+  const std::size_t numRows = srcOsdf->numRows();
+  std::unique_ptr<osdf::IFrame> orderedOsdf = osdf::createIFrame(srcOsdf->frameType());
+
+  for (const std::string & column : targetColumnNames) {
+    if (srcOsdf->hasColumn(column)) {
+      osdf::FrameUtils::callWithSupportedType(srcOsdf->getColumnType(column),
+                                              [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        std::vector<T> values;
+        srcOsdf->getColumn(column, values);
+        orderedOsdf->appendNewColumn(column, values, srcOsdf->getColumnUnits(column));
+      });
+    } else {
+      osdf::FrameUtils::callWithSupportedType(targetOsdf.getColumnType(column),
+                                              [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        const std::vector<T> missingValues(numRows, util::missingValue<T>());
+        orderedOsdf->appendNewColumn(column, missingValues, targetOsdf.getColumnUnits(column));
+      });
+    }
+  }
+  srcOsdf = std::move(orderedOsdf);
 }
 
 // -----------------------------------------------------------------------------

@@ -1062,7 +1062,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
             // with the same index values would produce identical column names and silently merge
             // into a structurally inconsistent result. (Variables present only in the appended
             // frame have no target slice dim and are skipped here -- they are handled by
-            // the column reconciliation in prepareSourceOsdfDerivedVariables / the OSDF append.)
+            // the column reconciliation in osdfAlignColumnsForAppend / the OSDF append.)
             for (const std::string & varName : appendOsdfMetadata.getMultiSliceVars()) {
               const std::string targetDimName = osdfMetadata_.varSliceDimName(varName);
               const std::string appendDimName = appendOsdfMetadata.varSliceDimName(varName);
@@ -1073,7 +1073,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
               }
             }
 
-            prepareSourceOsdfDerivedVariables(tempOsdf);
+            osdfAlignColumnsForAppend(*osdf_, tempOsdf);
             appendOsdf(tempOsdf, obsSourceStats);
           } else {
             // Load data into a temporary ObsGroup object and append that to the obs_group_
@@ -1101,45 +1101,6 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
         oops::Log::info() << "WARNING: ObsSpace::append is being used with a generator "
                         << "backend constructed ObsSpace - skipping the append action"
                         << std::endl;
-    }
-}
-
-void ObsSpace::prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFrame> &srcOsdf) {
-    osdf::ColumnMetadata targetColumnMetadata = osdf_->getData().getColumnMetadata();
-    osdf::ColumnMetadata srcColumnMetadata = srcOsdf->getData().getColumnMetadata();
-
-    // Only act on srcOsdf if it has fewer variables than osdf_
-    // Remaining cases handled by append directly
-    if (targetColumnMetadata.getSizeCols() <= srcColumnMetadata.getSizeCols()) {
-        return;
-    }
-
-    // Find variables which are not in both Osdfs
-    std::vector<std::string> srcColumnNames = srcColumnMetadata.columnNames();
-    vectorDifference unsharedElements
-      = findElementsNotInBothVectors(srcColumnNames, targetColumnMetadata.columnNames());
-
-    if (!unsharedElements.onlyInFirstVector.empty()) {
-      std::string errMsg
-        = "ERROR: The following variables are present in the srcOsdf but not in the targetOsdf: ";
-      for (const std::string &variable : unsharedElements.onlyInFirstVector) {
-        errMsg += (variable + ", ");
-      }
-      throw eckit::BadParameter(errMsg, Here());
-    }
-
-    // Add columns to srcOsdf corresponding to variables in targetOsdf not found in srcOsdf
-    const std::size_t numRows = srcOsdf->numRows();
-
-    for (std::string column : unsharedElements.onlyInSecondVector) {
-      osdf::FrameUtils::callWithSupportedType(osdf_->getColumnType(column),
-                                              [&](auto typeDiscriminator) {
-                                            using T = decltype(typeDiscriminator);
-                                            const std::vector<T> missingValues(
-                                              numRows, util::missingValue<T>());
-                                            std::string unit = osdf_->getColumnUnits(column);
-                                            srcOsdf->appendNewColumn(column, missingValues, unit);
-                                            });
     }
 }
 

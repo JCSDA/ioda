@@ -126,6 +126,54 @@ void updateDerivedObsError(ObsSpace & odb,
 }
 
 // -----------------------------------------------------------------------------
+// Create variables that are not in the input files, emulating the variables that UFO
+// creates at run time (eg, DerivedObsValue, EffectiveQC, HofX). Each entry holds either
+// "values" (float) or "int values" (int), one value per location.
+void putNewVariables(ObsSpace & odb, const eckit::LocalConfiguration & testConfig) {
+  std::vector<eckit::LocalConfiguration> newVarsConfig;
+  testConfig.get("put new variables", newVarsConfig);
+  for (const auto & newVarConfig : newVarsConfig) {
+    const std::string group = newVarConfig.getString("group");
+    const std::string name = newVarConfig.getString("name");
+    if (newVarConfig.has("int values")) {
+      odb.put_db(group, name, newVarConfig.getIntVector("int values"));
+    } else {
+      odb.put_db(group, name, newVarConfig.getFloatVector("values"));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+template <typename T>
+void checkNewVariable(const ObsSpace & odb, const std::string & group,
+                      const std::string & name, const std::vector<T> & expectedValues) {
+  std::vector<T> values;
+  odb.get_db(group, name, values);
+  EXPECT_EQUAL(values.size(), odb.nlocs());
+  // expect the values put before the appends to be retained, and the appended
+  // locations to hold missing values
+  const T missing = util::missingValue<T>();
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    const T expectedValue = (i < expectedValues.size()) ? expectedValues[i] : missing;
+    EXPECT_EQUAL(values[i], expectedValue);
+  }
+}
+
+void checkNewVariables(const ObsSpace & odb, const eckit::LocalConfiguration & testConfig) {
+  std::vector<eckit::LocalConfiguration> newVarsConfig;
+  testConfig.get("put new variables", newVarsConfig);
+  for (const auto & newVarConfig : newVarsConfig) {
+    const std::string group = newVarConfig.getString("group");
+    const std::string name = newVarConfig.getString("name");
+    if (newVarConfig.has("int values")) {
+      checkNewVariable(odb, group, name, newVarConfig.getIntVector("int values"));
+    } else {
+      checkNewVariable(odb, group, name, newVarConfig.getFloatVector("values"));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 void testConstructor() {
   typedef ObsSpaceTestFixture Test_;
@@ -196,6 +244,11 @@ void testAppend() {
     // First, update the variables in derived obs error group (if any)
     updateDerivedObsError(odb, testConfig, "after constructor.update derived obs error");
 
+    // Create variables that are not in the input files (if any). The append must fill
+    // these with missing values in the appended locations.
+    const bool putNewVars = testConfig.has("put new variables");
+    if (putNewVars) putNewVariables(odb, testConfig);
+
     // Walk through the append sequence
     std::vector<eckit::LocalConfiguration> appendSequence;
     testConfig.get("append sequence", appendSequence);
@@ -219,6 +272,8 @@ void testAppend() {
 
       const std::size_t expectedGlobalNrecs = appendSequence[iapp].getUnsigned("nrecs");
       checkNrecs(odb, expectedGlobalNrecs);
+
+      if (putNewVars) checkNewVariables(odb, testConfig);
 
       // Update the variables in derived obs error group (if any)
       updateDerivedObsError(odb, appendSequence[iapp], "update derived obs error");

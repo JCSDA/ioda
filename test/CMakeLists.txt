@@ -198,7 +198,6 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_osdf_frame_cols.yaml
   testinput/iodatest_obsspace_osdf_frame_rows.yaml
   testinput/iodatest_obsspace_generators.yaml
-  testinput/iodatest_obsspace_osdf_prepare_derived.yaml
   testinput/iodatest_obsspace_null_channel.yaml
   testinput/iodatest_obsspace_null_channel_osdf.yaml
   testinput/iodatest_obsvector.yaml
@@ -2456,11 +2455,11 @@ ecbuild_add_test( TARGET ioda_osdf_create_iframe
                   LIBS  ioda_test
                   )
 
-# this test checks that columns containing missing data are correctly created by the
-# prepareSourceOsdfDerivedVariables function when attempting to append an osdf with fewer columns
-ecbuild_add_test( TARGET ioda_osdf_prepare_derived_variables
-                  SOURCES mains/TestIodaObsSpacePrepareDerivedVariables.cc
-                  ARGS    "testinput/iodatest_obsspace_osdf_prepare_derived.yaml"
+# this test checks that the osdfAlignColumnsForAppend function puts the columns of an osdf
+# with fewer columns into the order of the osdf being appended to, filling in missing data
+ecbuild_add_test( TARGET ioda_osdf_align_columns_for_append
+                  SOURCES mains/containers/TestOsdfAlignColumnsForAppend.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
                   LIBS  ioda_test
                   )
 
@@ -2480,17 +2479,28 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_clean_files
                   COMMAND rm
                   ARGS    "-f"
                           "testoutput/obsspace_append_1D_out.nc4"
+                          "testoutput/obsspace_append_1D_new_vars_out.nc4"
                           "testoutput/obsspace_append_2D_out.nc4"
-                          "testoutput/obsspace_append_no_obsserror_out.nc4"
-                          "testoutput/obsspace_append_1D_osdf_out.nc4"
-                          "testoutput/obsspace_append_2D_osdf_out.nc4"
-                          "testoutput/obsspace_append_no_obsserror_osdf_out.nc4" )
+                          "testoutput/obsspace_append_no_obserror_out.nc4"
+                          "testoutput/obsspace_append_1D_out_osdf.nc4"
+                          "testoutput/obsspace_append_1D_new_vars_out_osdf.nc4"
+                          "testoutput/obsspace_append_2D_out_osdf.nc4"
+                          "testoutput/obsspace_append_no_obserror_out_osdf.nc4" )
 
 # this test creates the output files, and checks that obs space data members got
 # properly updated
 ecbuild_add_test( TARGET  ioda_obsspace_append
                   SOURCES mains/TestIodaObsSpaceAppend.cc
                   ARGS    "testinput/iodatest_obsspace_append.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_obsspace_append_clean_files )
+
+# the same yaml run again with OSDF. Output file names are tagged with "_osdf"
+ecbuild_add_test( TARGET  ioda_obsspace_append_osdf
+                  COMMAND ioda_obsspace_append
+                  ARGS    "testinput/iodatest_obsspace_append.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   LIBS  ioda_test
                   TEST_DEPENDS ioda_obsspace_append_clean_files )
 
@@ -2502,6 +2512,15 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_1D_variables_cmp
                           netcdf
                           "echo Checking append, 1D variables"
                           obsspace_append_1D_out.nc4
+                  TEST_DEPENDS ioda_obsspace_append )
+
+ecbuild_add_test( TARGET  ioda_obsspace_append_1D_new_vars_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking append, 1D variables with new variables"
+                          obsspace_append_1D_new_vars_out.nc4
                   TEST_DEPENDS ioda_obsspace_append )
 
 ecbuild_add_test( TARGET  ioda_obsspace_append_2D_variables_cmp
@@ -2522,15 +2541,24 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_no_obserrors_variables_cmp
                           obsspace_append_no_obserror_out.nc4
                   TEST_DEPENDS ioda_obsspace_append )
 
-# the following tests compare the output files
+# the following tests compare the OSDF output files
 ecbuild_add_test( TARGET  ioda_obsspace_append_1D_variables_osdf_cmp
                   TYPE    SCRIPT
                   COMMAND bash
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking append, 1D variables"
-                          obsspace_append_1D_osdf_out.nc4
-                  TEST_DEPENDS ioda_obsspace_append )
+                          obsspace_append_1D_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_append_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_append_1D_new_vars_osdf_cmp
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          netcdf
+                          "echo Checking append, 1D variables with new variables"
+                          obsspace_append_1D_new_vars_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_append_osdf )
 
 ecbuild_add_test( TARGET  ioda_obsspace_append_2D_variables_osdf_cmp
                   TYPE    SCRIPT
@@ -2538,8 +2566,8 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_2D_variables_osdf_cmp
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking append, 2D variables"
-                          obsspace_append_2D_osdf_out.nc4
-                  TEST_DEPENDS ioda_obsspace_append )
+                          obsspace_append_2D_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_append_osdf )
 
 ecbuild_add_test( TARGET  ioda_obsspace_append_no_obserrors_variables_osdf_cmp
                   TYPE    SCRIPT
@@ -2547,8 +2575,8 @@ ecbuild_add_test( TARGET  ioda_obsspace_append_no_obserrors_variables_osdf_cmp
                   ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
                           netcdf
                           "echo Checking append, no ObsError group"
-                          obsspace_append_no_obserror_osdf_out.nc4
-                  TEST_DEPENDS ioda_obsspace_append )
+                          obsspace_append_no_obserror_out_osdf.nc4
+                  TEST_DEPENDS ioda_obsspace_append_osdf )
 
 # the following tests check that append across multiple mpi tasks is working
 ecbuild_add_test( TARGET  ioda_obsspace_append_mpi_2

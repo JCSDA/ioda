@@ -7,7 +7,6 @@ observations:
 
 - obs space: &append_1d
     name: "Append 1D variables"
-    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -74,19 +73,39 @@ observations:
           rec19: [ 19 ]
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
+# Emulate a continuous DA cycle where UFO has created several variables (that are not
+# in the appended files) before the append.
 - obs space:
     <<: *append_1d
-    name: Append 1D variables (OSDF)
-    use data frame container: true
+    name: Append 1D variables with new variables
     obsdataout:
       engine:
         type: H5File
-        obsfile: "testoutput/obsspace_append_1D_osdf_out.nc4"
-  test data: *append_1d_test_data
+        obsfile: "testoutput/obsspace_append_1D_new_vars_out.nc4"
+  test data:
+    <<: *append_1d_test_data
+    put new variables:
+      - group: DerivedObsValue
+        name: airTemperature
+        values: [ 250.5, 251.5, 252.5, 253.5, 254.5, 255.5, 256.5 ]
+      - group: HofX
+        name: airTemperature
+        values: [ 260.5, 261.5, 262.5, 263.5, 264.5, 265.5, 266.5 ]
+      - group: EffectiveQC0
+        name: airTemperature
+        int values: [ 0, 1, 2, 3, 4, 5, 6 ]
+      - group: EffectiveError0
+        name: airTemperature
+        values: [ 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1 ]
+      - group: ObsBiasData
+        name: airTemperature
+        values: [ 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7 ]
+      - group: GrossErrorProbability
+        name: airTemperature
+        values: [ 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07 ]
 
-- obs space: &append_2d
+- obs space:
     name: "Append 2D variables"
-    use data frame container: false
     simulated variables: ['brightnessTemperature']
     channels: 1-5
     distribution:
@@ -99,7 +118,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/obsspace_append_2D_out.nc4"
-  test data: &append_2d_test_data
+  test data:
     # These input files contain ObsError variables so there is
     # no need to work with DerivedObsError, thus no need to update
     # the missing values that are placed into DerivedObsError
@@ -155,18 +174,7 @@ observations:
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
 - obs space:
-    <<: *append_2d
-    name: Append 2D variables (OSDF)
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/obsspace_append_2D_osdf_out.nc4"
-  test data: *append_2d_test_data
-
-- obs space: &append_no_obserror
     name: "Append no ObsError"
-    use data frame container: false
     simulated variables: ['airTemperature']
     distribution:
       name: "RoundRobin"
@@ -178,7 +186,7 @@ observations:
       engine:
         type: H5File
         obsfile: "testoutput/obsspace_append_no_obserror_out.nc4"
-  test data: &append_no_obserror_test_data
+  test data:
     # These files do not contain variables in the ObsError group, thus
     # the DerivedObsError is being used. Emulate the update of the
     # DerivedObsError after each of the append calls (and before the
@@ -243,14 +251,3 @@ observations:
           rec18: [ 18 ]
           rec19: [ 19 ]
         patch obs: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
-
-- obs space:
-    <<: *append_no_obserror
-    name: Append no ObsError variables (OSDF)
-    use data frame container: true
-    obsdataout:
-      engine:
-        type: H5File
-        obsfile: "testoutput/obsspace_append_no_obserror_osdf_out.nc4"
-  test data: *append_no_obserror_test_data
-
