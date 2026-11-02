@@ -76,6 +76,6 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda
 	    FILES_MATCHING PATTERN "*.py")
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pyioda/ioda_obs_space/__init__.py
-		DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/pyioda/site-packages/ioda_obs_space/
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/${pyver}/site-packages/pyioda/ioda_obs_space/
         COMPONENT Python)
 
