@@ -339,7 +339,8 @@ void ObsSpace::save(bool preserveDistribution) {
         if (use_dataframe_) {
           writer::obsWrite(*(obs_params_->top_level_.obsDataOut.value()),
                            obs_params_->top_level_.ioPool,
-                           obs_params_->comm(), this->obsname(), dist_, osdf_,
+                           obs_params_->comm(), obs_params_->timeComm(),
+                           this->obsname(), dist_, osdf_,
                            osdfMetadata_, preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());

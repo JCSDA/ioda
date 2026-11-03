@@ -33,6 +33,7 @@ namespace writer {
 /// \param dataOutParams obs space data output (obsdataout) parameters
 /// \param ioPoolParams io pool parameters
 /// \param commAll MPI communicator for all ranks
+/// \param commTime MPI communicator for the time decomposition (subwindows)
 /// \param obsName obs space name (used in the log messaging)
 /// \param ospaceDist distribution object for the caller's obs space
 /// \param srcOsdf source OSDF to be transferred to the output file
@@ -41,6 +42,7 @@ namespace writer {
 void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const ioda::IoPool::IoPoolParameters & ioPoolParams,
               const eckit::mpi::Comm & commAll,
+              const eckit::mpi::Comm & commTime,
               const std::string & obsName,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,

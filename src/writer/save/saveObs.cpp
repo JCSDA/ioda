@@ -34,10 +34,16 @@ namespace writer {
 void saveObs(const ObsDataOutParameters & dataOutParams,
              const std::unique_ptr<ObsIoPool::ObsIoPool> & obsIoPool,
              const eckit::mpi::Comm & commAll,
+             const eckit::mpi::Comm & commTime,
              const std::string & obsName,
              std::unique_ptr<osdf::IFrame> & srcOsdf,
              osdf::FrameMetadata & osdfMetadata) {
   oops::Log::trace() << "writer::saveObs start" << std::endl;
+  // Each time rank (subwindow) writes its own output file(s), so the time
+  // communicator rank gets appended to the file name. A value of -1 tells
+  // uniquifyFileName to skip the time rank suffix when there is only one time rank.
+  const int timeCommRank = (commTime.size() > 1) ? static_cast<int>(commTime.rank()) : -1;
+
   // todo(SRH): For now, we are only supporting HDF5 and ODB file types. We will
   // eventually want to support BUFR.
   const std::string fileType =
@@ -48,7 +54,8 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
     // It is assumed that all of the obs have been collected onto the
     // io pool ranks prior to calling this function.
     if (obsIoPool->inIoPool()) {
-      saveOsdfToNetcdf(dataOutParams, obsIoPool->commPool(), srcOsdf, osdfMetadata);
+      saveOsdfToNetcdf(dataOutParams, obsIoPool->commPool(), timeCommRank,
+                       srcOsdf, osdfMetadata);
     }
   } else {
     // Collectively save the OSDF to ODB across the io pool ranks.
@@ -56,13 +63,14 @@ void saveObs(const ObsDataOutParameters & dataOutParams,
     // io pool ranks prior to calling this function.
     ASSERT(fileType == "ODB");
     if (obsIoPool->inIoPool()) {
-      saveOsdfToOdb(dataOutParams, obsIoPool->commPool(), srcOsdf, osdfMetadata);
+      saveOsdfToOdb(dataOutParams, obsIoPool->commPool(), timeCommRank,
+                    srcOsdf, osdfMetadata);
     }
   }
 
   // Issue the summary message describing where this obs space wrote its data. The file
-  // name reported here is the one from the configuration, before the io pool rank number
-  // gets appended for multiple file output.
+  // name reported here is the one from the configuration, without suffixes appended, for
+  // clarity's sake.
   oops::Log::info() << obsName << ": save database to "
                     << dataOutParams.engine.value().engineParameters.value().fileName.value()
                     << " (io pool size: " << obsIoPool->poolSize() << ")" << std::endl;

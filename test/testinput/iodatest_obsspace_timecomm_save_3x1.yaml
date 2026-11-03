@@ -1,0 +1,28 @@
+---
+# Run on 3 MPI tasks: 3 time ranks (subwindows) of 1 task each. This mirrors
+# a 4DEnVar run with parallel subwindows. Each time rank must write its own
+# output file.
+#
+# The container is selected with the IODA_TEST_CONTAINER environment variable on
+# the ctest registration. The OSDF run tags the output file name with "_osdf".
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+number of time ranks: 3
+
+observations:
+  observers:
+  - obs space:
+      name: "AOD time comm save 3x1"
+      simulated variables: ['aerosolOpticalDepth']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: "testoutput/obsspace_timecomm_save_3x1.nc4"
+    expected output file suffixes: ["_0000", "_0001", "_0002"]
+    unexpected output file suffixes: [""]

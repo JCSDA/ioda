@@ -117,7 +117,8 @@ void testFrames() {
 
         if (preserveInputs) {
           // Call obsWrite. srcOsdf must NOT be modified.
-          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
+          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, oops::mpi::myself(),
+                                 "ObsWriter test",
                                  ospaceDist, srcOsdf, osdfMetadata, true);
 
           // Validate that the source frame is identical to the reference frame.
@@ -132,7 +133,8 @@ void testFrames() {
           tmpPool.reset();
 
           // Call obsWrite. srcOsdf WILL be modified: all data moves to ioPool ranks.
-          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, "ObsWriter test",
+          ioda::writer::obsWrite(dataOutParams, ioPoolParams, commAll, oops::mpi::myself(),
+                                 "ObsWriter test",
                                  ospaceDist, srcOsdf, osdfMetadata, false);
 
           // Validate that all locations were collected onto the ioPool rank and that

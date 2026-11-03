@@ -1,0 +1,36 @@
+---
+# Run on 4 MPI tasks: 2 time ranks (subwindows) of 2 tasks each, with an io pool
+# of size 2 in each subwindow, writing multiple ODB files: one per io pool rank
+# per time rank, named _<pool rank>_<time rank>.
+#
+# The container is selected with the IODA_TEST_CONTAINER environment variable on
+# the ctest registration. The OSDF run tags the output file name with "_osdf".
+#
+# The single file ODB output is in iodatest_obsspace_timecomm_save_odb_single_osdf.yaml
+# since the two containers merge the files differently.
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+number of time ranks: 2
+
+observations:
+  observers:
+  - obs space:
+      name: "AOD time comm save ODB multiple files"
+      simulated variables: ['aerosolOpticalDepth']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: ODB
+          obsfile: "testoutput/obsspace_timecomm_save_odb_multi.odc"
+          mapping file: ../share/test/testinput/odb_default_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+        write multiple files: true
+      io pool:
+        max pool size: 2
+    expected output file suffixes: ["_0000_0000", "_0001_0000", "_0000_0001", "_0001_0001"]
+    unexpected output file suffixes: ["", "_0000", "_0001"]

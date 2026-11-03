@@ -1,0 +1,34 @@
+---
+# Run on 4 MPI tasks: 2 time ranks (subwindows) of 2 tasks each, with an io pool
+# of size 2 in each subwindow, writing a single ODB file.
+#
+# The OSDF writer merges the io pool rank files separately for each time rank,
+# giving one merged file per time rank, and removes the io pool rank files. This
+# is OSDF only since the ObsGroup writer instead merges all of the time ranks into
+# one file.
+time window:
+  begin: "2018-04-14T21:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+
+number of time ranks: 2
+
+observations:
+  observers:
+  - obs space:
+      name: "AOD time comm save ODB single file"
+      use data frame container: true
+      simulated variables: ['aerosolOpticalDepth']
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: "Data/testinput_tier_1/geos_aod_obs_2018041500_m.nc4"
+      obsdataout:
+        engine:
+          type: ODB
+          obsfile: "testoutput/obsspace_timecomm_save_odb_single_osdf.odc"
+          mapping file: ../share/test/testinput/odb_default_name_map.yaml
+          query file: ../share/test/testinput/iodatest_odb_aod_write_testdatasets.yaml
+      io pool:
+        max pool size: 2
+    expected output file suffixes: ["_0000", "_0001"]
+    unexpected output file suffixes: ["", "_0000_0000", "_0001_0000", "_0000_0001", "_0001_0001"]

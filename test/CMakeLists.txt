@@ -188,6 +188,10 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_reduce.yaml
   testinput/iodatest_obsspace_reduce_mpi.yaml
   testinput/iodatest_obsspace_redistribute.yaml
+  testinput/iodatest_obsspace_timecomm_save_2x2.yaml
+  testinput/iodatest_obsspace_timecomm_save_3x1.yaml
+  testinput/iodatest_obsspace_timecomm_save_odb.yaml
+  testinput/iodatest_obsspace_timecomm_save_odb_single_osdf.yaml
   testinput/iodatest_obsspace_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs.yaml
   testinput/iodatest_obsspace_filter_to_zero_obs_osdf.yaml
@@ -2416,6 +2420,172 @@ ecbuild_add_test( TARGET  ioda_obsspace_contda
                   ARGS    "testinput/iodatest_obsspace_contda.yaml"
                   LIBS  ioda_test
                   )
+
+# This test removes the output files from prior testing, so that leftover files
+# can't make the expected file checks pass or the unexpected file checks fail.
+# The list covers every combination of the output names, container tags and
+# pool/time rank suffixes used in the time comm save yamls.
+set( timecomm_save_output_files "" )
+foreach( base 3x1.nc4 2x2_single.nc4 2x2_multi.nc4 odb_multi.odc odb_single.odc )
+  get_filename_component( stem ${base} NAME_WLE )
+  get_filename_component( ext ${base} LAST_EXT )
+  foreach( tag "" "_osdf" )
+    foreach( suffix "" _0000 _0001 _0002 _0000_0000 _0001_0000 _0000_0001 _0001_0001 )
+      list( APPEND timecomm_save_output_files
+            "testoutput/obsspace_timecomm_save_${stem}${tag}${suffix}${ext}" )
+    endforeach()
+  endforeach()
+endforeach()
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_clean_files
+                  COMMAND rm
+                  ARGS    "-f" ${timecomm_save_output_files} )
+
+# Check that each time communicator rank (subwindow) writes its own output
+# file(s). The shared yamls take the container from IODA_TEST_CONTAINER, and the
+# OSDF run tags its output file names with "_osdf".
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_3x1
+                  SOURCES mains/TestIodaObsSpaceTimeCommSave.cc
+                  MPI     3
+                  ARGS    "testinput/iodatest_obsspace_timecomm_save_3x1.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  LIBS  ioda_test
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_2x2
+                  COMMAND ioda_obsspace_timecomm_save_3x1
+                  MPI     4
+                  ARGS    "testinput/iodatest_obsspace_timecomm_save_2x2.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_odb
+                    COMMAND ioda_obsspace_timecomm_save_3x1
+                    MPI     4
+                    ARGS    "testinput/iodatest_obsspace_timecomm_save_odb.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                    TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+endif()
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_3x1_osdf
+                  COMMAND ioda_obsspace_timecomm_save_3x1
+                  MPI     3
+                  ARGS    "testinput/iodatest_obsspace_timecomm_save_3x1.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_2x2_osdf
+                  COMMAND ioda_obsspace_timecomm_save_3x1
+                  MPI     4
+                  ARGS    "testinput/iodatest_obsspace_timecomm_save_2x2.yaml"
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_odb_osdf
+                    COMMAND ioda_obsspace_timecomm_save_3x1
+                    MPI     4
+                    ARGS    "testinput/iodatest_obsspace_timecomm_save_odb.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                    TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+
+  # OSDF only: the two containers merge a single ODB file differently.
+  ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_odb_single_osdf
+                    COMMAND ioda_obsspace_timecomm_save_3x1
+                    MPI     4
+                    ARGS    "testinput/iodatest_obsspace_timecomm_save_odb_single_osdf.yaml"
+                    TEST_DEPENDS ioda_obsspace_timecomm_save_clean_files )
+endif()
+
+# Compare each time comm save output file to its test reference file. The ObsGroup
+# and OSDF outputs each have their own reference files. The comparison test is named
+# after the output file, and depends on the test that writes that file.
+function( add_timecomm_save_cmp_test file_type writer_test output_file )
+  get_filename_component( output_stem ${output_file} NAME_WLE )
+  ecbuild_add_test( TARGET  ioda_${output_stem}_cmp
+                    TYPE    SCRIPT
+                    COMMAND bash
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                            ${file_type}
+                            "echo Checking ${output_file}"
+                            ${output_file}
+                    TEST_DEPENDS ${writer_test} )
+endfunction()
+
+foreach( tag "" _osdf )
+  foreach( suffix _0000 _0001 _0002 )
+    add_timecomm_save_cmp_test( netcdf ioda_obsspace_timecomm_save_3x1${tag}
+                                obsspace_timecomm_save_3x1${tag}${suffix}.nc4 )
+  endforeach()
+  foreach( suffix _0000 _0001 )
+    add_timecomm_save_cmp_test( netcdf ioda_obsspace_timecomm_save_2x2${tag}
+                                obsspace_timecomm_save_2x2_single${tag}${suffix}.nc4 )
+  endforeach()
+  foreach( suffix _0000_0000 _0001_0000 _0000_0001 _0001_0001 )
+    add_timecomm_save_cmp_test( netcdf ioda_obsspace_timecomm_save_2x2${tag}
+                                obsspace_timecomm_save_2x2_multi${tag}${suffix}.nc4 )
+  endforeach()
+endforeach()
+
+if (odc_FOUND)
+  foreach( tag "" _osdf )
+    foreach( suffix _0000_0000 _0001_0000 _0000_0001 _0001_0001 )
+      add_timecomm_save_cmp_test( odb ioda_obsspace_timecomm_save_odb${tag}
+                                  obsspace_timecomm_save_odb_multi${tag}${suffix}.odc )
+    endforeach()
+  endforeach()
+  foreach( suffix _0000 _0001 )
+    add_timecomm_save_cmp_test( odb ioda_obsspace_timecomm_save_odb_single_osdf
+                                obsspace_timecomm_save_odb_single_osdf${suffix}.odc )
+  endforeach()
+endif()
+
+# OSDF parity: compare the OSDF time comm save output to the matching ObsGroup output.
+# Every time rank reads the same obs over the same time window, so its files match those
+# of the other time ranks, and the _cmp tests above hold each one to its reference file.
+# Checking parity on time rank 0 therefore covers the others. With multiple files, the
+# two containers can split a time rank's locations differently across the io pool rank
+# files, so the whole set of io pool rank files is compared as one. The single ODB file
+# output has no ObsGroup counterpart, so it has no parity test.
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_3x1_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/obsspace_timecomm_save_3x1_0000.nc4
+                          testoutput/obsspace_timecomm_save_3x1_osdf_0000.nc4
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_3x1
+                               ioda_obsspace_timecomm_save_3x1_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_2x2_single_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/obsspace_timecomm_save_2x2_single_0000.nc4
+                          testoutput/obsspace_timecomm_save_2x2_single_osdf_0000.nc4
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_2x2
+                               ioda_obsspace_timecomm_save_2x2_osdf )
+
+ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_2x2_multi_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_obs.py
+                          testoutput/obsspace_timecomm_save_2x2_multi_0000_0000.nc4,testoutput/obsspace_timecomm_save_2x2_multi_0001_0000.nc4
+                          testoutput/obsspace_timecomm_save_2x2_multi_osdf_0000_0000.nc4,testoutput/obsspace_timecomm_save_2x2_multi_osdf_0001_0000.nc4
+                  TEST_DEPENDS ioda_obsspace_timecomm_save_2x2
+                               ioda_obsspace_timecomm_save_2x2_osdf )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  ioda_obsspace_timecomm_save_odb_multi_osdf_parity
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/obsspace_timecomm_save_odb_multi_0000_0000.odc,testoutput/obsspace_timecomm_save_odb_multi_0001_0000.odc
+                            testoutput/obsspace_timecomm_save_odb_multi_osdf_0000_0000.odc,testoutput/obsspace_timecomm_save_odb_multi_osdf_0001_0000.odc
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_obsspace_timecomm_save_odb
+                                 ioda_obsspace_timecomm_save_odb_osdf )
+endif()
 
 #########################################################################
 ##### The following tests check the ObsSpace using an OSDF container ####

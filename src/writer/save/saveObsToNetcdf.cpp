@@ -830,6 +830,7 @@ static void saveOsdfToNetcdfSingleFile(const eckit::mpi::Comm & ioPoolComm,
 
 void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
                       const eckit::mpi::Comm & ioPoolComm,
+                      const int timeCommRank,
                       std::unique_ptr<osdf::IFrame> & srcOsdf,
                       osdf::FrameMetadata & osdfMetadata) {
   // saveObs (caller of this function) has already verified that the
@@ -837,31 +838,40 @@ void saveOsdfToNetcdf(const ObsDataOutParameters & dataOutParams,
 
   // Retrieve the file name, open the output file, and transfer the
   // data from srcOsdf to the output file.
-  std::string outputFileName =
+  const std::string configFileName =
     dataOutParams.engine.value().engineParameters.value().fileName.value();
 
-  // If we are writing multiple files, then we need to append
-  // the io pool rank to the file name to get the unique file name for
-  // this rank. If we are writing a single file, then all ranks will
-  // write to the same file name.
+  // There are 2 things to figure out:
+  // 1. Whether we need a pool rank suffix appended to the file name
+  // 2. Whether to call saveOsdfToNetcdfSingleFile or fall through
+  //    to the direct write path below.
+  //
+  // saveOsdfToNetcdfSingleFile will write from all the ranks in the
+  // io pool to a single output file.
+  //   Many ranks -> one output file
+  //   We always write to a single file, thus never want a pool rank
+  //   suffix appended to the output file name
+  //
+  // The direct write path below will write one file per rank
+  // regardless of the size of the io pool.
+  //   one or more ranks -> one or more output files
+  //   if io pool has only one rank -> no pool rank suffix on the file name
+  //   otherwise, append the pool rank suffix to each file name
+  //
+  // In all cases, the time communicator rank suffix is appended (when
+  // timeCommRank >= 0) so that each time rank writes its own file(s).
   const bool writeMultipleFiles = dataOutParams.writeMultipleFiles.value();
+  const bool multiRankPool = (ioPoolComm.size() > 1);
+  const bool appendPoolRank = writeMultipleFiles && multiRankPool;
+  const bool callSaveToSingleFile = !writeMultipleFiles && multiRankPool;
+  const std::string outputFileName = ioda::Engines::uniquifyFileName(configFileName,
+      appendPoolRank, ioPoolComm.rank(), timeCommRank);
 
-  if (!writeMultipleFiles && ioPoolComm.size() > 1) {
+  if (callSaveToSingleFile) {
     // Single shared file, written one pool rank at a time in rank order (see the
     // "Single-file write path" section above).
     saveOsdfToNetcdfSingleFile(ioPoolComm, srcOsdf, osdfMetadata, outputFileName);
     return;
-  }
-
-  // todo(SRH): For now we are ignoring the time communicator rank number.
-  // We eventually need to support this for when we output files on
-  // successive time steps. Setting timeCommRank to -1 will cause the output
-  // file name to not include the time communicator rank number. Only append
-  // the rank number if there is more than one rank in the io pool.
-  if (ioPoolComm.size() > 1) {
-    const int timeCommRank = -1;
-    outputFileName = ioda::Engines::uniquifyFileName(outputFileName,
-        writeMultipleFiles, ioPoolComm.rank(), timeCommRank);
   }
 
   // Open the output file, walk through the columns in srcOsdf, and

@@ -26,33 +26,27 @@ namespace ioda {
 namespace writer {
 
 void saveOsdfToOdb(const ObsDataOutParameters &dataOutParams, const eckit::mpi::Comm &ioPoolComm,
-                   std::unique_ptr<osdf::IFrame> &srcOsdf, osdf::FrameMetadata &osdfMetadata) {
+                   const int timeCommRank, std::unique_ptr<osdf::IFrame> &srcOsdf,
+                   osdf::FrameMetadata &osdfMetadata) {
   // saveObs (caller of this function) has already verified that the
   // output file type is ODB.
 
   const auto &writerParams = dynamic_cast<const Engines::WriteOdbFileParameters &>(
     dataOutParams.engine.value().engineParameters.value());
-  std::string outputFileName = writerParams.fileName.value();
-  std::string outputFileNameFromRank = outputFileName;
+  const std::string configFileName = writerParams.fileName.value();
 
-  oops::Log::info() << "Saving to file: " << outputFileName << std::endl;
-
-  // Set up unique file names for each ioPool rank member
-  if (ioPoolComm.size() > 1) {
-    // todo(SRH): For now we are ignoring the time communicator rank number.
-    // We eventually need to support this for when we output files on
-    // successive time steps. Setting timeCommRank to -1 will cause the output
-    // file name to not include the time communicator rank number. Only append
-    // the rank number if there is more than one rank in the io pool.
-    const int timeCommRank = -1;
-    outputFileNameFromRank = ioda::Engines::uniquifyFileName(outputFileNameFromRank, true,
-                                                             ioPoolComm.rank(), timeCommRank);
-  }
+  // Each time rank writes its own output file(s), so append the time communicator
+  // rank number (when timeCommRank >= 0) to the file name. Then set up unique file
+  // names for each ioPool rank member. Only append the io pool rank number if there
+  // is more than one rank in the io pool.
+  const bool multiRankPool = (ioPoolComm.size() > 1);
+  const std::string outputFileName = ioda::Engines::uniquifyFileName(
+    configFileName, multiRankPool, ioPoolComm.rank(), timeCommRank);
 
   Engines::ODC::ODC_Parameters odcparams;
   odcparams.queryFile                    = writerParams.queryFileName;
   odcparams.mappingFile                  = writerParams.mappingFileName;
-  odcparams.outputFile                   = outputFileNameFromRank;
+  odcparams.outputFile                   = outputFileName;
   odcparams.odbType                      = writerParams.odbType;
   odcparams.missingObsSpaceVariableAbort = writerParams.missingObsSpaceVariableAbort;
   odcparams.ignoreChannelDimensionWrite  = writerParams.ignoreChannelDimensionWrite;
@@ -69,16 +63,18 @@ void saveOsdfToOdb(const ObsDataOutParameters &dataOutParams, const eckit::mpi::
 
   ioPoolComm.barrier();
 
-  // Merge files if writeMultipleFiles == false
+  // Merge files if writeMultipleFiles == false. The merge is done separately for
+  // each time rank, so each time rank gets its own merged file.
   if (!dataOutParams.writeMultipleFiles.value()
-       && ioPoolComm.rank() == 0 && outputFileNameFromRank != outputFileName) {
+       && ioPoolComm.rank() == 0 && multiRankPool) {
     const std::size_t mpiRankSize     = ioPoolComm.size();
-    std::ofstream outFile(outputFileName,
+    const std::string mergedFileName =
+      ioda::Engines::uniquifyFileName(configFileName, false, 0, timeCommRank);
+    std::ofstream outFile(mergedFileName,
                           std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
     for (std::size_t irank = 0; irank < mpiRankSize; irank++) {
-      const int timeCommRank = -1;
       const std::string inFileName
-        = Engines::uniquifyFileName(outputFileName, true, irank, timeCommRank);
+        = Engines::uniquifyFileName(configFileName, true, irank, timeCommRank);
       std::ifstream inFile(inFileName, std::ios_base::binary | std::ios_base::in);
       outFile << inFile.rdbuf();
       inFile.close();

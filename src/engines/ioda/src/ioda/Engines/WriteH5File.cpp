@@ -12,6 +12,7 @@
 #include "ioda/Copying.h"   // for the post-processor workaround
 #include "ioda/Engines/EngineUtils.h"
 
+#include "oops/mpi/mpi.h"  // for the post-processor workaround
 #include "oops/util/DateTime.h"  // for the post-processor workaround
 #include "oops/util/Logger.h"
 
@@ -199,10 +200,14 @@ void WriteH5Proc::workaroundFixToVarLenStrings(const std::string & finalFileName
     // We want each rank to write its own corresponding file, and that can be accomplished
     // in telling the writer that we are to create multiple files and not use the parallel
     // io mode.
+    //
+    // finalFileName already has the rank number suffixes on it, so hand the writer a
+    // time communicator of size 1 to keep it from appending the time rank suffix a
+    // second time.
     writerParams.validateAndDeserialize(writerConfig);
     const bool createMultipleFiles = false;
     Engines::WriterCreationParameters writerCreateParams(
-        createParams_.comm, createParams_.timeComm, createMultipleFiles, isParallel);
+        createParams_.comm, oops::mpi::myself(), createMultipleFiles, isParallel);
     std::unique_ptr<Engines::WriterBase> writerEngine = Engines::WriterFactory::create(
           writerParams.engine.value().engineParameters, writerCreateParams);
 
