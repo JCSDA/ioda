@@ -17,6 +17,7 @@
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
 #include "ioda/containers/CreateIFrame.h"
+#include "ioda/core/OsdfSchemaCheck.h"
 #include "ioda/distribution/DistributionFactory.h"
 #include "ioda/ioPool/ReaderPoolUtils.h"
 #include "ioda/reader/distribute/osdfDistributeUtils.hpp"
@@ -46,19 +47,9 @@ void distributeObs(const DistributionParametersBase & distParams,
       "be the same in this mode");
   }
 
-  // Check that OSDF column counts across all MPI tasks are equal.
-  std::vector<std::size_t> localNumCols(commAll.size());
-  commAll.allGather(inOsdf->numCols(), localNumCols.begin(), localNumCols.end());
-  for (std::size_t i = 1; i < localNumCols.size(); ++i) {
-    if (localNumCols[i] != localNumCols[0]) {
-      std::string errMsg =
-        std::string("distributeObs: Inconsistent number of columns across MPI tasks: ") +
-        std::string("rank0: ") + std::to_string(localNumCols[0]) + std::string(" versus ") +
-        std::string("rank") + std::to_string(i) + std::string(": ") +
-        std::to_string(localNumCols[i]);
-      throw eckit::BadValue(errMsg, Here());
-    }
-  }
+  // The column loops below call allGatherv once per column, so every MPI task must hold the
+  // same columns in the same order with the same types.
+  osdfCheckSchemaAcrossRanks(*inOsdf, commAll, "distributeObs");
 
   // tempDistOut is the user-requested new distribution type (Step 4 of design, (now moved to top))
   std::shared_ptr<Distribution> tempDistOut = DistributionFactory::create(commAll, distParams);
@@ -68,9 +59,9 @@ void distributeObs(const DistributionParametersBase & distParams,
   // return. Nothing to distribute. Containers that hold columns but no rows go through the
   // steps below, so that the output has the same column order as when there are rows.
   //
-  // Note we have verified that all the ranks have the same number of columns above,
-  // so we can just check rank 0 here.
-  if (!preserveInputs && localNumCols[0] == 0) {
+  // Note we have verified that all the ranks have the same columns above, so this condition
+  // has the same value on every rank.
+  if (!preserveInputs && inOsdf->numCols() == 0) {
     outRecNums.resize(0);
     outDist = tempDistOut;
     tempDistOut.reset();

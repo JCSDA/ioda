@@ -65,6 +65,8 @@ core/FileFormat.h
 core/IodaUtils.cc
 core/IodaUtils.h
 core/ObsSourceStats.h
+core/OsdfSchemaCheck.cc
+core/OsdfSchemaCheck.h
 core/ParameterTraitsFileFormat.cc
 core/ParameterTraitsFileFormat.h
 core/ParameterTraitsObsDtype.cc

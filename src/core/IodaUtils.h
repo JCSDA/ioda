@@ -40,8 +40,8 @@ class ObsSpaceParameters;
   /// \param firstVector one vector to compare
   /// \param secondVector another vector to compare with the first
   /// Outputs a struct containing two vectors of strings, listing the elements
-  /// in one of the vectors which is not found in the other. The order of the elements
-  /// in the output vectors does not necessarily match their order in the input vectors.
+  /// in one of the vectors which is not found in the other. The elements in each output
+  /// vector keep their order in the corresponding input vector.
   vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& firstVector,
                                               const std::vector<std::string>& secondVector);
 

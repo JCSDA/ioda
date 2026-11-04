@@ -125,6 +125,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_empty_obs_file_reader_pool.yaml
   testinput/iodatest_obsspace_empty_obs_file_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_has.yaml
+  testinput/iodatest_obsspace_schema_consistency.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_bufr.yaml
   testinput/iodatest_obsspace_missing_obs_file_warn_mpi.yaml
@@ -1644,6 +1645,32 @@ ecbuild_add_test( TARGET  ioda_obsspace_has
                   SOURCES mains/TestIodaObsSpaceHas.cc
                   ARGS    "testinput/iodatest_obsspace_has.yaml"
                   LIBS    ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_osdf_check_schema_2
+                  MPI     2
+                  SOURCES mains/TestOsdfCheckSchema.cc
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  LIBS    ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_osdf_check_schema_4
+                  MPI     4
+                  COMMAND ioda_osdf_check_schema_2
+                  ARGS    "testinput/containers/iodatest_osdf_dummy_config.yaml"
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_schema_consistency_mpi_2
+                  MPI     2
+                  SOURCES mains/TestIodaObsSpaceSchemaConsistency.cc
+                  ARGS    "testinput/iodatest_obsspace_schema_consistency.yaml"
+                  LIBS    ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_schema_consistency_mpi_4
+                  MPI     4
+                  COMMAND ioda_obsspace_schema_consistency_mpi_2
+                  ARGS    "testinput/iodatest_obsspace_schema_consistency.yaml"
                   )
 
 # The next two tests are verifying that an exception is thrown (ie, error) when the input

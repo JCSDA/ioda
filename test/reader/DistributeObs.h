@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -190,6 +191,41 @@ void testCalculateDistribution() {
 }
 
 // -----------------------------------------------------------------------------
+// distributeObs calls allGatherv once per column, so it must refuse an input whose schema
+// differs across ranks before gathering anything. The schema check itself is tested in
+// OsdfCheckSchema.h.
+void testSchemaMismatchStopsDistribution() {
+  const eckit::mpi::Comm & comm = oops::mpi::world();
+  if (skipOnSingleTask(comm, "testSchemaMismatchStopsDistribution")) {
+    return;
+  }
+  // Only rank 0 holds locations; the last rank holds two columns of different types in
+  // swapped order.
+  std::vector<std::pair<std::string, osdf::consts::eDataTypes>> schema = {
+    {"MetaData/latitude", osdf::consts::eFloat},
+    {"MetaData/longitude", osdf::consts::eFloat},
+    {"DiagnosticFlags/flag", osdf::consts::eChar},
+    {"DerivedModelValue/var1", osdf::consts::eFloat}};
+  if (comm.rank() == comm.size() - 1) {
+    std::swap(schema[2], schema[3]);
+  }
+  const std::size_t numRows = (comm.rank() == 0) ? 3 : 0;
+  std::unique_ptr<osdf::IFrame> frame = createSchemaFrame<osdf::FrameRows>(schema, numRows);
+
+  std::unique_ptr<DistributionParametersBase> distParams =
+    createBaseDistributionParams("RoundRobin");
+  std::shared_ptr<Distribution> inDist =
+    std::make_shared<IdentityDistribution>(comm, IdentityDistribution::Parameters_{});
+  inDist->setNumberLocations(frame->numRows());
+  std::shared_ptr<Distribution> outDist;
+  std::unique_ptr<osdf::IFrame> outFrame = std::make_unique<osdf::FrameRows>();
+  std::vector<std::size_t> outRecNums;
+  EXPECT_THROWS_AS(ioda::reader::distributeObs(*distParams, comm, {}, inDist, frame,
+                                               outDist, outFrame, outRecNums),
+                   eckit::BadValue);
+}
+
+// -----------------------------------------------------------------------------
 class DistributeObs : public oops::Test {
  public:
   DistributeObs() {}
@@ -203,6 +239,8 @@ class DistributeObs : public oops::Test {
 
     ts.emplace_back(CASE("ioda/DistributeObs/testCalculateDistribution")
       { testCalculateDistribution(); });
+    ts.emplace_back(CASE("ioda/DistributeObs/testSchemaMismatchStopsDistribution")
+      { testSchemaMismatchStopsDistribution(); });
   }
 
   void clear() const override {}

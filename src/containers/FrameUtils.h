@@ -22,6 +22,22 @@ namespace osdf {
 
 namespace FrameUtils {
 
+/// \brief Return the name of an IFrame column data type \p dtype, for use in messages.
+///
+/// \param dtype
+///   One of the allowed values of the osdf::consts::eDataTypes enum defined in Constants.h.
+///   Any other value gives "unknown".
+inline std::string typeName(const consts::eDataTypes dtype) {
+  switch (dtype) {
+    case consts::eInt:    return "int";
+    case consts::eInt64:  return "int64";
+    case consts::eFloat:  return "float";
+    case consts::eChar:   return "char";
+    case consts::eString: return "string";
+    default:              return "unknown";
+  }
+}
+
 /// \brief Perform an action dependent on the type of an IFrame column variable \p dtype.
 ///
 /// \param dtype

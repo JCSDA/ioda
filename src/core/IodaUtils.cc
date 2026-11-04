@@ -37,12 +37,12 @@ vectorDifference findElementsNotInBothVectors(const std::vector<std::string>& fi
   outputVectors.onlyInFirstVector.reserve(firstVector.size());
   outputVectors.onlyInSecondVector.reserve(secondVector.size());
 
-  for (const std::string& item : firstVectorAsSet) {
+  for (const std::string& item : firstVector) {
     if (!secondVectorAsSet.count(item)) {
       outputVectors.onlyInFirstVector.emplace_back(item);
     }
   }
-  for (const std::string& item : secondVectorAsSet) {
+  for (const std::string& item : secondVector) {
     if (!firstVectorAsSet.count(item)) {
       outputVectors.onlyInSecondVector.emplace_back(item);
     }

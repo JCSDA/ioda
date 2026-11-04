@@ -1,0 +1,36 @@
+---
+time window:
+  begin: "2021-01-15T12:00:00Z"
+  end: "2021-01-15T18:00:00Z"
+
+# With the Identity distribution and an io pool of one rank, rank 0 holds every location and
+# the other ranks hold none: the layout in which filters have created columns on some ranks
+# but not others. The test must run on more than one MPI task.
+observations:
+- obs space:
+    name: "Schema consistency (FrameRows)"
+    simulated variables: ['windEastward']
+    distribution:
+      name: "Identity"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
+    use data frame container: true
+    data frame type: "FrameRows"
+    io pool:
+      max pool size: 1
+
+- obs space:
+    name: "Schema consistency (FrameCols)"
+    simulated variables: ['windEastward']
+    distribution:
+      name: "Identity"
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/obsspace_index_recnum.nc4"
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 1

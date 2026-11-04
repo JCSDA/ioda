@@ -37,6 +37,7 @@
 #include "ioda/containers/FrameMetadata.h"
 #include "ioda/containers/FrameUtils.h"
 #include "ioda/containers/IFrame.h"
+#include "ioda/core/OsdfSchemaCheck.h"
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/distribution/Distribution.h"
 #include "ioda/distribution/DistributionFactory.h"
@@ -295,6 +296,10 @@ ObsSpace::ObsSpace(const eckit::Configuration & config, const eckit::mpi::Comm &
 
     createMissingObsErrors();
 
+    // Columns created above, after the reader distributed the obs, must have been created on
+    // every MPI task.
+    checkSchemaConsistency("ObsSpace constructor");
+
     oops::Log::debug() << obsname() << ": " << globalNumLocsOutsideTimeWindow()
     << " observations are outside of time window out of " << sourceNumLocs() << std::endl;
     oops::Log::debug() << obsname() << ": " << globalNumLocsRejectQC()
@@ -327,6 +332,10 @@ const ObsSpaceParameters & ObsSpace::params() const {
 
 // -----------------------------------------------------------------------------
 void ObsSpace::save(bool preserveDistribution) {
+    // Catch any divergence in the column schema introduced during the run, even when no output
+    // file is written.
+    checkSchemaConsistency("ObsSpace::save");
+
     // Determine if we should continue on to write out a file. Conditions for
     // writing out a file are:
     //     1. The obsdataout parameter is specified in the YAML configuration
@@ -990,6 +999,13 @@ void ObsSpace::redistribute(const eckit::Configuration & redistributeConfig) {
 }
 
 // -----------------------------------------------------------------------------
+void ObsSpace::checkSchemaConsistency(const std::string & context) const {
+  if (use_dataframe_) {
+    ioda::osdfCheckSchemaAcrossRanks(*osdf_, this->comm(), obsname() + ": " + context);
+  }
+}
+
+// -----------------------------------------------------------------------------
 void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
   this->syncAppend();
   // For now, only allow append to run on non-overlapping distributions
@@ -1091,6 +1107,7 @@ void ObsSpace::updateObsSpace(const eckit::Configuration & cdaConfig) {
           dist_->computePatchLocs();
           buildRecIdx();
           appendMissingObsErrors(obsSourceStats.nlocs);
+          checkSchemaConsistency("ObsSpace::updateObsSpace");
           for (auto &data : obs_space_associated_) {
             data.get().append();
           }

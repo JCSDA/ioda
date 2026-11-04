@@ -517,6 +517,21 @@ namespace ioda {
         /// specification in the YAML configuration. Only works for OSDF-based ObsSpaces.
         void redistribute(const eckit::Configuration &);
 
+        /// \brief Check that the OSDF column schema is identical on all MPI tasks
+        /// \details Every MPI task must hold the same columns, in the same order and with the
+        /// same data types, even if it holds no locations. This is a collective call; it throws
+        /// on every task if the schemas differ. It does nothing if the ObsSpace is not using the
+        /// OSDF backend.
+        /// \param context description of the call site, included in the error message
+        void checkSchemaConsistency(const std::string & context) const;
+
+        /// \brief Prepare sourceOsdf for append if osdf_ has derived variables
+        /// \details If the osdf_ has more columns than appendOsdf, this function creates columns of
+        /// missing data with those names and adds them to appendOsdf
+        /// Will throw an exception if appendOsdf has more columns than osdf_
+        /// \param srcOsdf Osdf containing variables to be compared with osdf_
+        void prepareSourceOsdfDerivedVariables(const std::unique_ptr<osdf::IFrame> &srcOsdf);
+
         /// \brief Reduce obs space given a vector of int showing which values to remove
         /// \details This function will use its input arguments to remove unwanted
         /// values (along the Location dimension) from the obs space. It will also call

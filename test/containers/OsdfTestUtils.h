@@ -12,12 +12,14 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
 
 #include "ioda/containers/ColumnMetadata.h"
@@ -427,6 +429,35 @@ void compareFrames(const frameType &testOsdf,
       compareColumnExact<T>(testColumnNames[i], refColumnNames[i], testOsdf, refOsdf);
     });
   }
+}
+
+/// \brief Create a frame of type frameType holding the given columns, in order, each with
+/// numRows default-valued rows. Useful when only the column schema matters.
+template <typename frameType>
+std::unique_ptr<osdf::IFrame> createSchemaFrame(
+    const std::vector<std::pair<std::string, osdf::consts::eDataTypes>> & columns,
+    const std::size_t numRows) {
+  std::unique_ptr<osdf::IFrame> frame = std::make_unique<frameType>();
+  for (const auto & column : columns) {
+    osdf::FrameUtils::callWithSupportedType(
+      column.second,
+      [&](auto typeDiscriminator) {
+        using T = decltype(typeDiscriminator);
+        frame->appendNewColumn(column.first, std::vector<T>(numRows));
+      });
+  }
+  return frame;
+}
+
+/// \brief Return true, after logging a warning, if comm has fewer than two tasks. Lets a test
+/// that compares MPI tasks skip itself visibly rather than pass silently.
+inline bool skipOnSingleTask(const eckit::mpi::Comm & comm, const std::string & testName) {
+  if (comm.size() >= 2) {
+    return false;
+  }
+  oops::Log::warning() << testName << ": skipped, since it needs at least 2 MPI tasks and is "
+                       << "running on " << comm.size() << std::endl;
+  return true;
 }
 
 }  // namespace test
