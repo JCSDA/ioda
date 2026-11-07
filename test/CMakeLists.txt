@@ -205,6 +205,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_generators.yaml
   testinput/iodatest_obsspace_null_channel.yaml
   testinput/iodatest_obsspace_null_channel_osdf.yaml
+  testinput/iodatest_odb_missing_receipt_datetime.yaml
   testinput/iodatest_obsvector.yaml
   testinput/iodatest_obsvector_osdf_frame_cols.yaml
   testinput/iodatest_obsvector_osdf_frame_rows.yaml
@@ -3358,6 +3359,26 @@ ecbuild_add_test( TARGET  ioda_obsspace_null_channel_osdf_parity
                           --odc-lib $<TARGET_FILE:odccore>
                   TEST_DEPENDS ioda_obsspace_null_channel
                                ioda_obsspace_null_channel_osdf )
+
+# Missing receipt_date/receipt_time must be written as NULL.
+ecbuild_add_test( TARGET  ioda_odb_missing_receipt_datetime
+                  TYPE    SCRIPT
+                  COMMAND bash
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare.sh
+                          odb
+                          "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                          testinput/iodatest_odb_missing_receipt_datetime.yaml"
+                          odb_missing_receipt_datetime.odb)
+
+# The OSDF output, also written by the test above, has a different column order.
+ecbuild_add_test( TARGET  ioda_odb_missing_receipt_datetime_osdf_parity
+                  TYPE    SCRIPT
+                  COMMAND ${Python3_EXECUTABLE}
+                  ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                          testoutput/odb_missing_receipt_datetime.odb
+                          testoutput/odb_missing_receipt_datetime_osdf.odb
+                          --odc-lib $<TARGET_FILE:odccore>
+                  TEST_DEPENDS ioda_odb_missing_receipt_datetime )
 endif()
 
 # This tests creates a single output file (7 tasks, 4 tasks in the io pool)

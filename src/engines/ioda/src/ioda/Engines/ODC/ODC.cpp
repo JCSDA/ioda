@@ -1034,6 +1034,12 @@ void fillIntArray(const ContainerFacade &container, const std::string varname,
   }
 }
 
+/// Returns true if \p value is any of the int64 missing values a dateTime variable may hold.
+bool isMissingDateTime(const int64_t value, const std::optional<int64_t> &fillValue) {
+  static const int64_t odbMissingInt64 = OdbVariableCreationParameters().missingInt64.value();
+  return value == fillValue || value == util::missingValue<int64_t>() || value == odbMissingInt64;
+}
+
 void readColumn(const ContainerFacade &container, const ColumnInfo column,
                 std::vector<std::vector<double>> &data_store, const int number_of_locations,
                 const int number_of_channels, std::string odb_type, std::vector<int> extendeds) {
@@ -1047,7 +1053,7 @@ void readColumn(const ContainerFacade &container, const ColumnInfo column,
     std::vector<double> data_store_date(numrows);
     const std::optional<int64_t> fillValue = container.missingValue<int64_t>(obsspacename);
     for (int j = 0; j < numrows; j++) {
-      if (fillValue && fillValue.value() == buf[j]) {
+      if (isMissingDateTime(buf[j], fillValue)) {
         data_store_date[j] = odb_missing_int;
       } else {
         // struct tm is being used purely for time arithmetic.  The offset is incorrect but it
@@ -1072,7 +1078,8 @@ void readColumn(const ContainerFacade &container, const ColumnInfo column,
         time.tm_mon  = column.epoch_month - 1;
         time.tm_year = column.epoch_year - 1900;
         timegm(&time);
-        data_store_date[j] = (time.tm_year + 1900) * 10000 + (time.tm_mon + 1) * 100 + time.tm_mday;
+        data_store_date[j] = (static_cast<int64_t>(time.tm_year) + 1900) * 10000
+                             + (time.tm_mon + 1) * 100 + time.tm_mday;
       }
     }
     pushBackVector(data_store, data_store_date, number_of_locations, number_of_channels);
@@ -1084,7 +1091,7 @@ void readColumn(const ContainerFacade &container, const ColumnInfo column,
     std::vector<double> data_store_time(numrows);
     const std::optional<int64_t> fillValue = container.missingValue<int64_t>(obsspacename);
     for (int j = 0; j < numrows; j++) {
-      if (fillValue && fillValue.value() == buf[j]) {
+      if (isMissingDateTime(buf[j], fillValue)) {
         data_store_time[j] = odb_missing_int;
       } else {
         // See comments above in the date section.
