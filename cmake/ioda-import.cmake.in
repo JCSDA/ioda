@@ -24,7 +24,8 @@ if(NOT jedicmake_FOUND)
     find_dependency( jedicmake REQUIRED )
 endif()
 
-if(NOT NetCDF_C_FOUND)
+if(NOT NetCDF_C_FOUND OR NOT NetCDF_CXX_FOUND
+   OR NOT NetCDF_Fortran_FOUND)
     find_dependency( NetCDF REQUIRED COMPONENTS C CXX Fortran )
 endif()
 
@@ -58,7 +59,7 @@ endif()
 
 # Optional packages
 
-if(@OpenMP_FOUND@)
+if("@OPENMP@" AND "@OpenMP_FOUND@")
     find_dependency( OpenMP COMPONENTS C CXX Fortran )
 endif()
 
@@ -83,7 +84,7 @@ endif()
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID @CMAKE_Fortran_COMPILER_ID@)
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION @CMAKE_Fortran_COMPILER_VERSION@)
 if(NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_ID STREQUAL CMAKE_Fortran_COMPILER_ID
-   OR NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION VERSION_EQUAL CMAKE_Fortran_COMPILER_VERSION)
+    OR NOT @PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION VERSION_EQUAL CMAKE_Fortran_COMPILER_VERSION)
     message(SEND_ERROR "Package @PROJECT_NAME@ provides Fortran modules built with "
             "${@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID}-${@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION} "
             "but this build for ${PROJECT_NAME} uses incompatible compiler ${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}")

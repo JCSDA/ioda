@@ -42,12 +42,6 @@ macro(AddExample_C ExName SourceFile )
 	add_test(NAME ${ExName} COMMAND ${ExName})
 endmacro()
 
-macro(AddExample_F ExName SourceFile )
-	AddExample_Base( ${ExName} ${SourceFile} )
-	target_link_libraries(${ExName} PUBLIC ioda_engines ioda_fortran stdc++)
-	add_test(NAME ${ExName} COMMAND ${ExName})	
-endmacro()
-
 macro(AddExample_Py testname cmd args need_test_data_prep)
 	add_test(NAME ${testname}
 		COMMAND ${Python3_EXECUTABLE}
@@ -85,14 +79,6 @@ AddExample_CXX (ioda-engines-05b 05b-ObsGroupAppend.cpp)
 #AddExample_C   (ioda-engines-00-Strings-C 00-Strings.c)
 #AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
 #AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
-
-if (IODA_BUILD_ENGINES_FORTRAN)
-	AddExample_F   (ioda-engines-00-Strings-F 00-Strings.f90)
-	AddExample_F   (ioda-engines-00-VecStrings-F 00-VecStrings.f90)
-	AddExample_F   (ioda-engines-01-GroupsAndObsSpaces-F 01-GroupsAndObsSpaces.f90)
-	AddExample_F   (ioda-engines-02-Attributes-F 02-Attributes.f90)
-	AddExample_F   (ioda-engines-03-Variables-F 03-VariablesIntro.f90)
-endif()
 
 if(BUILD_PYTHON_BINDINGS)
 	AddExample_Py  (ioda-engines-01-Py 01-GroupsAndObsSpaces.py "" NO)

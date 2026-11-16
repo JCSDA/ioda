@@ -59,7 +59,7 @@ IODA_DL std::string genUniqueName();
 // created which can handle either serial or parallel access, and createFile calls
 // createFileImpl in its "serial" mode. In the future it would be good if possible
 // to encapsulate createFile so that the backends can be made more consistent in
-// the Python, C, and Fortran APIs. 
+// the Python and C APIs. 
 IODA_DL Group createFile(const std::string& filename, BackendCreateModes mode,
                          HDF5_Version_Range compat = defaultVersionRange());
 

@@ -24,10 +24,6 @@
 /// \brief Provides the C interface for ioda.
 /// \ingroup ioda_language_interfaces
 
-/// \defgroup ioda_fortran Fortran interface
-/// \brief The IODA Fortran interface (WIP)
-/// \ingroup ioda_language_interfaces
-
 /// \defgroup ioda_python Python interface
 /// \brief The IODA Python interface (WIP)
 /// \ingroup ioda_language_interfaces
@@ -35,10 +31,6 @@
 /// \defgroup ioda_cxx_api API
 /// \brief C++ API
 /// \ingroup ioda_cxx
-
-/// \defgroup ioda_fortran_api API
-/// \brief Fortran API
-/// \ingroup ioda_fortran
 
 /// \defgroup ioda_engines_grp Engines
 /// \brief The powerhouses of IODA

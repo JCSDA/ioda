@@ -115,10 +115,8 @@ ioda can read in any of these string types, but everything that it writes is
 assumed to be a variable-length, UTF-8 string. We subscribe to the
 [UTF-8 everywhere](http://utf8everywhere.org/) guidelines.
 
-Not all languages support all of these types. Fortran, for instance, lacks unsigned
-types. Type conversions are transparently applied in such cases. Also for Fortran,
-fixed-length strings are the norm, and these are silently trimmed. Other engines
-should eventually converge on this standard.
+Not all languages support all of these types. Type conversions are transparently 
+applied in such cases. 
 
 More advanced types such as arrays and compound types are also supported, but these
 have limited use at present. We will investigate whether a custom type is suitable

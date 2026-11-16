@@ -3612,22 +3612,20 @@ ecbuild_add_test( TARGET  ioda_obsspace_dist_write_atlas
                   TEST_DEPENDS ioda_obsspace_dist_write)
 
 # IODA ObsSpace class - Fortran interface test
-if (IODA_BUILD_OBSSPACE_FORTRAN)
-    add_fctest( TARGET  ioda_obsspace_fortran
-                SOURCES ioda/obsspace.F90
-                ARGS    --config testinput/iodatest_obsspace_fortran.yaml
-                LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
-                LIBS  ioda_test
-                )
+add_fctest( TARGET  ioda_obsspace_fortran
+            SOURCES ioda/obsspace.F90
+            ARGS    --config testinput/iodatest_obsspace_fortran.yaml
+            LINKER_LANGUAGE ${FORTRAN_LINKER_LANGUAGE}
+            LIBS  ioda_test
+            )
 
-    # OSDF parity: a twin yaml selecting the OSDF container on every obs space.  The
-    # IODA_TEST_CONTAINER environment variable cannot be used here because the container is
-    # selected from the Fortran interface, which does not consult it.
-    ecbuild_add_test( TARGET  ioda_obsspace_fortran_osdf
-                      COMMAND ioda_obsspace_fortran
-                      ARGS    --config testinput/iodatest_obsspace_fortran_osdf.yaml
-                      )
-endif()
+# OSDF parity: a twin yaml selecting the OSDF container on every obs space.  The
+# IODA_TEST_CONTAINER environment variable cannot be used here because the container is
+# selected from the Fortran interface, which does not consult it.
+ecbuild_add_test( TARGET  ioda_obsspace_fortran_osdf
+                  COMMAND ioda_obsspace_fortran
+                  ARGS    --config testinput/iodatest_obsspace_fortran_osdf.yaml
+                  )
 
 # IODA ObsSpace sorting of obs groups
 ecbuild_add_test( TARGET  ioda_sort

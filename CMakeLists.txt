@@ -9,12 +9,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.23 )
-option(IODA_BUILD_OBSSPACE_FORTRAN "Build ObsSpace Fortran bindings (src/, src/core/)." ON)
-option(IODA_BUILD_ENGINES_FORTRAN "Build ioda-engines Fortran bindings (src/engines/)." OFF)
-list( APPEND IODA_LANGUAGES CXX)
-if (IODA_BUILD_OBSSPACE_FORTRAN OR IODA_BUILD_ENGINES_FORTRAN)
-	list( APPEND IODA_LANGUAGES Fortran)
-endif()
+list( APPEND IODA_LANGUAGES CXX Fortran)
 
 project( ioda VERSION 2.12.0 LANGUAGES ${IODA_LANGUAGES} )
 
@@ -36,18 +31,18 @@ option( ENABLE_IODA_DOC "Build IODA documentation" OFF )
 ## Dependencies
 ## Note: when updating these lists, please also update ioda-import.cmake.in.
 
-# Required
 if(OPENMP)
-  find_package( OpenMP COMPONENTS C CXX Fortran )
+    find_package( OpenMP COMPONENTS C CXX Fortran )
 endif()
 
 set(HDF5_PREFER_PARALLEL true) # CMake sometimes mistakenly finds a serial system-provided HDF5.
 find_package( HDF5 REQUIRED COMPONENTS C HL )
 find_package( MPI REQUIRED )
 find_package( jedicmake REQUIRED )
-find_package( NetCDF REQUIRED COMPONENTS C Fortran CXX )  # Prefer find NetCDF by jedicmake
 find_package( eckit 1.23.0 REQUIRED )
+find_package( NetCDF REQUIRED COMPONENTS C CXX Fortran ) # Prefer find NetCDF by jedicmake
 find_package( fckit 0.10.1 REQUIRED )
+
 find_package( oops REQUIRED )
 find_package( Eigen3 REQUIRED NO_MODULE HINTS
               $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
