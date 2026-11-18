@@ -7,6 +7,8 @@
 #include "ioda/writer/ObsWriter.hpp"
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "eckit/mpi/Comm.h"
 
@@ -34,6 +36,7 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
               osdf::FrameMetadata & osdfMetadata,
+              const std::vector<std::string> & obsGroupVarList,
               const bool preserveInputs) {
   oops::Log::trace() << "writer::obsWrite start" << std::endl;
   util::Timer timer("ioda::writer", "obsWrite");
@@ -48,12 +51,12 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
     // create new output objects to pass to collectObs
     std::shared_ptr<Distribution> outOspaceDist;
     std::unique_ptr<osdf::IFrame> outOsdf;
-    collectObs(obsIoPool, ospaceDist, srcOsdf,
+    collectObs(obsIoPool, obsGroupVarList, ospaceDist, srcOsdf,
                outOspaceDist, outOsdf);
     saveObs(dataOutParams, obsIoPool, commAll, commTime, obsName, outOsdf, osdfMetadata);
     outOsdf.reset();  // free memory used for the output osdf since we won't need it anymore
   } else {
-    collectObs(obsIoPool, ospaceDist, srcOsdf);
+    collectObs(obsIoPool, obsGroupVarList, ospaceDist, srcOsdf);
     saveObs(dataOutParams, obsIoPool, commAll, commTime, obsName, srcOsdf, osdfMetadata);
   }
 

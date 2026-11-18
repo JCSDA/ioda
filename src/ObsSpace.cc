@@ -350,7 +350,7 @@ void ObsSpace::save(bool preserveDistribution) {
                            obs_params_->top_level_.ioPool,
                            obs_params_->comm(), obs_params_->timeComm(),
                            this->obsname(), dist_, osdf_,
-                           osdfMetadata_, preserveDistribution);
+                           osdfMetadata_, this->obs_group_vars(), preserveDistribution);
         } else {
           std::vector<bool> patchObsVec(nlocs());
           dist_->patchObs(patchObsVec);

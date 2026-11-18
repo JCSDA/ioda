@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace eckit {
   namespace mpi {
@@ -38,6 +39,9 @@ namespace writer {
 /// \param ospaceDist distribution object for the caller's obs space
 /// \param srcOsdf source OSDF to be transferred to the output file
 /// \param osdfMetadata frame metadata object associated with srcOsdf
+/// \param obsGroupVarList obs grouping variables (MetaData group) of the caller's obs space.
+///                        These are used to form records (groups of locations). An empty
+///                        list means no grouping.
 /// \param preserveInputs preserves the srcOsdf (requires more memory). Otherwise it is overwritten.
 void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               const ioda::IoPool::IoPoolParameters & ioPoolParams,
@@ -47,6 +51,7 @@ void obsWrite(const ioda::ObsDataOutParameters & dataOutParams,
               std::shared_ptr<Distribution> & ospaceDist,
               std::unique_ptr<osdf::IFrame> & srcOsdf,
               osdf::FrameMetadata & osdfMetadata,
+              const std::vector<std::string> & obsGroupVarList,
               const bool preserveInputs = false);
 
 }  // namespace writer

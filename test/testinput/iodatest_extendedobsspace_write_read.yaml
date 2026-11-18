@@ -1,0 +1,58 @@
+# Write an extended ObsSpace, read it back, and check that each record's locations kept
+# their order.
+#
+# The first case writes with an io pool of 2, which is what splits records across the
+# pool members if the writer collects locations rather than whole records. The second
+# case writes with an io pool of 1, where every record is collected onto one rank.
+
+extend, write and read back: &case_pool_2
+  time window:
+    begin: 2018-04-14T20:30:00Z
+    end: 2018-04-15T03:30:00Z
+  write:
+    obs space: &write_obs_space
+      name: Sondes, write
+      obsdatain:
+        engine:
+          type: H5File
+          obsfile: Data/testinput_tier_1/sondes_obs_2018041500_m.nc4
+        obsgrouping:
+          group variables: [ "stationIdentification" ]
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: testoutput/extendedobsspace_write_read.nc4
+      io pool:
+        max pool size: 2
+      simulated variables: [airTemperature]
+      distribution:
+        name: RoundRobin
+      extension:
+        allocate companion records with length: 71
+  read:
+    obs space:
+      name: Sondes, read
+      obsdatain:
+        engine:
+          type: H5File
+        obsgrouping:
+          group variables: [ "stationIdentification" ]
+      simulated variables: [airTemperature]
+      distribution:
+        name: RoundRobin
+  # 974 original locations plus 36 companion records of 71 locations
+  expected gnlocs: 3530
+  # each original record and its companion record share a station id
+  expected gnrecs: 36
+
+extend, write and read back, io pool of 1:
+  <<: *case_pool_2
+  write:
+    obs space:
+      <<: *write_obs_space
+      obsdataout:
+        engine:
+          type: H5File
+          obsfile: testoutput/extendedobsspace_write_read_pool1.nc4
+      io pool:
+        max pool size: 1

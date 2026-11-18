@@ -216,6 +216,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsvector_packeigen.yaml
   testinput/iodatest_extendedobsspace.yaml
   testinput/iodatest_extendedobsspace_halo.yaml
+  testinput/iodatest_extendedobsspace_write_read.yaml
   testinput/iodatest_odb_surface_with_query.yaml
   testinput/iodatest_odb_abiclr_sequential_channel_indexer_but_missing_varno.yaml
   testinput/iodatest_odb_airs_channel_index_reader_from_1st_loc_but_missing_varno.yaml
@@ -3676,6 +3677,39 @@ ecbuild_add_test( TARGET  ioda_extendedobsspace_halo_MPI_3
                   COMMAND ioda_extendedobsspace
                   ARGS    "testinput/iodatest_extendedobsspace_halo.yaml"
                   LIBS  ioda_test
+                  )
+
+# Write an extended ObsSpace, read it back, and check that each record's locations kept
+# their order. The MPI 4 runs include an io pool of 2, which is what spreads the
+# locations across the pool members when the output is collected.
+ecbuild_add_test( TARGET  ioda_extendedobsspace_write_read_obsgroup
+                  SOURCES mains/TestExtendedObsSpaceWriteRead.cc
+                  ARGS    "testinput/iodatest_extendedobsspace_write_read.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  )
+
+ecbuild_add_test( TARGET  ioda_extendedobsspace_write_read_obsgroup_MPI_4
+                  MPI     4
+                  COMMAND ioda_extendedobsspace_write_read_obsgroup
+                  ARGS    "testinput/iodatest_extendedobsspace_write_read.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                  )
+
+ecbuild_add_test( TARGET  ioda_extendedobsspace_write_read_osdf
+                  COMMAND ioda_extendedobsspace_write_read_obsgroup
+                  ARGS    "testinput/iodatest_extendedobsspace_write_read.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                  )
+
+ecbuild_add_test( TARGET  ioda_extendedobsspace_write_read_osdf_MPI_4
+                  MPI     4
+                  COMMAND ioda_extendedobsspace_write_read_obsgroup
+                  ARGS    "testinput/iodatest_extendedobsspace_write_read.yaml"
+                  LIBS  ioda_test
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF
                   )
 
 #####################################################################
