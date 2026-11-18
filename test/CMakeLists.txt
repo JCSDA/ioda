@@ -4687,16 +4687,19 @@ ecbuild_add_test( TARGET  ioda_filter_obs_cmp_amsua
 #####################################################################
 
 if (BUILD_PYTHON_BINDINGS)
+  set(ioda_test_pythonpath
+      ${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages:$ENV{PYTHONPATH}
+     )
   ecbuild_add_test( TARGET      ioda_time_io_script
                     COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS        "testinput/iodatest_time_io_script.yaml"
-                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+                    ENVIRONMENT PYTHONPATH=${ioda_test_pythonpath})
 
   ecbuild_add_test( TARGET      ioda_script_args
                     TYPE        SCRIPT
                     COMMAND     ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
                     ARGS        "testinput/iodatest_script_args.yaml"
-                    ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+                    ENVIRONMENT PYTHONPATH=${ioda_test_pythonpath})
 endif()
 
 #####################################################################
@@ -6076,8 +6079,10 @@ endif()
 #####################################################################
 
 if (bufr_query_FOUND)
-  #cmake python path relative too the install directory
-  #PYTHONPATH=${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}/site-packages
+  #cmake python path relative to the install directory
+  set(ioda_py_lib_pythonpath
+     ${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages:$ENV{PYTHONPATH}
+     )
   ecbuild_add_test( TARGET  ioda_bufr_mhs
           TYPE    SCRIPT
           COMMAND bash
@@ -6085,7 +6090,7 @@ if (bufr_query_FOUND)
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_mhs.yaml"
           iodatest_bufr_mhs.nc
-          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH})
+          ENVIRONMENT PYTHONPATH=${ioda_py_lib_pythonpath})
 
   ecbuild_add_test( TARGET  ioda_bufr_python_encoder
           TYPE    SCRIPT
@@ -6094,7 +6099,7 @@ if (bufr_query_FOUND)
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_encoder.yaml"
           iodatest_bufr_mhs.nc
-          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}
+          ENVIRONMENT PYTHONPATH=${ioda_py_lib_pythonpath}
           TEST_DEPENDS ioda_bufr_mhs )
 
   ecbuild_add_test( TARGET  ioda_bufr_python_parallel
@@ -6105,7 +6110,7 @@ if (bufr_query_FOUND)
           netcdf
           "${CMAKE_BINARY_DIR}/bin/time_IodaIO.x testinput/iodatest_bufr_python_parallel.yaml"
           iodatest_bufr_mhs.nc
-          ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}
+          ENVIRONMENT PYTHONPATH=${ioda_py_lib_pythonpath}
           TEST_DEPENDS ioda_bufr_python_encoder )
 endif ()
 

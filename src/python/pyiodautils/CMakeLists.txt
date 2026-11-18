@@ -6,8 +6,8 @@ list( APPEND pyiodautils_files
 
 # Set the path to the build install area for pyiodautils
 set(pyver python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR})
-set ( PYIODAUTILS_BUILD_LIBDIR ${CMAKE_BINARY_DIR}/lib/${pyver}/pyiodautils )
-set ( PYIODAUTILS_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib/${pyver}/pyiodautils )
+set ( PYIODAUTILS_BUILD_LIBDIR ${CMAKE_BINARY_DIR}/lib/${pyver}/site-packages/pyiodautils )
+set ( PYIODAUTILS_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib/${pyver}/site-packages/pyiodautils )
 
 # Set dependencies for the module target
 foreach( FILENAME ${pyiodautils_files} )

@@ -13,7 +13,7 @@ ecbuild_add_test ( TARGET ioda_pyiodautils_file_merge
                    --outfile testoutput/sondes_file_merge_concat_out.nc4
                    --infiles Data/testinput_tier_1/sondes_file_merge_concat_in_0000.nc4
                              Data/testinput_tier_1/sondes_file_merge_concat_in_0001.nc4
-                   ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}:$ENV{PYTHONPATH}
+                   ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages:$ENV{PYTHONPATH}
                    TEST_DEPENDS get_ioda_test_data ioda_clean_pyiodautils_file_merge_files )
 
 # check the concatenated file contents
