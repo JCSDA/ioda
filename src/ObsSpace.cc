@@ -1718,6 +1718,27 @@ void ObsSpace::saveVar(const std::string& group, std::string name,
         splitSliceSuffix(group, name, { }, baseName, sliceSelect);
         const bool writingSingleSlice = !sliceSelect.empty();
 
+        // Attempting to write a variable of dimension [Location] with
+        // a numeric suffix (e.g. X_1) when a 2D variable of the base
+        // name (e.g. X) exists causes a collision. This guard prevents
+        // the first column of X being overwritten by X1.
+        if (!varHasSliceDim) {
+            std::string unsuffixedName;
+            int sliceNumber;
+            bool varHasSuffix
+              = extractChannelSuffixIfPresent(name, unsuffixedName, sliceNumber);
+            bool unsuffixedHasSliceDims
+              = !osdfMetadata_.varSliceDimName(fullVarName(group, unsuffixedName)).empty();
+            bool osdfHasUnsuffixed = osdf_->hasColumn(fullVarName(group, name));
+
+            if (varHasSuffix && unsuffixedHasSliceDims && osdfHasUnsuffixed) {
+              throw eckit::UserError("Variable " + fullVarName(group, name)
+                                       + " collides with a slice of "
+                                       + fullVarName(group, unsuffixedName),
+                                     Here());
+            }
+        }
+
         // Writing a suffixed name whose base is already a variable with no slice dimension is
         // a collision: the suffix reads back as a slice selector on a variable that has no
         // slices. Reject it rather than letting the create step below

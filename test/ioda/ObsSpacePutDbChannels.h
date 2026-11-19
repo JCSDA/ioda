@@ -84,6 +84,20 @@ CASE("ioda/ObsSpace/testPutDb") {
         // nchans dimension
         EXPECT_THROWS(obsspace->put_db("DummyGroup", "single_dimensional_var_2", testVec1,
                                        {"Location", "Channel"}));
+
+        // Check that the OSDF does not allow creation of a 1D variable
+        // with the same name as a column of an existing 2D variable.
+        // This is OSDF specific behaviour because the ObsGroup does
+        // not store 2D variables as columns internally.
+        if (obsspace->useDataframe()) {
+          std::vector<float> originalValues;
+          obsspace->get_db("DummyGroup", "multi_dimensional_var", originalValues);
+          EXPECT_THROWS(obsspace->put_db("DummyGroup", "multi_dimensional_var_2", testVec2,
+                                         {"Location"}));
+          std::vector<float> actualValues;
+          obsspace->get_db("DummyGroup", "multi_dimensional_var", actualValues);
+          EXPECT_EQUAL(actualValues, originalValues);
+        }
       }
 
       // Call the ObsSpace save function to force an output file to be written
