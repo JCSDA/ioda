@@ -39,6 +39,28 @@ class fileMerge(object):
             return False
         return True
 
+    @staticmethod
+    def _open_input(in_file):
+        """
+        Open an input file for reading with auto-masking turned off, so values are copied
+        exactly as stored. Masking would hide values equal to _FillValue and also values
+        outside valid_range, valid_min or valid_max, and writing a masked value replaces
+        it with the default netCDF fill value, losing the data.
+        """
+        input_dataset = Dataset(in_file, "r")
+        input_dataset.set_auto_mask(False)
+        return input_dataset
+
+    @staticmethod
+    def _fill_value(variable):
+        """
+        The variable's _FillValue, or None if it has none, so that an output variable can
+        be created with the same missing value convention as the input.
+        """
+        if '_FillValue' in variable.ncattrs():
+            return variable.getncattr('_FillValue')
+        return None
+
     @classmethod
     def _concat_files_numpy(cls, in_files, output):
         """
@@ -91,7 +113,7 @@ class fileMerge(object):
         # Then cycle over the input files and initialize keys for dict data structures
         # excluding VarMetaData and RecMetaData
         for in_file in in_files:
-            input_dataset = Dataset(in_file, "r")
+            input_dataset = fileMerge._open_input(in_file)
             in_file_data_arrays[in_file] = {}
             for group in input_dataset.groups:
                 if group != 'VarMetaData' and group != 'RecMetaData':
@@ -102,7 +124,7 @@ class fileMerge(object):
 
         # Open the output data file as a Dataset and the first input data file as a template
         output_dataset = Dataset(output, "w")
-        input_dataset_template = Dataset(in_files[0], "r")
+        input_dataset_template = fileMerge._open_input(in_files[0])
 
         # Copy all root group attributes to the output file
         for attribute in input_dataset_template.ncattrs():
@@ -140,7 +162,8 @@ class fileMerge(object):
                 name = input_dataset_template.dimensions[dim].name
                 size = input_dataset_template.dimensions[dim].size
                 output_dataset.createDimension(name, size)
-                output_dataset.createVariable(name, 'int32', (name,))
+                output_dataset.createVariable(name, 'int32', (name,),
+                                              fill_value=fileMerge._fill_value(input_dataset_template[dim]))
                 output_dataset.variables[dim].setncattr('suggested_chunk_dim', size)
                 output_dataset.variables[dim][:] = input_dataset_template[dim][:]
 
@@ -154,7 +177,7 @@ class fileMerge(object):
         nlocs_total_size = 0
         location_data_array = numpy.array([], dtype=numpy.int32)
         for in_file in in_files:
-            in_file_dataset = Dataset(in_file, 'r')
+            in_file_dataset = fileMerge._open_input(in_file)
             for dim in in_file_dataset.dimensions:
                 if dim == 'Location':
                     nlocs_total_size += in_file_dataset.dimensions['Location'].size
@@ -163,14 +186,15 @@ class fileMerge(object):
                     break
             in_file_dataset.close()
         output_dataset.createDimension('Location', nlocs_total_size)
-        output_dataset.createVariable('Location', 'int32', ('Location',))
+        output_dataset.createVariable('Location', 'int32', ('Location',),
+                                      fill_value=fileMerge._fill_value(input_dataset_template['Location']))
         output_dataset.variables['Location'].setncattr('suggested_chunk_dim', nlocs_total_size)
         output_dataset.variables['Location'][:] = location_data_array
 
         # Cycle over all variables in the input data files and collect the raw data
         # keyed on in_file, group, and variable except for the VarMetaData and RecMetaData groups
         for in_file in in_files:
-            input_dataset = Dataset(in_file, 'r')
+            input_dataset = fileMerge._open_input(in_file)
             for group in input_dataset.groups:
                 if group != 'VarMetaData' and group != 'RecMetaData':
                     for variable in input_dataset[group].variables:
@@ -182,7 +206,7 @@ class fileMerge(object):
         # except for the VarMetaData and RecMetaData groups
         for in_file in in_files:
             if in_file != in_files[0]:
-                input_dataset = Dataset(in_file, 'r')
+                input_dataset = fileMerge._open_input(in_file)
                 for group in input_dataset.groups:
                     if group != 'VarMetaData' and group != 'RecMetaData':
                         for variable in input_dataset[group].variables:
@@ -205,7 +229,8 @@ class fileMerge(object):
                     data_array = data_array[0:len(input_dataset_template[name])]
                 elif len(data_array.shape) == 1 and 'nvars' in dims:
                     data_array = data_array[0:len(input_dataset_template[name])]
-                output_dataset.createVariable(name, dtype, dims)
+                output_dataset.createVariable(name, dtype, dims,
+                                              fill_value=fileMerge._fill_value(input_dataset_template[name]))
                 output_dataset[name][:] = data_array
 
         # Cycle over variables in the VarMetaData data structure, create the variables,
@@ -215,7 +240,8 @@ class fileMerge(object):
             dtype = numpy_to_netcdf_dtype[data_array.dtype]
             name = f'/VarMetaData/{variable}'
             dims = input_dataset_template[name].dimensions
-            output_dataset.createVariable(name, dtype, dims)
+            output_dataset.createVariable(name, dtype, dims,
+                                          fill_value=fileMerge._fill_value(input_dataset_template[name]))
             output_dataset[name][:] = data_array
 
         # Cycle over variables in the RecMetaData data structure, create the variables,
@@ -225,7 +251,8 @@ class fileMerge(object):
             dtype = numpy_to_netcdf_dtype[data_array.dtype]
             name = f'/RecMetaData/{variable}'
             dims = input_dataset_template[name].dimensions
-            output_dataset.createVariable(name, dtype, dims)
+            output_dataset.createVariable(name, dtype, dims,
+                                          fill_value=fileMerge._fill_value(input_dataset_template[name]))
             output_dataset[name][:] = data_array
 
         # Cycle over groups and variables to copy attributes to the output file (skips _FillValue)
