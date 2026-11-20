@@ -250,6 +250,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_random_obsvector_io_osdf.yaml
   testinput/iodatest_time_io.yaml
   testinput/iodatest_time_io_odc.yaml
+  testinput/iodatest_time_io_odc_osdf.yaml
   testinput/iodatest_time_io_osdf_odc_to_nc4.yaml
   testinput/iodatest_time_io_osdf_mpi1.yaml
   testinput/iodatest_time_io_osdf_mpi2.yaml
@@ -4323,8 +4324,11 @@ if (odc_FOUND)
                             "testoutput/aircraft_time.odb"
                             "testoutput/aircraft_time_reader_pool.odb"
                             "testoutput/atms_time.odb"
-                            "testoutput/atms_time_reader_pool.odb" )
+                            "testoutput/atms_time_reader_pool.odb"
+                            "testoutput/aircraft_time_osdf.odb"
+                            "testoutput/atms_time_osdf.odb" )
 
+  ## ObsGroup tests
   # this test creates new output files
   ecbuild_add_test( TARGET  ioda_time_io_odc
                     COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
@@ -4374,6 +4378,32 @@ if (odc_FOUND)
                             "echo Checking time io (reader pool) ATMS"
                             atms_time_reader_pool.odb
                     TEST_DEPENDS ioda_time_io_reader_pool_odc)
+
+## OSDF tests
+  # this test creates new output files
+  ecbuild_add_test( TARGET  ioda_time_io_odc_osdf
+                    COMMAND ${CMAKE_BINARY_DIR}/bin/time_IodaIO.x
+                    ARGS    "testinput/iodatest_time_io_odc_osdf.yaml"
+                    TEST_DEPENDS ioda_clean_time_io_files_odc )
+
+  # the following tests compare the output files content-wise not bitwise
+  ecbuild_add_test( TARGET  ioda_time_io_cmp_aircraft_odc_osdf
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/aircraft_time_osdf.odb
+                            testoutput/aircraft_time.odb
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_time_io_odc_osdf)
+
+  ecbuild_add_test( TARGET  ioda_time_io_cmp_atms_odc_osdf
+                    TYPE    SCRIPT
+                    COMMAND ${Python3_EXECUTABLE}
+                    ARGS    ${CMAKE_BINARY_DIR}/bin/ioda_compare_odb.py
+                            testoutput/atms_time_osdf.odb
+                            testoutput/atms_time.odb
+                            --odc-lib $<TARGET_FILE:odccore>
+                    TEST_DEPENDS ioda_time_io_odc_osdf)
 endif()
 
 #####################################################################
