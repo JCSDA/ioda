@@ -616,6 +616,43 @@ ObsDtype ObsSpace::dtype(const std::string & group, const std::string & name,
 }
 
 // -----------------------------------------------------------------------------
+void ObsSpace::removeGroups(const std::vector<std::string> & groups) {
+    const std::set<std::string> groupSet(groups.begin(), groups.end());
+    // The original obs provider data are treated as read only
+    for (const std::string & readOnlyGroup : {"ObsValue", "ObsError", "PreQC"}) {
+        if (groupSet.count(readOnlyGroup) > 0) {
+            throw eckit::BadValue("ObsSpace::removeGroups: cannot remove the " +
+                                  std::string(readOnlyGroup) + " group", Here());
+        }
+    }
+    // Group of a variable name "<group>/<name>", derived the same way as in listGroups()
+    auto groupOf = [](const std::string & varName) {
+        const std::size_t pos = varName.find_last_of("/");
+        return (pos == std::string::npos) ? std::string() : varName.substr(0, pos);
+    };
+    if (use_dataframe_) {
+        // Removing a column re-indexes every later column, so remove them last to first in a
+        // single pass to keep the cost linear in the number of columns.
+        const std::vector<std::string> colNames = osdf_->columnNames();
+        for (auto colName = colNames.rbegin(); colName != colNames.rend(); ++colName) {
+            if (groupSet.count(groupOf(*colName)) > 0) osdf_->removeColumn(*colName);
+        }
+        // Only variables with a slice dimension are registered in the metadata.
+        for (const std::string & varName : osdfMetadata_.getMultiSliceVars()) {
+            if (groupSet.count(groupOf(varName)) > 0) osdfMetadata_.removeVarDimNames(varName);
+        }
+    } else {
+        for (const std::string & group : groupSet) {
+            if (obs_group_->exists(group)) {
+                for (const std::string & varName : obs_group_->open(group).vars.list()) {
+                    obs_group_->vars.remove(fullVarName(group, varName));
+                }
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 std::vector<std::string> ObsSpace::listGroups() const {
     std::vector<std::string> groupList;
     if (use_dataframe_) {

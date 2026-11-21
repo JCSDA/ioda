@@ -360,6 +360,10 @@ namespace ioda {
         /// \brief return a list of names of the groups contained in the ObsSpace.
         std::vector<std::string> listGroups() const;
 
+        /// \brief remove all variables in the given groups (e.g. ones written by
+        /// ObsVector::save), freeing their memory and leaving them out of save().
+        void removeGroups(const std::vector<std::string> & groups);
+
         /// \brief return a list of names of the variables contained in the ObsSpace.
         /// \details If using an ObsGroup-based ObsSpace, then this function will return the
         /// list of all variables across all groups. If using an OSDF-based ObsSpace, then this

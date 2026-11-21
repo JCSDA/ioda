@@ -30,6 +30,7 @@
 #include "ioda/IodaTrait.h"
 #include "ioda/ObsSpace.h"
 #include "ioda/ObsSpaceParameters.h"
+#include "ioda/ObsVector.h"
 #include "IodaTestUtils.h"
 
 namespace eckit {
@@ -716,6 +717,109 @@ void testMultiDimTransfer() {
 
 // -----------------------------------------------------------------------------
 
+// Test that removeGroups() removes all variables in the given groups and leaves other groups
+// (including ones whose names share a prefix) untouched.
+void testRemoveGroups() {
+  typedef ObsSpaceTestFixture Test_;
+
+  const std::string group("RemoveGroupTest");
+  const std::string group2("RemoveGroupTest2");
+  const std::string keepGroup("RemoveGroupTestKeep");
+  const util::TimeWindow timeWindow
+    (::test::TestEnvironment::config().getSubConfiguration("time window"));
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    // Use a private obs space without obsdataout so the test groups are never written out
+    eckit::LocalConfiguration obsconf(Test_::config(jj), "obs space");
+    applyContainerDefault(::test::TestEnvironment::config(), obsconf);
+    if (obsconf.has("obsdataout")) obsconf.remove("obsdataout");
+    ioda::ObsSpace Odb(obsconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
+    // has() reports every variable as present in an empty obs space
+    if (Odb.empty()) continue;
+
+    // Set up values for a 1D variable and for a variable with a channel dimension
+    // (which is also 1D if this obs space has no channels).
+    const std::size_t Nlocs = Odb.nlocs();
+    const std::size_t Nchans = Odb.nchans();
+
+    std::vector<std::string> dimList{Odb.get_dim_name(ObsDimensionId::Location)};
+    std::size_t numElements = Nlocs;
+    if (Nchans > 0) {
+      numElements *= Nchans;
+      dimList.push_back(Odb.get_dim_name(ObsDimensionId::Channel));
+    }
+    const std::vector<float> ExpectedValues(Nlocs, 1.0f);
+    const std::vector<int> ExpectedMultiDimValues(numElements, 2);
+    const std::size_t numGroups = Odb.listGroups().size();
+
+    // Put the variables into the groups to be removed and into a group to be kept.
+    Odb.put_db(group, "DummyVar", ExpectedValues);
+    Odb.put_db(group, "DummyMultiDimVar", ExpectedMultiDimValues, dimList);
+    Odb.put_db(group2, "DummyVar", ExpectedValues);
+    Odb.put_db(keepGroup, "DummyVar", ExpectedValues);
+    EXPECT(Odb.has(group, "DummyVar"));
+    EXPECT(Odb.has(group, "DummyMultiDimVar"));
+    EXPECT(Odb.has(group2, "DummyVar"));
+    EXPECT_EQUAL(Odb.listGroups().size(), numGroups + 3);
+
+    // Remove two groups, then check they are gone and the kept group is unchanged.
+    Odb.removeGroups({group, group2});
+    // Only OSDF drops the removed groups; the ObsGroup container keeps them as empty groups
+    if (Odb.useDataframe()) {
+      EXPECT_EQUAL(Odb.listGroups().size(), numGroups + 1);
+    } else {
+      EXPECT_EQUAL(Odb.listGroups().size(), numGroups + 3);
+    }
+    EXPECT_NOT(Odb.has(group, "DummyVar"));
+    EXPECT_NOT(Odb.has(group, "DummyMultiDimVar"));
+    EXPECT_NOT(Odb.has(group2, "DummyVar"));
+    EXPECT(Odb.has(keepGroup, "DummyVar"));
+    std::vector<float> TestValues(Nlocs);
+    Odb.get_db(keepGroup, "DummyVar", TestValues);
+    EXPECT_EQUAL(TestValues, ExpectedValues);
+
+    // Removing a group that no longer exists is a no-op
+    EXPECT_NO_THROW(Odb.removeGroups({group}));
+
+    // The removed variables can be created again, with new values
+    const std::vector<int> ExpectedMultiDimValuesNew(numElements, 3);
+    Odb.put_db(group, "DummyMultiDimVar", ExpectedMultiDimValuesNew, dimList);
+    std::vector<int> TestMultiDimValues(numElements);
+    Odb.get_db(group, "DummyMultiDimVar", TestMultiDimValues, {} /*select all channels*/);
+    EXPECT_EQUAL(TestMultiDimValues, ExpectedMultiDimValuesNew);
+
+    // An attached ObsVector keeps its values when the group it was saved to is removed
+    ioda::ObsVector obsVec(Odb);
+    obsVec.ones();
+    const std::vector<double> ExpectedObsVecValues = obsVec.data();
+    obsVec.save(group2);
+    Odb.removeGroups({group2});
+    EXPECT_EQUAL(obsVec.data(), ExpectedObsVecValues);
+    obsVec.save(group2);
+    const ioda::ObsVector obsVecReread(Odb, group2);
+    EXPECT_EQUAL(obsVecReread.data(), ExpectedObsVecValues);
+
+    // Clean up the remaining test groups
+    Odb.removeGroups({group, group2, keepGroup});
+    if (Odb.useDataframe()) {
+      EXPECT_EQUAL(Odb.listGroups().size(), numGroups);
+    } else {
+      EXPECT_EQUAL(Odb.listGroups().size(), numGroups + 3);
+    }
+    EXPECT_NOT(Odb.has(group, "DummyMultiDimVar"));
+    EXPECT_NOT(Odb.has(keepGroup, "DummyVar"));
+
+    // The original obs provider groups cannot be removed
+    const std::size_t Nvars = Odb.nvars();
+    EXPECT_THROWS(Odb.removeGroups({"ObsValue"}));
+    EXPECT_THROWS(Odb.removeGroups({"ObsError"}));
+    EXPECT_THROWS(Odb.removeGroups({"PreQC"}));
+    EXPECT_EQUAL(Odb.nvars(), Nvars);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 // Test the obsvariables(), initial_obsvariables() and derived_obsvariables() methods.
 void testObsVariables() {
   typedef ObsSpaceTestFixture Test_;
@@ -783,6 +887,8 @@ class ObsSpace : public oops::Test {
       { testWriteableGroup(); });
     ts.emplace_back(CASE("ioda/ObsSpace/testMultiDimTransfer")
       { testMultiDimTransfer(); });
+    ts.emplace_back(CASE("ioda/ObsSpace/testRemoveGroups")
+      { testRemoveGroups(); });
   }
 
   void clear() const override {
