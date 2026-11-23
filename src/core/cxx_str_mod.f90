@@ -51,13 +51,6 @@ module cxx_str_mod
             type(c_ptr), value :: p
             type(c_ptr) :: r
         end function cxx_string_c_get
-        function cxx_string_c_add(p,o) result(r) bind(C,name="cxx_string_c_add")
-            import c_ptr
-            implicit none
-            type(c_ptr), value :: p
-            type(c_ptr), value :: o
-            type(c_ptr) :: r
-        end function cxx_string_c_add
         function cxx_string_c_size(p) result(sz) bind(C,name="cxx_string_c_size")
             import c_ptr, c_int64_t
             implicit none

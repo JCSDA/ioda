@@ -20,8 +20,6 @@ add_subdirectory(list-objects)
 # Needs a test file
 #add_subdirectory(upgrade_format)
 
-add_subdirectory(C)
-
 if(BUILD_PYTHON_BINDINGS)
 	add_subdirectory(python)
 endif(BUILD_PYTHON_BINDINGS)

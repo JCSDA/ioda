@@ -19,37 +19,6 @@ list(APPEND SRCS_ATTRIBUTES
 	src/ioda/Has_Attributes.cpp
 	src/ioda/AttrUtils.cpp
 	)
-list(APPEND SRCS_C_BINDINGS
-	include/ioda/C/cxx_string.hpp
-	include/ioda/C/cxx_vector_string.hpp
-	include/ioda/C/cxx_vector_int.hpp
-	include/ioda/C/cxx_vector_dbl.hpp
-	include/ioda/C/ioda_group_c.hpp
-	include/ioda/C/ioda_has_attributes_c.hpp
-	include/ioda/C/ioda_attribute_c.hpp
-	include/ioda/C/ioda_dimensions_c.hpp
-	include/ioda/C/ioda_decls.hpp
-	include/ioda/C/ioda_engines_c.hpp
-	include/ioda/C/ioda_group_c.hpp
-	include/ioda/C/ioda_has_attributes_c.hpp
-	include/ioda/C/ioda_has_variables_c.hpp
-	include/ioda/C/ioda_c_utils.hpp
-	include/ioda/C/ioda_variable_c.hpp
-	include/ioda/C/ioda_variable_creation_parameters_c.hpp
-	src/ioda/C/cxx_string.cpp
-	src/ioda/C/cxx_vector_string.cpp
-	src/ioda/C/cxx_vector_int.cpp
-	src/ioda/C/cxx_vector_dbl.cpp
-	src/ioda/C/ioda_c_utils.cpp
-	src/ioda/C/ioda_attribute_c.cpp
-	src/ioda/C/ioda_dimensions_c.cpp
-	src/ioda/C/ioda_engines_c.cpp
-	src/ioda/C/ioda_group_c.cpp
-	src/ioda/C/ioda_has_attributes_c.cpp
-	src/ioda/C/ioda_has_variables_c.cpp
-	src/ioda/C/ioda_variable_c.cpp
-	src/ioda/C/ioda_variable_creation_parameters_c.cpp
-	)
 list(APPEND SRCS_GROUPS
 	include/ioda/Group.h
 	include/ioda/ObsGroup.h
@@ -267,7 +236,6 @@ list(APPEND SRCS_ENGINES_SCRIPT
 )
 
 source_group("Attributes" FILES ${SRCS_ATTRIBUTES})
-source_group("C Bindings" FILES ${SRCS_C_BINDINGS})
 source_group("Groups" FILES ${SRCS_GROUPS})
 source_group("Layouts" FILES ${SRCS_LAYOUTS} ${SRCS_LAYOUTS_ODB})
 source_group("Math" FILES ${SRCS_MATH})
@@ -293,7 +261,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/ioda/testconfig.h.in
 
 list(APPEND SRCS_IODA_ENGINES
 	${SRCS_ATTRIBUTES}
-	${SRCS_C_BINDINGS}
 	${SRCS_GROUPS}
 	${SRCS_LAYOUTS}
 	${SRCS_MATH}

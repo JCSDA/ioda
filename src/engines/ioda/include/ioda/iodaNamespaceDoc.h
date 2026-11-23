@@ -20,10 +20,6 @@
 /// \brief Provides the C++ interface for IODA
 /// \ingroup ioda_language_interfaces
 
-/// \defgroup ioda_c C interface
-/// \brief Provides the C interface for ioda.
-/// \ingroup ioda_language_interfaces
-
 /// \defgroup ioda_python Python interface
 /// \brief The IODA Python interface (WIP)
 /// \ingroup ioda_language_interfaces

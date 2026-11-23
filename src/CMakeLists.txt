@@ -58,6 +58,10 @@ containers/ViewRows.h
 containers/ViewRowsData.cpp
 containers/ViewRowsData.h
 
+core/cxx_string.cpp
+core/cxx_string.hpp
+core/ioda_c_utils.cpp
+core/ioda_c_utils.hpp
 core/ObsDimInfo.h
 core/ObsDimInfo.cc
 core/FileFormat.cc

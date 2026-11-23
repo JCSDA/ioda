@@ -34,14 +34,6 @@ macro(AddExample_CXX ExName SourceFile )
 	add_test(NAME ${ExName}-obsstore COMMAND ${ExName} --ioda-engine-options obs-store)
 endmacro()
 
-macro(AddExample_C ExName SourceFile )
-	AddExample_Base( ${ExName} ${SourceFile} )
-	# MSVC has a really bad and old C compiler. Instead use the C++ compiler.
-	# For other compilers, force C11, which is the CMake max version.
-	set_source_files_properties(${SourceFile} PROPERTIES LANGUAGE CXX)
-	add_test(NAME ${ExName} COMMAND ${ExName})
-endmacro()
-
 macro(AddExample_Py testname cmd args need_test_data_prep)
 	add_test(NAME ${testname}
 		COMMAND ${Python3_EXECUTABLE}
@@ -76,10 +68,6 @@ AddExample_CXX (ioda-engines-04 04-VariablesAttributesAndDimensions.cpp)
 AddExample_CXX (ioda-engines-05a 05a-ObsGroup.cpp)
 AddExample_CXX (ioda-engines-05b 05b-ObsGroupAppend.cpp)
 
-#AddExample_C   (ioda-engines-00-Strings-C 00-Strings.c)
-#AddExample_C   (ioda-engines-00-VecStrings-C 00-VecStrings.c)
-#AddExample_C   (ioda-engines-01-C 01-GroupsAndObsSpaces.c)
-
 if(BUILD_PYTHON_BINDINGS)
 	AddExample_Py  (ioda-engines-01-Py 01-GroupsAndObsSpaces.py "" NO)
 	AddExample_Py  (ioda-engines-02-Py 02-Attributes.py "" NO)
@@ -93,4 +81,3 @@ if(BUILD_PYTHON_BINDINGS)
 	# In the future, this will move to the Advanced examples section.
 	AddExample_Py  (ioda-engines-chrono-Py chrono.py "" NO)
 endif()
-
