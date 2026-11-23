@@ -16,6 +16,7 @@
 #include "ioda/ObsDataIoParameters.h"
 
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 #include "oops/util/missingValues.h"
 
 namespace ioda {
@@ -24,6 +25,7 @@ namespace reader {
 //---------------------------------------------------------------------
 void loadOsdfFromOdb(const ObsDataInParameters & dataInParams,
                      const eckit::mpi::Comm & ioPoolComm,
+                     const util::TimeWindow & timeWindow,
                      std::unique_ptr<osdf::IFrame>& destOsdf,
                      osdf::FrameMetadata& osdfMetadata)
 {
@@ -60,8 +62,8 @@ void loadOsdfFromOdb(const ObsDataInParameters & dataInParams,
   odcparams.mappingFile = readerParams.mappingFileName;
   odcparams.queryFile   = readerParams.queryFileName;
   const util::DateTime missingDate = util::missingValue<util::DateTime>();
-  // Time window filtering will be done later, once all data have been read.
-  odcparams.timeWindowStart = missingDate;
+  // Supply the start for datetime clamping; filtering still happens after loading.
+  odcparams.timeWindowStart = timeWindow.start();
   odcparams.timeWindowExtendedLowerBound =
     readerParams.timeWindowExtendedLowerBound.value() != boost::none ?
       readerParams.timeWindowExtendedLowerBound.value().value() : missingDate;

@@ -1,0 +1,48 @@
+time window:
+  begin: "2018-04-14T23:00:00Z"
+  end: "2018-04-15T03:00:00Z"
+  bound to include: begin
+
+# Reuse the input and bounds from the converter's extended-time-window-before-window-start
+# test, but exercise ObsSpace loading and filtering. Of the 1123 retained locations, 460
+# are clamped to the inclusive window start; the unfixed OSDF reader loses them.
+observations:
+- obs space:
+    name: Sonde extended window
+    simulated variables: [airTemperature]
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: Data/testinput_tier_1/sonde.odb
+        mapping file: ../share/test/testinput/odb_sonde_name_map.yaml
+        query file: ../share/test/testinput/iodatest_odb_sonde_time_displacement.yaml
+        time window extended lower bound: "2018-04-14T21:00:00Z"
+      obsgrouping:
+        group variables: [sequenceNumber]
+  test data:
+    gnlocs: 1123
+    gnlocs outside time window: 40
+    gnlocs rejected by qc: 0
+    nlocs from source: 1163
+    nrecs: 64
+    obs perturbations seed: 0
+    expected group variables: [sequenceNumber]
+    expected sort variable: ""
+    expected sort order: ascending
+    variables for get test:
+      - name: dateTime
+        group: MetaData
+        type: datetime
+        first value: "2018-04-15T00:12:00Z"
+        last value: "2018-04-14T23:00:00Z"
+      - name: initialDateTime
+        group: MetaData
+        type: datetime
+        first value: "2018-04-15T00:12:00Z"
+        last value: "2018-04-14T22:31:16Z"
+      - name: sequenceNumber
+        group: MetaData
+        type: integer
+        norm: 1544.763412306234
+    tolerance: [1.0e-7]
+    variables for putget test: []

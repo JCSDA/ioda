@@ -114,7 +114,7 @@ void loadObs(const ObsDataInParameters & dataInParams,
     // Reading an ODB file.
     // Collectively call the loadOsdfFromOdb function with all io pool members.
     if (obsIoPool->inIoPool()) {
-      loadOsdfFromOdb(dataInParams, obsIoPool->commPool(), destOsdf, osdfMetadata);
+      loadOsdfFromOdb(dataInParams, obsIoPool->commPool(), timeWindow, destOsdf, osdfMetadata);
     }
     // The ODB reader generates column metadata only on io pool ranks that get to read at least one
     // location.

@@ -166,6 +166,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_mpi.yaml
   testinput/iodatest_obsspace_mpi_reader_pool.yaml
   testinput/iodatest_obsspace_odc.yaml
+  testinput/iodatest_obsspace_extended_window.yaml
   testinput/iodatest_obsspace_odc_multiple_channels.yaml
   testinput/iodatest_obsspace_odc_reader_pool.yaml
   testinput/iodatest_obsspace_odc_atms.yaml
@@ -1123,6 +1124,18 @@ ecbuild_add_test( TARGET  ioda_obsspace_reader_pool_osdf_parity_3
 
 
 if (odc_FOUND)
+  ecbuild_add_test( TARGET  ioda_obsspace_extended_window
+                    COMMAND ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_extended_window.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup
+                    LIBS    ioda_test )
+
+  ecbuild_add_test( TARGET  ioda_obsspace_extended_window_osdf
+                    COMMAND ioda_obsspace
+                    ARGS    "testinput/iodatest_obsspace_extended_window.yaml"
+                    ENVIRONMENT IODA_TEST_CONTAINER=OSDF
+                    LIBS    ioda_test )
+
   ecbuild_add_test( TARGET  ioda_clean_obsspace_out_odc_files
                     COMMAND rm
                     ARGS    "-f" 

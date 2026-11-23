@@ -18,6 +18,9 @@ namespace eckit {
         class Comm;
     }
 }
+namespace util {
+    class TimeWindow;
+}
 namespace ioda {
     class ObsDataInParameters;
 }
@@ -29,10 +32,12 @@ namespace reader {
 ///
 /// \param dataInParams parameters for obsdatain configuration
 /// \param ioPoolComm eckit MPI communicator group for the io pool
+/// \param timeWindow assimilation time window, whose start is used for datetime clamping
 /// \param destOsdf destination OSDF container
 /// \param osdfMetadata frame metadata for the destination OSDF
 void loadOsdfFromOdb(const ObsDataInParameters & dataInParams,
                      const eckit::mpi::Comm & ioPoolComm,
+                     const util::TimeWindow & timeWindow,
                      std::unique_ptr<osdf::IFrame> & destOsdf,
                      osdf::FrameMetadata & osdfMetadata);
 
