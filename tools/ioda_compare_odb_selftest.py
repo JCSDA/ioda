@@ -201,6 +201,21 @@ def _drop_missing(columns, records):
     return columns, records
 
 
+def _missing_to_nan(columns, records):
+    _set_where(records, "obsvalue", None, float("nan"))
+    return columns, records
+
+
+def _missing_to_positive_infinity(columns, records):
+    _set_where(records, "obsvalue", None, float("inf"))
+    return columns, records
+
+
+def _missing_to_negative_infinity(columns, records):
+    _set_where(records, "obsvalue", None, float("-inf"))
+    return columns, records
+
+
 def _change_string(columns, records):
     records[1][column_index("statid")] = "zzz9"
     return columns, records
@@ -233,6 +248,11 @@ MUTATIONS = [
     ("change_obsvalue", _change_obsvalue, "a non-identity value changed by 1"),
     ("change_tiny", _change_tiny, "a 1e-20 value changed  <- odc sql text is blind"),
     ("drop_missing", _drop_missing, "a missing value replaced by real data"),
+    ("missing_to_nan", _missing_to_nan, "a missing value replaced by NaN"),
+    ("missing_to_positive_infinity", _missing_to_positive_infinity,
+     "a missing value replaced by positive infinity"),
+    ("missing_to_negative_infinity", _missing_to_negative_infinity,
+     "a missing value replaced by negative infinity"),
     ("change_string", _change_string, "one string changed"),
     ("change_long_string", _change_long_string, "second 8-byte word of a string changed"),
     ("drop_column", _drop_column, "a column missing from B"),
@@ -359,6 +379,12 @@ def diagnostic_cases(fixture, path_a):
     _, output = fixture.run(path_a, write_mutated(fixture, "drop_missing"))
     cases.append(("missing vs present: the row is listed, shown as missing",
                   True, "A = missing" in output))
+
+    nonfinite = write_mutated(fixture, "missing_to_nan")
+    code, output = fixture.run(nonfinite, nonfinite)
+    cases.append(("identical NaN files still fail", 1, code))
+    cases.append(("non-finite failure names the column and count",
+                  True, "obsvalue contains 2 non-finite floating-point values" in output))
 
     # Without pairing by identity, the moved row would misalign others.
     _, output = fixture.run(path_a, write_mutated(fixture, "change_one_value"))

@@ -1,0 +1,7 @@
+# (C) Crown Copyright 2026 Met Office
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+mapping file: ../share/test/testinput/odb_default_name_map.yaml
+query file: ../share/test/testinput/iodatest_odb_aircraft.yaml

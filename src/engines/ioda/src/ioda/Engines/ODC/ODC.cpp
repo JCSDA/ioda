@@ -929,8 +929,9 @@ void fillFloatArray(const ContainerFacade &container, const std::string varname,
     const float utilMissingDoubleAsFloat = static_cast<float>(util::missingValue<double>());
     const float odbMissingAsFloat        = static_cast<float>(odb_missing_float);
     const auto isMissing                 = [&](float value) {
-      return value == fillValue || value == utilMissingFloat || value == utilMissingDoubleAsFloat
-             || value == odbMissingAsFloat || (std::isnan(value) && std::isnan(*fillValue));
+      return !std::isfinite(value) || (fillValue && value == *fillValue)
+             || value == utilMissingFloat || value == utilMissingDoubleAsFloat
+             || value == odbMissingAsFloat;
     };
     if (derived_odb) {
       if (metadata_varname) {

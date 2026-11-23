@@ -1,0 +1,33 @@
+# (C) Crown Copyright 2026 Met Office
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+time window:
+  begin: "2021-07-01T11:00:00Z"
+  end: "2021-07-01T13:00:00Z"
+
+observations:
+- obs space:
+    name: "Invalid Numeric ODB"
+    simulated variables: [airTemperature]
+    obsdatain:
+      engine:
+        type: ODB
+        obsfile: "Data/testinput_tier_1/invalid_numeric_test.odb"
+        mapping file: "../share/test/testinput/odb_default_name_map.yaml"
+        query file: "../share/test/testinput/iodatest_odb_aircraft.yaml"
+    obsdataout:
+      engine:
+        type: ODB
+        obsfile: "testoutput/invalid_numeric_out.odb"
+        mapping file: "../share/test/testinput/odb_default_name_map.yaml"
+        query file: "../share/test/testinput/iodatest_odb_aircraft.yaml"
+  test data:
+    variables:
+      - name: airTemperature
+        group: ObsValue
+        type: float
+        values: [270, -3.36879526e+38, -3.36879526e+38, -3.36879526e+38,
+                 -3.36879526e+38, 280]
+    tolerance: 1.0e-7

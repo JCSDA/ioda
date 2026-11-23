@@ -44,9 +44,9 @@ Normalization rules.  Every column becomes one of three kinds plus a missing mas
 
   INTEGER, BITFIELD -> int     exact int64; missing when == odb_missing_int
                                (2147483647)
-  REAL, DOUBLE      -> float   float64; missing when not finite or equal to
-                               odb_missing_float (-2147483648, what ioda
-                               writes) or odc's default missing double
+  REAL, DOUBLE      -> float   float64; NaN and infinity are invalid (fatal);
+                               missing when equal to odb_missing_float
+                               (-2147483648, what ioda writes) or odc's default missing double
                                (-2147483647, what odc itself writes)
   STRING            -> string  bytes with trailing NUL and blank padding
                                stripped, decoded as latin-1 so that no two
@@ -59,7 +59,8 @@ Normalization rules.  Every column becomes one of three kinds plus a missing mas
   the library.
 
 Fatal vs reported:
-  Always fatal: a column present on one side only, a column whose declared type
+  Always fatal: a non-finite floating-point value (even if both files contain it),
+  a column present on one side only, a column whose declared type
   differs between the two sides, a row count mismatch, a row with no partner
   of the same identity on the other side, and any data difference.
   Column order -- between the two sides, or between the frames or member files
@@ -318,6 +319,7 @@ def canonical_column(type_name, raw):
         missing = raw == ODB_MISSING_INT
         values = np.where(missing, 0, raw).astype(np.int64)
     elif kind == "float":
+        # Non-finite values are diagnosed before normalization; mask them here for sorting.
         missing = ~np.isfinite(raw)
         for sentinel in ODB_MISSING_FLOATS:
             missing = missing | (raw == sentinel)
@@ -359,6 +361,15 @@ def load_file_set(library, paths):
             types[name] = type_name
 
     nrows = sum(len(next(iter(arrays.values()))) for _, _, arrays in frames if arrays)
+    for label, schema, arrays in frames:
+        for name, type_name in schema:
+            if TYPE_KIND[type_name.split("[")[0]] == "float":
+                nonfinite = ~np.isfinite(arrays[name])
+                count = int(np.count_nonzero(nonfinite))
+                if count:
+                    structural.append("%s: %s contains %s"
+                                      % (label, name,
+                                         plural(count, "non-finite floating-point value")))
     columns = {name: canonical_column(type_name,
                                       np.concatenate([arrays[name] for _, _, arrays in frames]))
                for name, type_name in types.items()}

@@ -102,6 +102,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsiterator.yaml
   testinput/iodatest_obsiterator_osdf.yaml
   testinput/iodatest_container_facades.yaml
+  testinput/iodatest_odc_nonfinite_writer.yaml
   testinput/iodatest_departuresensemble.yaml
   testinput/iodatest_departuresensemble_osdf.yaml
   testinput/iodatest_obsdatavector.yaml
@@ -155,6 +156,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml
   testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
+  testinput/iodatest_obsspace_invalid_numeric_odb.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file_osdf.yaml
   testinput/iodatest_obsspace_io_pool_global_max_size_osdf.yaml
@@ -2413,6 +2415,17 @@ if (odc_FOUND)
                     COMMAND ioda_obsspace
                     ARGS    "testinput/iodatest_obsspace_odc_single_frame_multiple_channels_parallel_io.yaml"
                     )
+
+ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric_odb_obsgroup
+                  COMMAND ioda_obsspace_invalid_numeric
+                  ARGS    testinput/iodatest_obsspace_invalid_numeric_odb.yaml
+                  ENVIRONMENT IODA_TEST_CONTAINER=ObsGroup )
+
+ecbuild_add_test( TARGET  ioda_obsspace_invalid_numeric_odb_osdf
+                  COMMAND ioda_obsspace_invalid_numeric
+                  ARGS    testinput/iodatest_obsspace_invalid_numeric_odb.yaml
+                  ENVIRONMENT IODA_TEST_CONTAINER=OSDF )
+
 endif()
 
 # Slice selection on a non-Channel slice dimension: both containers must pass
@@ -3851,7 +3864,7 @@ ecbuild_add_test( TARGET  ioda_obsdatavector_osdf
                   )
 
 #####################################################################
-# Test container facades used by the reader load step
+# Test container facades used in read/write
 #####################################################################
 
 ecbuild_add_test( TARGET  ioda_container_facades
@@ -3859,6 +3872,13 @@ ecbuild_add_test( TARGET  ioda_container_facades
                   ARGS    "testinput/iodatest_container_facades.yaml"
                   LIBS  ioda_test
                   )
+
+if (odc_FOUND)
+  ecbuild_add_test( TARGET  ioda_odc_nonfinite_writer
+                    SOURCES mains/TestOdcNonFiniteWriter.cc
+                    ARGS    "testinput/iodatest_odc_nonfinite_writer.yaml"
+                    LIBS    ioda_test )
+endif()
 
 # DeparturesEnsemble tests
 #####################################################################

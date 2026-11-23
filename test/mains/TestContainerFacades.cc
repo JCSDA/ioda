@@ -6,6 +6,7 @@
  */
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,6 +17,7 @@
 #include "oops/runs/Run.h"
 #include "oops/runs/Test.h"
 #include "oops/test/TestEnvironment.h"
+#include "oops/util/missingValues.h"
 
 #include "ioda/containers/FrameCols.h"
 #include "ioda/containers/FrameMetadata.h"
@@ -896,6 +898,65 @@ CASE("testSetVariableValuesWithMissingValuesWithChannelAxis_ObsGroup") {
 
 CASE("testSetVariableValuesWithMissingValuesWithChannelAxis_OsdfFrame") {
   testSetVariableValuesWithMissingValuesWithChannelAxis(std::make_unique<WrappedOsdfFrame>);
+}
+
+void testNonFiniteValuesOsdfFrame() {
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const float inf = std::numeric_limits<float>::infinity();
+  const float missing = util::missingValue<float>();
+  const std::vector<float> values({270.f, nan, inf, -inf, -10.f, 280.f});
+
+  // NaN and infinity must become JEDI missing with no fill value, a finite sentinel, or a NaN fill.
+  // The ordinary value -10 must remain unchanged unless it is the configured fill value.
+  for (bool hasChannels : {false, true}) {
+    for (MemoryLayout layout : {MemoryLayout::RowMajor, MemoryLayout::ColumnMajor}) {
+      for (const std::optional<float> fill :
+           {std::optional<float>(), std::optional<float>(-10.f),
+            std::optional<float>(missing), std::optional<float>(nan)}) {
+        osdf::FrameCols frame;
+        osdf::FrameMetadata metadata;
+        OsdfFrameFacade facade(frame, metadata);
+        const std::optional<std::vector<int>> channels =
+          hasChannels ? std::optional<std::vector<int>>(std::vector<int>({3, 5})) : std::nullopt;
+        facade.initialize(values.size(), channels,
+                          dataLayoutPolicy(), ContainerOptions());
+        std::vector<float> input = values;
+        std::vector<float> expectedInput({270.f, missing, missing, missing,
+                                          fill && *fill == -10.f ? missing : -10.f, 280.f});
+        if (hasChannels) {
+          // Reuse the same input buffer in both layouts
+          input.insert(input.end(), values.begin(), values.end());
+          const std::vector<float> expectedColumn = expectedInput;
+          expectedInput.insert(expectedInput.end(), expectedColumn.begin(), expectedColumn.end());
+        }
+        facade.addVariable("initial_obsvalue/2", input, hasChannels, layout, fill);
+
+        // Inspect columns directly, rather than relying on a read accessor to replace NaN/Inf.
+        for (bool update : {false, true}) {
+          if (update)
+            facade.setVariableValues("initial_obsvalue/2", input, layout);
+          for (int channel : hasChannels ? std::vector<int>({3, 5}) : std::vector<int>({0})) {
+            const std::string name = "ObsValue/airTemperature"
+                                      + (hasChannels ? "_" + std::to_string(channel) : "");
+            std::vector<float> actual;
+            frame.getColumn(name, actual);
+            std::vector<float> expected;
+            for (size_t loc = 0; loc < values.size(); ++loc) {
+              const size_t index = !hasChannels || layout == MemoryLayout::ColumnMajor
+                                    ? loc + (channel == 5 ? values.size() : 0)
+                                    : 2 * loc + (channel == 5 ? 1 : 0);
+              expected.push_back(expectedInput[index]);
+            }
+            EXPECT_EQUAL(actual, expected);
+          }
+        }
+      }
+    }
+  }
+}
+
+CASE("testNonFiniteValues_OsdfFrame") {
+  testNonFiniteValuesOsdfFrame();
 }
 
 void testIodaVariableNames(

@@ -7,10 +7,12 @@
 
 #include "ioda/OsdfFrameFacade.hpp"
 
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <optional>  // NOLINT(build/include_order): linter mis-identifies C++ header as C
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -455,6 +457,13 @@ void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
                                                  MemoryLayout layout,
                                                  const std::optional<T> &missingValue,
                                                  bool createNewColumns) {
+  const auto replaceMissing = [&missingValue](const T &value) {
+    bool isMissing = missingValue && value == *missingValue;
+    if constexpr (std::is_floating_point_v<T>)
+      isMissing = isMissing || !std::isfinite(value);
+    return isMissing ? util::missingValue<T>() : value;
+  };
+
   if (!sliceDimName.empty()) {
     using Matrix = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
     const std::vector<int> &sliceIndices = metadata_.getDimNums(sliceDimName);
@@ -481,14 +490,9 @@ void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
     column.resize(numLocations);
     for (size_t columnIndex = 0; columnIndex < numSlices; ++columnIndex) {
       const int sliceIndex = sliceIndices[columnIndex];
-      if (missingValue)
-        std::replace_copy(valuesView.col(columnIndex).data(),
-                          valuesView.col(columnIndex).data() + numLocations,
-                          column.begin(),
-                          *missingValue, util::missingValue<T>());
-      else
-        column.assign(valuesView.col(columnIndex).data(),
-                      valuesView.col(columnIndex).data() + numLocations);
+      std::transform(valuesView.col(columnIndex).data(),
+                     valuesView.col(columnIndex).data() + numLocations,
+                     column.begin(), replaceMissing);
 
       const std::string fullName = iodaName + '_' + std::to_string(sliceIndex);
       if (createNewColumns) {
@@ -500,11 +504,9 @@ void OsdfFrameFacade::setTypedIodaVariableValues(const std::string &iodaName,
   } else {
     std::vector<T> editedValues;
     const std::vector<T> *column = &values;
-    if (missingValue) {
+    if (missingValue || std::is_floating_point_v<T>) {
       editedValues.resize(values.size());
-      std::replace_copy(values.begin(), values.end(),
-                        editedValues.begin(),
-                        *missingValue, util::missingValue<T>());
+      std::transform(values.begin(), values.end(), editedValues.begin(), replaceMissing);
       column = &editedValues;
     }
     if (createNewColumns) {
