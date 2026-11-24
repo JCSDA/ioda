@@ -928,11 +928,22 @@ void fillFloatArray(const ContainerFacade &container, const std::string varname,
     const float utilMissingFloat         = util::missingValue<float>();
     const float utilMissingDoubleAsFloat = static_cast<float>(util::missingValue<double>());
     const float odbMissingAsFloat        = static_cast<float>(odb_missing_float);
-    const auto isMissing                 = [&](float value) {
-      return !std::isfinite(value) || (fillValue && value == *fillValue)
+
+    const auto isMissing = [&](float value) {
+      bool valueFinite = std::isfinite(value);
+      if (!valueFinite) {
+        std::string nonFiniteType = "infinite.";
+        if (std::isnan(value)) {
+          nonFiniteType = "NaN.";
+        }
+        std::string msg = varname + " value is " + nonFiniteType + "Converting to missing value: " + std::to_string(odb_missing_float);
+        oops::Log::warning() << msg << std::endl;
+      }
+      return !valueFinite || (fillValue && value == *fillValue)
              || value == utilMissingFloat || value == utilMissingDoubleAsFloat
              || value == odbMissingAsFloat;
     };
+    
     if (derived_odb) {
       if (metadata_varname) {
         for (int j = 0; j < numrows; j++) {
