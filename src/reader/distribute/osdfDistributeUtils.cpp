@@ -9,6 +9,7 @@
 
 #include "osdfDistributeUtils.hpp"
 
+#include <algorithm>
 #include <unordered_map>
 #include <numeric>
 #include <utility>
@@ -94,6 +95,32 @@ void osdfAssignRecordNumbers(const osdf::IFrame & srcFrame,
             sourceRecNums[i] = obsGroupingMap.at(obsGroupingKeys[i]);
         }
     }
+}
+
+void makeRecordsContiguous(std::vector<std::size_t> & locIndices,
+                           std::vector<std::size_t> & recNums) {
+    ASSERT(locIndices.size() == recNums.size());
+    // Records are numbered in the order they are first seen, so when the records are
+    // already contiguous the record numbers are non-decreasing. Nothing to do in that case.
+    if (std::is_sorted(recNums.begin(), recNums.end())) {
+        return;
+    }
+
+    // Sort positions by record number. The stable sort keeps the locations of each record
+    // in their current relative order.
+    std::vector<std::size_t> order(recNums.size());
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(),
+        [&recNums](std::size_t a, std::size_t b) { return recNums[a] < recNums[b]; });
+
+    std::vector<std::size_t> sortedLocIndices(order.size());
+    std::vector<std::size_t> sortedRecNums(order.size());
+    for (std::size_t i = 0; i < order.size(); ++i) {
+        sortedLocIndices[i] = locIndices[order[i]];
+        sortedRecNums[i] = recNums[order[i]];
+    }
+    locIndices = std::move(sortedLocIndices);
+    recNums = std::move(sortedRecNums);
 }
 
 void osdfSelectRankData(const std::unique_ptr<osdf::IFrame> &  srcGlobalFrame,

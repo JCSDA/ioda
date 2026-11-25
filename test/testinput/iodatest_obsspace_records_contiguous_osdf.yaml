@@ -1,0 +1,56 @@
+# Check that, with the OSDF container, the locations of each record are contiguous on every
+# MPI rank.
+#
+# Only the contiguity check and the global counts are tested here. The exact location order
+# is covered by the index/recnum tests. This is accomplished by setting the
+# "check index and recnum" config to false, and setting the "records are contiguous" config
+# to true.
+time window:
+  begin: "2018-01-01T00:00:00Z"
+  end: "2023-01-01T00:00:00Z"
+
+observations:
+- obs space:
+    name: "Sondes, single file"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: "Data/testinput_tier_1/sondes_obs_2018041500_m.nc4"
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 4
+  test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
+    nrecs: 36
+    obs are sorted: false
+    check index and recnum: false
+    records are contiguous: true
+
+- obs space:
+    name: "Sondes, three files"
+    simulated variables: ['airTemperature']
+    obsdatain:
+      engine:
+        type: H5File
+        obsfiles:
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p1.nc4"
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p2.nc4"
+        - "Data/testinput_tier_1/sondes_obs_2018041500_m_p3.nc4"
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+    use data frame container: true
+    data frame type: "FrameCols"
+    io pool:
+      max pool size: 4
+  test data:
+    gnlocs: 974
+    gnlocs outside time window: 0
+    nrecs: 36
+    obs are sorted: false
+    check index and recnum: false
+    records are contiguous: true

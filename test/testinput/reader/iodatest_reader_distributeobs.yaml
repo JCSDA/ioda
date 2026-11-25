@@ -84,27 +84,30 @@ function inputs:
   grouping variables: [ "stationIdentification" ]
 expected results:
   mpisize4:
+    # Record 0 (sta100) arrives from two input ranks, so its locations are separated by
+    # record 4 (sta104) in the gathered order. distributeObs makes each record's locations
+    # contiguous, keeping their relative order within the record.
     rank0:
       expected local data:
       - name: "sourceLocationIndices"
         type: "int"
-        values: [ 0, 6, 7, 9 ]
+        values: [ 0, 9, 6, 7 ]
       - name: "MetaData/latitude"
         type: "float"
         unit: "floatUnit"
-        values: [ 1.5, 5.5, 6.5, 7.5 ]
+        values: [ 1.5, 7.5, 5.5, 6.5 ]
       - name: "MetaData/longitude"
         type: "float"
-        values: [ 11.5, 15.5, 16.5, 17.5 ]
+        values: [ 11.5, 17.5, 15.5, 16.5 ]
       - name: "MetaData/stationIdentification"
         type: "string"
         unit: "stringUnit"
-        values: [ "sta100", "sta104", "sta104", "sta100" ]
+        values: [ "sta100", "sta100", "sta104", "sta104" ]
       - name: "ObsValue/myObsInst"
         type: "float"
-        values: [ 10.5, 50.5, 60.5, 70.5 ]
-      local loc indices: [ 0, 6, 7, 9 ]
-      local record numbers: [ 0, 4, 4, 0 ]
+        values: [ 10.5, 70.5, 50.5, 60.5 ]
+      local loc indices: [ 0, 9, 6, 7 ]
+      local record numbers: [ 0, 0, 4, 4 ]
       local num locations: 4
       local num records: 2
     rank1:

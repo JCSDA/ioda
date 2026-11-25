@@ -155,6 +155,7 @@ list( APPEND ioda_test_input
   testinput/iodatest_obsspace_index_recnum_multiple_input_files.yaml
   testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml
   testinput/iodatest_obsspace_index_recnum_identity_osdf.yaml
+  testinput/iodatest_obsspace_records_contiguous_osdf.yaml
   testinput/iodatest_obsspace_invalid_numeric.yaml
   testinput/iodatest_obsspace_invalid_numeric_odb.yaml
   testinput/iodatest_obsspace_io_pool_sondes_single_file.yaml
@@ -2026,6 +2027,28 @@ ecbuild_add_test( TARGET  ioda_obsspace_index_recnum_multiple_input_files_osdf_m
                   MPI 4
                   COMMAND ioda_obsspace_index_recnum
                   ARGS    "testinput/iodatest_obsspace_index_recnum_multiple_input_files_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+# Records must be contiguous on each MPI rank with the OSDF container.
+# The io pool only splits the input files into chunks with more than one MPI task.
+ecbuild_add_test( TARGET  ioda_obsspace_records_contiguous_osdf
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_records_contiguous_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_records_contiguous_osdf_mpi_2
+                  MPI 2
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_records_contiguous_osdf.yaml"
+                  LIBS  ioda_test
+                  )
+
+ecbuild_add_test( TARGET  ioda_obsspace_records_contiguous_osdf_mpi_4
+                  MPI 4
+                  COMMAND ioda_obsspace_index_recnum
+                  ARGS    "testinput/iodatest_obsspace_records_contiguous_osdf.yaml"
                   LIBS  ioda_test
                   )
 

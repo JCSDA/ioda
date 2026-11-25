@@ -164,6 +164,12 @@ void testIndexRecnum() {
     conf[jj].get("test data", testConfig);
     oops::Log::debug() << "Test data configuration: " << testConfig << std::endl;
 
+    // Optional: an obs space can opt out of the exact index/recnum/recidx comparison,
+    // e.g. when it only exists to exercise the record contiguity check below.
+    if (!testConfig.getBool("check index and recnum", true)) {
+      continue;
+    }
+
     // Get the index and recnum vectors from the obs space
     std::vector<std::size_t> Index = Test_::obspace(jj).index();
     std::vector<std::size_t> Recnum = Test_::obspace(jj).recnum();
@@ -207,6 +213,50 @@ void testIndexRecnum() {
 
 // -----------------------------------------------------------------------------
 
+/// \brief Check that the locations of each record are contiguous on this MPI rank.
+/// \details Enabled per obs space with "records are contiguous: true" in the test data.
+/// The check counts the runs of identical record numbers along the location order and
+/// requires one run per record.
+void testRecordsContiguous() {
+  typedef ObsSpaceTestFixture Test_;
+
+  std::vector<eckit::LocalConfiguration> conf;
+  ::test::TestEnvironment::config().get("observations", conf);
+
+  for (std::size_t jj = 0; jj < Test_::size(); ++jj) {
+    eckit::LocalConfiguration testConfig;
+    conf[jj].get("test data", testConfig);
+    if (!testConfig.getBool("records are contiguous", false)) {
+      continue;
+    }
+
+    const ObsSpace & odb = Test_::obspace(jj);
+    // records are ambiguous and not implemented for the halo distribution
+    if (odb.distribution()->name() == "Halo") {
+      continue;
+    }
+
+    const std::vector<std::size_t> & Recnum = odb.recnum();
+    std::size_t NumRuns = 0;
+    std::set<std::size_t> UniqueRecnums;
+    for (std::size_t loc = 0; loc < Recnum.size(); ++loc) {
+      if (loc == 0 || Recnum[loc] != Recnum[loc - 1]) {
+        ++NumRuns;
+      }
+      UniqueRecnums.insert(Recnum[loc]);
+    }
+
+    oops::Log::info() << "testRecordsContiguous: obs space " << odb.obsname()
+                      << ", rank " << odb.comm().rank()
+                      << ": nlocs = " << Recnum.size()
+                      << ", nrecs = " << UniqueRecnums.size()
+                      << ", runs of identical record numbers = " << NumRuns << std::endl;
+    EXPECT_EQUAL(NumRuns, UniqueRecnums.size());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 class ObsSpaceIndexRecnum : public oops::Test {
  public:
   ObsSpaceIndexRecnum() {}
@@ -221,6 +271,8 @@ class ObsSpaceIndexRecnum : public oops::Test {
       { testConstructor(); });
     ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testIndexRecnum")
       { testIndexRecnum(); });
+    ts.emplace_back(CASE("ioda/ObsSpaceIndexRecnum/testRecordsContiguous")
+      { testRecordsContiguous(); });
   }
 
   void clear() const override {

@@ -1,11 +1,12 @@
 # OSDF counterpart of iodatest_obsspace_index_recnum_multiple_input_files.yaml.
 #
 # index() holds the position of each location in the input files (numbered as if the
-# files were concatenated) with both containers. The single file input obs space matches
-# the ObsGroup file. With multiple input files, every io pool rank loads a block of every
-# file, so the OSDF container holds the locations in a different order from ObsGroup, and
-# the recnum values, the rank each record goes to and the order of the index values differ.
-# This difference is expected until the ObsGroup container is retired.
+# files were concatenated) with both containers. With multiple input files, every io pool
+# rank loads a block of every file, so the OSDF container holds the locations in a different
+# order from ObsGroup, and the recnum values, the rank each record goes to and the order of
+# the index values differ.
+#
+# Note that the ObsGroup and OSDF readers can produce correct, but different results.
 time window:
   begin: "2022-02-15T21:00:00Z"
   end: "2022-02-16T03:00:00Z"
@@ -32,40 +33,41 @@ observations:
     nrecs: 10
     nvars: 1
     obs are sorted: false
+    records are contiguous: true
     mpi size1:
       rank0:
-        index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
-        recnum: [ 0, 1, 1, 2, 3, 0, 4, 5, 6, 7, 5, 8, 9, 8, 9 ]
+        index: [ 0, 5, 1, 2, 3, 4, 6, 7, 10, 8, 9, 11, 13, 12, 14 ]
+        recnum: [ 0, 0, 1, 1, 2, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9 ]
         recidx:
-          rec0: [ 0, 5 ]
-          rec1: [ 1, 2 ]
-          rec2: [ 3 ]
-          rec3: [ 4 ]
+          rec0: [ 0, 1 ]
+          rec1: [ 2, 3 ]
+          rec2: [ 4 ]
+          rec3: [ 5 ]
           rec4: [ 6 ]
-          rec5: [ 7, 10 ]
-          rec6: [ 8 ]
-          rec7: [ 9 ]
-          rec8: [ 11, 13 ]
-          rec9: [ 12, 14 ]
+          rec5: [ 7, 8 ]
+          rec6: [ 9 ]
+          rec7: [ 10 ]
+          rec8: [ 11, 12 ]
+          rec9: [ 13, 14 ]
 
     mpi size2:
       rank0:
-        index: [ 0, 3, 5, 6, 8, 11, 13 ]
-        recnum: [ 0, 2, 0, 4, 6, 8, 8 ]
+        index: [ 0, 5, 3, 6, 8, 11, 13 ]
+        recnum: [ 0, 0, 2, 4, 6, 8, 8 ]
         recidx:
-          rec0: [ 0, 2 ]
-          rec2: [ 1 ]
+          rec0: [ 0, 1 ]
+          rec2: [ 2 ]
           rec4: [ 3 ]
           rec6: [ 4 ]
           rec8: [ 5, 6 ]
       rank1:
-        index: [ 1, 2, 4, 7, 9, 10, 12, 14 ]
-        recnum: [ 1, 1, 3, 5, 7, 5, 9, 9 ]
+        index: [ 1, 2, 4, 7, 10, 9, 12, 14 ]
+        recnum: [ 1, 1, 3, 5, 5, 7, 9, 9 ]
         recidx:
           rec1: [ 0, 1 ]
           rec3: [ 2 ]
-          rec5: [ 3, 5 ]
-          rec7: [ 4 ]
+          rec5: [ 3, 4 ]
+          rec7: [ 5 ]
           rec9: [ 6, 7 ]
 
     mpi size4:
@@ -120,50 +122,51 @@ observations:
     nrecs: 10
     nvars: 1
     obs are sorted: false
+    records are contiguous: true
     mpi size1:
       rank0:
-        index: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
-        recnum: [ 0, 1, 1, 2, 3, 0, 4, 5, 6, 7, 5, 8, 9, 8, 9 ]
+        index: [ 0, 5, 1, 2, 3, 4, 6, 7, 10, 8, 9, 11, 13, 12, 14 ]
+        recnum: [ 0, 0, 1, 1, 2, 3, 4, 5, 5, 6, 7, 8, 8, 9, 9 ]
         recidx:
-          rec0: [ 0, 5 ]
-          rec1: [ 1, 2 ]
-          rec2: [ 3 ]
-          rec3: [ 4 ]
+          rec0: [ 0, 1 ]
+          rec1: [ 2, 3 ]
+          rec2: [ 4 ]
+          rec3: [ 5 ]
           rec4: [ 6 ]
-          rec5: [ 7, 10 ]
-          rec6: [ 8 ]
-          rec7: [ 9 ]
-          rec8: [ 11, 13 ]
-          rec9: [ 12, 14 ]
+          rec5: [ 7, 8 ]
+          rec6: [ 9 ]
+          rec7: [ 10 ]
+          rec8: [ 11, 12 ]
+          rec9: [ 13, 14 ]
 
     mpi size2:
       rank0:
-        index: [ 0, 6, 8, 12, 4, 5, 14 ]
-        recnum: [ 0, 2, 4, 6, 8, 0, 6 ]
+        index: [ 0, 5, 6, 8, 12, 14, 4 ]
+        recnum: [ 0, 0, 2, 4, 6, 6, 8 ]
         recidx:
-          rec0: [ 0, 5 ]
-          rec2: [ 1 ]
-          rec4: [ 2 ]
-          rec6: [ 3, 6 ]
-          rec8: [ 4 ]
+          rec0: [ 0, 1 ]
+          rec2: [ 2 ]
+          rec4: [ 3 ]
+          rec6: [ 4, 5 ]
+          rec8: [ 6 ]
       rank1:
-        index: [ 1, 2, 7, 11, 3, 9, 10, 13 ]
-        recnum: [ 1, 1, 3, 5, 7, 9, 3, 5 ]
+        index: [ 1, 2, 7, 10, 11, 13, 3, 9 ]
+        recnum: [ 1, 1, 3, 3, 5, 5, 7, 9 ]
         recidx:
           rec1: [ 0, 1 ]
-          rec3: [ 2, 6 ]
-          rec5: [ 3, 7 ]
-          rec7: [ 4 ]
-          rec9: [ 5 ]
+          rec3: [ 2, 3 ]
+          rec5: [ 4, 5 ]
+          rec7: [ 6 ]
+          rec9: [ 7 ]
 
     mpi size4:
       rank0:
-        index: [ 0, 11, 4, 13, 5 ]
-        recnum: [ 0, 4, 8, 4, 0 ]
+        index: [ 0, 5, 11, 13, 4 ]
+        recnum: [ 0, 0, 4, 4, 8 ]
         recidx:
-          rec0: [ 0, 4 ]
-          rec4: [ 1, 3 ]
-          rec8: [ 2 ]
+          rec0: [ 0, 1 ]
+          rec4: [ 2, 3 ]
+          rec8: [ 4 ]
       rank1:
         index: [ 1, 2, 3, 9 ]
         recnum: [ 1, 1, 5, 9 ]
@@ -178,8 +181,8 @@ observations:
           rec2: [ 0 ]
           rec6: [ 1 ]
       rank3:
-        index: [ 7, 12, 10, 14 ]
-        recnum: [ 3, 7, 3, 7 ]
+        index: [ 7, 10, 12, 14 ]
+        recnum: [ 3, 3, 7, 7 ]
         recidx:
-          rec3: [ 0, 2 ]
-          rec7: [ 1, 3 ]
+          rec3: [ 0, 1 ]
+          rec7: [ 2, 3 ]

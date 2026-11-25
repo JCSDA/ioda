@@ -40,6 +40,14 @@ void osdfAssignRecordNumbers(const osdf::IFrame & srcFrame,
                              const std::vector<std::string> & obsGroupVarList,
                              std::vector<std::size_t> & sourceRecNums);
 
+/// @brief Reorder this rank's locations so that the locations of each record are contiguous
+/// @detail Stable sort of the locations by record number. Locations within a record keep
+/// their relative order, and nothing changes when the records are already contiguous.
+/// @param[in,out] locIndices  Global indexes of the locations assigned to this rank
+/// @param[in,out] recNums     Record number of each location in locIndices
+void makeRecordsContiguous(std::vector<std::size_t> & locIndices,
+                           std::vector<std::size_t> & recNums);
+
 /// @brief Add a new column to a rank-specific IFrame, based on selecting rows from a global IFrame
 /// @detail After a Distribution object has produced the sourceRecNums vector, this function
 /// is used to select the rows from a global IFrame that correspond to a specific rank.

@@ -180,6 +180,16 @@ void distributeObs(const DistributionParametersBase & distParams,
                                     localNlocs,
                                     localNrecs);
 
+  // Make the locations of each record contiguous on this rank. The locations come out of
+  // applyMpiDistribution in the order of the gathered rows, where a record's locations can
+  // be interleaved with those of other records. This is only needed when obs grouping is
+  // in use (otherwise each location is its own record and the order is already contiguous),
+  // and only for non-overlapping distributions, since with overlapping distributions (Halo)
+  // it doesn't make sense to do obs grouping.
+  if (!obsGroupVarList.empty() && tempDistOut->isNonoverlapping()) {
+    makeRecordsContiguous(localLocIndices, localRecNums);
+  }
+
   // Create the rank-specific osdf container to hold only this rank's locations (Step 6.)
   std::unique_ptr<osdf::IFrame> tempRankOsdf = osdf::createIFrame(inOsdf->frameType());
 
